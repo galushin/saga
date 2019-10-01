@@ -54,5 +54,5 @@ install:
 
 script:
     - cd ./tests
-    - make -f makefile.gcc debug && ./bin/Debug/tests
-    - make -f makefile.gcc release && ./bin/Release/tests
+    - make -f makefile.gcc debug && ./bin/Debug/test
+    - make -f makefile.gcc release && ./bin/Release/test
