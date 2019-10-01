@@ -1,0 +1,58 @@
+sudo: required
+dist: trusty
+language: cpp
+
+matrix:
+    include:
+        # gcc 5
+        - env: GCC_VERSION=5
+          os: linux
+          compiler: gcc-5
+          addons: &gcc5
+            apt:
+              packages:
+                - g++-5
+              sources:
+                - ubuntu-toolchain-r-test
+                
+        # gcc 6
+        - env: GCC_VERSION=6
+          os: linux
+          compiler: gcc-6
+          addons: &gcc6
+            apt:
+              packages:
+                - g++-6
+              sources:
+                - ubuntu-toolchain-r-test
+                
+        # gcc 7
+        - env: GCC_VERSION=7
+          os: linux
+          compiler: gcc-7
+          addons: &gcc7
+            apt:
+              packages:
+                - g++-7
+              sources:
+                - ubuntu-toolchain-r-test
+        # gcc 8
+        - env: GCC_VERSION=8
+          os: linux
+          compiler: gcc-8
+          addons: &gcc8
+            apt:
+              packages:
+                - g++-8
+              sources:
+                - ubuntu-toolchain-r-test
+
+install:
+    - if [ -n "$GCC_VERSION" ]; then export CXX="g++-${GCC_VERSION}" CC="gcc-${GCC_VERSION}"; fi
+    - if [ "$GCC_VERSION" == 5 ]; then export CFLAGS="${CFLAGS} -std=gnu++14 -Wall"; fi
+    - if [ -n "$GCC_VERSION" ]; then export CFLAGS="${CFLAGS} -Wall"; fi
+
+script:
+    - cd ./tests
+    - make -f makefile.gcc debug && ./bin/Debug/test
+    - make -f makefile.gcc release && ./bin/Release/test
