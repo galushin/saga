@@ -31,13 +31,11 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add directory="./contrib/catch2/include" />
 		</Compiler>
+		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
 		<Unit filename="main.cpp" />
 		<Extensions>
-			<code_completion />
-			<envvars />
-			<debugger />
-			<fortran_project />
 			<lib_finder disable_auto="1" />
 		</Extensions>
 	</Project>
