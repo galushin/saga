@@ -4,7 +4,8 @@
 
 LD = $(CXX)
 
-INC =
+
+INC = -I./contrib/catch2/include
 RESINC = 
 LIBDIR = 
 LIB = 
