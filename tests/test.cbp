@@ -32,9 +32,14 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add directory="./contrib/catch2/include" />
+			<Add directory="../include" />
 		</Compiler>
+		<Unit filename="../include/saga/random/iid_distribution.hpp" />
 		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
 		<Unit filename="main.cpp" />
+		<Unit filename="random/iid_distribution.cpp" />
+		<Unit filename="random_engine.cpp" />
+		<Unit filename="random_engine.hpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>
