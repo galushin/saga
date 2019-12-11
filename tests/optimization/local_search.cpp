@@ -55,3 +55,46 @@ TEST_CASE("local search (pseudoboolen, first improvement) : L1 distance to some 
     // @todo Тестировать для разных размерностей?
     test_local_search_boolean<Argument>(objective, dim, dim);
 }
+
+TEST_CASE("local search (pseudoboolen, first improvement) : number of unequal adjacent bits")
+{
+    using Argument = std::vector<bool>;
+    auto const objective = [](Argument const & arg)
+    {
+        // @todo Алгоритм?
+        auto result = arg.size()*0;
+
+        for(auto i = 0*arg.size(); i+1 != arg.size(); ++ i)
+        {
+            result += (arg[i] != arg[i+1]);
+        }
+
+        return result;
+    };
+
+    // @todo Тестировать для разных размерностей?
+    auto const dim = 20;
+
+    saga::iid_distribution<std::bernoulli_distribution> init_distr(dim);
+
+    for(auto N = 100; N > 0; -- N)
+    {
+        auto const x_init = init_distr(saga_test::random_engine());
+        auto const x_result = saga::local_search_boolean(objective, x_init);
+
+        CAPTURE(x_result);
+
+        // Проверяем, что является локальным экстремумом
+        auto const y_result = objective(x_result);
+        auto x = x_result;
+        for(auto i = x.begin(); i != x.end(); ++ i)
+        {
+            *i = !*i;
+
+            auto const y = objective(x);
+            REQUIRE(y_result >= y);
+
+            *i = !*i;
+        }
+    }
+}
