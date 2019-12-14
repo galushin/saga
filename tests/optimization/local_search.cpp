@@ -9,7 +9,6 @@ template <class Argument, class Objective, class RealType>
 void test_local_search_boolean(Objective const & objective, typename Argument::size_type dim,
                                RealType desired_value, RealType eps = 0)
 {
-    // @todo Через тестирование, основанное на свойствах
     saga::iid_distribution<std::bernoulli_distribution> init_distr(dim);
 
     for(auto N = 100; N > 0; -- N)
@@ -22,6 +21,29 @@ void test_local_search_boolean(Objective const & objective, typename Argument::s
     }
 }
 
+template <class Objective, class Argument>
+bool is_local_maximum(Objective const & objective, Argument const & arg)
+{
+    auto const y_arg = objective(arg);
+    auto x = arg;
+
+    for(auto i = x.begin(); i != x.end(); ++ i)
+    {
+        *i = !*i;
+
+        auto const y = objective(x);
+
+        if(y > y_arg)
+        {
+            return false;
+        }
+
+        *i = !*i;
+    }
+
+    return true;
+}
+
 TEST_CASE("local search (pseudoboolen, first improvement) : L1 norm")
 {
 
@@ -31,7 +53,6 @@ TEST_CASE("local search (pseudoboolen, first improvement) : L1 norm")
         return std::count(arg.begin(), arg.end(), true);
     };
 
-    // @todo Тестировать для разных размерностей?
     auto const dim = 20;
     test_local_search_boolean<Argument>(objective, dim, dim);
 }
@@ -52,16 +73,14 @@ TEST_CASE("local search (pseudoboolen, first improvement) : L1 distance to some 
                                   std::plus<>{}, std::not_equal_to<>{});
     };
 
-    // @todo Тестировать для разных размерностей?
     test_local_search_boolean<Argument>(objective, dim, dim);
 }
 
-TEST_CASE("local search (pseudoboolen, first improvement) : number of unequal adjacent bits")
+TEST_CASE("local search (pseudoboolean, first improvement): number of unequal adjacent bits")
 {
     using Argument = std::vector<bool>;
     auto const objective = [](Argument const & arg)
     {
-        // @todo Алгоритм?
         auto result = arg.size()*0;
 
         for(auto i = 0*arg.size(); i+1 != arg.size(); ++ i)
@@ -72,7 +91,6 @@ TEST_CASE("local search (pseudoboolen, first improvement) : number of unequal ad
         return result;
     };
 
-    // @todo Тестировать для разных размерностей?
     auto const dim = 20;
 
     saga::iid_distribution<std::bernoulli_distribution> init_distr(dim);
@@ -84,17 +102,42 @@ TEST_CASE("local search (pseudoboolen, first improvement) : number of unequal ad
 
         CAPTURE(x_result);
 
-        // Проверяем, что является локальным экстремумом
-        auto const y_result = objective(x_result);
-        auto x = x_result;
-        for(auto i = x.begin(); i != x.end(); ++ i)
+        REQUIRE(is_local_maximum(objective, x_result));
+    }
+}
+
+TEST_CASE("local search (pseudoboolean, first improvement): number of unequal adjacent bits, mask")
+{
+    using Argument = std::vector<bool>;
+
+    auto const dim = 20;
+
+    saga::iid_distribution<std::bernoulli_distribution> mask_distr(dim);
+    auto const mask = mask_distr(saga_test::random_engine());
+
+    auto const objective = [&](Argument const & arg)
+    {
+        assert(arg.size() == mask.size());
+
+        auto result = arg.size()*0;
+
+        for(auto i = 0*arg.size(); i+1 != arg.size(); ++ i)
         {
-            *i = !*i;
-
-            auto const y = objective(x);
-            REQUIRE(y_result >= y);
-
-            *i = !*i;
+            result += ((arg[i] ^ mask[i]) != (arg[i+1] ^ mask[i+1]));
         }
+
+        return result;
+    };
+
+    saga::iid_distribution<std::bernoulli_distribution> init_distr(dim);
+
+    for(auto N = 100; N > 0; -- N)
+    {
+        auto const x_init = init_distr(saga_test::random_engine());
+        auto const x_result = saga::local_search_boolean(objective, x_init);
+
+        CAPTURE(x_result);
+
+        REQUIRE(is_local_maximum(objective, x_result));
     }
 }
