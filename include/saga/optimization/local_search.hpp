@@ -5,6 +5,8 @@
  @brief Методы локального поиска
 */
 
+#include <functional>
+
 namespace saga
 {
     /** @brief Алгоритм локального поиска псевдо-булевой оптимизации с изменением одной компоненты
@@ -14,10 +16,10 @@ namespace saga
     @return локальный минимум, найденный алгоритмом, запущенным из точки @c x_init
     @todo Закон "полезного возврата": мы могли бы возвращать также значение целевой функции
     в найденной точке
-    @todo Выбор между минимизацией и максимизацией (сейчас осуществляем максимизацию)
     */
-    template <class Objective, class Argument>
-    Argument local_search_boolean(Objective const & objective, Argument x_init)
+    template <class Objective, class Argument, class Compare = std::less<>>
+    Argument local_search_boolean(Objective const & objective, Argument x_init,
+                                  Compare cmp = Compare())
     {
         auto const first = x_init.begin();
         auto const last = x_init.end();
@@ -30,7 +32,7 @@ namespace saga
             *pos = !*pos;
             auto y_new = objective(x_init);
 
-            if(y_new > y_current)
+            if(cmp(y_new, y_current))
             {
                 fails = 0;
                 y_current = y_new;
