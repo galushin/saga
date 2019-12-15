@@ -54,7 +54,7 @@ TEST_CASE("local search (pseudoboolen, first improvement) : L1 norm")
     };
 
     auto const dim = 20;
-    test_local_search_boolean<Argument>(objective, dim, dim);
+    test_local_search_boolean<Argument>(objective, dim, 0*dim);
 }
 
 TEST_CASE("local search (pseudoboolen, first improvement) : L1 distance to some vector")
@@ -73,7 +73,7 @@ TEST_CASE("local search (pseudoboolen, first improvement) : L1 distance to some 
                                   std::plus<>{}, std::not_equal_to<>{});
     };
 
-    test_local_search_boolean<Argument>(objective, dim, dim);
+    test_local_search_boolean<Argument>(objective, dim, 0*dim);
 }
 
 TEST_CASE("local search (pseudoboolean, first improvement): number of unequal adjacent bits")
@@ -98,7 +98,7 @@ TEST_CASE("local search (pseudoboolean, first improvement): number of unequal ad
     for(auto N = 100; N > 0; -- N)
     {
         auto const x_init = init_distr(saga_test::random_engine());
-        auto const x_result = saga::local_search_boolean(objective, x_init);
+        auto const x_result = saga::local_search_boolean(objective, x_init, std::greater<>{});
 
         CAPTURE(x_result);
 
@@ -134,7 +134,7 @@ TEST_CASE("local search (pseudoboolean, first improvement): number of unequal ad
     for(auto N = 100; N > 0; -- N)
     {
         auto const x_init = init_distr(saga_test::random_engine());
-        auto const x_result = saga::local_search_boolean(objective, x_init);
+        auto const x_result = saga::local_search_boolean(objective, x_init, std::greater<>{});
 
         CAPTURE(x_result);
 
