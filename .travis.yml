@@ -57,6 +57,7 @@ script:
     - make -f makefile.gcc debug && ./bin/Debug/test
     - make -f makefile.gcc release && ./bin/Release/test
     - cd ../example/local_search
+    - make -f makefile.gcc sampledll_debug
     - make -f makefile.gcc debug && ./bin/Debug/local_search
     - make -f makefile.gcc release && ./bin/Release/local_search
 

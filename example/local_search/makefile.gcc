@@ -28,13 +28,26 @@ OBJDIR_RELEASE = ./obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = ./bin/Release/local_search
 
+INC_SAMPLEDLL_DEBUG = $(INC)
+CFLAGS_SAMPLEDLL_DEBUG = $(CFLAGS)
+RESINC_SAMPLEDLL_DEBUG = $(RESINC)
+RCFLAGS_SAMPLEDLL_DEBUG = $(RCFLAGS)
+LIBDIR_SAMPLEDLL_DEBUG = $(LIBDIR)
+LIB_SAMPLEDLL_DEBUG = $(LIB)
+LDFLAGS_SAMPLEDLL_DEBUG = $(LDFLAGS)
+OBJDIR_SAMPLEDLL_DEBUG = .objs
+DEP_SAMPLEDLL_DEBUG = 
+OUT_SAMPLEDLL_DEBUG = /local_search.so
+
 OBJ_DEBUG = $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o $(OBJDIR_DEBUG)/main.o
 
 OBJ_RELEASE = $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o $(OBJDIR_RELEASE)/main.o
 
-all: debug release
+OBJ_SAMPLEDLL_DEBUG = $(OBJDIR_SAMPLEDLL_DEBUG)/sample_library.o
 
-clean: clean_debug clean_release
+all: debug release sampledll_debug
+
+clean: clean_debug clean_release clean_sampledll_debug
 
 before_debug: 
 	test -d ./bin/Debug || mkdir -p ./bin/Debug
@@ -102,5 +115,22 @@ clean_release:
 	rm -rf $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src
 	rm -rf $(OBJDIR_RELEASE)
 
-.PHONY: before_debug after_debug clean_debug before_release after_release clean_release
+before_sampledll_debug: 
+	test -d $(OBJDIR_SAMPLEDLL_DEBUG) || mkdir -p $(OBJDIR_SAMPLEDLL_DEBUG)
+
+after_sampledll_debug: 
+
+sampledll_debug: before_sampledll_debug out_sampledll_debug after_sampledll_debug
+
+out_sampledll_debug: before_sampledll_debug $(OBJ_SAMPLEDLL_DEBUG) $(DEP_SAMPLEDLL_DEBUG)
+	$(LD) -shared $(LIBDIR_SAMPLEDLL_DEBUG) $(OBJ_SAMPLEDLL_DEBUG)  -o $(OUT_SAMPLEDLL_DEBUG) $(LDFLAGS_SAMPLEDLL_DEBUG) $(LIB_SAMPLEDLL_DEBUG)
+
+$(OBJDIR_SAMPLEDLL_DEBUG)/sample_library.o: sample_library.cpp
+	$(CXX) $(CFLAGS_SAMPLEDLL_DEBUG) $(INC_SAMPLEDLL_DEBUG) -c sample_library.cpp -o $(OBJDIR_SAMPLEDLL_DEBUG)/sample_library.o
+
+clean_sampledll_debug: 
+	rm -f $(OBJ_SAMPLEDLL_DEBUG) $(OUT_SAMPLEDLL_DEBUG)
+	rm -rf $(OBJDIR_SAMPLEDLL_DEBUG)
+
+.PHONY: before_debug after_debug clean_debug before_release after_release clean_release before_sampledll_debug after_sampledll_debug clean_sampledll_debug
 
