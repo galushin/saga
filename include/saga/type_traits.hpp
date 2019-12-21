@@ -15,39 +15,32 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#include <saga/random/iid_distribution.hpp>
+#ifndef Z_SAGA_TYPE_TRAITS_HPP_INCLUDED
+#define Z_SAGA_TYPE_TRAITS_HPP_INCLUDED
 
-#include <catch/catch.hpp>
-#include "../random_engine.hpp"
+/** @file saga/type_traits.hpp
+ @brief Характеристики-типов
+*/
 
-TEST_CASE("iid_distribution<bernoully_distribution> simple sample")
+#include <utility>
+
+namespace saga
 {
-    auto const dim = 20;
+    template <class T>
+    struct size_type
+    {
+    private:
+        template <class U>
+        static typename U::size_type impl(int);
 
-    saga::iid_distribution<std::bernoulli_distribution> distr(dim);
+        template <class U>
+        static auto impl(...) -> decltype(std::declval<U>().size());
 
-    auto const value = distr(saga_test::random_engine());
-
-    using Value = std::remove_cv_t<decltype(value)>;
-
-    static_assert(std::is_same<Value, std::vector<bool>>::value, "Must be same!");
-
-    REQUIRE(value.size() == dim);
+    public:
+        using type = decltype(size_type::impl<T>(0));
+    };
 }
+// namespace saga
 
-#include <valarray>
-
-TEST_CASE("iid_distribution<bernoully_distribution, std::valarray>")
-{
-    auto const dim = 20;
-
-    saga::iid_distribution<std::bernoulli_distribution, std::valarray> distr(dim);
-
-    auto const value = distr(saga_test::random_engine());
-
-    using Value = std::remove_cv_t<decltype(value)>;
-
-    static_assert(std::is_same<Value, std::valarray<bool>>::value, "Must be same!");
-
-    REQUIRE(value.size() == dim);
-}
+#endif
+// Z_SAGA_TYPE_TRAITS_HPP_INCLUDED
