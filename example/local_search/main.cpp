@@ -22,7 +22,6 @@ argv[2] Строка: имя целевой функции из библиоте
 argv[3] Целое положительное: размерность вектора аргумента,
 argv[4] Строка (необязательный): цель оптимзиации (должно быть min или max)
 */
-// @todo Локализация
 
 class my_function_manager
  : public saga::function_manager
@@ -49,7 +48,6 @@ private:
 int main(int argc, char * argv[])
 {
     // Чтение аргументов
-    // @todo Задокументировать "SAGA function plugin"
     if(argc < 4)
     {
         std::cout << "This program needs at least 3 parameters:\n"
@@ -61,23 +59,31 @@ int main(int argc, char * argv[])
 
     boost::dll::fs::path const lib_path(argv[1]);
 
-    // @todo Проверить, что файл с таким именем действительно существует
-
     std::string const objective_name(argv[2]);
 
-    // @todo Перехватить исключения
     auto const dim = std::atoi(argv[3]);
 
     if(dim < 0)
     {
         std::cout << "Dimension must be positive integer, but it's equal to " << dim << "\n";
-        return 0;
+        return 1;
     }
 
-    // @todo Если цель не задана, то использовать минимизацию
+    std::string goal("min");
+
+    if(argc >= 5)
+    {
+        goal = argv[4];
+    }
+
+    if(goal != "min" && goal != "max")
+    {
+        std::cout << "4th argument must be optimization goal: 'min' or 'max'\n"
+                  << "but it was: '" << goal << "'\n";
+        return 1;
+    }
 
     // Реальная работа
-    // @todo Обработка ошибок
     my_function_manager manager;
 
     boost::shared_ptr<saga::function_regitrar> plugin
@@ -85,21 +91,26 @@ int main(int argc, char * argv[])
 
     plugin->init(manager);
 
-    // @todo Выполнить поиск и вывести результаты
     saga::iid_distribution<std::bernoulli_distribution, std::valarray> init_distr(dim);
 
     auto objective_impl = manager.at(objective_name);
     auto objective = [&](std::valarray<bool> const & arg)
     {
-        return objective_impl(arg.data(), arg.size());
+        return objective_impl(std::begin(arg), arg.size());
     };
 
     std::mt19937 random_engine(std::time(nullptr));
 
     auto const x_init = init_distr(random_engine);
-    auto const x_result = saga::local_search_boolean(objective, x_init);
+    std::copy(std::begin(x_init), std::end(x_init), std::ostream_iterator<int>(std::cout));
+    std::cout << "\t" << objective(x_init) << "\n";
 
-    std::copy(x_result.begin(), x_result.end(), std::ostream_iterator<int>(std::cout));
+    auto const x_result =
+        (goal == "min") ? saga::local_search_boolean(objective, x_init)
+                        : saga::local_search_boolean(objective, x_init, std::greater<>{});
+
+    std::copy(std::begin(x_result), std::end(x_result), std::ostream_iterator<int>(std::cout));
+    std::cout << "\t" << objective(x_result) << "\n";
 
     return 0;
 }

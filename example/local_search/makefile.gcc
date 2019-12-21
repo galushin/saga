@@ -5,7 +5,7 @@
 LD = $(CXX)
 
 
-INC = -I../../contrib/boost_1_72_0
+INC = -I../../contrib/boost_1_72_0 -I../../include
 INC_DEBUG = $(INC)
 CFLAGS_DEBUG = $(CFLAGS) -g
 RESINC_DEBUG = $(RESINC)
@@ -37,11 +37,11 @@ LIB_SAMPLEDLL_DEBUG = $(LIB)
 LDFLAGS_SAMPLEDLL_DEBUG = $(LDFLAGS)
 OBJDIR_SAMPLEDLL_DEBUG = .objs
 DEP_SAMPLEDLL_DEBUG = 
-OUT_SAMPLEDLL_DEBUG = /local_search.so
+OUT_SAMPLEDLL_DEBUG = /sampleDLL.so
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o $(OBJDIR_DEBUG)/main.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/directory.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/exception.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/operations.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o $(OBJDIR_DEBUG)/main.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o $(OBJDIR_RELEASE)/main.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/directory.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/exception.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/operations.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o $(OBJDIR_RELEASE)/main.o
 
 OBJ_SAMPLEDLL_DEBUG = $(OBJDIR_SAMPLEDLL_DEBUG)/sample_library.o
 
@@ -63,6 +63,15 @@ out_debug: before_debug $(OBJ_DEBUG) $(DEP_DEBUG)
 
 $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o: ../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c ../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp -o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o
+
+$(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/directory.o: ../../contrib/boost_1_72_0/libs/filesystem/src/directory.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c ../../contrib/boost_1_72_0/libs/filesystem/src/directory.cpp -o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/directory.o
+
+$(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/exception.o: ../../contrib/boost_1_72_0/libs/filesystem/src/exception.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c ../../contrib/boost_1_72_0/libs/filesystem/src/exception.cpp -o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/exception.o
+
+$(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/operations.o: ../../contrib/boost_1_72_0/libs/filesystem/src/operations.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c ../../contrib/boost_1_72_0/libs/filesystem/src/operations.cpp -o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/operations.o
 
 $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o: ../../contrib/boost_1_72_0/libs/filesystem/src/path.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c ../../contrib/boost_1_72_0/libs/filesystem/src/path.cpp -o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o
@@ -96,6 +105,15 @@ out_release: before_release $(OBJ_RELEASE) $(DEP_RELEASE)
 
 $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o: ../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c ../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp -o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o
+
+$(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/directory.o: ../../contrib/boost_1_72_0/libs/filesystem/src/directory.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c ../../contrib/boost_1_72_0/libs/filesystem/src/directory.cpp -o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/directory.o
+
+$(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/exception.o: ../../contrib/boost_1_72_0/libs/filesystem/src/exception.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c ../../contrib/boost_1_72_0/libs/filesystem/src/exception.cpp -o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/exception.o
+
+$(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/operations.o: ../../contrib/boost_1_72_0/libs/filesystem/src/operations.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c ../../contrib/boost_1_72_0/libs/filesystem/src/operations.cpp -o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/operations.o
 
 $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o: ../../contrib/boost_1_72_0/libs/filesystem/src/path.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c ../../contrib/boost_1_72_0/libs/filesystem/src/path.cpp -o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o
