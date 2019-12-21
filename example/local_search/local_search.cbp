@@ -43,6 +43,14 @@
 			<Option target="Debug" />
 			<Option target="Release" />
 		</Unit>
+		<Unit filename="../../contrib/boost_1_72_0/libs/filesystem/src/exception.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
+		<Unit filename="../../contrib/boost_1_72_0/libs/filesystem/src/operations.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+		</Unit>
 		<Unit filename="../../contrib/boost_1_72_0/libs/filesystem/src/path.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />

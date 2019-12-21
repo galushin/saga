@@ -21,7 +21,7 @@ class sample_library_registrar
 protected:
     void do_init(saga::function_manager & manager) override
     {
-        manager.add(manhattan_norm, "Manhattan norm");
+        manager.add(manhattan_norm, "manhattan_norm");
     }
 };
 
