@@ -5,6 +5,8 @@
  @brief Многомерное распределение, у которого компоненты распределены независимо и одинаково
 */
 
+#include <saga/type_traits.hpp>
+
 #include <algorithm>
 #include <vector>
 
@@ -23,7 +25,7 @@ namespace saga
         using result_type = Container<typename Distribution::result_type>;
 
         /// @brief Тип размерности
-        using size_type = typename result_type::size_type;
+        using size_type = typename size_type<result_type>::type;
 
         // Создание, копирование, уничтожение
         /** @brief Конструктор с параметром, задающим размерность порождаемых значений
@@ -46,7 +48,8 @@ namespace saga
         {
             result_type result(this->dim());
 
-            std::generate(result.begin(), result.end(), [&]{ return this->distr_(engine); });
+            std::generate(std::begin(result), std::end(result),
+                          [&]{ return this->distr_(engine); });
 
             return result;
         }
