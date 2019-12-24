@@ -85,3 +85,20 @@ TEST_CASE("span : default constructor")
     // Статическая положительная размерность
     static_assert(!std::is_default_constructible<saga::span<Element, 7>>::value, "");
 }
+
+// @todo Аналог для span со статическим размером
+TEST_CASE("span : initialization from pointer and size")
+{
+    using Element = int;
+
+    std::vector<Element> const src{1, 2, 3, 5, 8, 13};
+
+    auto const n = src.size() / 2;
+    auto const ptr = src.data() + 1;
+
+    saga::span<Element const> const s(ptr, n);
+
+    REQUIRE(s.size() == n);
+    REQUIRE(s.data() == ptr);
+}
+

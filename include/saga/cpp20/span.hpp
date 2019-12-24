@@ -51,6 +51,12 @@ namespace saga
         // Конструкторы, копирование и присваивание
         constexpr span() noexcept = default;
 
+        // @todo Покрыть тестами, что этот конструктор должен быть constexpr
+        span(pointer ptr, index_type count)
+         : data_(ptr)
+         , size_(count)
+        {}
+
         // Подинтервалы
         // Свойства
         constexpr index_type size() const noexcept
@@ -66,6 +72,7 @@ namespace saga
 
     private:
         pointer data_ = nullptr;
+        // @todo Может быть не хранить это, когда Extent >= 0
         index_type size_ = 0;
     };
 }
