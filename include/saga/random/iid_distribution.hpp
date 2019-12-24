@@ -65,7 +65,9 @@ namespace saga
         {
             result_type result(this->dim());
 
-            std::generate(std::begin(result), std::end(result),
+            using std::begin;
+            using std::end;
+            std::generate(begin(result), end(result),
                           [&]{ return this->distr_(engine); });
 
             return result;

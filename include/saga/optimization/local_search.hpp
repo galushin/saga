@@ -38,8 +38,10 @@ namespace saga
     Argument local_search_boolean(Objective const & objective, Argument x_init,
                                   Compare cmp = Compare())
     {
-        auto const first = std::begin(x_init);
-        auto const last = std::end(x_init);
+        using std::begin;
+        using std::end;
+        auto const first = begin(x_init);
+        auto const last = end(x_init);
         auto const dim = x_init.size();
 
         auto y_current = objective(x_init);
