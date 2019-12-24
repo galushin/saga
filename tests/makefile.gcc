@@ -33,9 +33,9 @@ OBJDIR_RELEASE = ./obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = ./bin/Release/test
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o
 
 all: debug release
 
@@ -43,6 +43,7 @@ clean: clean_debug clean_release
 
 before_debug: 
 	test -d ./bin/Debug || mkdir -p ./bin/Debug
+	test -d $(OBJDIR_DEBUG)/cpp20 || mkdir -p $(OBJDIR_DEBUG)/cpp20
 	test -d $(OBJDIR_DEBUG) || mkdir -p $(OBJDIR_DEBUG)
 	test -d $(OBJDIR_DEBUG)/optimization || mkdir -p $(OBJDIR_DEBUG)/optimization
 	test -d $(OBJDIR_DEBUG)/random || mkdir -p $(OBJDIR_DEBUG)/random
@@ -53,6 +54,9 @@ debug: before_debug out_debug after_debug
 
 out_debug: before_debug $(OBJ_DEBUG) $(DEP_DEBUG)
 	$(LD) $(LIBDIR_DEBUG) -o $(OUT_DEBUG) $(OBJ_DEBUG)  $(LDFLAGS_DEBUG) $(LIB_DEBUG)
+
+$(OBJDIR_DEBUG)/cpp20/span.o: cpp20/span.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c cpp20/span.cpp -o $(OBJDIR_DEBUG)/cpp20/span.o
 
 $(OBJDIR_DEBUG)/main.o: main.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c main.cpp -o $(OBJDIR_DEBUG)/main.o
@@ -69,12 +73,14 @@ $(OBJDIR_DEBUG)/random_engine.o: random_engine.cpp
 clean_debug: 
 	rm -f $(OBJ_DEBUG) $(OUT_DEBUG)
 	rm -rf ./bin/Debug
+	rm -rf $(OBJDIR_DEBUG)/cpp20
 	rm -rf $(OBJDIR_DEBUG)
 	rm -rf $(OBJDIR_DEBUG)/optimization
 	rm -rf $(OBJDIR_DEBUG)/random
 
 before_release: 
 	test -d ./bin/Release || mkdir -p ./bin/Release
+	test -d $(OBJDIR_RELEASE)/cpp20 || mkdir -p $(OBJDIR_RELEASE)/cpp20
 	test -d $(OBJDIR_RELEASE) || mkdir -p $(OBJDIR_RELEASE)
 	test -d $(OBJDIR_RELEASE)/optimization || mkdir -p $(OBJDIR_RELEASE)/optimization
 	test -d $(OBJDIR_RELEASE)/random || mkdir -p $(OBJDIR_RELEASE)/random
@@ -85,6 +91,9 @@ release: before_release out_release after_release
 
 out_release: before_release $(OBJ_RELEASE) $(DEP_RELEASE)
 	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE)
+
+$(OBJDIR_RELEASE)/cpp20/span.o: cpp20/span.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c cpp20/span.cpp -o $(OBJDIR_RELEASE)/cpp20/span.o
 
 $(OBJDIR_RELEASE)/main.o: main.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c main.cpp -o $(OBJDIR_RELEASE)/main.o
@@ -101,6 +110,7 @@ $(OBJDIR_RELEASE)/random_engine.o: random_engine.cpp
 clean_release: 
 	rm -f $(OBJ_RELEASE) $(OUT_RELEASE)
 	rm -rf ./bin/Release
+	rm -rf $(OBJDIR_RELEASE)/cpp20
 	rm -rf $(OBJDIR_RELEASE)
 	rm -rf $(OBJDIR_RELEASE)/optimization
 	rm -rf $(OBJDIR_RELEASE)/random
