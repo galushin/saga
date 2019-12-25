@@ -336,3 +336,58 @@ TEST_CASE("span : operator []")
         REQUIRE(std::addressof(s[i]) == std::addressof(src[i]));
     }
 }
+
+// Итераторы
+TEST_CASE("span : iterators of empty")
+{
+    using Element = int;
+    using Span = saga::span<Element>;
+    Span const s{};
+
+    REQUIRE(s.begin() == s.end());
+    REQUIRE(s.cbegin() == s.cend());
+    REQUIRE(s.rbegin() == s.rend());
+    REQUIRE(s.crbegin() == s.crend());
+
+    static_assert(std::is_same<decltype(s.begin()), Span::iterator>::value, "");
+    static_assert(std::is_same<decltype(s.end()), Span::iterator>::value, "");
+    static_assert(std::is_same<decltype(s.cbegin()), Span::const_iterator>::value, "");
+    static_assert(std::is_same<decltype(s.cend()), Span::const_iterator>::value, "");
+    static_assert(std::is_same<decltype(s.rbegin()), Span::reverse_iterator>::value, "");
+    static_assert(std::is_same<decltype(s.rend()), Span::reverse_iterator>::value, "");
+    static_assert(std::is_same<decltype(s.crbegin()), Span::const_reverse_iterator>::value, "");
+    static_assert(std::is_same<decltype(s.crend()), Span::const_reverse_iterator>::value, "");
+
+    static_assert(noexcept(s.begin()), "");
+    static_assert(noexcept(s.end()), "");
+    static_assert(noexcept(s.cbegin()), "");
+    static_assert(noexcept(s.cend()), "");
+    static_assert(noexcept(s.rbegin()), "");
+    static_assert(noexcept(s.rend()), "");
+    static_assert(noexcept(s.crbegin()), "");
+    static_assert(noexcept(s.crend()), "");
+}
+
+TEST_CASE("span : iterators of not-empty")
+{
+    using Element = int;
+    std::vector<Element> src{1, 2, 3, 5, 8, 13};
+
+    using Span = saga::span<Element>;
+    Span const s(src);
+
+    REQUIRE(std::addressof(*s.begin()) == std::addressof(src.front()));
+    REQUIRE(std::addressof(*s.cbegin()) == std::addressof(src.front()));
+    REQUIRE(std::addressof(*s.rbegin()) == std::addressof(src.back()));
+    REQUIRE(std::addressof(*s.crbegin()) == std::addressof(src.back()));
+
+    REQUIRE(s.rbegin() == Span::reverse_iterator(s.end()));
+    REQUIRE(s.rend() == Span::reverse_iterator(s.begin()));
+    REQUIRE(s.crbegin() == Span::const_reverse_iterator(s.cend()));
+    REQUIRE(s.crend() == Span::const_reverse_iterator(s.cbegin()));
+
+    REQUIRE(s.end() == s.begin() + s.size());
+    REQUIRE(s.cend() == s.cbegin() + s.size());
+    REQUIRE(s.rend() == s.rbegin() + s.size());
+    REQUIRE(s.crend() == s.crbegin() + s.size());
+}

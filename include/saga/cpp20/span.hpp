@@ -180,6 +180,47 @@ namespace saga
             return this->data_;
         }
 
+        // Итераторы
+        iterator begin() const noexcept
+        {
+            return iterator(this->data());
+        }
+
+        iterator end() const noexcept
+        {
+            return this->begin() + this->size();
+        }
+
+        const_iterator cbegin() const noexcept
+        {
+            return const_iterator(this->data());
+        }
+
+        const_iterator cend() const noexcept
+        {
+            return this->cbegin() + this->size();
+        }
+
+        reverse_iterator rbegin() const noexcept
+        {
+            return reverse_iterator(this->end());
+        }
+
+        reverse_iterator rend() const noexcept
+        {
+            return reverse_iterator(this->begin());
+        }
+
+        const_reverse_iterator crbegin() const noexcept
+        {
+            return const_reverse_iterator(this->cend());
+        }
+
+        const_reverse_iterator crend() const noexcept
+        {
+            return const_reverse_iterator(this->cbegin());
+        }
+
     private:
         pointer data_ = nullptr;
         // @todo Может быть не хранить это, когда Extent >= 0
