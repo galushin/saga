@@ -7,12 +7,17 @@
 #ifndef PLUGIN_HPP_INCLUDED
 #define PLUGIN_HPP_INCLUDED
 
+#include <saga/cpp20/span.hpp>
+
 #include <cstddef>
 #include <string>
 
 namespace saga
 {
-    using pseudo_boolean_objective_signature = double(bool const *, std::size_t);
+    using objective_value_type = double;
+    using boolean_const_span = saga::span<bool const>;
+
+    using pseudo_boolean_objective_signature = objective_value_type(boolean_const_span);
 
     class function_manager
     {

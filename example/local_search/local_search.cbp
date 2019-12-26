@@ -69,6 +69,7 @@
 			<Option target="Debug" />
 			<Option target="Release" />
 		</Unit>
+		<Unit filename="../../include/saga/cpp20/span.hpp" />
 		<Unit filename="main.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />
