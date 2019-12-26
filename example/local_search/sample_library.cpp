@@ -10,9 +10,10 @@
 
 #include <algorithm>
 
-double manhattan_norm(bool const * ptr, std::size_t dim)
+saga::objective_value_type
+manhattan_norm(saga::boolean_const_span xs)
 {
-    return std::count(ptr, ptr+dim, true);
+    return static_cast<saga::objective_value_type>(std::count(xs.begin(), xs.end(), true));
 }
 
 class sample_library_registrar

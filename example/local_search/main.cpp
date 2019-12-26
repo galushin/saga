@@ -96,7 +96,8 @@ int main(int argc, char * argv[])
     auto objective_impl = manager.at(objective_name);
     auto objective = [&](std::valarray<bool> const & arg)
     {
-        return objective_impl(std::begin(arg), arg.size());
+        saga::boolean_const_span s(arg.size() == 0 ? nullptr : std::addressof(arg[0]), arg.size());
+        return objective_impl(s);
     };
 
     std::mt19937 random_engine(std::time(nullptr));
