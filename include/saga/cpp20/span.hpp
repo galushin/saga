@@ -27,6 +27,7 @@ SAGA -- это свободной программное обеспечение:
 #include <cassert>
 #include <cstddef>
 
+#include <algorithm>
 #include <array>
 #include <iterator>
 #include <type_traits>
@@ -237,6 +238,30 @@ namespace saga
     bool operator!=(span<T, X> lhs, span<U, Y> rhs)
     {
         return !(lhs == rhs);
+    }
+
+    template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
+    bool operator<(span<T, X> lhs, span<U, Y> rhs)
+    {
+        return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+    }
+
+    template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
+    bool operator<=(span<T, X> lhs, span<U, Y> rhs)
+    {
+        return !(rhs < lhs);
+    }
+
+    template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
+    bool operator>(span<T, X> lhs, span<U, Y> rhs)
+    {
+        return rhs < lhs;
+    }
+
+    template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
+    bool operator>=(span<T, X> lhs, span<U, Y> rhs)
+    {
+        return !(lhs < rhs);
     }
 }
 // namespace saga

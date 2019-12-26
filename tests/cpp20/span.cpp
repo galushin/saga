@@ -418,3 +418,32 @@ TEST_CASE("span : equality")
     REQUIRE(s2 != s3);
     REQUIRE(s2 != s4);
 }
+
+TEST_CASE("span : ordering")
+{
+    using Element = int;
+    using Span = saga::span<Element>;
+
+    std::vector<Element> src1{1, 2, 3, 4};
+    auto src3 = src1;
+
+    Element src2 [] = {1, 2, 3, 5, 8, 13};
+
+    Span const s1(src1);
+    Span const s2(src2);
+    auto const s2p = s2.first(4);
+    Span const s3(src3);
+
+    REQUIRE(s1 < s2);
+    REQUIRE(s2p < s2);
+    REQUIRE(s1 < s2p);
+
+    REQUIRE(s2 > s1);
+
+    REQUIRE(s2 >= s1);
+    REQUIRE(s3 >= s1);
+
+    REQUIRE(s1 <= s2);
+    REQUIRE(s2p <= s2);
+    REQUIRE(s1 <= s2p);
+}
