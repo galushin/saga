@@ -391,3 +391,30 @@ TEST_CASE("span : iterators of not-empty")
     REQUIRE(s.rend() == s.rbegin() + s.size());
     REQUIRE(s.crend() == s.crbegin() + s.size());
 }
+
+TEST_CASE("span : equality")
+{
+    using Element = int;
+    using Span = saga::span<Element>;
+
+    Element src1 [] = {1, 2, 3, 5, 8, 13};
+    std::vector<Element> src2(std::begin(src1), std::end(src1));
+    std::vector<Element> src3 = src2;
+    src3[0] += 1;
+
+    Span const s1(src1);
+    Span const s2(src2);
+    Span const s3(src3);
+    Span const s4(src2.data(), src2.size() / 2);
+
+    REQUIRE(src2 != src3);
+
+    REQUIRE(s1 == s2);
+    REQUIRE(!(s1 != s2));
+    REQUIRE(s2 == s1);
+    REQUIRE(!(s2 != s1));
+    REQUIRE(s1 != s3);
+    REQUIRE(s1 != s4);
+    REQUIRE(s2 != s3);
+    REQUIRE(s2 != s4);
+}
