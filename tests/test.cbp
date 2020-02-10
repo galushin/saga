@@ -36,6 +36,7 @@
 		</Compiler>
 		<Unit filename="../include/saga/cpp20/span.hpp" />
 		<Unit filename="../include/saga/optimization/local_search.hpp" />
+		<Unit filename="../include/saga/optimization/test_objectives.hpp" />
 		<Unit filename="../include/saga/random/iid_distribution.hpp" />
 		<Unit filename="../include/saga/type_traits.hpp" />
 		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
