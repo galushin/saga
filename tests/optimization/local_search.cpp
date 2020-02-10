@@ -20,6 +20,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 #include <saga/random/iid_distribution.hpp>
+#include <saga/optimization/test_objectives.hpp>
 #include "../random_engine.hpp"
 
 template <class Argument, class Objective, class RealType>
@@ -63,12 +64,8 @@ bool is_local_maximum(Objective const & objective, Argument const & arg)
 
 TEST_CASE("local search (pseudoboolen, first improvement) : L1 norm")
 {
-
     using Argument = std::vector<bool>;
-    auto const objective = [](Argument const & arg)
-    {
-        return std::count(arg.begin(), arg.end(), true);
-    };
+    auto const objective = saga::boolean_manhattan_norm;
 
     auto const dim = 20;
     test_local_search_boolean<Argument>(objective, dim, 0*dim);
@@ -84,10 +81,7 @@ TEST_CASE("local search (pseudoboolen, first improvement) : L1 distance to some 
     auto const x_opt = init_distr(saga_test::random_engine());
     auto const objective = [&x_opt](Argument const & arg)
     {
-        assert(x_opt.size() == arg.size());
-
-        return std::inner_product(arg.begin(), arg.end(), x_opt.begin(), 0*arg.size(),
-                                  std::plus<>{}, std::not_equal_to<>{});
+        return saga::boolean_manhattan_distance(arg, x_opt);
     };
 
     test_local_search_boolean<Argument>(objective, dim, 0*dim);
@@ -95,18 +89,7 @@ TEST_CASE("local search (pseudoboolen, first improvement) : L1 distance to some 
 
 TEST_CASE("local search (pseudoboolean, first improvement): number of unequal adjacent bits")
 {
-    using Argument = std::vector<bool>;
-    auto const objective = [](Argument const & arg)
-    {
-        auto result = arg.size()*0;
-
-        for(auto i = 0*arg.size(); i+1 != arg.size(); ++ i)
-        {
-            result += (arg[i] != arg[i+1]);
-        }
-
-        return result;
-    };
+    auto const objective = saga::count_adjacent_unequal;
 
     auto const dim = 20;
 
@@ -132,18 +115,18 @@ TEST_CASE("local search (pseudoboolean, first improvement): number of unequal ad
     saga::iid_distribution<std::bernoulli_distribution> mask_distr(dim);
     auto const mask = mask_distr(saga_test::random_engine());
 
+    // @todo Автоматизировать создание маски
     auto const objective = [&](Argument const & arg)
     {
         assert(arg.size() == mask.size());
-
-        auto result = arg.size()*0;
+        auto x = arg;
 
         for(auto i = 0*arg.size(); i+1 != arg.size(); ++ i)
         {
-            result += ((arg[i] ^ mask[i]) != (arg[i+1] ^ mask[i+1]));
+            x[i] = x[i] ^ mask[i];
         }
 
-        return result;
+        return saga::count_adjacent_unequal(x);
     };
 
     saga::iid_distribution<std::bernoulli_distribution> init_distr(dim);
