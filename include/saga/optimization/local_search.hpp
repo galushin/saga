@@ -22,22 +22,20 @@ SAGA -- это свободной программное обеспечение:
  @brief Методы локального поиска
 */
 
+#include <saga/optimization/evaluated_solution.hpp>
+
 #include <functional>
+
 
 namespace saga
 {
-    template <class Solution, class ObjectiveValue>
-    struct evaluated_solution
-    {
-        Solution solution;
-        ObjectiveValue objective_value;
-    };
-
     /** @brief Алгоритм локального поиска псевдо-булевой оптимизации с изменением одной компоненты
     и с переходом по первому улучшению.
     @param objective целевая функция
     @param x_init начальная точка поиска
-    @return локальный минимум, найденный алгоритмом, запущенным из точки @c x_init
+    @param cmp функция сравнения, используемая для сравнения значений целевой функции
+    @return Структуру, содержащую локальный минимум, найденный алгоритмом, запущенным из
+    точки @c x_init, и значение целевой функции в этом минимуме
     */
     template <class Objective, class Argument, class Compare = std::less<>>
     auto local_search_boolean(Objective const & objective, Argument x_init,

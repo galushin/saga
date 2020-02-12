@@ -35,6 +35,7 @@
 			<Add directory="../include" />
 		</Compiler>
 		<Unit filename="../include/saga/cpp20/span.hpp" />
+		<Unit filename="../include/saga/optimization/evaluated_solution.hpp" />
 		<Unit filename="../include/saga/optimization/local_search.hpp" />
 		<Unit filename="../include/saga/optimization/test_objectives.hpp" />
 		<Unit filename="../include/saga/random/iid_distribution.hpp" />
