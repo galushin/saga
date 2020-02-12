@@ -22,7 +22,10 @@ SAGA -- это свободной программное обеспечение:
  @brief Методы локального поиска
 */
 
+#include <saga/optimization/evaluated_solution.hpp>
+
 #include <functional>
+
 
 namespace saga
 {
@@ -30,13 +33,14 @@ namespace saga
     и с переходом по первому улучшению.
     @param objective целевая функция
     @param x_init начальная точка поиска
-    @return локальный минимум, найденный алгоритмом, запущенным из точки @c x_init
-    @todo Закон "полезного возврата": мы могли бы возвращать также значение целевой функции
-    в найденной точке
+    @param cmp функция сравнения, используемая для сравнения значений целевой функции
+    @return Структуру, содержащую локальный минимум, найденный алгоритмом, запущенным из
+    точки @c x_init, и значение целевой функции в этом минимуме
     */
     template <class Objective, class Argument, class Compare = std::less<>>
-    Argument local_search_boolean(Objective const & objective, Argument x_init,
-                                  Compare cmp = Compare())
+    auto local_search_boolean(Objective const & objective, Argument x_init,
+                              Compare cmp = Compare())
+    -> evaluated_solution<Argument, decltype(objective(x_init))>
     {
         using std::begin;
         using std::end;
@@ -70,7 +74,7 @@ namespace saga
             }
         }
 
-        return x_init;
+        return {std::move(x_init), std::move(y_current)};
     }
 }
 // namespace saga
