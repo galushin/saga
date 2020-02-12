@@ -106,12 +106,13 @@ int main(int argc, char * argv[])
     std::copy(std::begin(x_init), std::end(x_init), std::ostream_iterator<int>(std::cout));
     std::cout << "\t" << objective(x_init) << "\n";
 
-    auto const x_result =
+    auto const result =
         (goal == "min") ? saga::local_search_boolean(objective, x_init)
                         : saga::local_search_boolean(objective, x_init, std::greater<>{});
 
-    std::copy(std::begin(x_result), std::end(x_result), std::ostream_iterator<int>(std::cout));
-    std::cout << "\t" << objective(x_result) << "\n";
+    std::copy(std::begin(result.solution), std::end(result.solution),
+              std::ostream_iterator<int>(std::cout));
+    std::cout << "\t" << result.objective_value << "\n";
 
     return 0;
 }

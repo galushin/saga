@@ -32,10 +32,14 @@ void test_local_search_boolean(Objective const & objective, typename Argument::s
     for(auto N = 100; N > 0; -- N)
     {
         auto const x_init = init_distr(saga_test::random_engine());
-        auto const x_result = saga::local_search_boolean(objective, x_init);
+        auto const result = saga::local_search_boolean(objective, x_init);
 
-        CAPTURE(x_result);
-        REQUIRE(objective(x_result) == Approx(desired_value).epsilon(eps));
+        CAPTURE(result.solution);
+        CAPTURE(result.objective_value);
+
+        REQUIRE(result.objective_value == objective(result.solution));
+
+        REQUIRE(result.objective_value == Approx(desired_value).epsilon(eps));
     }
 }
 
@@ -98,11 +102,12 @@ TEST_CASE("local search (pseudoboolean, first improvement): number of unequal ad
     for(auto N = 100; N > 0; -- N)
     {
         auto const x_init = init_distr(saga_test::random_engine());
-        auto const x_result = saga::local_search_boolean(objective, x_init, std::greater<>{});
+        auto const result = saga::local_search_boolean(objective, x_init, std::greater<>{});
 
-        CAPTURE(x_result);
+        CAPTURE(result.solution);
+        CAPTURE(result.objective_value);
 
-        REQUIRE(is_local_maximum(objective, x_result));
+        REQUIRE(is_local_maximum(objective, result.solution));
     }
 }
 
@@ -134,10 +139,11 @@ TEST_CASE("local search (pseudoboolean, first improvement): number of unequal ad
     for(auto N = 100; N > 0; -- N)
     {
         auto const x_init = init_distr(saga_test::random_engine());
-        auto const x_result = saga::local_search_boolean(objective, x_init, std::greater<>{});
+        auto const result = saga::local_search_boolean(objective, x_init, std::greater<>{});
 
-        CAPTURE(x_result);
+        CAPTURE(result.solution);
+        CAPTURE(result.objective_value);
 
-        REQUIRE(is_local_maximum(objective, x_result));
+        REQUIRE(is_local_maximum(objective, result.solution));
     }
 }

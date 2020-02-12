@@ -26,17 +26,23 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    template <class Solution, class ObjectiveValue>
+    struct evaluated_solution
+    {
+        Solution solution;
+        ObjectiveValue objective_value;
+    };
+
     /** @brief Алгоритм локального поиска псевдо-булевой оптимизации с изменением одной компоненты
     и с переходом по первому улучшению.
     @param objective целевая функция
     @param x_init начальная точка поиска
     @return локальный минимум, найденный алгоритмом, запущенным из точки @c x_init
-    @todo Закон "полезного возврата": мы могли бы возвращать также значение целевой функции
-    в найденной точке
     */
     template <class Objective, class Argument, class Compare = std::less<>>
-    Argument local_search_boolean(Objective const & objective, Argument x_init,
-                                  Compare cmp = Compare())
+    auto local_search_boolean(Objective const & objective, Argument x_init,
+                              Compare cmp = Compare())
+    -> evaluated_solution<Argument, decltype(objective(x_init))>
     {
         using std::begin;
         using std::end;
@@ -70,7 +76,7 @@ namespace saga
             }
         }
 
-        return x_init;
+        return {std::move(x_init), std::move(y_current)};
     }
 }
 // namespace saga
