@@ -26,18 +26,41 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    /** @brief Тип-тэг для задания приоритета перегрузок
+    @tparam P уровень приоритета: чем больше это значение, тем выше приоритет
+    */
+    template <std::size_t P>
+    struct priority_tag
+     : priority_tag<P-1>
+    {};
+
+    /// @brief Специализация для наименьшего приоритета
+    template <>
+    struct priority_tag<0>
+    {};
+
+
+    /** @brief Определение типа для предсставления размера, используемого данным типом, например,
+    контейнером
+
+    Определяет вложенный тип @c type, определённый по следующему правилу.
+    Если у @c T определён вложенный тип @c size_type, то <tt>type = typename T::size_type</tt>.
+    Иначе @c type совпадает с типом, возвращаемым функцией-членом @c size типа @c T
+
+    @tparam T тип (предположительно, тип контейнера)
+    */
     template <class T>
     struct size_type
     {
     private:
         template <class U>
-        static typename U::size_type impl(int);
+        static auto impl(priority_tag<0>) -> decltype(std::declval<U>().size());
 
         template <class U>
-        static auto impl(...) -> decltype(std::declval<U>().size());
+        static auto impl(priority_tag<1>) -> typename U::size_type;
 
     public:
-        using type = decltype(size_type::impl<T>(0));
+        using type = decltype(size_type::impl<T>(priority_tag<1>{}));
     };
 }
 // namespace saga
