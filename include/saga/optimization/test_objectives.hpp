@@ -38,9 +38,6 @@ namespace saga
         }
     };
 
-    // @todo Должно быть inline
-    constexpr auto boolean_manhattan_norm = boolean_manhattan_norm_fn{};
-
     struct boolean_manhattan_distance_fn
     {
         template <class BooleanVector1, class BooleanVector2>
@@ -53,9 +50,6 @@ namespace saga
                                       std::plus<>{}, std::not_equal_to<>{});
         }
     };
-
-    // @todo Должно быть inline
-    constexpr auto boolean_manhattan_distance = boolean_manhattan_distance_fn{};
 
     struct count_adjacent_unequal_fn
     {
@@ -75,8 +69,17 @@ namespace saga
         }
     };
 
-    // @todo Должно быть inline
-    constexpr auto count_adjacent_unequal = count_adjacent_unequal_fn{};
+    namespace
+    {
+        constexpr auto const & boolean_manhattan_norm
+            = detail::static_empty_const<boolean_manhattan_norm_fn>::value;
+
+        constexpr auto const & boolean_manhattan_distance
+            = detail::static_empty_const<boolean_manhattan_distance_fn>::value;
+
+        constexpr auto const & count_adjacent_unequal
+            = detail::static_empty_const<count_adjacent_unequal_fn>::value;
+    }
 }
 // namespace saga
 

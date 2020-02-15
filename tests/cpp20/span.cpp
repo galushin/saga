@@ -17,6 +17,8 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/cpp20/span.hpp>
 
+#include <saga/iterator.hpp>
+
 #include <catch/catch.hpp>
 
 // @todo Убедиться, что итераторы являются непрерывными
@@ -398,7 +400,7 @@ TEST_CASE("span : equality")
     using Span = saga::span<Element>;
 
     Element src1 [] = {1, 2, 3, 5, 8, 13};
-    std::vector<Element> src2(std::begin(src1), std::end(src1));
+    std::vector<Element> src2(saga::begin(src1), saga::end(src1));
     std::vector<Element> src3 = src2;
     src3[0] += 1;
 

@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Методы локального поиска
 */
 
+#include <saga/iterator.hpp>
 #include <saga/optimization/evaluated_solution.hpp>
 
 #include <functional>
@@ -42,10 +43,8 @@ namespace saga
                               Compare cmp = Compare())
     -> evaluated_solution<Argument, decltype(objective(x_init))>
     {
-        using std::begin;
-        using std::end;
-        auto const first = begin(x_init);
-        auto const last = end(x_init);
+        auto const first = saga::begin(x_init);
+        auto const last = saga::end(x_init);
         auto const dim = x_init.size();
 
         auto y_current = objective(x_init);
