@@ -22,7 +22,8 @@ SAGA -- это свободной программное обеспечение:
  @brief Методы локального поиска
 */
 
-#include <saga/iterator.hpp>
+#include <saga/cursor/cycle.hpp>
+#include <saga/cursor/subrange.hpp>
 #include <saga/optimization/evaluated_solution.hpp>
 
 #include <functional>
@@ -43,33 +44,26 @@ namespace saga
                               Compare cmp = Compare())
     -> evaluated_solution<Argument, decltype(objective(x_init))>
     {
-        auto const first = saga::begin(x_init);
-        auto const last = saga::end(x_init);
+        auto pos = saga::cursor::make_cycled(saga::cursor::all(x_init));
+
         auto const dim = x_init.size();
 
         auto y_current = objective(x_init);
-        auto pos = first;
-        for(auto fails = 0*dim; fails < dim;)
+
+        for(auto fails = dim; fails > 0; ++ pos)
         {
             *pos = !*pos;
             auto y_new = objective(x_init);
 
             if(cmp(y_new, y_current))
             {
-                fails = 0;
+                fails = dim;
                 y_current = y_new;
             }
             else
             {
-                ++ fails;
+                -- fails;
                 *pos = !*pos;
-            }
-
-            ++ pos;
-
-            if(last == pos)
-            {
-                pos = first;
             }
         }
 
