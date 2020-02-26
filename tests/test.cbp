@@ -34,6 +34,7 @@
 			<Add directory="./contrib/catch2/include" />
 			<Add directory="../include" />
 		</Compiler>
+		<Unit filename="../include/saga/algorithm.hpp" />
 		<Unit filename="../include/saga/cpp20/span.hpp" />
 		<Unit filename="../include/saga/cursor/cycle.hpp" />
 		<Unit filename="../include/saga/cursor/subrange.hpp" />

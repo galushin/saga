@@ -22,6 +22,8 @@ SAGA -- это свободной программное обеспечение:
  @brief Многомерное распределение, у которого компоненты распределены независимо и одинаково
 */
 
+#include <saga/algorithm.hpp>
+#include <saga/cursor/subrange.hpp>
 #include <saga/iterator.hpp>
 #include <saga/type_traits.hpp>
 
@@ -66,8 +68,7 @@ namespace saga
         {
             result_type result(this->dim());
 
-            std::generate(saga::begin(result), saga::end(result),
-                          [&]{ return this->distr_(engine); });
+            saga::generate(saga::cursor::all(result), [&]{ return this->distr_(engine); });
 
             return result;
         }

@@ -24,6 +24,9 @@ SAGA -- это свободной программное обеспечение:
   www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1024r2.pdf
 */
 
+#include <saga/algorithm.hpp>
+#include <saga/cursor/subrange.hpp>
+
 #include <cassert>
 #include <cstddef>
 
@@ -231,7 +234,7 @@ namespace saga
     template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
     bool operator==(span<T, X> lhs, span<U, Y> rhs)
     {
-        return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+        return saga::equal(saga::cursor::all(lhs), saga::cursor::all(rhs));
     }
 
     template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
@@ -243,7 +246,7 @@ namespace saga
     template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
     bool operator<(span<T, X> lhs, span<U, Y> rhs)
     {
-        return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+        return saga::lexicographical_compare(saga::cursor::all(lhs), saga::cursor::all(rhs));
     }
 
     template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
