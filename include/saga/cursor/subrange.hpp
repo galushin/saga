@@ -24,8 +24,8 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/iterator.hpp>
 
+#include <cassert>
 #include <iterator>
-
 
 namespace saga
 {
@@ -35,6 +35,7 @@ namespace saga
     public:
         // Типы
         using reference = typename std::iterator_traits<ForwardIterator>::reference;
+        using difference_type = typename std::iterator_traits<ForwardIterator>::difference_type;
 
         // Создание, копирование, уничтожение
         subrange_cursor(ForwardIterator first, Sentinel last)

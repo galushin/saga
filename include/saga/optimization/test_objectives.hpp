@@ -34,7 +34,7 @@ namespace saga
         auto operator()(BooleanVector const & arg) const
         -> decltype(arg.size())
         {
-            return std::count(arg.begin(), arg.end(), true);
+            return saga::count(saga::cursor::all(arg), true);
         }
     };
 
