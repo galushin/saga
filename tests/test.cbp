@@ -40,6 +40,7 @@
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
 		<Unit filename="../include/saga/detail/static_empty_const.hpp" />
 		<Unit filename="../include/saga/iterator.hpp" />
+		<Unit filename="../include/saga/numeric.hpp" />
 		<Unit filename="../include/saga/optimization/evaluated_solution.hpp" />
 		<Unit filename="../include/saga/optimization/local_search.hpp" />
 		<Unit filename="../include/saga/optimization/test_objectives.hpp" />

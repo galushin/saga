@@ -15,12 +15,13 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
+#include <saga/optimization/test_objectives.hpp>
+
 #include <saga/optimization/local_search.hpp>
 
 #include <catch/catch.hpp>
 
 #include <saga/random/iid_distribution.hpp>
-#include <saga/optimization/test_objectives.hpp>
 #include "../random_engine.hpp"
 
 template <class Argument, class Objective, class RealType>
