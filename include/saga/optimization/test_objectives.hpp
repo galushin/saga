@@ -22,6 +22,10 @@ SAGA -- это свободной программное обеспечение:
  @brief Тестовые функции оптимизации
 */
 
+#include <saga/algorithm.hpp>
+#include <saga/cursor/subrange.hpp>
+#include <saga/numeric.hpp>
+
 #include <algorithm>
 #include <functional>
 #include <numeric>
@@ -46,8 +50,8 @@ namespace saga
         {
             assert(x.size() == y.size());
 
-            return std::inner_product(x.begin(), x.end(), y.begin(), 0*x.size(),
-                                      std::plus<>{}, std::not_equal_to<>{});
+            return saga::inner_product(saga::cursor::all(x), saga::cursor::all(y),
+                                       0*x.size(), std::plus<>{}, std::not_equal_to<>{});
         }
     };
 
