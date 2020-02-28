@@ -51,3 +51,26 @@ TEST_CASE("iid_distribution<bernoully_distribution, std::valarray>")
 
     REQUIRE(value.size() == dim);
 }
+
+TEST_CASE("iid_distribution<normal_distribution>, std::valarray>")
+{
+    auto const dim = 20;
+
+    using Normal = std::normal_distribution<double>;
+    Normal unit_distr(-3, 5);
+
+    saga::iid_distribution<Normal, std::valarray> distr(dim, unit_distr);
+
+    auto const value = distr(saga_test::random_engine());
+
+    using Value = std::remove_cv_t<decltype(value)>;
+
+    static_assert(std::is_same<Value, std::valarray<double>>::value, "Must be same!");
+
+    REQUIRE(value.size() == dim);
+
+    REQUIRE(distr.dim() == dim);
+    REQUIRE(distr.component_distribution() == unit_distr);
+
+    // @todo Статистический тест распределения?
+}

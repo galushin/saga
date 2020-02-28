@@ -50,12 +50,14 @@ namespace saga
         // Создание, копирование, уничтожение
         /** @brief Конструктор с параметром, задающим размерность порождаемых значений
         @param dim размерность
+        @param unit_distribution распределение каждого из компонентов, если не задано пользователем,
+        то создаётся с помощью конструктора по умолчанию класса @c Distribution
         @post <tt>this->dim() == dim</tt>
-        @todo Задокументировать пост-условие распределение компонент
+        @post <tt>this->component_distribution() == unit_distribution</tt>
         */
-        explicit iid_distribution(size_type dim)
+        explicit iid_distribution(size_type dim, Distribution unit_distribution = Distribution{})
          : dim_(std::move(dim))
-         , distr_()
+         , distr_(std::move(unit_distribution))
         {}
 
         // Порождение
@@ -80,6 +82,14 @@ namespace saga
         size_type const & dim() const
         {
             return this->dim_;
+        }
+
+        /** @brief Распределение компонент порождаемого значения
+        @return Объект, задающий распределение компонент порождаемого значения
+        */
+        Distribution const & component_distribution() const
+        {
+            return this->distr_;
         }
 
     private:
