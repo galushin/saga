@@ -34,15 +34,15 @@ namespace saga
 {
     /** @brief Многомерное распределение, у которого компоненты распределены независимо и одинаково
     @tparam Distribution распределение компонент
-    @tparam Container шаблон контейнера для хранения элементов
+    @tparam Container тип контейнера для хранения элементов
     */
-    template <class Distribution, template <class...> class Container = std::vector>
+    template <class Distribution, class Container = std::vector<typename Distribution::result_type>>
     class iid_distribution
     {
     public:
         // Типы
         /// @brief Тип порождаемых значений
-        using result_type = Container<typename Distribution::result_type>;
+        using result_type = Container;
 
         /// @brief Тип размерности
         using size_type = typename size_type<result_type>::type;
