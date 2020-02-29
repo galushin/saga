@@ -41,7 +41,7 @@ TEST_CASE("iid_distribution<bernoully_distribution, std::valarray>")
 {
     auto const dim = 20;
 
-    saga::iid_distribution<std::bernoulli_distribution, std::valarray> distr(dim);
+    saga::iid_distribution<std::bernoulli_distribution, std::valarray<bool>> distr(dim);
 
     auto const value = distr(saga_test::random_engine());
 
@@ -59,7 +59,7 @@ TEST_CASE("iid_distribution<normal_distribution>, std::valarray>")
     using Normal = std::normal_distribution<double>;
     Normal unit_distr(-3, 5);
 
-    saga::iid_distribution<Normal, std::valarray> distr(dim, unit_distr);
+    saga::iid_distribution<Normal, std::valarray<double>> distr(dim, unit_distr);
 
     auto const value = distr(saga_test::random_engine());
 

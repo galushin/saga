@@ -33,9 +33,9 @@ OBJDIR_RELEASE = ./obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = ./bin/Release/test
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o
 
 all: debug release
 
@@ -60,6 +60,9 @@ $(OBJDIR_DEBUG)/cpp20/span.o: cpp20/span.cpp
 
 $(OBJDIR_DEBUG)/main.o: main.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c main.cpp -o $(OBJDIR_DEBUG)/main.o
+
+$(OBJDIR_DEBUG)/optimization/ga.o: optimization/ga.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c optimization/ga.cpp -o $(OBJDIR_DEBUG)/optimization/ga.o
 
 $(OBJDIR_DEBUG)/optimization/local_search.o: optimization/local_search.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c optimization/local_search.cpp -o $(OBJDIR_DEBUG)/optimization/local_search.o
@@ -97,6 +100,9 @@ $(OBJDIR_RELEASE)/cpp20/span.o: cpp20/span.cpp
 
 $(OBJDIR_RELEASE)/main.o: main.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c main.cpp -o $(OBJDIR_RELEASE)/main.o
+
+$(OBJDIR_RELEASE)/optimization/ga.o: optimization/ga.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c optimization/ga.cpp -o $(OBJDIR_RELEASE)/optimization/ga.o
 
 $(OBJDIR_RELEASE)/optimization/local_search.o: optimization/local_search.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c optimization/local_search.cpp -o $(OBJDIR_RELEASE)/optimization/local_search.o

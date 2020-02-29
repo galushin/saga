@@ -91,7 +91,7 @@ int main(int argc, char * argv[])
 
     plugin->init(manager);
 
-    saga::iid_distribution<std::bernoulli_distribution, std::valarray> init_distr(dim);
+    saga::iid_distribution<std::bernoulli_distribution, std::valarray<bool>> init_distr(dim);
 
     auto objective_impl = manager.at(objective_name);
     auto objective = [&](std::valarray<bool> const & arg)
