@@ -45,3 +45,32 @@ TEST_CASE("GA pseudoboolean : initializing population")
         }
     }
 }
+
+#include <saga/optimization/test_objectives.hpp>
+
+TEST_CASE("simple GA boolean : manhattan norm")
+{
+    auto const objective = saga::boolean_manhattan_norm;
+
+    auto const dim = 20;
+    auto const population_size = 100;
+    auto const max_iterations = 100;
+
+    auto const population = saga::ga_boolean_simple(objective, dim, population_size,
+                                                    max_iterations, saga_test::random_engine());
+
+    std::vector<double> obj_values;
+    obj_values.reserve(population_size);
+
+    std::transform(saga::begin(population), saga::end(population),
+                   std::back_inserter(obj_values), objective);
+
+    auto const best = std::max_element(obj_values.begin(), obj_values.end()) - obj_values.begin();
+
+    CAPTURE(population[best]);
+    CAPTURE(obj_values[best]);
+
+    REQUIRE(obj_values[best] >= dim);
+}
+
+// @todo Другие целевые функции
