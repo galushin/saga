@@ -62,6 +62,113 @@ namespace saga
         assert(population.size() <= pop_size);
         std::generate_n(std::back_inserter(population), pop_size - population.size(), gen);
     }
+
+    template <class Container, class UniformRandomBitGenerator>
+    typename Container::size_type
+    selection_tournament_2(Container const & obj_values, UniformRandomBitGenerator & rnd)
+    {
+        assert(!obj_values.empty());
+
+        std::uniform_int_distribution<typename Container::size_type> distr(0, obj_values.size() - 1);
+
+        auto const i1 = distr(rnd);
+        auto const i2 = distr(rnd);
+
+        assert(0 <= i1 && i1 < obj_values.size());
+        assert(0 <= i2 && i2 < obj_values.size());
+
+        return (obj_values[i1] > obj_values[i2]) ? i1 : i2;
+    }
+
+    template <class Genotype, class UniformRandomBitGenerator>
+    Genotype
+    ga_boolean_crossover_uniform(Genotype const & gen1, Genotype const & gen2,
+                                 UniformRandomBitGenerator & rnd)
+    {
+        assert(gen1.size() == gen2.size());
+        auto const dim = gen1.size();
+
+        Genotype result(dim);
+
+        std::bernoulli_distribution distr(0.5);
+
+        for(auto i = 0*dim; i != dim; ++ i)
+        {
+            result[i] = distr(rnd) ? gen1[i] : gen2[i];
+        }
+
+        return result;
+    }
+
+    template <class Genotype, class UniformRandomBitGenerator>
+    void ga_boolean_mutation(Genotype & genotype, double p_mutation,
+                             UniformRandomBitGenerator & rnd)
+    {
+        std::bernoulli_distribution distr(p_mutation);
+
+        for(auto & gen : genotype)
+        {
+            if(distr(rnd))
+            {
+                gen = !gen;
+            }
+        }
+    }
+
+    template <class Objective, class UniformRandomBitGegerator>
+    auto ga_boolean_simple(Objective objective, std::size_t const dim,
+                           std::size_t const population_size, std::size_t const max_iterations,
+                           UniformRandomBitGegerator & rnd)
+    {
+        using Genotype = std::valarray<bool>;
+
+        // Инициализация
+        std::vector<Genotype> population;
+
+        saga::ga_boolen_initialize_population(population, population_size, dim, rnd);
+
+        for(auto n = max_iterations; n > 0; -- n)
+        {
+            // Оценка
+            std::vector<double> obj_values;
+            obj_values.reserve(population_size);
+
+            std::transform(saga::begin(population), saga::end(population),
+                           std::back_inserter(obj_values), objective);
+
+            // Селекция и Скрещивание
+            std::vector<Genotype> kids;
+
+            // Элитизм
+            auto const best = std::max_element(saga::begin(obj_values), saga::end(obj_values))
+                            - saga::begin(obj_values);
+            kids.push_back(population[best]);
+
+            // Турнирная селекция + равномерное скрещивание
+            for(; kids.size() < population.size(); )
+            {
+                auto const par_1 = saga::selection_tournament_2(obj_values, rnd);
+                auto const par_2 = saga::selection_tournament_2(obj_values, rnd);
+
+                kids.push_back(saga::ga_boolean_crossover_uniform(population.at(par_1),
+                                                                  population.at(par_2), rnd));
+            }
+
+            assert(kids.size() == population.size());
+
+            // Мутация
+            auto const p_mutation = 1.0 / static_cast<double>(dim);
+            for(auto & kid : kids)
+            {
+                saga::ga_boolean_mutation(kid, p_mutation, rnd);
+            }
+
+            // Смена поколений
+            population.swap(kids);
+        }
+
+        return population;
+    }
 }
 // namespace saga
 

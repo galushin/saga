@@ -45,3 +45,44 @@ TEST_CASE("GA pseudoboolean : initializing population")
         }
     }
 }
+
+#include <saga/cpp20/span.hpp>
+#include <saga/optimization/test_objectives.hpp>
+
+TEST_CASE("simple GA boolean : minimize manhattan distance to random vector")
+{
+    auto const dim = 20;
+    using Argument = std::valarray<bool>;
+
+    for(auto T = 50; T > 0; -- T)
+    {
+        saga::iid_distribution<std::bernoulli_distribution, Argument> init_distr(dim);
+
+        auto const x_opt = init_distr(saga_test::random_engine());
+        auto const objective = [&x_opt](Argument const & arg)
+        {
+            return arg.size() - saga::boolean_manhattan_distance(arg, x_opt);
+        };
+
+        auto const population_size = 200;
+        auto const max_iterations = 200;
+
+        auto const population = saga::ga_boolean_simple(objective, dim, population_size,
+                                                        max_iterations, saga_test::random_engine());
+
+        std::vector<double> obj_values;
+        obj_values.reserve(population_size);
+
+        std::transform(saga::begin(population), saga::end(population),
+                       std::back_inserter(obj_values), objective);
+
+        auto const best = std::max_element(obj_values.begin(), obj_values.end())
+                        - obj_values.begin();
+
+        CAPTURE(x_opt);
+        CAPTURE(population[best]);
+        CAPTURE(obj_values[best]);
+
+        REQUIRE(saga::equal(saga::cursor::all(population[best]), saga::cursor::all(x_opt)));
+    }
+}
