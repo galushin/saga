@@ -65,7 +65,7 @@ TEST_CASE("simple GA boolean : minimize manhattan distance to random vector")
         };
 
         auto const population_size = 200;
-        auto const max_iterations = 100;
+        auto const max_iterations = 200;
 
         auto const population = saga::ga_boolean_simple(objective, dim, population_size,
                                                         max_iterations, saga_test::random_engine());
