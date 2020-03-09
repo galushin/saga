@@ -102,17 +102,14 @@ namespace saga
     }
 
     template <class Genotype, class UniformRandomBitGenerator>
-    void ga_boolean_mutation(Genotype & genotype, double p_mutation,
+    void ga_boolean_mutation(Genotype & genotype, saga::probability<double> const & p_mutation,
                              UniformRandomBitGenerator & rnd)
     {
-        std::bernoulli_distribution distr(p_mutation);
+        std::bernoulli_distribution distr(p_mutation.value());
 
         for(auto & gen : genotype)
         {
-            if(distr(rnd))
-            {
-                gen = !gen;
-            }
+            gen ^= distr(rnd);
         }
     }
 
@@ -122,6 +119,7 @@ namespace saga
                            UniformRandomBitGegerator & rnd)
     {
         using Genotype = std::valarray<bool>;
+        saga::probability<double> const p_mutation{1.0 / static_cast<double>(dim)};
 
         // Инициализация
         std::vector<Genotype> population;
@@ -139,31 +137,26 @@ namespace saga
 
             // Селекция и Скрещивание
             std::vector<Genotype> kids;
+            kids.reserve(population_size);
 
             // Элитизм
             auto const best = std::max_element(saga::begin(obj_values), saga::end(obj_values))
                             - saga::begin(obj_values);
             kids.push_back(population[best]);
 
-            // Турнирная селекция + равномерное скрещивание
-            for(; kids.size() < population.size(); )
+            // Турнирная селекция + равномерное скрещивание + нормальная мутация
+            for(; kids.size() < population_size; )
             {
                 auto const par_1 = saga::selection_tournament_2(obj_values, rnd);
                 auto const par_2 = saga::selection_tournament_2(obj_values, rnd);
 
-                kids.push_back(saga::ga_boolean_crossover_uniform(population.at(par_1),
-                                                                  population.at(par_2), rnd));
+                auto kid = saga::ga_boolean_crossover_uniform(population.at(par_1),
+                                                              population.at(par_2), rnd);
+                saga::ga_boolean_mutation(kid, p_mutation, rnd);
+                kids.push_back(std::move(kid));
             }
 
             assert(kids.size() == population.size());
-
-            // Мутация
-            saga::probability<double> p_mutation{1.0 / static_cast<double>(dim)};
-
-            for(auto & kid : kids)
-            {
-                saga::ga_boolean_mutation(kid, p_mutation.value(), rnd);
-            }
 
             // Смена поколений
             population.swap(kids);
