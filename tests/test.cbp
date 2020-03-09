@@ -40,6 +40,7 @@
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
 		<Unit filename="../include/saga/detail/static_empty_const.hpp" />
 		<Unit filename="../include/saga/iterator.hpp" />
+		<Unit filename="../include/saga/math/probability.hpp" />
 		<Unit filename="../include/saga/numeric.hpp" />
 		<Unit filename="../include/saga/optimization/evaluated_solution.hpp" />
 		<Unit filename="../include/saga/optimization/ga.hpp" />
@@ -50,6 +51,7 @@
 		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
 		<Unit filename="cpp20/span.cpp" />
 		<Unit filename="main.cpp" />
+		<Unit filename="math/probability.cpp" />
 		<Unit filename="optimization/ga.cpp" />
 		<Unit filename="optimization/local_search.cpp" />
 		<Unit filename="random/iid_distribution.cpp" />

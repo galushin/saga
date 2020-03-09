@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Функциональность, связанная с генетическими алгоритмами
 */
 
+#include <saga/math/probability.hpp>
 #include <saga/random/iid_distribution.hpp>
 
 #include <random>
@@ -157,10 +158,11 @@ namespace saga
             assert(kids.size() == population.size());
 
             // Мутация
-            auto const p_mutation = 1.0 / static_cast<double>(dim);
+            saga::probability<double> p_mutation{1.0 / static_cast<double>(dim)};
+
             for(auto & kid : kids)
             {
-                saga::ga_boolean_mutation(kid, p_mutation, rnd);
+                saga::ga_boolean_mutation(kid, p_mutation.value(), rnd);
             }
 
             // Смена поколений
