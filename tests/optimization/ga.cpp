@@ -64,14 +64,17 @@ TEST_CASE("simple GA boolean : minimize manhattan distance to random vector")
             return arg.size() - saga::boolean_manhattan_distance(arg, x_opt);
         };
 
-        auto const population_size = 200;
-        auto const max_iterations = 200;
+        auto const problem = saga::make_optimization_problem_boolean(objective, dim);
 
-        auto const population = saga::ga_boolean_simple(objective, dim, population_size,
-                                                        max_iterations, saga_test::random_engine());
+        saga::GA_settings settings;
+        settings.population_size = 200;
+        settings.max_iterations = 200;
+
+        auto const population
+            = saga::genetic_algorithm(problem, settings, saga_test::random_engine());
 
         std::vector<double> obj_values;
-        obj_values.reserve(population_size);
+        obj_values.reserve(settings.population_size);
 
         std::transform(saga::begin(population), saga::end(population),
                        std::back_inserter(obj_values), objective);
