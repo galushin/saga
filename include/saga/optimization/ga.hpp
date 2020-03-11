@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/math/probability.hpp>
+#include <saga/optimization/optimization_problem.hpp>
 #include <saga/random/iid_distribution.hpp>
 
 #include <random>
@@ -113,31 +114,39 @@ namespace saga
         }
     }
 
+    struct GA_settings
+    {
+    public:
+        int population_size = 0;
+        int max_iterations = 0;
+    };
+
     template <class Objective, class UniformRandomBitGegerator>
-    auto ga_boolean_simple(Objective objective, std::size_t const dim,
-                           std::size_t const population_size, std::size_t const max_iterations,
+    auto genetic_algorithm(optimization_problem_boolean<Objective> const & problem,
+                           GA_settings const & settings,
                            UniformRandomBitGegerator & rnd)
     {
         using Genotype = std::valarray<bool>;
-        saga::probability<double> const p_mutation{1.0 / static_cast<double>(dim)};
+        saga::probability<double> const p_mutation{1.0 / static_cast<double>(problem.dimension)};
 
         // Инициализация
         std::vector<Genotype> population;
 
-        saga::ga_boolen_initialize_population(population, population_size, dim, rnd);
+        saga::ga_boolen_initialize_population(population, settings.population_size,
+                                              problem.dimension, rnd);
 
-        for(auto n = max_iterations; n > 0; -- n)
+        for(auto n = settings.max_iterations; n > 0; -- n)
         {
             // Оценка
             std::vector<double> obj_values;
-            obj_values.reserve(population_size);
+            obj_values.reserve(settings.population_size);
 
             std::transform(saga::begin(population), saga::end(population),
-                           std::back_inserter(obj_values), objective);
+                           std::back_inserter(obj_values), problem.objective);
 
             // Селекция и Скрещивание
             std::vector<Genotype> kids;
-            kids.reserve(population_size);
+            kids.reserve(settings.population_size);
 
             // Элитизм
             auto const best = std::max_element(saga::begin(obj_values), saga::end(obj_values))
@@ -145,7 +154,7 @@ namespace saga
             kids.push_back(population[best]);
 
             // Турнирная селекция + равномерное скрещивание + нормальная мутация
-            for(; kids.size() < population_size; )
+            for(; kids.size() < settings.population_size; )
             {
                 auto const par_1 = saga::selection_tournament_2(obj_values, rnd);
                 auto const par_2 = saga::selection_tournament_2(obj_values, rnd);
