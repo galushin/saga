@@ -66,7 +66,7 @@ TEST_CASE("simple GA boolean : minimize manhattan distance to random vector")
 
         auto const problem = saga::make_optimization_problem_boolean(objective, dim);
 
-        saga::GA_settings settings;
+        saga::GA_settings<saga::ga_boolean_crossover_uniform_fn> settings;
         settings.population_size = 200;
         settings.max_iterations = 200;
 

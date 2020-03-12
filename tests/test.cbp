@@ -45,6 +45,7 @@
 		<Unit filename="../include/saga/optimization/evaluated_solution.hpp" />
 		<Unit filename="../include/saga/optimization/ga.hpp" />
 		<Unit filename="../include/saga/optimization/local_search.hpp" />
+		<Unit filename="../include/saga/optimization/optimization_problem.hpp" />
 		<Unit filename="../include/saga/optimization/test_objectives.hpp" />
 		<Unit filename="../include/saga/random/iid_distribution.hpp" />
 		<Unit filename="../include/saga/type_traits.hpp" />
