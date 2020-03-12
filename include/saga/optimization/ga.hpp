@@ -82,25 +82,36 @@ namespace saga
         return (obj_values[i1] > obj_values[i2]) ? i1 : i2;
     }
 
-    template <class Genotype, class UniformRandomBitGenerator>
-    Genotype
-    ga_boolean_crossover_uniform(Genotype const & gen1, Genotype const & gen2,
-                                 UniformRandomBitGenerator & rnd)
+    class ga_boolean_crossover_uniform_fn
     {
-        assert(gen1.size() == gen2.size());
-        auto const dim = gen1.size();
-
-        Genotype result(dim);
-
-        std::bernoulli_distribution distr(0.5);
-
-        for(auto i = 0*dim; i != dim; ++ i)
+    public:
+        template <class Genotype, class UniformRandomBitGenerator>
+        static Genotype crossover(Genotype const & gen1, Genotype const & gen2,
+                                  UniformRandomBitGenerator & rnd)
         {
-            result[i] = distr(rnd) ? gen1[i] : gen2[i];
+            assert(gen1.size() == gen2.size());
+            auto const dim = gen1.size();
+
+            Genotype result(dim);
+
+            std::bernoulli_distribution distr(0.5);
+
+            for(auto i = 0*dim; i != dim; ++ i)
+            {
+                result[i] = distr(rnd) ? gen1[i] : gen2[i];
+            }
+
+            return result;
         }
 
-        return result;
-    }
+        template <class Genotype, class UniformRandomBitGenerator>
+        Genotype operator ()(Genotype const & gen1, Genotype const & gen2,
+                             UniformRandomBitGenerator & rnd) const
+        {
+            return this->crossover(gen1, gen2, rnd);
+        }
+
+    };
 
     template <class Genotype, class UniformRandomBitGenerator>
     void ga_boolean_mutation(Genotype & genotype, saga::probability<double> const & p_mutation,
@@ -114,14 +125,16 @@ namespace saga
         }
     }
 
+    template <class Crossover>
     struct GA_settings
     {
     public:
         int population_size = 0;
         int max_iterations = 0;
+        Crossover crossover{};
     };
 
-    template <class Objective, class UniformRandomBitGegerator>
+    template <class Objective, class GA_settings, class UniformRandomBitGegerator>
     auto genetic_algorithm(optimization_problem_boolean<Objective> const & problem,
                            GA_settings const & settings,
                            UniformRandomBitGegerator & rnd)
@@ -159,8 +172,7 @@ namespace saga
                 auto const par_1 = saga::selection_tournament_2(obj_values, rnd);
                 auto const par_2 = saga::selection_tournament_2(obj_values, rnd);
 
-                auto kid = saga::ga_boolean_crossover_uniform(population.at(par_1),
-                                                              population.at(par_2), rnd);
+                auto kid = settings.crossover(population.at(par_1), population.at(par_2), rnd);
                 saga::ga_boolean_mutation(kid, p_mutation, rnd);
                 kids.push_back(std::move(kid));
             }
