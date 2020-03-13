@@ -49,7 +49,7 @@ TEST_CASE("GA pseudoboolean : initializing population")
 #include <saga/cpp20/span.hpp>
 #include <saga/optimization/test_objectives.hpp>
 
-TEST_CASE("simple GA boolean : minimize manhattan distance to random vector")
+TEST_CASE("GA boolean : minimize manhattan distance, uniform crossover")
 {
     auto const dim = 20;
     using Argument = std::valarray<bool>;
@@ -66,7 +66,8 @@ TEST_CASE("simple GA boolean : minimize manhattan distance to random vector")
 
         auto const problem = saga::make_optimization_problem_boolean(objective, dim);
 
-        saga::GA_settings<saga::ga_boolean_crossover_uniform_fn> settings;
+        using Genotype = std::valarray<bool>;
+        saga::GA_settings<Genotype, saga::ga_boolean_crossover_uniform_fn> settings;
         settings.population_size = 200;
         settings.max_iterations = 200;
 

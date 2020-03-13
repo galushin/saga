@@ -125,10 +125,12 @@ namespace saga
         }
     }
 
-    template <class Crossover>
+    template <class Genotype, class Crossover>
     struct GA_settings
     {
     public:
+        using genotype_type = Genotype;
+
         int population_size = 0;
         int max_iterations = 0;
         Crossover crossover{};
@@ -139,7 +141,8 @@ namespace saga
                            GA_settings const & settings,
                            UniformRandomBitGegerator & rnd)
     {
-        using Genotype = std::valarray<bool>;
+        using Genotype = typename GA_settings::genotype_type;
+
         saga::probability<double> const p_mutation{1.0 / static_cast<double>(problem.dimension)};
 
         // Инициализация
