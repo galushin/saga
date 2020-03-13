@@ -49,7 +49,7 @@ TEST_CASE("GA pseudoboolean : initializing population")
 #include <saga/cpp20/span.hpp>
 #include <saga/optimization/test_objectives.hpp>
 
-TEST_CASE("simple GA boolean : minimize manhattan distance to random vector")
+TEST_CASE("GA boolean : minimize manhattan distance, uniform crossover")
 {
     auto const dim = 20;
     using Argument = std::valarray<bool>;
@@ -66,7 +66,50 @@ TEST_CASE("simple GA boolean : minimize manhattan distance to random vector")
 
         auto const problem = saga::make_optimization_problem_boolean(objective, dim);
 
-        saga::GA_settings<saga::ga_boolean_crossover_uniform_fn> settings;
+        using Genotype = std::valarray<bool>;
+        saga::GA_settings<Genotype, saga::ga_boolean_crossover_uniform_fn> settings;
+        settings.population_size = 200;
+        settings.max_iterations = 200;
+
+        auto const population
+            = saga::genetic_algorithm(problem, settings, saga_test::random_engine());
+
+        std::vector<double> obj_values;
+        obj_values.reserve(settings.population_size);
+
+        std::transform(saga::begin(population), saga::end(population),
+                       std::back_inserter(obj_values), objective);
+
+        auto const best = std::max_element(obj_values.begin(), obj_values.end())
+                        - obj_values.begin();
+
+        CAPTURE(x_opt);
+        CAPTURE(population[best]);
+        CAPTURE(obj_values[best]);
+
+        REQUIRE(saga::equal(saga::cursor::all(population[best]), saga::cursor::all(x_opt)));
+    }
+}
+
+TEST_CASE("GA boolean : minimize manhattan distance, one point crossover")
+{
+    auto const dim = 20;
+    using Argument = std::valarray<bool>;
+
+    for(auto T = 50; T > 0; -- T)
+    {
+        saga::iid_distribution<std::bernoulli_distribution, Argument> init_distr(dim);
+
+        auto const x_opt = init_distr(saga_test::random_engine());
+        auto const objective = [&x_opt](Argument const & arg)
+        {
+            return arg.size() - saga::boolean_manhattan_distance(arg, x_opt);
+        };
+
+        auto const problem = saga::make_optimization_problem_boolean(objective, dim);
+
+        using Genotype = std::valarray<bool>;
+        saga::GA_settings<Genotype, saga::ga_boolean_crossover_one_point_fn> settings;
         settings.population_size = 200;
         settings.max_iterations = 200;
 

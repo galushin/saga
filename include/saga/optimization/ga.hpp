@@ -113,6 +113,37 @@ namespace saga
 
     };
 
+    class ga_boolean_crossover_one_point_fn
+    {
+    public:
+        template <class Genotype, class UniformRandomBitGenerator>
+        static Genotype crossover(Genotype const & gen1, Genotype const & gen2,
+                                  UniformRandomBitGenerator & rnd)
+        {
+            assert(gen1.size() == gen2.size());
+            auto const dim = gen1.size();
+
+
+            std::uniform_int_distribution<typename saga::size_type<Genotype>::type> distr(0, dim);
+            auto const pos = distr(rnd);
+
+            Genotype result(dim);
+            auto const out
+                = std::copy(saga::begin(gen1), saga::begin(gen1) + pos, saga::begin(result));
+            std::copy(saga::begin(gen2) + pos, saga::end(gen2), out);
+
+            return result;
+        }
+
+        template <class Genotype, class UniformRandomBitGenerator>
+        Genotype operator ()(Genotype const & gen1, Genotype const & gen2,
+                             UniformRandomBitGenerator & rnd) const
+        {
+            return this->crossover(gen1, gen2, rnd);
+        }
+
+    };
+
     template <class Genotype, class UniformRandomBitGenerator>
     void ga_boolean_mutation(Genotype & genotype, saga::probability<double> const & p_mutation,
                              UniformRandomBitGenerator & rnd)
@@ -125,10 +156,12 @@ namespace saga
         }
     }
 
-    template <class Crossover>
+    template <class Genotype, class Crossover>
     struct GA_settings
     {
     public:
+        using genotype_type = Genotype;
+
         int population_size = 0;
         int max_iterations = 0;
         Crossover crossover{};
@@ -139,7 +172,8 @@ namespace saga
                            GA_settings const & settings,
                            UniformRandomBitGegerator & rnd)
     {
-        using Genotype = std::valarray<bool>;
+        using Genotype = typename GA_settings::genotype_type;
+
         saga::probability<double> const p_mutation{1.0 / static_cast<double>(problem.dimension)};
 
         // Инициализация
