@@ -144,6 +144,50 @@ namespace saga
 
     };
 
+    class ga_boolean_crossover_two_point_fn
+    {
+    public:
+        template <class Genotype, class UniformRandomBitGenerator>
+        static Genotype crossover(Genotype const & gen1, Genotype const & gen2,
+                                  UniformRandomBitGenerator & rnd)
+        {
+            assert(gen1.size() == gen2.size());
+            auto const dim = gen1.size();
+
+            std::uniform_int_distribution<typename saga::size_type<Genotype>::type> distr(0, dim);
+            auto first = distr(rnd);
+            auto last = (first + distr(rnd));
+
+            if(last > dim)
+            {
+                last -= dim;
+            }
+
+            if(last < first)
+            {
+                using std::swap;
+                swap(first, last);
+            }
+
+            assert(0 <= first && first <= last && last <= dim);
+
+            Genotype result(dim);
+            auto out = std::copy(saga::begin(gen1), saga::begin(gen1) + first, saga::begin(result));
+            out = std::copy(saga::begin(gen2) + first, saga::begin(gen2) + last, out);
+            std::copy(saga::begin(gen1) + last, saga::end(gen1), out);
+
+            return result;
+        }
+
+        template <class Genotype, class UniformRandomBitGenerator>
+        Genotype operator ()(Genotype const & gen1, Genotype const & gen2,
+                             UniformRandomBitGenerator & rnd) const
+        {
+            return this->crossover(gen1, gen2, rnd);
+        }
+
+    };
+
     template <class Genotype, class UniformRandomBitGenerator>
     void ga_boolean_mutation(Genotype & genotype, saga::probability<double> const & p_mutation,
                              UniformRandomBitGenerator & rnd)
