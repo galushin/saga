@@ -208,8 +208,15 @@ namespace saga
 
         int population_size = 0;
         int max_iterations = 0;
+        double mutation_strength = 1.0;
         Crossover crossover{};
     };
+
+    auto mutation_probability(double mutation_strength, int genes_count)
+    {
+        auto const avg_mutant_genes = std::min<double>(mutation_strength, genes_count);
+        return saga::probability<double>{avg_mutant_genes / genes_count};
+    }
 
     template <class Objective, class GA_settings, class UniformRandomBitGegerator>
     auto genetic_algorithm(optimization_problem_boolean<Objective> const & problem,
@@ -218,7 +225,8 @@ namespace saga
     {
         using Genotype = typename GA_settings::genotype_type;
 
-        saga::probability<double> const p_mutation{1.0 / static_cast<double>(problem.dimension)};
+        auto const p_mutation
+            = ::saga::mutation_probability(settings.mutation_strength, problem.dimension);
 
         // Инициализация
         std::vector<Genotype> population;
