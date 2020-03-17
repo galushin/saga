@@ -79,7 +79,7 @@ namespace saga
         assert(0 <= i1 && i1 < obj_values.size());
         assert(0 <= i2 && i2 < obj_values.size());
 
-        return (obj_values[i1] > obj_values[i2]) ? i1 : i2;
+        return (obj_values[i2] < obj_values[i1]) ? i2 : i1;
     }
 
     class ga_boolean_crossover_uniform_fn
@@ -248,7 +248,7 @@ namespace saga
             kids.reserve(settings.population_size);
 
             // Элитизм
-            auto const best = std::max_element(saga::begin(obj_values), saga::end(obj_values))
+            auto const best = std::min_element(saga::begin(obj_values), saga::end(obj_values))
                             - saga::begin(obj_values);
             kids.push_back(population[best]);
 
