@@ -22,21 +22,24 @@ SAGA -- это свободной программное обеспечение:
  @brief Шаблоны классов для представления задач оптимизации
 */
 
+#include <functional>
+
 namespace saga
 {
-    template <class Objective>
+    template <class Objective, class Compare = std::less<>>
     struct optimization_problem_boolean
     {
     public:
         Objective objective{};
         int dimension = 0;
+        Compare compare{};
     };
 
-    template <class Objective>
-    auto make_optimization_problem_boolean(Objective objective, int dim)
-    -> optimization_problem_boolean<Objective>
+    template <class Objective, class Compare = std::less<>>
+    auto make_optimization_problem_boolean(Objective objective, int dim, Compare cmp = Compare())
+    -> optimization_problem_boolean<Objective, Compare>
     {
-        return {std::move(objective), dim};
+        return {std::move(objective), dim, std::move(cmp)};
     }
 }
 // namespace saga

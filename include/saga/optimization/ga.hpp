@@ -22,8 +22,8 @@ SAGA -- это свободной программное обеспечение:
  @brief Функциональность, связанная с генетическими алгоритмами
 */
 
-#include <saga/math/probability.hpp>
 #include <saga/optimization/optimization_problem.hpp>
+#include <saga/math/probability.hpp>
 #include <saga/random/iid_distribution.hpp>
 
 #include <random>
@@ -65,9 +65,10 @@ namespace saga
         std::generate_n(std::back_inserter(population), pop_size - population.size(), gen);
     }
 
-    template <class Container, class UniformRandomBitGenerator>
+    template <class Container, class Compare, class UniformRandomBitGenerator>
     typename Container::size_type
-    selection_tournament_2(Container const & obj_values, UniformRandomBitGenerator & rnd)
+    selection_tournament_2(Container const & obj_values, Compare cmp,
+                           UniformRandomBitGenerator & rnd)
     {
         assert(!obj_values.empty());
 
@@ -79,7 +80,7 @@ namespace saga
         assert(0 <= i1 && i1 < obj_values.size());
         assert(0 <= i2 && i2 < obj_values.size());
 
-        return (obj_values[i1] > obj_values[i2]) ? i1 : i2;
+        return cmp(obj_values[i2], obj_values[i1]) ? i2 : i1;
     }
 
     class ga_boolean_crossover_uniform_fn
@@ -208,17 +209,24 @@ namespace saga
 
         int population_size = 0;
         int max_iterations = 0;
+        double mutation_strength = 1.0;
         Crossover crossover{};
     };
 
-    template <class Objective, class GA_settings, class UniformRandomBitGegerator>
-    auto genetic_algorithm(optimization_problem_boolean<Objective> const & problem,
-                           GA_settings const & settings,
+    auto mutation_probability(double mutation_strength, int genes_count)
+    {
+        auto const avg_mutant_genes = std::min<double>(mutation_strength, genes_count);
+        return saga::probability<double>{avg_mutant_genes / genes_count};
+    }
+
+    template <class Problem, class GA_settings, class UniformRandomBitGegerator>
+    auto genetic_algorithm(Problem const & problem, GA_settings const & settings,
                            UniformRandomBitGegerator & rnd)
     {
         using Genotype = typename GA_settings::genotype_type;
 
-        saga::probability<double> const p_mutation{1.0 / static_cast<double>(problem.dimension)};
+        auto const p_mutation
+            = ::saga::mutation_probability(settings.mutation_strength, problem.dimension);
 
         // Инициализация
         std::vector<Genotype> population;
@@ -240,15 +248,16 @@ namespace saga
             kids.reserve(settings.population_size);
 
             // Элитизм
-            auto const best = std::max_element(saga::begin(obj_values), saga::end(obj_values))
+            auto const best = std::min_element(saga::begin(obj_values), saga::end(obj_values),
+                                               problem.compare)
                             - saga::begin(obj_values);
             kids.push_back(population[best]);
 
             // Турнирная селекция + равномерное скрещивание + нормальная мутация
             for(; kids.size() < settings.population_size; )
             {
-                auto const par_1 = saga::selection_tournament_2(obj_values, rnd);
-                auto const par_2 = saga::selection_tournament_2(obj_values, rnd);
+                auto const par_1 = saga::selection_tournament_2(obj_values, problem.compare, rnd);
+                auto const par_2 = saga::selection_tournament_2(obj_values, problem.compare, rnd);
 
                 auto kid = settings.crossover(population.at(par_1), population.at(par_2), rnd);
                 saga::ga_boolean_mutation(kid, p_mutation, rnd);

@@ -49,13 +49,54 @@ TEST_CASE("GA pseudoboolean : initializing population")
 #include <saga/cpp20/span.hpp>
 #include <saga/optimization/test_objectives.hpp>
 
-TEST_CASE("GA boolean : minimize manhattan distance, uniform crossover")
+namespace
 {
-    auto const dim = 20;
-    using Argument = std::valarray<bool>;
-
-    for(auto T = 50; T > 0; -- T)
+    template <class Crossover>
+    void test_ga_boolean_manhattan_distance_min()
     {
+        auto const dim = 20;
+        using Argument = std::valarray<bool>;
+
+        saga::iid_distribution<std::bernoulli_distribution, Argument> init_distr(dim);
+
+        auto const x_opt = init_distr(saga_test::random_engine());
+        auto const objective = [&x_opt](Argument const & arg)
+        {
+            return saga::boolean_manhattan_distance(arg, x_opt);
+        };
+
+        auto const problem = saga::make_optimization_problem_boolean(objective, dim);
+
+        using Genotype = std::valarray<bool>;
+        saga::GA_settings<Genotype, Crossover> settings;
+        settings.population_size = 200;
+        settings.max_iterations = 200;
+
+        auto const population
+            = saga::genetic_algorithm(problem, settings, saga_test::random_engine());
+
+        std::vector<double> obj_values;
+        obj_values.reserve(settings.population_size);
+
+        std::transform(saga::begin(population), saga::end(population),
+                       std::back_inserter(obj_values), objective);
+
+        auto const best = std::min_element(obj_values.begin(), obj_values.end())
+                        - obj_values.begin();
+
+        CAPTURE(x_opt);
+        CAPTURE(population[best]);
+        CAPTURE(obj_values[best]);
+
+        REQUIRE(saga::equal(saga::cursor::all(population[best]), saga::cursor::all(x_opt)));
+    }
+
+    template <class Crossover>
+    void test_ga_boolean_manhattan_distance_max()
+    {
+        auto const dim = 20;
+        using Argument = std::valarray<bool>;
+
         saga::iid_distribution<std::bernoulli_distribution, Argument> init_distr(dim);
 
         auto const x_opt = init_distr(saga_test::random_engine());
@@ -64,10 +105,11 @@ TEST_CASE("GA boolean : minimize manhattan distance, uniform crossover")
             return arg.size() - saga::boolean_manhattan_distance(arg, x_opt);
         };
 
-        auto const problem = saga::make_optimization_problem_boolean(objective, dim);
+        auto const problem
+            = saga::make_optimization_problem_boolean(objective, dim, std::greater<>{});
 
         using Genotype = std::valarray<bool>;
-        saga::GA_settings<Genotype, saga::ga_boolean_crossover_uniform_fn> settings;
+        saga::GA_settings<Genotype, Crossover> settings;
         settings.population_size = 200;
         settings.max_iterations = 200;
 
@@ -91,86 +133,16 @@ TEST_CASE("GA boolean : minimize manhattan distance, uniform crossover")
     }
 }
 
-TEST_CASE("GA boolean : minimize manhattan distance, one point crossover")
+TEST_CASE("GA boolean : minimize manhattan distance")
 {
-    auto const dim = 20;
-    using Argument = std::valarray<bool>;
-
-    for(auto T = 50; T > 0; -- T)
+    for(auto T = 10; T > 0; -- T)
     {
-        saga::iid_distribution<std::bernoulli_distribution, Argument> init_distr(dim);
+        ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_uniform_fn>();
+        ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_one_point_fn>();
+        ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_two_point_fn>();
 
-        auto const x_opt = init_distr(saga_test::random_engine());
-        auto const objective = [&x_opt](Argument const & arg)
-        {
-            return arg.size() - saga::boolean_manhattan_distance(arg, x_opt);
-        };
-
-        auto const problem = saga::make_optimization_problem_boolean(objective, dim);
-
-        using Genotype = std::valarray<bool>;
-        saga::GA_settings<Genotype, saga::ga_boolean_crossover_one_point_fn> settings;
-        settings.population_size = 200;
-        settings.max_iterations = 200;
-
-        auto const population
-            = saga::genetic_algorithm(problem, settings, saga_test::random_engine());
-
-        std::vector<double> obj_values;
-        obj_values.reserve(settings.population_size);
-
-        std::transform(saga::begin(population), saga::end(population),
-                       std::back_inserter(obj_values), objective);
-
-        auto const best = std::max_element(obj_values.begin(), obj_values.end())
-                        - obj_values.begin();
-
-        CAPTURE(x_opt);
-        CAPTURE(population[best]);
-        CAPTURE(obj_values[best]);
-
-        REQUIRE(saga::equal(saga::cursor::all(population[best]), saga::cursor::all(x_opt)));
-    }
-}
-
-TEST_CASE("GA boolean : minimize manhattan distance, two point crossover")
-{
-    auto const dim = 20;
-    using Argument = std::valarray<bool>;
-
-    for(auto T = 50; T > 0; -- T)
-    {
-        saga::iid_distribution<std::bernoulli_distribution, Argument> init_distr(dim);
-
-        auto const x_opt = init_distr(saga_test::random_engine());
-        auto const objective = [&x_opt](Argument const & arg)
-        {
-            return arg.size() - saga::boolean_manhattan_distance(arg, x_opt);
-        };
-
-        auto const problem = saga::make_optimization_problem_boolean(objective, dim);
-
-        using Genotype = std::valarray<bool>;
-        saga::GA_settings<Genotype, saga::ga_boolean_crossover_two_point_fn> settings;
-        settings.population_size = 200;
-        settings.max_iterations = 200;
-
-        auto const population
-            = saga::genetic_algorithm(problem, settings, saga_test::random_engine());
-
-        std::vector<double> obj_values;
-        obj_values.reserve(settings.population_size);
-
-        std::transform(saga::begin(population), saga::end(population),
-                       std::back_inserter(obj_values), objective);
-
-        auto const best = std::max_element(obj_values.begin(), obj_values.end())
-                        - obj_values.begin();
-
-        CAPTURE(x_opt);
-        CAPTURE(population[best]);
-        CAPTURE(obj_values[best]);
-
-        REQUIRE(saga::equal(saga::cursor::all(population[best]), saga::cursor::all(x_opt)));
+        ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_uniform_fn>();
+        ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_one_point_fn>();
+        ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_two_point_fn>();
     }
 }
