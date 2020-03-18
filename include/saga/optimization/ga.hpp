@@ -65,23 +65,34 @@ namespace saga
         std::generate_n(std::back_inserter(population), pop_size - population.size(), gen);
     }
 
-    template <class Container, class Compare, class UniformRandomBitGenerator>
-    typename Container::size_type
-    selection_tournament_2(Container const & obj_values, Compare cmp,
-                           UniformRandomBitGenerator & rnd)
+    class selection_tournament_2_fn
     {
-        assert(!obj_values.empty());
+    public:
+        template <class Container, class Compare, class UniformRandomBitGenerator>
+        static
+        typename Container::size_type
+        selection(Container const & obj_values, Compare cmp, UniformRandomBitGenerator & rnd)
+        {
+            assert(!obj_values.empty());
 
-        std::uniform_int_distribution<typename Container::size_type> distr(0, obj_values.size() - 1);
+            std::uniform_int_distribution<typename Container::size_type> distr(0, obj_values.size() - 1);
 
-        auto const i1 = distr(rnd);
-        auto const i2 = distr(rnd);
+            auto const i1 = distr(rnd);
+            auto const i2 = distr(rnd);
 
-        assert(0 <= i1 && i1 < obj_values.size());
-        assert(0 <= i2 && i2 < obj_values.size());
+            assert(0 <= i1 && i1 < obj_values.size());
+            assert(0 <= i2 && i2 < obj_values.size());
 
-        return cmp(obj_values[i2], obj_values[i1]) ? i2 : i1;
-    }
+            return cmp(obj_values[i2], obj_values[i1]) ? i2 : i1;
+        }
+
+        template <class Container, class Compare, class UniformRandomBitGenerator>
+        typename Container::size_type
+        operator()(Container const & obj_values, Compare cmp, UniformRandomBitGenerator & rnd) const
+        {
+            return this->selection(obj_values, std::move(cmp), rnd);
+        }
+    };
 
     class ga_boolean_crossover_uniform_fn
     {
@@ -201,7 +212,7 @@ namespace saga
         }
     }
 
-    template <class Genotype, class Crossover>
+    template <class Genotype, class Crossover, class Selection>
     struct GA_settings
     {
     public:
@@ -211,6 +222,7 @@ namespace saga
         int max_iterations = 0;
         double mutation_strength = 1.0;
         Crossover crossover{};
+        Selection selection{};
     };
 
     auto mutation_probability(double mutation_strength, int genes_count)
@@ -256,8 +268,8 @@ namespace saga
             // Турнирная селекция + равномерное скрещивание + нормальная мутация
             for(; kids.size() < settings.population_size; )
             {
-                auto const par_1 = saga::selection_tournament_2(obj_values, problem.compare, rnd);
-                auto const par_2 = saga::selection_tournament_2(obj_values, problem.compare, rnd);
+                auto const par_1 = settings.selection(obj_values, problem.compare, rnd);
+                auto const par_2 = settings.selection(obj_values, problem.compare, rnd);
 
                 auto kid = settings.crossover(population.at(par_1), population.at(par_2), rnd);
                 saga::ga_boolean_mutation(kid, p_mutation, rnd);
