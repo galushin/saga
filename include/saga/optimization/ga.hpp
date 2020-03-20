@@ -65,33 +65,103 @@ namespace saga
         std::generate_n(std::back_inserter(population), pop_size - population.size(), gen);
     }
 
-    class selection_tournament_2_fn
+    class selection_tournament_fn
     {
     public:
-        template <class Container, class Compare, class UniformRandomBitGenerator>
-        static
-        typename Container::size_type
-        selection(Container const & obj_values, Compare cmp, UniformRandomBitGenerator & rnd)
-        {
-            assert(!obj_values.empty());
-
-            std::uniform_int_distribution<typename Container::size_type> distr(0, obj_values.size() - 1);
-
-            auto const i1 = distr(rnd);
-            auto const i2 = distr(rnd);
-
-            assert(0 <= i1 && i1 < obj_values.size());
-            assert(0 <= i2 && i2 < obj_values.size());
-
-            return cmp(obj_values[i2], obj_values[i1]) ? i2 : i1;
-        }
+        /** @pre <tt>tournament_size > 2</tt>
+        */
+        explicit selection_tournament_fn(int tournament_size = 2, bool repeat = true)
+         : tournament_(tournament_size)
+         , repeat_(repeat)
+        {}
 
         template <class Container, class Compare, class UniformRandomBitGenerator>
         typename Container::size_type
         operator()(Container const & obj_values, Compare cmp, UniformRandomBitGenerator & rnd) const
         {
-            return this->selection(obj_values, std::move(cmp), rnd);
+            if(this->repeat_)
+            {
+                return this->selection_repeat(obj_values, std::move(cmp), rnd);
+            }
+            else
+            {
+                return this->selection_no_repeat(obj_values, std::move(cmp), rnd);
+            }
         }
+
+
+    private:
+        template <class Container, class Compare, class UniformRandomBitGenerator>
+        typename Container::size_type
+        selection_repeat(Container const & obj_values, Compare cmp,
+                         UniformRandomBitGenerator & rnd) const
+        {
+            assert(!obj_values.empty());
+
+            std::uniform_int_distribution<typename Container::size_type>
+                distr(0, obj_values.size() - 1);
+
+            auto best = distr(rnd);
+            assert(0 <= best && best < obj_values.size());
+
+            for(auto num = this->tournament_ - 1; num > 0; -- num)
+            {
+                auto cur = distr(rnd);
+
+                assert(0 <= cur && cur < obj_values.size());
+
+                if(cmp(obj_values[cur], obj_values[best]))
+                {
+                   best = std::move(cur);
+                }
+            }
+
+            return best;
+        }
+
+        template <class Container, class Compare, class UniformRandomBitGenerator>
+        typename Container::size_type
+        selection_no_repeat(Container const & obj_values, Compare cmp,
+                            UniformRandomBitGenerator & rnd) const
+        {
+            assert(!obj_values.empty());
+            assert(static_cast<std::size_t>(this->tournament_) <= obj_values.size());
+
+            using Result = typename Container::size_type;
+
+            std::vector<Result> selected;
+            selected.reserve(this->tournament_);
+
+            std::uniform_real_distribution<double> distr(0.0, 1.0);
+            auto left = this->tournament_;
+
+            for(auto num = obj_values.size(); num > 0; -- num)
+            {
+                auto p = distr(rnd);
+
+                if(p*num < left)
+                {
+                    selected.push_back(num - 1);
+                    -- left;
+                }
+            }
+            assert(selected.size() == static_cast<std::size_t>(this->tournament_));
+
+            for(auto const & x : selected)
+            {
+                assert(0 <= x && x < obj_values.size());
+            }
+
+            auto index_cmp = [&obj_values, &cmp](Result const & x, Result const & y)
+            {
+                return cmp(obj_values[x], obj_values[y]);
+            };
+
+            return *std::min_element(selected.begin(), selected.end(), std::move(index_cmp));
+        }
+
+        int tournament_ = 2;
+        bool repeat_ = true;
     };
 
     class ga_boolean_crossover_uniform_fn
@@ -266,7 +336,7 @@ namespace saga
             kids.push_back(population[best]);
 
             // Турнирная селекция + равномерное скрещивание + нормальная мутация
-            for(; kids.size() < settings.population_size; )
+            for(; kids.size() < static_cast<std::size_t>(settings.population_size); )
             {
                 auto const par_1 = settings.selection(obj_values, problem.compare, rnd);
                 auto const par_2 = settings.selection(obj_values, problem.compare, rnd);

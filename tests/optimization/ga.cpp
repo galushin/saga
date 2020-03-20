@@ -52,7 +52,7 @@ TEST_CASE("GA pseudoboolean : initializing population")
 namespace
 {
     template <class Crossover, class Selection>
-    void test_ga_boolean_manhattan_distance_min()
+    void test_ga_boolean_manhattan_distance_min(Selection selection)
     {
         auto const dim = 20;
         using Argument = std::valarray<bool>;
@@ -71,6 +71,7 @@ namespace
         saga::GA_settings<Genotype, Crossover, Selection> settings;
         settings.population_size = 200;
         settings.max_iterations = 200;
+        settings.selection = selection;
 
         auto const population
             = saga::genetic_algorithm(problem, settings, saga_test::random_engine());
@@ -92,7 +93,7 @@ namespace
     }
 
     template <class Crossover, class Selection>
-    void test_ga_boolean_manhattan_distance_max()
+    void test_ga_boolean_manhattan_distance_max(Selection selection)
     {
         auto const dim = 20;
         using Argument = std::valarray<bool>;
@@ -112,6 +113,7 @@ namespace
         saga::GA_settings<Genotype, Crossover, Selection> settings;
         settings.population_size = 200;
         settings.max_iterations = 200;
+        settings.selection = selection;
 
         auto const population
             = saga::genetic_algorithm(problem, settings, saga_test::random_engine());
@@ -133,22 +135,34 @@ namespace
     }
 }
 
-TEST_CASE("GA boolean : minimize manhattan distance")
+TEST_CASE("GA boolean : minimize manhattan distance, tournament selection")
 {
-    for(auto T = 10; T > 0; -- T)
+    for(auto tournament = 2; tournament < 5; ++ tournament)
     {
-        ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_uniform_fn,
-                                                 saga::selection_tournament_2_fn>();
-        ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_one_point_fn,
-                                                 saga::selection_tournament_2_fn>();
-        ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_two_point_fn,
-                                                 saga::selection_tournament_2_fn>();
+        for(auto T = 10; T > 0; -- T)
+        {
+            saga::selection_tournament_fn selection(tournament);
 
-        ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_uniform_fn,
-                                                 saga::selection_tournament_2_fn>();
-        ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_one_point_fn,
-                                                 saga::selection_tournament_2_fn>();
-        ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_two_point_fn,
-                                                 saga::selection_tournament_2_fn>();
+            ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_uniform_fn>(selection);
+            ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_one_point_fn>(selection);
+            ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_two_point_fn>(selection);
+
+            ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_uniform_fn>(selection);
+            ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_one_point_fn>(selection);
+            ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_two_point_fn>(selection);
+        }
+
+        for(auto T = 10; T > 0; -- T)
+        {
+            saga::selection_tournament_fn selection(tournament, false);
+
+            ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_uniform_fn>(selection);
+            ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_one_point_fn>(selection);
+            ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_two_point_fn>(selection);
+
+            ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_uniform_fn>(selection);
+            ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_one_point_fn>(selection);
+            ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_two_point_fn>(selection);
+        }
     }
 }
