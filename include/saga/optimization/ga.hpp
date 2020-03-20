@@ -70,13 +70,31 @@ namespace saga
     public:
         /** @pre <tt>tournament_size > 2</tt>
         */
-        explicit selection_tournament_fn(int tournament_size = 2)
+        explicit selection_tournament_fn(int tournament_size = 2, bool repeat = true)
          : tournament_(tournament_size)
+         , repeat_(repeat)
         {}
 
         template <class Container, class Compare, class UniformRandomBitGenerator>
         typename Container::size_type
         operator()(Container const & obj_values, Compare cmp, UniformRandomBitGenerator & rnd) const
+        {
+            if(this->repeat_)
+            {
+                return this->selection_repeat(obj_values, std::move(cmp), rnd);
+            }
+            else
+            {
+                return this->selection_no_repeat(obj_values, std::move(cmp), rnd);
+            }
+        }
+
+
+    private:
+        template <class Container, class Compare, class UniformRandomBitGenerator>
+        typename Container::size_type
+        selection_repeat(Container const & obj_values, Compare cmp,
+                         UniformRandomBitGenerator & rnd) const
         {
             assert(!obj_values.empty());
 
@@ -101,8 +119,49 @@ namespace saga
             return best;
         }
 
-    private:
-        int tournament_;
+        template <class Container, class Compare, class UniformRandomBitGenerator>
+        typename Container::size_type
+        selection_no_repeat(Container const & obj_values, Compare cmp,
+                            UniformRandomBitGenerator & rnd) const
+        {
+            assert(!obj_values.empty());
+            assert(static_cast<std::size_t>(this->tournament_) <= obj_values.size());
+
+            using Result = typename Container::size_type;
+
+            std::vector<Result> selected;
+            selected.reserve(this->tournament_);
+
+            std::uniform_real_distribution<double> distr(0.0, 1.0);
+            auto left = this->tournament_;
+
+            for(auto num = obj_values.size(); num > 0; -- num)
+            {
+                auto p = distr(rnd);
+
+                if(p*num < left)
+                {
+                    selected.push_back(num - 1);
+                    -- left;
+                }
+            }
+            assert(selected.size() == static_cast<std::size_t>(this->tournament_));
+
+            for(auto const & x : selected)
+            {
+                assert(0 <= x && x < obj_values.size());
+            }
+
+            auto index_cmp = [&obj_values, &cmp](Result const & x, Result const & y)
+            {
+                return cmp(obj_values[x], obj_values[y]);
+            };
+
+            return *std::min_element(selected.begin(), selected.end(), std::move(index_cmp));
+        }
+
+        int tournament_ = 2;
+        bool repeat_ = true;
     };
 
     class ga_boolean_crossover_uniform_fn
