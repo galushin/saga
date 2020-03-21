@@ -141,7 +141,7 @@ TEST_CASE("GA boolean : minimize manhattan distance, tournament selection")
     {
         for(auto T = 10; T > 0; -- T)
         {
-            saga::selection_tournament_fn selection(tournament);
+            saga::selection_tournament selection(tournament);
 
             ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_uniform_fn>(selection);
             ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_one_point_fn>(selection);
@@ -154,7 +154,7 @@ TEST_CASE("GA boolean : minimize manhattan distance, tournament selection")
 
         for(auto T = 10; T > 0; -- T)
         {
-            saga::selection_tournament_fn selection(tournament, false);
+            saga::selection_tournament selection(tournament, false);
 
             ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_uniform_fn>(selection);
             ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_one_point_fn>(selection);
