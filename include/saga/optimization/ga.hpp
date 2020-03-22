@@ -85,7 +85,7 @@ namespace saga
          , cmp_(std::move(cmp))
         {
             assert(!this->obj_values_.empty());
-            assert(0 < this->tournament_)
+            assert(0 < this->tournament_);
             assert(static_cast<std::size_t>(this->tournament_) <= this->obj_values_.size());
         }
 
