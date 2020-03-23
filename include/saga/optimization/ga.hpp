@@ -27,6 +27,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/random/iid_distribution.hpp>
 
 #include <random>
+#include <map>
 
 namespace saga
 {
@@ -195,6 +196,47 @@ namespace saga
         bool repeat_ = true;
     };
 
+    class selection_ranking
+    {
+    public:
+        template <class Container, class Compare>
+        std::discrete_distribution<typename Container::difference_type>
+        build_distribution(Container const & obj_values, Compare cmp) const
+        {
+            using Value = typename Container::value_type;
+            using Distribution = std::discrete_distribution<typename Container::difference_type>;
+
+            auto cmp_tr = [&cmp](Value const & x, Value const & y)
+            {
+                return cmp(y, x);
+            };
+
+            std::map<Value, int, decltype(cmp_tr)> fs(std::move(cmp_tr));
+            for(auto const & value : obj_values)
+            {
+                fs[value] += 1;
+            }
+
+            int N_cur = 0;
+            for(auto & f : fs)
+            {
+                auto N_prev = N_cur;
+                N_cur += f.second;
+                f.second = (N_cur + N_prev + 1);
+            }
+
+            std::vector<double> ws;
+            for(auto const & value : obj_values)
+            {
+                ws.push_back(fs.at(value));
+            }
+
+            assert(ws.size() == obj_values.size());
+
+            return Distribution(ws.begin(), ws.end());
+        }
+    };
+
     class ga_boolean_crossover_uniform_fn
     {
     public:
@@ -356,17 +398,10 @@ namespace saga
             std::transform(saga::begin(population), saga::end(population),
                            std::back_inserter(obj_values), problem.objective);
 
-            // Селекция и Скрещивание
+            // Репродукция: селекция, скрещивание, нормальная мутация
             std::vector<Genotype> kids;
             kids.reserve(settings.population_size);
 
-            // Элитизм
-            auto const best = std::min_element(saga::begin(obj_values), saga::end(obj_values),
-                                               problem.compare)
-                            - saga::begin(obj_values);
-            kids.push_back(population[best]);
-
-            // Репродукция: селекция, скрещивание, нормальная мутация
             auto s_distr = settings.selection.build_distribution(obj_values, problem.compare);
 
             for(; kids.size() < static_cast<std::size_t>(settings.population_size); )
@@ -374,8 +409,8 @@ namespace saga
                 auto const par_1 = s_distr(rnd);
                 auto const par_2 = s_distr(rnd);
 
-                assert(0 <= par_1 && par_1 < population.size());
-                assert(0 <= par_2 && par_2 < population.size());
+                assert(0 <= par_1 && static_cast<std::size_t>(par_1) < population.size());
+                assert(0 <= par_2 && static_cast<std::size_t>(par_2) < population.size());
 
                 auto kid = settings.crossover(population[par_1], population[par_2], rnd);
                 saga::ga_boolean_mutation(kid, p_mutation, rnd);
