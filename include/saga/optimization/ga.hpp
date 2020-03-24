@@ -237,6 +237,43 @@ namespace saga
         }
     };
 
+    class selection_proportional
+    {
+    public:
+        template <class Container, class Compare>
+        std::discrete_distribution<typename Container::difference_type>
+        build_distribution(Container const & obj_values, Compare cmp) const
+        {
+            assert(obj_values.empty() == false);
+
+            auto const extr
+                = std::minmax_element(obj_values.begin(), obj_values.end(), std::move(cmp));
+
+            std::vector<double> weights;
+            weights.reserve(obj_values.size());
+
+            for(auto const & value : obj_values)
+            {
+                auto p = static_cast<double>(*extr.second - value) / (*extr.second - *extr.first);
+                weights.push_back(std::move(p));
+            }
+
+            assert(weights.size() == obj_values.size());
+            for(auto const & w : weights)
+            {
+                assert(w >= 0);
+            }
+            assert(std::accumulate(weights.begin(), weights.end(), 0.0) > 0.0);
+
+            using Distribution = std::discrete_distribution<typename Container::difference_type>;
+
+            return Distribution(weights.begin(), weights.end());
+        }
+
+    private:
+        double alpha_ = 2.0;
+    };
+
     class ga_boolean_crossover_uniform_fn
     {
     public:
@@ -401,6 +438,11 @@ namespace saga
             // Репродукция: селекция, скрещивание, нормальная мутация
             std::vector<Genotype> kids;
             kids.reserve(settings.population_size);
+
+            auto const best = std::min_element(saga::begin(obj_values), saga::end(obj_values),
+                                               problem.compare)
+                            - saga::begin(obj_values);
+            kids.push_back(population[best]);
 
             auto s_distr = settings.selection.build_distribution(obj_values, problem.compare);
 
