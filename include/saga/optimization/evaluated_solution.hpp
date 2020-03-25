@@ -27,6 +27,12 @@ namespace saga
     template <class Solution, class ObjectiveValue>
     struct evaluated_solution
     {
+    public:
+        // Типы
+        using solution_type = Solution;
+        using objective_value_type = ObjectiveValue;
+
+        // Значения
         Solution solution;
         ObjectiveValue objective_value;
     };

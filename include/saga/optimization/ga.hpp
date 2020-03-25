@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Функциональность, связанная с генетическими алгоритмами
 */
 
+#include <saga/optimization/evaluated_solution.hpp>
 #include <saga/optimization/optimization_problem.hpp>
 #include <saga/math/probability.hpp>
 #include <saga/random/iid_distribution.hpp>
@@ -35,13 +36,15 @@ namespace saga
     @param population контейнер, используемый для хранения популяции
     @param population_size требуемый размер начальной популяции
     @param dim размерность (число генов в генотипе)
+    @param objective целевая функция
     @param rnd_engine генератор равномерно распределённых битов, используемый для порождения
     псевдо-случайных чисел
     */
-    template <class Container, class Size, class UniformRandomBitGenerator>
+    template <class Container, class Size, class Objective, class UniformRandomBitGenerator>
     void ga_boolen_initialize_population(Container & population,
                                          typename Container::difference_type const population_size,
                                          Size const dim,
+                                         Objective objective,
                                          UniformRandomBitGenerator & rnd_engine)
     {
         assert(population_size >= 0);
@@ -49,9 +52,18 @@ namespace saga
 
         auto const pop_size = static_cast<typename Container::size_type>(population_size);
 
-        saga::iid_distribution<std::bernoulli_distribution, typename Container::value_type>
-            distr(dim);
-        auto gen = [&] { return distr(rnd_engine); };
+        using Individual = typename Container::value_type;
+        using Genotype = typename Individual::solution_type;
+
+        saga::iid_distribution<std::bernoulli_distribution, Genotype> distr(dim);
+
+        auto gen = [&]
+        {
+            auto x = distr(rnd_engine);
+            auto y = objective(x);
+
+            return Individual{std::move(x), std::move(y)};
+        };
 
         population.reserve(pop_size);
 
@@ -421,28 +433,34 @@ namespace saga
             = ::saga::mutation_probability(settings.mutation_strength, problem.dimension);
 
         // Инициализация
-        std::vector<Genotype> population;
+        using Individual = saga::evaluated_solution<Genotype, double>;
+        std::vector<Individual> population;
 
         saga::ga_boolen_initialize_population(population, settings.population_size,
-                                              problem.dimension, rnd);
+                                              problem.dimension, problem.objective, rnd);
+
+        auto const cmp = [&](Individual const & x, Individual const & y)
+        {
+            return problem.compare(x.objective_value, y.objective_value);
+        };
 
         for(auto n = settings.max_iterations; n > 0; -- n)
         {
-            // Оценка
+            // Репродукция: селекция, скрещивание, нормальная мутация
+            std::vector<Individual> kids;
+            kids.reserve(settings.population_size);
+
+            auto const best = std::min_element(saga::begin(population), saga::end(population), cmp);
+            kids.push_back(*best);
+
+            // @todo Обойтись без копирования
             std::vector<double> obj_values;
             obj_values.reserve(settings.population_size);
 
-            std::transform(saga::begin(population), saga::end(population),
-                           std::back_inserter(obj_values), problem.objective);
-
-            // Репродукция: селекция, скрещивание, нормальная мутация
-            std::vector<Genotype> kids;
-            kids.reserve(settings.population_size);
-
-            auto const best = std::min_element(saga::begin(obj_values), saga::end(obj_values),
-                                               problem.compare)
-                            - saga::begin(obj_values);
-            kids.push_back(population[best]);
+            for(auto const & each : population)
+            {
+                obj_values.push_back(each.objective_value);
+            }
 
             auto s_distr = settings.selection.build_distribution(obj_values, problem.compare);
 
@@ -454,9 +472,12 @@ namespace saga
                 assert(0 <= par_1 && static_cast<std::size_t>(par_1) < population.size());
                 assert(0 <= par_2 && static_cast<std::size_t>(par_2) < population.size());
 
-                auto kid = settings.crossover(population[par_1], population[par_2], rnd);
+                auto kid = settings.crossover(population[par_1].solution,
+                                              population[par_2].solution, rnd);
                 saga::ga_boolean_mutation(kid, p_mutation, rnd);
-                kids.push_back(std::move(kid));
+                auto obj_value = problem.objective(kid);
+
+                kids.push_back(Individual{std::move(kid), std::move(obj_value)});
             }
 
             assert(kids.size() == population.size());

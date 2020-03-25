@@ -15,42 +15,26 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
+#include <saga/cpp20/span.hpp>
 #include <saga/optimization/ga.hpp>
+#include <saga/optimization/test_objectives.hpp>
 
 #include <catch/catch.hpp>
 
 #include "../random_engine.hpp"
 #include <valarray>
 
-TEST_CASE("GA pseudoboolean : initializing population")
-{
-    auto const dim = 20;
-
-    auto const population_size = 100;
-
-    using Genotype = std::valarray<bool>;
-
-    for(auto n = 0; n < 2*population_size; n += population_size / 3)
-    {
-        std::vector<Genotype> population(n);
-
-        saga::ga_boolen_initialize_population(population, population_size, dim,
-                                              saga_test::random_engine());
-
-        REQUIRE(population.size() == population_size);
-
-        for(auto const & each : population)
-        {
-            REQUIRE(each.size() == dim);
-        }
-    }
-}
-
-#include <saga/cpp20/span.hpp>
-#include <saga/optimization/test_objectives.hpp>
-
 namespace
 {
+    struct compare_by_objective_value
+    {
+        template <class Individual>
+        bool operator()(Individual const & x, Individual const & y) const
+        {
+            return x.objective_value < y.objective_value;
+        }
+    };
+
     template <class Crossover, class Selection>
     void test_ga_boolean_manhattan_distance_min(Selection selection)
     {
@@ -60,7 +44,7 @@ namespace
         saga::iid_distribution<std::bernoulli_distribution, Argument> init_distr(dim);
 
         auto const x_opt = init_distr(saga_test::random_engine());
-        auto const objective = [&x_opt](Argument const & arg)
+        auto const objective = [&x_opt](Argument const & arg) -> double
         {
             return saga::boolean_manhattan_distance(arg, x_opt);
         };
@@ -76,20 +60,14 @@ namespace
         auto const population
             = saga::genetic_algorithm(problem, settings, saga_test::random_engine());
 
-        std::vector<double> obj_values;
-        obj_values.reserve(settings.population_size);
-
-        std::transform(saga::begin(population), saga::end(population),
-                       std::back_inserter(obj_values), objective);
-
-        auto const best = std::min_element(obj_values.begin(), obj_values.end())
-                        - obj_values.begin();
+        auto const best = std::min_element(population.begin(), population.end(),
+                                           ::compare_by_objective_value{});
 
         CAPTURE(x_opt);
-        CAPTURE(population[best]);
-        CAPTURE(obj_values[best]);
+        CAPTURE(best->solution);
+        CAPTURE(best->objective_value);
 
-        REQUIRE(saga::equal(saga::cursor::all(population[best]), saga::cursor::all(x_opt)));
+        REQUIRE(saga::equal(saga::cursor::all(best->solution), saga::cursor::all(x_opt)));
     }
 
     template <class Crossover, class Selection>
@@ -101,7 +79,7 @@ namespace
         saga::iid_distribution<std::bernoulli_distribution, Argument> init_distr(dim);
 
         auto const x_opt = init_distr(saga_test::random_engine());
-        auto const objective = [&x_opt](Argument const & arg)
+        auto const objective = [&x_opt](Argument const & arg) -> double
         {
             return arg.size() - saga::boolean_manhattan_distance(arg, x_opt);
         };
@@ -118,20 +96,14 @@ namespace
         auto const population
             = saga::genetic_algorithm(problem, settings, saga_test::random_engine());
 
-        std::vector<double> obj_values;
-        obj_values.reserve(settings.population_size);
-
-        std::transform(saga::begin(population), saga::end(population),
-                       std::back_inserter(obj_values), objective);
-
-        auto const best = std::max_element(obj_values.begin(), obj_values.end())
-                        - obj_values.begin();
+        auto const best = std::max_element(population.begin(), population.end(),
+                                           ::compare_by_objective_value{});
 
         CAPTURE(x_opt);
-        CAPTURE(population[best]);
-        CAPTURE(obj_values[best]);
+        CAPTURE(best->solution);
+        CAPTURE(best->objective_value);
 
-        REQUIRE(saga::equal(saga::cursor::all(population[best]), saga::cursor::all(x_opt)));
+        REQUIRE(saga::equal(saga::cursor::all(best->solution), saga::cursor::all(x_opt)));
     }
 }
 
