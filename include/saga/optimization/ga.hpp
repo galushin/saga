@@ -415,6 +415,21 @@ namespace saga
         double mutation_strength = 1.0;
         Crossover crossover{};
         Selection selection{};
+
+        template <class Population, class Compare>
+        void change_generation(Population & parents, Population & kids, Compare cmp) const
+        {
+            assert(kids.size() == parents.size());
+
+            auto elite_pos = std::min_element(saga::begin(parents), saga::end(parents), cmp);
+            kids.push_back(std::move(*elite_pos));
+
+            auto worst_pos = std::max_element(saga::begin(kids), saga::end(kids), cmp);
+            *worst_pos = std::move(kids.back());
+            kids.pop_back();
+
+            parents.swap(kids);
+        }
     };
 
     auto mutation_probability(double mutation_strength, int genes_count)
@@ -446,13 +461,7 @@ namespace saga
 
         for(auto n = settings.max_iterations; n > 0; -- n)
         {
-            // Репродукция: селекция, скрещивание, нормальная мутация
-            std::vector<Individual> kids;
-            kids.reserve(settings.population_size);
-
-            auto const best = std::min_element(saga::begin(population), saga::end(population), cmp);
-            kids.push_back(*best);
-
+            // Построение распределения для селекции
             // @todo Обойтись без копирования
             std::vector<double> obj_values;
             obj_values.reserve(settings.population_size);
@@ -463,6 +472,10 @@ namespace saga
             }
 
             auto s_distr = settings.selection.build_distribution(obj_values, problem.compare);
+
+            // Репродукция: селекция, скрещивание, нормальная мутация
+            std::vector<Individual> kids;
+            kids.reserve(settings.population_size);
 
             for(; kids.size() < static_cast<std::size_t>(settings.population_size); )
             {
@@ -483,7 +496,9 @@ namespace saga
             assert(kids.size() == population.size());
 
             // Смена поколений
-            population.swap(kids);
+            settings.change_generation(population, kids, cmp);
+
+            assert(population.size() == settings.population_size);
         }
 
         return population;
