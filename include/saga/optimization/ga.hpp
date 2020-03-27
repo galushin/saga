@@ -421,10 +421,16 @@ namespace saga
         {
             assert(kids.size() == parents.size());
 
-            auto elite_pos = std::min_element(saga::begin(parents), saga::end(parents), cmp);
+            using Individual = typename Population::value_type;
+            auto const cmp_individ = [&](Individual const & x, Individual const & y)
+            {
+                return cmp(x.objective_value, y.objective_value);
+            };
+
+            auto elite_pos = std::min_element(saga::begin(parents), saga::end(parents), cmp_individ);
             kids.push_back(std::move(*elite_pos));
 
-            auto worst_pos = std::max_element(saga::begin(kids), saga::end(kids), cmp);
+            auto worst_pos = std::max_element(saga::begin(kids), saga::end(kids), cmp_individ);
             *worst_pos = std::move(kids.back());
             kids.pop_back();
 
@@ -438,14 +444,59 @@ namespace saga
         return saga::probability<double>{avg_mutant_genes / genes_count};
     }
 
+    template <class Population, class Problem, class GA_settings, class UniformRandomBitGegerator>
+    void genetic_algorithm_cycle(Population & population,
+                                 Problem const & problem, GA_settings const & settings,
+                                 UniformRandomBitGegerator & rnd )
+    {
+        using Individual = typename Population::value_type;
+
+        // Построение распределения для селекции
+        // @todo Обойтись без копирования
+        std::vector<double> obj_values;
+        obj_values.reserve(settings.population_size);
+
+        std::transform(population.begin(), population.end(), std::back_inserter(obj_values),
+                       std::mem_fn(&Individual::objective_value));
+
+        auto s_distr = settings.selection.build_distribution(obj_values, problem.compare);
+
+        // Репродукция: селекция, скрещивание, нормальная мутация
+        auto const p_mutation
+            = ::saga::mutation_probability(settings.mutation_strength, problem.dimension);
+
+        std::vector<Individual> kids;
+        kids.reserve(settings.population_size);
+
+        for(auto n = settings.population_size; n > 0; -- n)
+        {
+            auto const par_1 = s_distr(rnd);
+            auto const par_2 = s_distr(rnd);
+
+            assert(0 <= par_1 && static_cast<std::size_t>(par_1) < population.size());
+            assert(0 <= par_2 && static_cast<std::size_t>(par_2) < population.size());
+
+            auto kid = settings.crossover(population[par_1].solution,
+                                          population[par_2].solution, rnd);
+            saga::ga_boolean_mutation(kid, p_mutation, rnd);
+            auto obj_value = problem.objective(kid);
+
+            kids.push_back(Individual{std::move(kid), std::move(obj_value)});
+        }
+
+        assert(kids.size() == population.size());
+
+        // Смена поколений
+        settings.change_generation(population, kids, problem.compare);
+
+        assert(population.size() == static_cast<std::size_t>(settings.population_size));
+    }
+
     template <class Problem, class GA_settings, class UniformRandomBitGegerator>
     auto genetic_algorithm(Problem const & problem, GA_settings const & settings,
                            UniformRandomBitGegerator & rnd)
     {
         using Genotype = typename GA_settings::genotype_type;
-
-        auto const p_mutation
-            = ::saga::mutation_probability(settings.mutation_strength, problem.dimension);
 
         // Инициализация
         using Individual = saga::evaluated_solution<Genotype, double>;
@@ -454,51 +505,9 @@ namespace saga
         saga::ga_boolen_initialize_population(population, settings.population_size,
                                               problem.dimension, problem.objective, rnd);
 
-        auto const cmp = [&](Individual const & x, Individual const & y)
-        {
-            return problem.compare(x.objective_value, y.objective_value);
-        };
-
         for(auto n = settings.max_iterations; n > 0; -- n)
         {
-            // Построение распределения для селекции
-            // @todo Обойтись без копирования
-            std::vector<double> obj_values;
-            obj_values.reserve(settings.population_size);
-
-            for(auto const & each : population)
-            {
-                obj_values.push_back(each.objective_value);
-            }
-
-            auto s_distr = settings.selection.build_distribution(obj_values, problem.compare);
-
-            // Репродукция: селекция, скрещивание, нормальная мутация
-            std::vector<Individual> kids;
-            kids.reserve(settings.population_size);
-
-            for(; kids.size() < static_cast<std::size_t>(settings.population_size); )
-            {
-                auto const par_1 = s_distr(rnd);
-                auto const par_2 = s_distr(rnd);
-
-                assert(0 <= par_1 && static_cast<std::size_t>(par_1) < population.size());
-                assert(0 <= par_2 && static_cast<std::size_t>(par_2) < population.size());
-
-                auto kid = settings.crossover(population[par_1].solution,
-                                              population[par_2].solution, rnd);
-                saga::ga_boolean_mutation(kid, p_mutation, rnd);
-                auto obj_value = problem.objective(kid);
-
-                kids.push_back(Individual{std::move(kid), std::move(obj_value)});
-            }
-
-            assert(kids.size() == population.size());
-
-            // Смена поколений
-            settings.change_generation(population, kids, cmp);
-
-            assert(population.size() == settings.population_size);
+            genetic_algorithm_cycle(population, problem, settings, rnd);
         }
 
         return population;
