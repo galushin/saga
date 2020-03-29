@@ -247,12 +247,12 @@ namespace saga
             }
 
             std::vector<double> ws;
-            for(auto const & value : obj_values)
-            {
-                ws.push_back(fs.at(value));
-            }
-
-            assert(ws.size() == obj_values.size());
+            ws.reserve(obj_values.size());
+            std::transform(saga::begin(obj_values), saga::end(obj_values), std::back_inserter(ws),
+                           [&](typename Container::value_type const & value)
+                           {
+                               return fs.at(value);
+                           });
 
             return Distribution(ws.begin(), ws.end());
         }
@@ -302,16 +302,14 @@ namespace saga
                                   UniformRandomBitGenerator & rnd)
         {
             assert(gen1.size() == gen2.size());
-            auto const dim = gen1.size();
 
-            Genotype result(dim);
+            Genotype result(gen1.size());
 
             std::bernoulli_distribution distr(0.5);
 
-            for(auto i = 0*dim; i != dim; ++ i)
-            {
-                result[i] = distr(rnd) ? gen1[i] : gen2[i];
-            }
+            std::transform(saga::begin(gen1), saga::end(gen1), saga::begin(gen2),
+                           saga::begin(result),
+                           [&](bool lhs, bool rhs) { return distr(rnd) ? lhs : rhs; });
 
             return result;
         }
