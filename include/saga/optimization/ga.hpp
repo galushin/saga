@@ -115,6 +115,16 @@ namespace saga
             }
         }
 
+        // Свойства
+        result_type min() const
+        {
+            return 0;
+        }
+
+        result_type max() const
+        {
+            return this->obj_values_.size() - 1;
+        }
 
     private:
         template <class UniformRandomBitGenerator>
@@ -163,10 +173,9 @@ namespace saga
             }
             assert(selected.size() == static_cast<std::size_t>(this->tournament_));
 
-            for(auto const & x : selected)
-            {
-                assert(0 <= x && x < this->obj_values_.size());
-            }
+            assert(std::all_of(selected.begin(), selected.end(),
+                               [&](result_type const & each)
+                               { return 0 <= each && each < this->obj_values_.size(); }));
 
             auto index_cmp = [this](result_type const & x, result_type const & y)
             {
@@ -238,12 +247,12 @@ namespace saga
             }
 
             std::vector<double> ws;
-            for(auto const & value : obj_values)
-            {
-                ws.push_back(fs.at(value));
-            }
-
-            assert(ws.size() == obj_values.size());
+            ws.reserve(obj_values.size());
+            std::transform(saga::begin(obj_values), saga::end(obj_values), std::back_inserter(ws),
+                           [&](typename Container::value_type const & value)
+                           {
+                               return fs.at(value);
+                           });
 
             return Distribution(ws.begin(), ws.end());
         }
@@ -264,17 +273,16 @@ namespace saga
             std::vector<double> weights;
             weights.reserve(obj_values.size());
 
-            for(auto const & value : obj_values)
+            auto objective_value_to_weight = [&](typename Container::value_type const & obj_value)
             {
-                auto p = static_cast<double>(*extr.second - value) / (*extr.second - *extr.first);
-                weights.push_back(std::move(p));
-            }
+                return static_cast<double>(*extr.second - obj_value) / (*extr.second - *extr.first);
+            };
 
-            assert(weights.size() == obj_values.size());
-            for(auto const & w : weights)
-            {
-                assert(w >= 0);
-            }
+            std::transform(obj_values.begin(), obj_values.end(), std::back_inserter(weights),
+                           objective_value_to_weight);
+
+            assert(std::all_of(weights.begin(), weights.end(),
+                               [](double const & weight) { return weight >= 0; }));
             assert(std::accumulate(weights.begin(), weights.end(), 0.0) > 0.0);
 
             using Distribution = std::discrete_distribution<typename Container::difference_type>;
@@ -294,16 +302,14 @@ namespace saga
                                   UniformRandomBitGenerator & rnd)
         {
             assert(gen1.size() == gen2.size());
-            auto const dim = gen1.size();
 
-            Genotype result(dim);
+            Genotype result(gen1.size());
 
             std::bernoulli_distribution distr(0.5);
 
-            for(auto i = 0*dim; i != dim; ++ i)
-            {
-                result[i] = distr(rnd) ? gen1[i] : gen2[i];
-            }
+            std::transform(saga::begin(gen1), saga::end(gen1), saga::begin(gen2),
+                           saga::begin(result),
+                           [&](bool lhs, bool rhs) { return distr(rnd) ? lhs : rhs; });
 
             return result;
         }
@@ -449,6 +455,11 @@ namespace saga
                                  Problem const & problem, GA_settings const & settings,
                                  UniformRandomBitGegerator & rnd )
     {
+        if(population.empty())
+        {
+            return;
+        }
+
         using Individual = typename Population::value_type;
 
         // Построение распределения для селекции
@@ -468,23 +479,22 @@ namespace saga
         std::vector<Individual> kids;
         kids.reserve(settings.population_size);
 
-        for(auto n = settings.population_size; n > 0; -- n)
-        {
-            auto const par_1 = s_distr(rnd);
-            auto const par_2 = s_distr(rnd);
+        assert(s_distr.min() == 0);
+        assert(static_cast<std::size_t>(s_distr.max()+1) == population.size());
 
-            assert(0 <= par_1 && static_cast<std::size_t>(par_1) < population.size());
-            assert(0 <= par_2 && static_cast<std::size_t>(par_2) < population.size());
+        std::generate_n(std::back_inserter(kids), settings.population_size,
+                        [&]()
+                        {
+                            auto const par_1 = s_distr(rnd);
+                            auto const par_2 = s_distr(rnd);
 
-            auto kid = settings.crossover(population[par_1].solution,
-                                          population[par_2].solution, rnd);
-            saga::ga_boolean_mutation(kid, p_mutation, rnd);
-            auto obj_value = problem.objective(kid);
+                            auto kid = settings.crossover(population[par_1].solution,
+                                                          population[par_2].solution, rnd);
+                            saga::ga_boolean_mutation(kid, p_mutation, rnd);
+                            auto obj_value = problem.objective(kid);
 
-            kids.push_back(Individual{std::move(kid), std::move(obj_value)});
-        }
-
-        assert(kids.size() == population.size());
+                            return Individual{std::move(kid), std::move(obj_value)};
+                        });
 
         // Смена поколений
         settings.change_generation(population, kids, problem.compare);
