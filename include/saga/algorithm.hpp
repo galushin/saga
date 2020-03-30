@@ -96,13 +96,13 @@ namespace saga
 
     namespace
     {
-        constexpr auto const count = detail::static_empty_const<count_fn>::value;
+        constexpr auto const & count = detail::static_empty_const<count_fn>::value;
 
-        constexpr auto const generate = detail::static_empty_const<generate_fn>::value;
+        constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
 
-        constexpr auto const equal = detail::static_empty_const<equal_fn>::value;
+        constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
 
-        constexpr auto const lexicographical_compare
+        constexpr auto const & lexicographical_compare
             = detail::static_empty_const<lexicographical_compare_fn>::value;
     }
 }

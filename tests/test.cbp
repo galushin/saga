@@ -49,6 +49,7 @@
 		<Unit filename="../include/saga/optimization/test_objectives.hpp" />
 		<Unit filename="../include/saga/random/iid_distribution.hpp" />
 		<Unit filename="../include/saga/type_traits.hpp" />
+		<Unit filename="../include/saga/view/indices.hpp" />
 		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
 		<Unit filename="cpp20/span.cpp" />
 		<Unit filename="main.cpp" />
@@ -58,6 +59,7 @@
 		<Unit filename="random/iid_distribution.cpp" />
 		<Unit filename="random_engine.cpp" />
 		<Unit filename="random_engine.hpp" />
+		<Unit filename="view/indices.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>
