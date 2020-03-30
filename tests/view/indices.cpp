@@ -15,67 +15,46 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_ITERATOR_HPP_INCLUDED
-#define Z_SAGA_ITERATOR_HPP_INCLUDED
+#include <saga/view/indices.hpp>
 
-/** @file saga/iterator.hpp
- @brief Функциональность, связанная с итераторома
-*/
+#include <catch/catch.hpp>
 
-#include <iterator>
-#include <saga/detail/static_empty_const.hpp>
+#include <saga/iterator.hpp>
 
-namespace saga
+TEST_CASE("range-for with indices")
 {
-namespace detail
-{
-    struct begin_fn
+    using Container = std::vector<int>;
+    Container xs(25, -13);
+
+    using Index = Container::difference_type;
+
+    std::vector<Index> ins_obj(xs.size());
+    std::iota(ins_obj.begin(), ins_obj.end(), Index(0));
+
+    std::vector<Index> ins;
+    for(auto const & i : saga::view::indices_of(xs))
     {
-        template <class Range>
-        auto operator()(Range && rng) const
-        {
-            using std::begin;
-            return begin(std::forward<Range>(rng));
-        }
-    };
-
-    struct end_fn
-    {
-        template <class Range>
-        auto operator()(Range && rng) const
-        {
-            using std::end;
-            return end(std::forward<Range>(rng));
-        }
-    };
-
-    struct size_fn
-    {
-        template <class SizedRange>
-        auto operator()(SizedRange const & sr) const
-        -> decltype(sr.size())
-        {
-            return sr.size();
-        }
-
-        template <class T, std::size_t N>
-        std::size_t operator()(const T(&arr)[N]) const noexcept
-        {
-            return N;
-        }
-    };
-}
-// namespace detail
-
-    namespace
-    {
-        constexpr auto const & begin = detail::static_empty_const<detail::begin_fn>::value;
-        constexpr auto const & end = detail::static_empty_const<detail::end_fn>::value;
-
-        constexpr auto const & size = detail::static_empty_const<detail::size_fn>::value;
+        ins.push_back(i);
     }
-}
-// namespace saga
 
-#endif
-// Z_SAGA_ITERATOR_HPP_INCLUDED
+    CHECK(ins == ins_obj);
+}
+
+TEST_CASE("indices_of for arrays")
+{
+    using Container = std::vector<int>;
+    int xs [] = {1, 3, 7, 15};
+
+    using Index = Container::difference_type;
+
+    std::vector<Index> ins_obj(saga::size(xs));
+    std::iota(ins_obj.begin(), ins_obj.end(), Index(0));
+
+    std::vector<Index> ins;
+    for(auto const & i : saga::view::indices_of(xs))
+    {
+        ins.push_back(i);
+    }
+
+    CHECK(ins == ins_obj);
+}
