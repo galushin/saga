@@ -18,6 +18,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/math/probability.hpp>
 
 #include <catch/catch.hpp>
+#include "../saga_test.hpp"
 
 TEST_CASE("probabilty : default initialization")
 {
@@ -30,19 +31,37 @@ TEST_CASE("probabilty : default initialization")
 
 TEST_CASE("probabilty : initialization with correct value")
 {
-    // @todo Тест на основе свойств
-    auto const p_value = 0.7;
+    auto property = [](double p_value)
+    {
+        using Probability = saga::probability<double, saga::probability_policy_throw>;
 
-    saga::probability<double> p(p_value);
+        p_value = std::abs(std::sin(p_value));
 
-    REQUIRE_THAT(p.value(), Catch::WithinULP(p_value, 1));
+        Probability p(p_value);
+
+        REQUIRE_THAT(p.value(), Catch::WithinULP(p_value, 1));
+    };
+
+    saga_test::check_property(property);
 }
 
-TEST_CASE("probabilty : initialization with incorrect value")
+TEST_CASE("probabilty : throw on incorrect value")
 {
-    // @todo Тест на основе свойств
-    using Probability = saga::probability<double, saga::probability_policy_throw>;
+    auto property = [](double p_value)
+    {
+        using Probability = saga::probability<double, saga::probability_policy_throw>;
 
-    CHECK_THROWS_AS(Probability(-0.1), std::logic_error);
-    CHECK_THROWS_AS(Probability(1.1), std::logic_error);
+        if(0.0 <= p_value && p_value <= 1.0)
+        {
+            Probability p(p_value);
+
+            REQUIRE_THAT(p.value(), Catch::WithinULP(p_value, 1));
+        }
+        else
+        {
+            CHECK_THROWS_AS(Probability(p_value), std::logic_error);
+        }
+    };
+
+    saga_test::check_property(property);
 }

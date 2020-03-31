@@ -59,6 +59,7 @@
 		<Unit filename="random/iid_distribution.cpp" />
 		<Unit filename="random_engine.cpp" />
 		<Unit filename="random_engine.hpp" />
+		<Unit filename="saga_test.hpp" />
 		<Unit filename="view/indices.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
