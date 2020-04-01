@@ -25,6 +25,13 @@ namespace saga_test
     using random_engine_type = std::mt19937;
 
     random_engine_type & random_engine();
+
+    template <class IntType, std::enable_if_t<std::is_integral<IntType>::value, std::nullptr_t> = nullptr>
+    IntType random_uniform(IntType lower, IntType upper)
+    {
+         std::uniform_int_distribution<IntType> distr(std::move(lower), std::move(upper));
+         return distr(saga_test::random_engine());
+    }
 }
 // namespace saga_test
 

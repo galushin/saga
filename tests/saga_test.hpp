@@ -21,6 +21,7 @@ SAGA -- это свободной программное обеспечение:
 #include "random_engine.hpp"
 #include <saga/detail/static_empty_const.hpp>
 
+#include <tuple>
 #include <type_traits>
 
 namespace saga_test
@@ -109,7 +110,12 @@ namespace saga_test
             {
                 assert(generation >= 0);
 
-                if(generation == 0)
+                using Size = typename Container::size_type;
+                std::uniform_int_distribution<Size> distr(0, generation);
+
+                auto const num = distr(urbg);
+
+                if(num == 0)
                 {
                     return {};
                 }
@@ -117,12 +123,9 @@ namespace saga_test
                 // @todo Через generate_iterator?
                 value_type result;
 
-                using Size = typename Container::size_type;
                 using Element = typename Container::value_type;
 
-                std::uniform_int_distribution<Size> distr(0, generation);
-
-                std::generate_n(std::back_inserter(result), generation,
+                std::generate_n(std::back_inserter(result), num,
                                 [&](){ return arbitrary<Element>::generate(distr(urbg), urbg); });
 
                 return result;
@@ -152,19 +155,48 @@ namespace saga_test
      : detail::arbitrary_container<std::vector<T, A>>
     {};
 
+    template <class... Types>
+    struct arbitrary<std::tuple<Types...>>
+    {
+    public:
+        using value_type = std::tuple<Types...>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            return std::make_tuple(arbitrary<Types>::generate(std::move(generation), urbg)...);
+        }
+    };
+
     namespace detail
     {
-        template <class Arg>
-        void check_property(void(*property)(Arg))
+        template <class F, class Tuple, std::size_t... Indices>
+        void apply_impl(F&& f, Tuple&& t, std::index_sequence<Indices...>)
+        {
+            return std::forward<F>(f)(std::get<Indices>(std::forward<Tuple>(t))...);
+        }
+
+        template <class F, class Tuple>
+        void apply(F&& f, Tuple&& t)
+        {
+            constexpr auto const n = std::tuple_size<std::remove_reference_t<Tuple>>::value;
+
+            return saga_test::detail::apply_impl(std::forward<F>(f), std::forward<Tuple>(t),
+                                                 std::make_index_sequence<n>{});
+        }
+
+        template <class... Args>
+        void check_property(void(*property)(Args...))
         {
             // @todo Возможность настраивать это значение
             auto const max_generation = generation_t{100};
 
-            using Value = std::remove_cv_t<std::remove_reference_t<Arg>>;
+            using Value = std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...>;
 
             for(auto gen = generation_t{0}; gen < max_generation; ++ gen)
             {
-                property(saga_test::arbitrary<Value>::generate(gen, saga_test::random_engine()));
+                auto args = saga_test::arbitrary<Value>::generate(gen, saga_test::random_engine());
+                ::saga_test::detail::apply(property, std::move(args));
             }
         }
 

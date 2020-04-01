@@ -297,8 +297,7 @@ TEST_CASE("span : first and last")
     {
         saga::span<Element const> const s(src);
 
-        auto const n
-            = std::uniform_int_distribution<std::size_t>(0, s.size())(saga_test::random_engine());
+        auto const n = saga_test::random_uniform(0*s.size(), s.size());
 
         auto const s1 = s.first(n);
         auto const s2 = s.last(n);
@@ -317,29 +316,44 @@ TEST_CASE("span : subspan")
 {
     using Element = int;
 
-    std::vector<Element> const src{1, 2, 3, 5, 8, 13};
+    saga_test::property_checker
+    << [](std::vector<Element> const & src)
+    {
+        saga::span<Element const> const s_all(src);
 
-    saga::span<Element const> const s(src);
+        auto const offset = saga_test::random_uniform(0*s_all.size(), s_all.size());
 
-    auto const n = src.size() / 2;
-    auto const offset = 2;
+        auto const s_part = s_all.subspan(offset, saga::dynamic_extent);
+        static_assert(std::is_same<decltype(s_part), decltype(s_all)>::value, "");
 
-    auto const s1 = s.subspan(offset, n);
+        REQUIRE(s_part.size() == s_all.size() - offset);
+        REQUIRE(s_part.data() == s_all.data() + offset);
+    }
+    << [](std::vector<Element> const & src)
+    {
+        saga::span<Element const> const s_all(src);
 
-    static_assert(std::is_same<decltype(s1), saga::span<Element const> const>::value, "");
+        auto const offset = saga_test::random_uniform(0*s_all.size(), s_all.size());
 
-    REQUIRE(s1.size() == n);
-    REQUIRE(s1.data() == s.data() + offset);
+        auto const s_part = s_all.subspan(offset);
+        static_assert(std::is_same<decltype(s_part), decltype(s_all)>::value, "");
 
-    auto const s2 = s.subspan(offset, saga::dynamic_extent);
+        REQUIRE(s_part.size() == s_all.size() - offset);
+        REQUIRE(s_part.data() == s_all.data() + offset);
+    }
+    << [](std::vector<Element> const & src)
+    {
+        saga::span<Element const> const s_all(src);
 
-    REQUIRE(s2.size() == s.size() - offset);
-    REQUIRE(s2.data() == s.data() + offset);
+        auto const offset = saga_test::random_uniform(0*s_all.size(), s_all.size());
+        auto const num = saga_test::random_uniform(0*s_all.size(), s_all.size() - offset);
 
-    auto const s3 = s.subspan(offset);
+        auto const s_part = s_all.subspan(offset, num);
+        static_assert(std::is_same<decltype(s_part), decltype(s_all)>::value, "");
 
-    REQUIRE(s3.size() == s.size() - offset);
-    REQUIRE(s3.data() == s.data() + offset);
+        REQUIRE(s_part.size() == num);
+        REQUIRE(s_part.data() == s_all.data() + offset);
+    };
 }
 
 // Свойства (observers): проверяются в предыдущих тестах
@@ -348,21 +362,23 @@ TEST_CASE("span : subspan")
 // data проверяется в предыдущих тестах, operator() исключён в p1024r2
 TEST_CASE("span : operator []")
 {
-     using Element = int;
+    using Element = int;
 
-    std::vector<Element> src{1, 2, 3, 5, 8, 13};
-
-    saga::span<Element> const s(src);
-
-    static_assert(std::is_same<decltype(s[0]), Element &>::value, "");
-
-    REQUIRE(s.size() == src.size());
-
-    for(auto const & i : saga::view::indices_of(src))
+    saga_test::property_checker
+    << [](std::vector<Element> src)
     {
-        REQUIRE(s[i] == src[i]);
-        REQUIRE(std::addressof(s[i]) == std::addressof(src[i]));
-    }
+        saga::span<Element> const s(src);
+
+        static_assert(std::is_same<decltype(s[0]), Element &>::value, "");
+
+        REQUIRE(s.size() == src.size());
+
+        for(auto const & i : saga::view::indices_of(src))
+        {
+            REQUIRE(s[i] == src[i]);
+            REQUIRE(std::addressof(s[i]) == std::addressof(src[i]));
+        }
+    };
 }
 
 // Итераторы
@@ -399,79 +415,77 @@ TEST_CASE("span : iterators of empty")
 TEST_CASE("span : iterators of not-empty")
 {
     using Element = int;
-    std::vector<Element> src{1, 2, 3, 5, 8, 13};
+    saga_test::property_checker
+    << [](std::vector<Element> src)
+    {
+        using Span = saga::span<Element>;
+        Span const s(src);
 
-    using Span = saga::span<Element>;
-    Span const s(src);
+        REQUIRE(std::addressof(*s.begin()) == std::addressof(src.front()));
+        REQUIRE(std::addressof(*s.cbegin()) == std::addressof(src.front()));
+        REQUIRE(std::addressof(*s.rbegin()) == std::addressof(src.back()));
+        REQUIRE(std::addressof(*s.crbegin()) == std::addressof(src.back()));
 
-    REQUIRE(std::addressof(*s.begin()) == std::addressof(src.front()));
-    REQUIRE(std::addressof(*s.cbegin()) == std::addressof(src.front()));
-    REQUIRE(std::addressof(*s.rbegin()) == std::addressof(src.back()));
-    REQUIRE(std::addressof(*s.crbegin()) == std::addressof(src.back()));
+        REQUIRE(s.rbegin() == Span::reverse_iterator(s.end()));
+        REQUIRE(s.rend() == Span::reverse_iterator(s.begin()));
+        REQUIRE(s.crbegin() == Span::const_reverse_iterator(s.cend()));
+        REQUIRE(s.crend() == Span::const_reverse_iterator(s.cbegin()));
 
-    REQUIRE(s.rbegin() == Span::reverse_iterator(s.end()));
-    REQUIRE(s.rend() == Span::reverse_iterator(s.begin()));
-    REQUIRE(s.crbegin() == Span::const_reverse_iterator(s.cend()));
-    REQUIRE(s.crend() == Span::const_reverse_iterator(s.cbegin()));
-
-    REQUIRE(s.end() == s.begin() + s.size());
-    REQUIRE(s.cend() == s.cbegin() + s.size());
-    REQUIRE(s.rend() == s.rbegin() + s.size());
-    REQUIRE(s.crend() == s.crbegin() + s.size());
+        REQUIRE(s.end() == s.begin() + s.size());
+        REQUIRE(s.cend() == s.cbegin() + s.size());
+        REQUIRE(s.rend() == s.rbegin() + s.size());
+        REQUIRE(s.crend() == s.crbegin() + s.size());
+    };
 }
 
 TEST_CASE("span : equality")
 {
     using Element = int;
-    using Span = saga::span<Element>;
 
-    Element src1 [] = {1, 2, 3, 5, 8, 13};
-    std::vector<Element> src2(saga::begin(src1), saga::end(src1));
-    std::vector<Element> src3 = src2;
-    src3[0] += 1;
+    saga_test::property_checker
+    << [](std::vector<Element> const & src1, std::vector<Element> const & src2)
+    {
+        using Span = saga::span<Element const>;
 
-    Span const s1(src1);
-    Span const s2(src2);
-    Span const s3(src3);
-    Span const s4(src2.data(), src2.size() / 2);
+        Span const s1(src1);
+        Span const s2(src2);
 
-    REQUIRE(src2 != src3);
-
-    REQUIRE(s1 == s2);
-    REQUIRE(!(s1 != s2));
-    REQUIRE(s2 == s1);
-    REQUIRE(!(s2 != s1));
-    REQUIRE(s1 != s3);
-    REQUIRE(s1 != s4);
-    REQUIRE(s2 != s3);
-    REQUIRE(s2 != s4);
+        REQUIRE((s1 == s2) == (src1 == src2));
+        REQUIRE((s1 != s2) == !(s1 == s2));
+    };
 }
 
 TEST_CASE("span : ordering")
 {
     using Element = int;
-    using Span = saga::span<Element>;
 
-    std::vector<Element> src1{1, 2, 3, 4};
-    auto src3 = src1;
+    saga_test::property_checker
+    << [](std::vector<Element> const & src1, std::vector<Element> const & src2)
+    {
+        using Span = saga::span<Element const>;
 
-    Element src2 [] = {1, 2, 3, 5, 8, 13};
+        Span const s1(src1);
+        Span const s2(src2);
 
-    Span const s1(src1);
-    Span const s2(src2);
-    auto const s2p = s2.first(4);
-    Span const s3(src3);
+        REQUIRE((s1 < s2) == (src1 < src2));
+        REQUIRE((s1 <= s2) == (src1 <= src2));
+        REQUIRE((s1 > s2) == (src1 > src2));
+        REQUIRE((s1 >= s2) == (src1 >= src2));
+    };
+}
 
-    REQUIRE(s1 < s2);
-    REQUIRE(s2p < s2);
-    REQUIRE(s1 < s2p);
+TEST_CASE("span : ordering prefix")
+{
+    using Element = int;
 
-    REQUIRE(s2 > s1);
+    saga_test::property_checker
+    << [](std::vector<Element> const & src)
+    {
+        using Span = saga::span<Element const>;
 
-    REQUIRE(s2 >= s1);
-    REQUIRE(s3 >= s1);
+        Span const s1(src);
+        auto s2 = s1.first(s1.size() / 2);
 
-    REQUIRE(s1 <= s2);
-    REQUIRE(s2p <= s2);
-    REQUIRE(s1 <= s2p);
+        REQUIRE((s2 < s1) == !src.empty());
+    };
 }
