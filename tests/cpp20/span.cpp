@@ -438,6 +438,26 @@ TEST_CASE("span : iterators of not-empty")
     };
 }
 
+TEST_CASE("span : equality (same)")
+{
+    using Element = int;
+
+    saga_test::property_checker
+    << [](std::vector<Element> const & src1)
+    {
+        auto const src2 = src1;
+        using Span = saga::span<Element const>;
+
+        Span const s1(src1);
+        Span const s2(src2);
+        REQUIRE(s1 == s1);
+        REQUIRE(s2 == s2);
+
+        REQUIRE(s1 == s2);
+        REQUIRE(!(s1 != s2));
+    };
+}
+
 TEST_CASE("span : equality")
 {
     using Element = int;
@@ -449,6 +469,9 @@ TEST_CASE("span : equality")
 
         Span const s1(src1);
         Span const s2(src2);
+
+        REQUIRE(s1 == s1);
+        REQUIRE(s2 == s2);
 
         REQUIRE((s1 == s2) == (src1 == src2));
         REQUIRE((s1 != s2) == !(s1 == s2));
@@ -463,7 +486,6 @@ TEST_CASE("span : ordering")
     << [](std::vector<Element> const & src1, std::vector<Element> const & src2)
     {
         using Span = saga::span<Element const>;
-
         Span const s1(src1);
         Span const s2(src2);
 
