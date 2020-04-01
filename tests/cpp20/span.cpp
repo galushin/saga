@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 #include <saga/view/indices.hpp>
+#include "../saga_test.hpp"
 
 // @todo Убедиться, что итераторы являются непрерывными
 
@@ -119,20 +120,24 @@ TEST_CASE("span : initialization from pointer and size")
 {
     using Element = int;
 
-    std::vector<Element> const src{1, 2, 3, 5, 8, 13};
-    auto const offset = 1;
-
-    for(auto n = 0*src.size(); n + offset <= src.size() / 2; ++ n)
+    saga_test::property_checker
+    << [](std::vector<Element> const & src)
     {
-        auto const ptr = src.data() + offset;
+        // @todo offset и n получать автоматизировано
+        auto const offset = 1;
 
-        saga::span<Element const> const s(ptr, n);
+        for(auto n = 0*src.size(); n + offset <= src.size() / 2; ++ n)
+        {
+            auto const ptr = src.data() + offset;
 
-        REQUIRE(s.empty() == (n == 0));
-        REQUIRE(s.size() == n);
-        REQUIRE(s.size_bytes() == n*sizeof(Element));
-        REQUIRE(s.data() == ptr);
-    }
+            saga::span<Element const> const s(ptr, n);
+
+            REQUIRE(s.empty() == (n == 0));
+            REQUIRE(s.size() == n);
+            REQUIRE(s.size_bytes() == n*sizeof(Element));
+            REQUIRE(s.data() == ptr);
+        }
+    };
 }
 
 TEST_CASE("span : initialization from range, defined by two pointers")
