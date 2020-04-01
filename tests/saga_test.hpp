@@ -19,6 +19,7 @@ SAGA -- это свободной программное обеспечение:
 #define Z_SAGA_TEST_HPP_INCLUDED
 
 #include "random_engine.hpp"
+#include <saga/detail/static_empty_const.hpp>
 
 #include <type_traits>
 
@@ -84,6 +85,18 @@ namespace saga_test
                 property(saga_test::arbitrary<Arg>::generate(gen, saga_test::random_engine()));
             }
         }
+
+        struct property_checker_t
+        {
+        public:
+            template <class StatelessLambda>
+            property_checker_t const &
+            operator<<(StatelessLambda lambda) const
+            {
+                ::saga_test::detail::check_property(+lambda);
+                return *this;
+            }
+        };
     }
     // namespace detail
 
@@ -91,6 +104,12 @@ namespace saga_test
     void check_property(StatelessLambda lambda)
     {
         return ::saga_test::detail::check_property(+lambda);
+    }
+
+    namespace
+    {
+        constexpr auto const & property_checker
+            = saga::detail::static_empty_const<detail::property_checker_t>::value;
     }
 }
 // namespace saga_test

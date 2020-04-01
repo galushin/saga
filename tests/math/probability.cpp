@@ -63,5 +63,5 @@ TEST_CASE("probabilty : throw on incorrect value")
         }
     };
 
-    saga_test::check_property(property);
+    saga_test::property_checker << property;
 }
