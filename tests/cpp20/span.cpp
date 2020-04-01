@@ -144,17 +144,20 @@ TEST_CASE("span : initialization from range, defined by two pointers")
 {
     using Element = int;
 
-    std::vector<Element> const src{1, 2, 3, 5, 8, 13};
+    saga_test::property_checker
+    << [](std::vector<Element> const & src)
+    {
+        auto const first = src.data() + !src.empty();
+        auto const last = src.data() + src.size() / 2;
 
-    auto const first = src.data() + 1;
-    auto const last = src.data() + src.size() / 2;
+        saga::span<Element const> const s(first, last);
 
-    saga::span<Element const> const s(first, last);
-
-    REQUIRE(s.size() == last - first);
-    REQUIRE(s.data() == first);
+        REQUIRE(s.size() == last - first);
+        REQUIRE(s.data() == first);
+    };
 }
 
+// @todo Подумать, как перевести на тестирование, основанное на свойствах
 TEST_CASE("span : initialization from C array")
 {
     using Element = int;
@@ -169,6 +172,7 @@ TEST_CASE("span : initialization from C array")
     REQUIRE(s.data() == src);
 }
 
+// @todo Подумать, как перевести на тестирование, основанное на свойствах
 TEST_CASE("span : initialization from std::array")
 {
     using Element = int;
@@ -182,6 +186,7 @@ TEST_CASE("span : initialization from std::array")
     REQUIRE(s.data() == src.data());
 }
 
+// @todo Подумать, как перевести на тестирование, основанное на свойствах
 TEST_CASE("span : initialization from const std::array")
 {
     using Element = int;
@@ -199,24 +204,28 @@ TEST_CASE("span : initialization from contiguous container (vector)")
 {
     using Element = int;
 
-    std::vector<Element> src{1, 2, 3, 5, 8, 13};
+    saga_test::property_checker
+    << [](std::vector<Element> src)
+    {
+        saga::span<Element> const s(src);
 
-    saga::span<Element const> const s(src);
-
-    REQUIRE(s.size() == src.size());
-    REQUIRE(s.data() == src.data());
+        REQUIRE(s.size() == src.size());
+        REQUIRE(s.data() == src.data());
+    };
 }
 
 TEST_CASE("span : initialization from const contiguous container (vector)")
 {
     using Element = int;
 
-    std::vector<Element> const src{1, 2, 3, 5, 8, 13};
+    saga_test::property_checker
+    << [](std::vector<Element> const src)
+    {
+        saga::span<Element const> const s(src);
 
-    saga::span<Element const> const s(src);
-
-    REQUIRE(s.size() == src.size());
-    REQUIRE(s.data() == src.data());
+        REQUIRE(s.size() == src.size());
+        REQUIRE(s.data() == src.data());
+    };
 }
 
 // @todo Конструирование на основе valarray
@@ -225,53 +234,57 @@ TEST_CASE("span : copy ctor")
 {
     using Element = int;
 
-    Element src[] = {1, 2, 3, 5, 8, 13};
+    saga_test::property_checker
+    << [](std::vector<Element> src)
+    {
+        saga::span<Element> const s1(src);
 
-    saga::span<Element> const s1(src);
+        auto const s2(s1);
 
-    auto const s2(s1);
+        static_assert(noexcept(saga::span<Element>(s1)), "");
 
-    static_assert(noexcept(saga::span<Element>(s1)), "");
-
-    REQUIRE(s2.size() == s1.size());
-    REQUIRE(s2.data() == s1.data());
+        REQUIRE(s2.size() == s1.size());
+        REQUIRE(s2.data() == s1.data());
+    };
 }
 
 TEST_CASE("span : ctor from other instantiation span")
 {
-    using Element = int;
-
-    Element src[] = {1, 2, 3, 5, 8, 13};
-
-    saga::span<Element> const s1(src);
-
-    saga::span<Element const> const s2(s1);
-
-    static_assert(noexcept(saga::span<Element const>(s1)), "");
     static_assert(!std::is_constructible<saga::span<double>, saga::span<int>>::value, "");
 
-    REQUIRE(s2.size() == s1.size());
-    REQUIRE(s2.data() == s1.data());
+    using Element = int;
+
+    saga_test::property_checker
+    << [](std::vector<Element> src)
+    {
+        saga::span<Element> const s1(src);
+
+        saga::span<Element const> const s2(s1);
+
+        static_assert(noexcept(saga::span<Element const>(s1)), "");
+
+        REQUIRE(s2.size() == s1.size());
+        REQUIRE(s2.data() == s1.data());
+    };
 }
 
 TEST_CASE("span : copy assign")
 {
     using Element = int;
 
-    Element src[] = {1, 2, 3, 5, 8, 13};
+    saga_test::property_checker
+    << [](std::vector<Element> src)
+    {
+        saga::span<Element> const s1(src);
+        saga::span<Element> s2;
 
-    saga::span<Element> const s1(src);
-    saga::span<Element> s2;
+        s2 = s1;
 
-    REQUIRE(s2.size() != s1.size());
-    REQUIRE(s2.data() != s1.data());
+        static_assert(noexcept(s2 = s1), "");
 
-    s2 = s1;
-
-    static_assert(noexcept(s2 = s1), "");
-
-    REQUIRE(s2.size() == s1.size());
-    REQUIRE(s2.data() == s1.data());
+        REQUIRE(s2.size() == s1.size());
+        REQUIRE(s2.data() == s1.data());
+    };
 }
 
 // Подинтервалы
@@ -279,21 +292,25 @@ TEST_CASE("span : first and last")
 {
     using Element = int;
 
-    std::vector<Element> const src{1, 2, 3, 5, 8, 13};
+    saga_test::property_checker
+    << [](std::vector<Element> const & src)
+    {
+        saga::span<Element const> const s(src);
 
-    saga::span<Element const> const s(src);
+        auto const n
+            = std::uniform_int_distribution<std::size_t>(0, s.size())(saga_test::random_engine());
 
-    auto const n = 3;
-    auto const s1 = s.first(n);
-    auto const s2 = s.last(n);
+        auto const s1 = s.first(n);
+        auto const s2 = s.last(n);
 
-    static_assert(std::is_same<decltype(s1), saga::span<Element const> const>::value, "");
+        static_assert(std::is_same<decltype(s1), saga::span<Element const> const>::value, "");
 
-    REQUIRE(s1.size() == n);
-    REQUIRE(s1.data() == s.data());
+        REQUIRE(s1.size() == n);
+        REQUIRE(s1.data() == s.data());
 
-    REQUIRE(s2.size() == n);
-    REQUIRE(s2.data() == s.data() + (s.size() - n));
+        REQUIRE(s2.size() == n);
+        REQUIRE(s2.data() == s.data() + (s.size() - n));
+    };
 }
 
 TEST_CASE("span : subspan")

@@ -27,8 +27,43 @@ namespace saga_test
 {
     using generation_t = int;
 
+    // @todo выводить ошибку компиляции при попытке использовать или задокументировать неполноту
+    template <class T, class SFINAE = void>
+    struct arbitrary;
+
     namespace detail
     {
+        template <class T>
+        struct arbitrary_integer
+        {
+        public:
+            using value_type = T;
+
+            template <class UniformRandomBitGenerator>
+            static T generate(generation_t generation, UniformRandomBitGenerator & urbg)
+            {
+                assert(generation >= 0);
+
+                switch(generation)
+                {
+                case 0:
+                    return value_type(0);
+
+                case 1:
+                    return std::numeric_limits<value_type>::min();
+
+                case 2:
+                    return std::numeric_limits<value_type>::max();
+
+                default:
+                    std::uniform_int_distribution<value_type>
+                        distr(std::numeric_limits<value_type>::min(),
+                              std::numeric_limits<value_type>::max());
+                    return distr(urbg);
+                }
+            }
+        };
+
         template <class T>
         struct arbitrary_real
         {
@@ -38,6 +73,8 @@ namespace saga_test
             template <class UniformRandomBitGenerator>
             static T generate(generation_t generation, UniformRandomBitGenerator & urbg)
             {
+                assert(generation >= 0);
+
                 switch(generation)
                 {
                 case 0:
@@ -60,16 +97,59 @@ namespace saga_test
                 }
             }
         };
+
+        template <class Container>
+        struct arbitrary_container
+        {
+        public:
+            using value_type = Container;
+
+            template <class UniformRandomBitGenerator>
+            static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+            {
+                assert(generation >= 0);
+
+                if(generation == 0)
+                {
+                    return {};
+                }
+
+                // @todo Через generate_iterator?
+                value_type result;
+
+                using Size = typename Container::size_type;
+                using Element = typename Container::value_type;
+
+                std::uniform_int_distribution<Size> distr(0, generation);
+
+                std::generate_n(std::back_inserter(result), generation,
+                                [&](){ return arbitrary<Element>::generate(distr(urbg), urbg); });
+
+                return result;
+            }
+        };
     }
     // namespace detail
 
-    // @todo выводить ошибку компиляции при попытке использовать или задокументировать неполноту
-    template <class T, class SFINAE = void>
-    struct arbitrary;
+    template <>
+    struct arbitrary<bool>;
+
+    template <>
+    struct arbitrary<char>;
+
+    template <class T>
+    struct arbitrary<T, std::enable_if_t<std::is_integral<T>::value>>
+     : detail::arbitrary_integer<T>
+    {};
 
     template <class T>
     struct arbitrary<T, std::enable_if_t<std::is_floating_point<T>::value>>
      : detail::arbitrary_real<T>
+    {};
+
+    template <class T, class A>
+    struct arbitrary<std::vector<T, A>>
+     : detail::arbitrary_container<std::vector<T, A>>
     {};
 
     namespace detail
@@ -80,9 +160,11 @@ namespace saga_test
             // @todo Возможность настраивать это значение
             auto const max_generation = generation_t{100};
 
+            using Value = std::remove_cv_t<std::remove_reference_t<Arg>>;
+
             for(auto gen = generation_t{0}; gen < max_generation; ++ gen)
             {
-                property(saga_test::arbitrary<Arg>::generate(gen, saga_test::random_engine()));
+                property(saga_test::arbitrary<Value>::generate(gen, saga_test::random_engine()));
             }
         }
 
