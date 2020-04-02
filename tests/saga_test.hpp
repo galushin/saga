@@ -21,6 +21,7 @@ SAGA -- это свободной программное обеспечение:
 #include "random_engine.hpp"
 #include <saga/detail/static_empty_const.hpp>
 
+#include <algorithm>
 #include <tuple>
 #include <type_traits>
 

@@ -15,14 +15,16 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#include <saga/optimization/test_objectives.hpp>
-
+// Тестируемый файл
 #include <saga/optimization/local_search.hpp>
 
+// Инфраструктура тестирования
+#include "../saga_test.hpp"
 #include <catch/catch.hpp>
 
+// Вспомогательные возможноти
+#include <saga/optimization/test_objectives.hpp>
 #include <saga/random/iid_distribution.hpp>
-#include "../random_engine.hpp"
 
 template <class Argument, class Objective, class RealType>
 void test_local_search_boolean(Objective const & objective, typename Argument::size_type dim,
@@ -67,6 +69,7 @@ bool is_local_maximum(Objective const & objective, Argument const & arg)
     return true;
 }
 
+// @todo Превратить в тест, основанный на свойстах
 TEST_CASE("local search (pseudoboolen, first improvement) : L1 norm")
 {
     using Argument = std::vector<bool>;
@@ -76,6 +79,7 @@ TEST_CASE("local search (pseudoboolen, first improvement) : L1 norm")
     test_local_search_boolean<Argument>(objective, dim, 0*dim);
 }
 
+// @todo Превратить в тест, основанный на свойстах
 TEST_CASE("local search (pseudoboolen, first improvement) : L1 distance to some vector")
 {
     using Argument = std::vector<bool>;
@@ -92,6 +96,7 @@ TEST_CASE("local search (pseudoboolen, first improvement) : L1 distance to some 
     test_local_search_boolean<Argument>(objective, dim, 0*dim);
 }
 
+// @todo Превратить в тест, основанный на свойстах
 TEST_CASE("local search (pseudoboolean, first improvement): number of unequal adjacent bits")
 {
     auto const objective = saga::count_adjacent_unequal;
@@ -112,6 +117,7 @@ TEST_CASE("local search (pseudoboolean, first improvement): number of unequal ad
     }
 }
 
+// @todo Превратить в тест, основанный на свойстах
 TEST_CASE("local search (pseudoboolean, first improvement): number of unequal adjacent bits, mask")
 {
     using Argument = std::vector<bool>;
