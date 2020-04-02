@@ -123,20 +123,16 @@ TEST_CASE("span : initialization from pointer and size")
     saga_test::property_checker
     << [](std::vector<Element> const & src)
     {
-        // @todo offset и n получать автоматизировано
-        auto const offset = 1;
+        auto const offset = saga_test::random_uniform(0*src.size(), src.size());
+        auto const num = saga_test::random_uniform(0*src.size(), src.size() - offset);
 
-        for(auto n = 0*src.size(); n + offset <= src.size() / 2; ++ n)
-        {
-            auto const ptr = src.data() + offset;
+        auto const ptr = src.data() + offset;
+        saga::span<Element const> const s(ptr, num);
 
-            saga::span<Element const> const s(ptr, n);
-
-            REQUIRE(s.empty() == (n == 0));
-            REQUIRE(s.size() == n);
-            REQUIRE(s.size_bytes() == n*sizeof(Element));
-            REQUIRE(s.data() == ptr);
-        }
+        REQUIRE(s.empty() == (num == 0));
+        REQUIRE(s.size() == num);
+        REQUIRE(s.size_bytes() == num*sizeof(Element));
+        REQUIRE(s.data() == ptr);
     };
 }
 
@@ -157,7 +153,6 @@ TEST_CASE("span : initialization from range, defined by two pointers")
     };
 }
 
-// @todo Подумать, как перевести на тестирование, основанное на свойствах
 TEST_CASE("span : initialization from C array")
 {
     using Element = int;
@@ -172,32 +167,32 @@ TEST_CASE("span : initialization from C array")
     REQUIRE(s.data() == src);
 }
 
-// @todo Подумать, как перевести на тестирование, основанное на свойствах
 TEST_CASE("span : initialization from std::array")
 {
     using Element = int;
 
-    std::array<Element, 6> src = {1, 2, 3, 5, 8, 13};
+    saga_test::property_checker << [](std::array<Element, 6> src)
+    {
+        saga::span<Element> const s(src);
+        static_assert(noexcept(saga::span<Element>(src)), "");
 
-    saga::span<Element> const s(src);
-    static_assert(noexcept(saga::span<Element>(src)), "");
-
-    REQUIRE(s.size() == src.size());
-    REQUIRE(s.data() == src.data());
+        REQUIRE(s.size() == src.size());
+        REQUIRE(s.data() == src.data());
+    };
 }
 
-// @todo Подумать, как перевести на тестирование, основанное на свойствах
 TEST_CASE("span : initialization from const std::array")
 {
     using Element = int;
 
-    std::array<Element, 6> const src = {1, 2, 3, 5, 8, 13};
+    saga_test::property_checker << [](std::array<Element, 6> const & src)
+    {
+        saga::span<Element const> const s(src);
+        static_assert(noexcept(saga::span<Element const>(src)), "");
 
-    saga::span<Element const> const s(src);
-    static_assert(noexcept(saga::span<Element>(src)), "");
-
-    REQUIRE(s.size() == src.size());
-    REQUIRE(s.data() == src.data());
+        REQUIRE(s.size() == src.size());
+        REQUIRE(s.data() == src.data());
+    };
 }
 
 TEST_CASE("span : initialization from contiguous container (vector)")

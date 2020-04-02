@@ -41,7 +41,6 @@ namespace saga_test
         IntType value{};
     };
 
-    // @todo выводить ошибку компиляции при попытке использовать или задокументировать неполноту
     template <class T, class SFINAE = void>
     struct arbitrary;
 
@@ -131,11 +130,10 @@ namespace saga_test
                     return {};
                 }
 
-                // @todo Через generate_iterator?
                 value_type result;
 
                 using Element = typename Container::value_type;
-                std::uniform_int_distribution<Size> distr(0, generation);
+                std::uniform_int_distribution<generation_t> distr(0, generation);
 
                 std::generate_n(std::back_inserter(result), num,
                                 [&](){ return arbitrary<Element>::generate(distr(urbg), urbg); });
@@ -174,6 +172,29 @@ namespace saga_test
     struct arbitrary<std::vector<T, A>>
      : detail::arbitrary_container<std::vector<T, A>>
     {};
+
+    template <class T, std::size_t N>
+    struct arbitrary<std::array<T, N>>
+    {
+    public:
+        using value_type = std::array<T, N>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            assert(generation >= 0);
+
+            value_type result;
+
+            using Element = typename value_type::value_type;
+            std::uniform_int_distribution<generation_t> distr(0, generation);
+
+            std::generate(result.begin(), result.end(),
+                          [&](){ return arbitrary<Element>::generate(distr(urbg), urbg); });
+
+            return result;
+        }
+    };
 
     template <class... Types>
     struct arbitrary<std::tuple<Types...>>
@@ -228,7 +249,6 @@ namespace saga_test
         template <class... Args>
         void check_property(void(*property)(Args...))
         {
-            // @todo Возможность настраивать это значение
             auto const max_generation = generation_t{100};
 
             using Value = std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...>;

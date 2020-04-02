@@ -63,7 +63,6 @@ TEST_CASE("iid_distribution<normal_distribution>, std::valarray>")
     saga_test::property_checker
     << [](saga_test::container_size<int> const dim)
     {
-        // @todo Подумать, как перенести это в параметры свойства
         auto const mean = saga_test::random_uniform(-10.0, 10.0);
         auto const sigma = saga_test::random_uniform(0.1, 10.0);
 

@@ -45,7 +45,6 @@ TEST_CASE("range-for with indices")
     };
 }
 
-// @todo Как организовать тестирование, основанное на свойствах
 TEST_CASE("indices_of for arrays")
 {
     int xs [] = {1, 3, 7, 15};
