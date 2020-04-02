@@ -26,11 +26,20 @@ namespace saga_test
 
     random_engine_type & random_engine();
 
-    template <class IntType, std::enable_if_t<std::is_integral<IntType>::value, std::nullptr_t> = nullptr>
+    template <class IntType,
+              std::enable_if_t<std::is_integral<IntType>{}, std::nullptr_t> = nullptr>
     IntType random_uniform(IntType lower, IntType upper)
     {
          std::uniform_int_distribution<IntType> distr(std::move(lower), std::move(upper));
          return distr(saga_test::random_engine());
+    }
+
+    template <class RealType,
+              std::enable_if_t<std::is_floating_point<RealType>{}, std::nullptr_t> = nullptr>
+    RealType random_uniform(RealType lower, RealType upper)
+    {
+        std::uniform_real_distribution<RealType> distr(std::move(lower), std::move(upper));
+        return distr(saga_test::random_engine());
     }
 }
 // namespace saga_test

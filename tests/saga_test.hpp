@@ -28,6 +28,18 @@ namespace saga_test
 {
     using generation_t = int;
 
+    template <class IntType>
+    struct container_size
+    {
+    public:
+        operator IntType const & () const
+        {
+            return this->value;
+        }
+
+        IntType value{};
+    };
+
     // @todo выводить ошибку компиляции при попытке использовать или задокументировать неполноту
     template <class T, class SFINAE = void>
     struct arbitrary;
@@ -111,9 +123,7 @@ namespace saga_test
                 assert(generation >= 0);
 
                 using Size = typename Container::size_type;
-                std::uniform_int_distribution<Size> distr(0, generation);
-
-                auto const num = distr(urbg);
+                auto const num = Size{arbitrary<container_size<Size>>::generate(generation, urbg)};
 
                 if(num == 0)
                 {
@@ -124,6 +134,7 @@ namespace saga_test
                 value_type result;
 
                 using Element = typename Container::value_type;
+                std::uniform_int_distribution<Size> distr(0, generation);
 
                 std::generate_n(std::back_inserter(result), num,
                                 [&](){ return arbitrary<Element>::generate(distr(urbg), urbg); });
@@ -165,6 +176,26 @@ namespace saga_test
         static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
         {
             return std::make_tuple(arbitrary<Types>::generate(std::move(generation), urbg)...);
+        }
+    };
+
+    template <class IntType>
+    struct arbitrary<container_size<IntType>>
+    {
+    public:
+        using value_type = container_size<IntType>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            if(generation == 0)
+            {
+                return {0};
+            }
+
+            std::uniform_int_distribution<IntType> distr(0, generation);
+
+            return {distr(urbg)};
         }
     };
 
