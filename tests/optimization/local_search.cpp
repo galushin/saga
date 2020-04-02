@@ -96,25 +96,19 @@ TEST_CASE("local search (pseudoboolen, first improvement) : L1 distance to some 
     test_local_search_boolean<Argument>(objective, dim, 0*dim);
 }
 
-// @todo Превратить в тест, основанный на свойстах
 TEST_CASE("local search (pseudoboolean, first improvement): number of unequal adjacent bits")
 {
-    auto const objective = saga::count_adjacent_unequal;
-
-    auto const dim = 20;
-
-    saga::iid_distribution<std::bernoulli_distribution> init_distr(dim);
-
-    for(auto N = 100; N > 0; -- N)
+    saga_test::property_checker << [](std::vector<bool> const & x_init)
     {
-        auto const x_init = init_distr(saga_test::random_engine());
+        auto const objective = saga::count_adjacent_unequal;
+
         auto const result = saga::local_search_boolean(objective, x_init, std::greater<>{});
 
         CAPTURE(result.solution);
         CAPTURE(result.objective_value);
 
         REQUIRE(is_local_maximum(objective, result.solution));
-    }
+    };
 }
 
 // @todo Превратить в тест, основанный на свойстах

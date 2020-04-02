@@ -147,7 +147,15 @@ namespace saga_test
     // namespace detail
 
     template <>
-    struct arbitrary<bool>;
+    struct arbitrary<bool>
+    {
+    public:
+        template <class UniformRandomBitGenerator>
+        static bool generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            return std::bernoulli_distribution(0.5)(urbg);
+        }
+    };
 
     template <>
     struct arbitrary<char>;

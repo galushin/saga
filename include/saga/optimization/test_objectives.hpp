@@ -64,7 +64,7 @@ namespace saga
         {
             auto result = arg.size()*0;
 
-            for(auto i = 0*arg.size(); i+1 != arg.size(); ++ i)
+            for(auto i = 0*arg.size(); i+1 < arg.size(); ++ i)
             {
                 result += (arg[i] != arg[i+1]);
             }
