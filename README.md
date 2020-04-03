@@ -3,7 +3,7 @@
 
 Статус основной ветки (master):
 
-* GNU/linux+gcc: [![Build Status](https://travis-ci.org/galushin/saga.svg?branch=master)](https://travis-ci.org/galushin/saga)
+* GNU/linux+gcc: [![Build Status](https://travis-ci.com/galushin/saga.svg?branch=master)](https://travis-ci.com/galushin/saga)
 
 Отказ от ответственности
 ----
