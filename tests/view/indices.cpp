@@ -21,31 +21,35 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/iterator.hpp>
 
+#include "../saga_test.hpp"
+
 TEST_CASE("range-for with indices")
 {
     using Container = std::vector<int>;
-    Container xs(25, -13);
 
-    using Index = Container::difference_type;
-
-    std::vector<Index> ins_obj(xs.size());
-    std::iota(ins_obj.begin(), ins_obj.end(), Index(0));
-
-    std::vector<Index> ins;
-    for(auto const & i : saga::view::indices_of(xs))
+    saga_test::property_checker
+    << [](Container const & xs)
     {
-        ins.push_back(i);
-    }
+        using Index = Container::difference_type;
 
-    CHECK(ins == ins_obj);
+        std::vector<Index> ins_obj(xs.size());
+        std::iota(ins_obj.begin(), ins_obj.end(), Index(0));
+
+        std::vector<Index> ins;
+        for(auto const & i : saga::view::indices_of(xs))
+        {
+            ins.push_back(i);
+        }
+
+        CHECK(ins == ins_obj);
+    };
 }
 
 TEST_CASE("indices_of for arrays")
 {
-    using Container = std::vector<int>;
     int xs [] = {1, 3, 7, 15};
 
-    using Index = Container::difference_type;
+    using Index = std::size_t;
 
     std::vector<Index> ins_obj(saga::size(xs));
     std::iota(ins_obj.begin(), ins_obj.end(), Index(0));
