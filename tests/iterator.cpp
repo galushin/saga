@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
+#include <saga/view/indices.hpp>
 
 //Тесты
 TEST_CASE("back_implacer")
@@ -48,13 +49,17 @@ TEST_CASE("back_implacer")
 
     // Основной функционал
     saga_test::property_checker
-    << [](saga_test::container_size<Size> const & num, saga_test::container_size<> r_size)
+    << [](std::vector<saga_test::container_size<Size>> const & nums)
     {
         std::vector<Container> result;
 
-        auto it = std::fill_n(saga::back_emplacer(result), r_size.value, num.value);
+        auto it = std::copy(nums.begin(), nums.end(), saga::back_emplacer(result));
 
         REQUIRE(std::addressof(it.container()) == std::addressof(result));
-        REQUIRE(result == std::vector<Container>(r_size, Container(num)));
+
+        for(auto i : saga::view::indices_of(nums))
+        {
+            result.at(i) == Container(nums.at(i));
+        }
     };
 }
