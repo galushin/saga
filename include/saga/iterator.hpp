@@ -67,6 +67,61 @@ namespace detail
 }
 // namespace detail
 
+    template <class Container>
+    class back_emplace_iterator
+    {
+        using Value = typename Container::value_type;
+    public:
+        // Типы
+        using iterator_category = std::output_iterator_tag;
+        using value_type = void;
+        using difference_type = void;
+        using pointer = void;
+        using reference = void;
+        using container_type = Container;
+
+        // Создание, копирование, уничтожение
+        back_emplace_iterator() = default;
+
+        explicit back_emplace_iterator(Container & container)
+         : container_(std::addressof(container))
+        {}
+
+        template <class Arg,
+                  std::enable_if_t<std::is_constructible<Value, Arg>{}, std::nullptr_t> = nullptr>
+        back_emplace_iterator & operator=(Arg && arg)
+        {
+            this->container().emplace_back(std::forward<Arg>(arg));
+            return *this;
+        }
+
+        // Итератор
+        back_emplace_iterator & operator++()
+        {
+            return *this;
+        }
+
+        back_emplace_iterator & operator*()
+        {
+            return *this;
+        }
+
+        // Свойства
+        Container & container() const
+        {
+            return *this->container_;
+        }
+
+    private:
+        Container * container_ = nullptr;
+    };
+
+    template <class Container>
+    auto back_emplacer(Container & container)
+    {
+        return back_emplace_iterator<Container>(container);
+    }
+
     namespace
     {
         constexpr auto const & begin = detail::static_empty_const<detail::begin_fn>::value;

@@ -33,9 +33,9 @@ OBJDIR_RELEASE = ./obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = ./bin/Release/test
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/view/indices.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/view/indices.o $(OBJDIR_DEBUG)/iterator.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/view/indices.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/view/indices.o $(OBJDIR_RELEASE)/iterator.o
 
 all: debug release
 
@@ -80,6 +80,9 @@ $(OBJDIR_DEBUG)/random_engine.o: random_engine.cpp
 	
 $(OBJDIR_DEBUG)/view/indices.o: view/indices.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c view/indices.cpp -o $(OBJDIR_DEBUG)/view/indices.o
+	
+$(OBJDIR_DEBUG)/iterator.o: iterator.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c iterator.cpp -o $(OBJDIR_DEBUG)/iterator.o
 
 clean_debug: 
 	rm -f $(OBJ_DEBUG) $(OUT_DEBUG)
@@ -130,6 +133,9 @@ $(OBJDIR_RELEASE)/random_engine.o: random_engine.cpp
 	
 $(OBJDIR_RELEASE)/view/indices.o: view/indices.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c view/indices.cpp -o $(OBJDIR_RELEASE)/view/indices.o
+	
+$(OBJDIR_RELEASE)/iterator.o: iterator.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_RELEASE) -c iterator.cpp -o $(OBJDIR_RELEASE)/iterator.o
 
 clean_release: 
 	rm -f $(OBJ_RELEASE) $(OUT_RELEASE)

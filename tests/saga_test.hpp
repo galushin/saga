@@ -21,6 +21,8 @@ SAGA -- это свободной программное обеспечение:
 #include "random_engine.hpp"
 #include <saga/detail/static_empty_const.hpp>
 
+#include <cassert>
+
 #include <algorithm>
 #include <tuple>
 #include <type_traits>
@@ -29,7 +31,7 @@ namespace saga_test
 {
     using generation_t = int;
 
-    template <class IntType>
+    template <class IntType = std::size_t>
     struct container_size
     {
     public:
