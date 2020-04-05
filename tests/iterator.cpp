@@ -25,8 +25,24 @@ SAGA -- это свободной программное обеспечение:
 // Вспомогательные файлы
 #include <saga/view/indices.hpp>
 
+#include <list>
+
+namespace
+{
+    template <class Iterator, class Container>
+    void check_emplace_iterators_typedefs()
+    {
+        static_assert(std::is_same<typename Iterator::iterator_category, std::output_iterator_tag>{}, "");
+        static_assert(std::is_same<typename Iterator::value_type, void>{}, "");
+        static_assert(std::is_same<typename Iterator::difference_type, void>{}, "");
+        static_assert(std::is_same<typename Iterator::pointer, void>{}, "");
+        static_assert(std::is_same<typename Iterator::reference, void>{}, "");
+        static_assert(std::is_same<typename Iterator::container_type, Container>{}, "");
+    }
+}
+
 //Тесты
-TEST_CASE("back_implacer")
+TEST_CASE("back_emplacer")
 {
     using Size = std::size_t;
     using Container = std::vector<int>;
@@ -36,16 +52,11 @@ TEST_CASE("back_implacer")
 
     // Конструктор по умолчанию
     saga::back_emplace_iterator<Container> it_0;
-    REQUIRE(std::addressof(it_0.container()) == nullptr);
+    REQUIRE(it_0.container() == nullptr);
 
     using Iterator = decltype(it_0);
 
-    static_assert(std::is_same<Iterator::iterator_category, std::output_iterator_tag>{}, "");
-    static_assert(std::is_same<Iterator::value_type, void>{}, "");
-    static_assert(std::is_same<Iterator::difference_type, void>{}, "");
-    static_assert(std::is_same<Iterator::pointer, void>{}, "");
-    static_assert(std::is_same<Iterator::reference, void>{}, "");
-    static_assert(std::is_same<Iterator::container_type, Container>{}, "");
+    check_emplace_iterators_typedefs<Iterator, Container>();
 
     // Основной функционал
     saga_test::property_checker
@@ -55,11 +66,88 @@ TEST_CASE("back_implacer")
 
         auto it = std::copy(nums.begin(), nums.end(), saga::back_emplacer(result));
 
-        REQUIRE(std::addressof(it.container()) == std::addressof(result));
+        REQUIRE(it.container() == std::addressof(result));
+
+        REQUIRE(result.size() == nums.size());
 
         for(auto i : saga::view::indices_of(nums))
         {
-            result.at(i) == Container(nums.at(i));
+            REQUIRE(result.at(i) == Container(nums.at(i)));
         }
+    };
+}
+
+TEST_CASE("front_emplacer")
+{
+    using Size = std::size_t;
+    using Container = std::vector<int>;
+
+    static_assert(std::is_constructible<Container, Size>{}, "");
+    static_assert(!std::is_convertible<Size, Container>{}, "");
+
+    // Конструктор по умолчанию
+    saga::front_emplace_iterator<Container> it_0;
+    REQUIRE(it_0.container() == nullptr);
+
+    using Iterator = decltype(it_0);
+
+    check_emplace_iterators_typedefs<Iterator, Container>();
+
+    // Основной функционал
+    saga_test::property_checker
+    << [](std::vector<saga_test::container_size<Size>> const & nums)
+    {
+        std::list<Container> temp;
+
+        auto it = std::copy(nums.begin(), nums.end(), saga::front_emplacer(temp));
+
+        REQUIRE(it.container() == std::addressof(temp));
+
+        std::vector<Container> result;
+        std::reverse_copy(temp.begin(), temp.end(), saga::back_emplacer(result));
+
+        REQUIRE(result.size() == nums.size());
+
+        for(auto i : saga::view::indices_of(nums))
+        {
+            REQUIRE(result.at(i) == Container(nums.at(i)));
+        }
+    };
+}
+
+TEST_CASE("emplacer")
+{
+    using Size = std::size_t;
+    using Container = std::vector<int>;
+
+    static_assert(std::is_constructible<Container, Size>{}, "");
+    static_assert(!std::is_convertible<Size, Container>{}, "");
+
+    // Конструктор по умолчанию
+    saga::front_emplace_iterator<Container> it_0;
+    REQUIRE(it_0.container() == nullptr);
+
+    using Iterator = decltype(it_0);
+
+    check_emplace_iterators_typedefs<Iterator, Container>();
+
+    // Основной функционал
+    saga_test::property_checker
+    << [](std::vector<saga_test::container_size<Size>> const & nums)
+    {
+        std::vector<Container> result(10, Container{});
+        auto const offset = result.size() / 2;
+        auto const pos = result.begin() + offset;
+
+        std::vector<Container> obj(result.begin(), pos);
+        std::copy(nums.begin(), nums.end(), saga::back_emplacer(obj));
+        std::copy(pos, result.end(), std::back_inserter(obj));
+
+        auto it = std::copy(nums.begin(), nums.end(), saga::emplacer(result, pos));
+        REQUIRE(it.container() == std::addressof(result));
+
+        CAPTURE(nums);
+
+        REQUIRE(result == obj);
     };
 }
