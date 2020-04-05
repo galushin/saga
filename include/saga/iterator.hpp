@@ -22,8 +22,10 @@ SAGA -- это свободной программное обеспечение:
  @brief Функциональность, связанная с итераторома
 */
 
-#include <iterator>
 #include <saga/detail/static_empty_const.hpp>
+
+#include <cassert>
+#include <iterator>
 
 namespace saga
 {
@@ -66,6 +68,126 @@ namespace detail
     };
 }
 // namespace detail
+
+    struct front_emplace_fn
+    {
+    public:
+        template <class Container, class Arg>
+        void operator()(Container & container, Arg && arg)
+        {
+            container.emplace_front(std::forward<Arg>(arg));
+        }
+    };
+
+    struct back_emplace_fn
+    {
+    public:
+        template <class Container, class Arg>
+        void operator()(Container & container, Arg && arg)
+        {
+            container.emplace_back(std::forward<Arg>(arg));
+        }
+    };
+
+    template <class Iterator>
+    struct emplace_fn
+    {
+    public:
+        emplace_fn(Iterator it)
+         : position(std::move(it))
+        {}
+
+        template <class Container, class Arg>
+        void operator()(Container & container, Arg && arg)
+        {
+            position = container.emplace(this->position, std::forward<Arg>(arg));
+            ++ position;
+        }
+
+        Iterator position;
+    };
+
+    template <class Container, class BackEnd>
+    class generic_container_output_iterator
+    {
+        using Value = typename Container::value_type;
+    public:
+        // Типы
+        using iterator_category = std::output_iterator_tag;
+        using value_type = void;
+        using difference_type = void;
+        using pointer = void;
+        using reference = void;
+        using container_type = Container;
+
+        // Создание, копирование, уничтожение
+        generic_container_output_iterator() = default;
+
+        template <class... Args>
+        explicit generic_container_output_iterator(Container & container, Args &&... args)
+         : back_end_(std::forward<Args>(args)...)
+         , container_(std::addressof(container))
+        {}
+
+        template <class Arg,
+                  std::enable_if_t<std::is_constructible<Value, Arg>{}, std::nullptr_t> = nullptr>
+        generic_container_output_iterator & operator=(Arg && arg)
+        {
+            assert(this->container() != nullptr);
+            this->back_end_(*this->container(), std::forward<Arg>(arg));
+            return *this;
+        }
+
+        // Итератор
+        generic_container_output_iterator & operator++()
+        {
+            return *this;
+        }
+
+        generic_container_output_iterator & operator*()
+        {
+            return *this;
+        }
+
+        // Свойства
+        Container * container() const
+        {
+            return this->container_;
+        }
+
+    private:
+        // @todo оптмизация пустого возвращаемого значения
+        BackEnd back_end_ {};
+        Container * container_ = nullptr;
+    };
+
+    template <class Container>
+    using back_emplace_iterator = generic_container_output_iterator<Container, back_emplace_fn>;
+
+    template <class Container>
+    using front_emplace_iterator = generic_container_output_iterator<Container, front_emplace_fn>;
+
+    template <class Container>
+    using emplace_iterator
+        = generic_container_output_iterator<Container, emplace_fn<typename Container::iterator>>;
+
+    template <class Container>
+    auto back_emplacer(Container & container)
+    {
+        return back_emplace_iterator<Container>(container);
+    }
+
+    template <class Container>
+    auto front_emplacer(Container & container)
+    {
+        return front_emplace_iterator<Container>(container);
+    }
+
+    template <class Container>
+    auto emplacer(Container & container, typename Container::iterator pos)
+    {
+        return emplace_iterator<Container>(container, std::move(pos));
+    }
 
     namespace
     {

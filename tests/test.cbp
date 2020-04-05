@@ -52,7 +52,9 @@
 		<Unit filename="../include/saga/view/indices.hpp" />
 		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
 		<Unit filename="cpp20/span.cpp" />
+		<Unit filename="iterator.cpp" />
 		<Unit filename="main.cpp" />
+		<Unit filename="makefile.gcc" />
 		<Unit filename="math/probability.cpp" />
 		<Unit filename="optimization/ga.cpp" />
 		<Unit filename="optimization/local_search.cpp" />
