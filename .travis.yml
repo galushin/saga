@@ -60,4 +60,7 @@ script:
     - cd ../example/local_search
     - make -f makefile.gcc debug && ./bin/Debug/local_search
     - make -f makefile.gcc release && ./bin/Release/local_search
+    - cd ../example/ga
+    - make -f makefile.gcc debug && ./bin/Debug/local_search
+    - make -f makefile.gcc release && ./bin/Release/local_search
 
