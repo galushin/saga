@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 #include <saga/optimization/test_objectives.hpp>
 
