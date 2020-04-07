@@ -4,7 +4,7 @@
 
 LD = $(CXX)
 
-INC = 
+INC = -I../../include
 
 INC_DEBUG = $(INC)
 CFLAGS_DEBUG = $(CFLAGS) -g
