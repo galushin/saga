@@ -58,8 +58,8 @@ script:
     - make -f makefile.gcc debug && ./bin/Debug/test
     - make -f makefile.gcc release && ./bin/Release/test
     - cd ../example/objective_server
-    - make -f makefile.gcc debug && ./bin/Debug/objective_server
-    - make -f makefile.gcc release && ./bin/Release/objective_server
+    - make -f makefile.gcc debug
+    - make -f makefile.gcc release
     - cd ../local_search
     - make -f makefile.gcc debug && ./bin/Debug/local_search
     - make -f makefile.gcc release && ./bin/Release/local_search
