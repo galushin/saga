@@ -70,6 +70,9 @@
 			<Option target="Release" />
 		</Unit>
 		<Unit filename="../../include/saga/cpp20/span.hpp" />
+		<Unit filename="../../include/saga/optimization/test_objectives.hpp">
+			<Option target="SampleDLL_Debug" />
+		</Unit>
 		<Unit filename="main.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />
