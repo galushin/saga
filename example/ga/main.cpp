@@ -1,3 +1,8 @@
+#ifndef __kernel_entry
+    #define __kernel_entry
+#endif
+#include <boost/process.hpp>
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -60,8 +65,12 @@ int main(int argc, char * argv[])
     // Разбор файла
     auto kvps = parse_ini_file(problem_file);
 
-    // @todo Настроить задачу оптимизации, подключиться к серверу целевых функций
+    // @todo Настроить задачу оптимизации
+
+    // @todo подключиться к серверу целевых функций
+
     // @todo Выполнить оптимизацию
+
     // @todo Вывести результаты
 
     return 0;

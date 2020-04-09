@@ -64,6 +64,6 @@ script:
     - make -f makefile.gcc debug && ./bin/Debug/local_search
     - make -f makefile.gcc release && ./bin/Release/local_search
     - cd ../ga
-    - make -f makefile.gcc debug && ./bin/Debug/ga
-    - make -f makefile.gcc release && ./bin/Release/ga
+    - make -f makefile.gcc debug && ./bin/Debug/ga problem.txt
+    - make -f makefile.gcc release && ./bin/Release/ga problem.txt
 

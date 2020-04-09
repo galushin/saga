@@ -5,7 +5,7 @@
 
 LD = $(CXX)
 
-INC = 
+INC = -I../../contrib/boost_1_72_0
 INC_DEBUG = $(INC)
 CFLAGS_DEBUG = $(CFLAGS) -g
 RESINC_DEBUG = $(RESINC)

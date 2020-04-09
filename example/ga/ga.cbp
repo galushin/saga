@@ -32,7 +32,11 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add directory="../../contrib/boost_1_72_0" />
 		</Compiler>
+		<Linker>
+			<Add library="libws2_32" />
+		</Linker>
 		<Unit filename="main.cpp" />
 		<Extensions />
 	</Project>
