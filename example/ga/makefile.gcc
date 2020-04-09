@@ -6,6 +6,8 @@
 LD = $(CXX)
 
 INC = -I../../contrib/boost_1_72_0
+LD_FLAGS = -pthread
+
 INC_DEBUG = $(INC)
 CFLAGS_DEBUG = $(CFLAGS) -g
 RESINC_DEBUG = $(RESINC)
