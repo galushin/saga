@@ -11,6 +11,7 @@
 				<Option object_output="./obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option parameters='&quot;manhattan norm&quot;' />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
@@ -31,7 +32,9 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add directory="../../include" />
 		</Compiler>
+		<Unit filename="../../include/saga/optimization/test_objectives.hpp" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
