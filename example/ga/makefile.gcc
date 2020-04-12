@@ -5,8 +5,9 @@
 
 LD = $(CXX)
 
-INC = -I../../contrib/boost_1_72_0
 LDFLAGS = -pthread
+
+INC = -I../../contrib/boost_1_72_0 -I../../include
 
 INC_DEBUG = $(INC)
 CFLAGS_DEBUG = $(CFLAGS) -g

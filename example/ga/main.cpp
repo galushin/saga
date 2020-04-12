@@ -1,3 +1,29 @@
+/* (c) 2020 Галушин Павел Викторович, galushin@gmail.com
+
+Данный файл -- часть библиотеки SAGA.
+
+SAGA -- это свободной программное обеспечение: вы можете перераспространять ее и/или изменять ее
+на условиях Стандартной общественной лицензии GNU в том виде, в каком она была опубликована Фондом
+свободного программного обеспечения; либо версии 3 лицензии, либо (по вашему выбору) любой более
+поздней версии.
+
+Это программное обеспечение распространяется в надежде, что оно будет полезной, но БЕЗО ВСЯКИХ
+ГАРАНТИЙ; даже без неявной гарантии ТОВАРНОГО ВИДА или ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ.
+Подробнее см. в Стандартной общественной лицензии GNU.
+
+Вы должны были получить копию Стандартной общественной лицензии GNU вместе с этим программным
+обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
+*/
+
+#include <saga/optimization/ga.hpp>
+#include <saga/optimization/optimization_problem.hpp>
+
+// @todo Удалить эту строку, когда exe_objective будет полностью реализован
+#include <saga/optimization/test_objectives.hpp>
+
+/* Без следующего определения Boost.Process не компилируетя
+https://stackoverflow.com/questions/59337197/boostprocess-on-windows-with-mingw
+*/
 #ifndef __kernel_entry
     #define __kernel_entry
 #endif
@@ -7,6 +33,8 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <random>
+#include <valarray>
 
 namespace
 {
@@ -28,6 +56,7 @@ namespace
             if(pos == last)
             {
                 // @todo обработать ошибку
+                assert(false);
                 continue;
             }
 
@@ -39,6 +68,25 @@ namespace
 
         return result;
     }
+
+    using Genotype = std::valarray<bool>;
+
+    class exe_objective
+    {
+    public:
+        // @todo Перейти на использование std::string_view?
+        exe_objective(std::string const & path, std::string const & objective_name)
+        {
+            // @todo Реализовать запуск сервера
+        }
+
+        double operator()(Genotype const & arg) const
+        {
+            return saga::boolean_manhattan_norm(arg);
+        }
+
+    private:
+    };
 }
 
 int main(int argc, char * argv[])
@@ -65,13 +113,39 @@ int main(int argc, char * argv[])
     // Разбор файла
     auto kvps = parse_ini_file(problem_file);
 
-    // @todo Настроить задачу оптимизации
+    // Создаём целевую функцию на основе exe-файла
+    exe_objective objective(kvps.at("exe"), kvps.at("objective"));
 
-    // @todo подключиться к серверу целевых функций
+    // Настроить задачу оптимизации
+    auto const dim = std::stol(kvps.at("dim"));
 
-    // @todo Выполнить оптимизацию
+    auto problem = saga::make_optimization_problem_boolean(objective, dim);
 
-    // @todo Вывести результаты
+    // Запустить генератор случайных чисел
+    // @todo Добавить возможность задать зерно генератора случайных чисел через аргумент программы
+    std::default_random_engine rnd_engine(std::time(nullptr));
+
+    // Настройка генетического алгоритма
+    // @todo Возможность настраивать операторы через аргументы программы
+    saga::GA_settings<Genotype, saga::ga_boolean_crossover_one_point_fn,
+                      saga::selection_ranking> settings;
+
+    settings.population_size = 100;
+    settings.max_iterations = 100;
+
+    // @todo Выполнить другие необходимые настройки
+
+    // Выполняем оптимизацию
+    auto const result = saga::genetic_algorithm(problem, settings, rnd_engine);
+
+    // Вывести результаты
+    // @todo Что улучшить в выводе результатов?
+    for(auto const & xy : result)
+    {
+        std::copy(saga::begin(xy.solution), saga::end(xy.solution),
+                  std::ostream_iterator<bool>(std::cout));
+        std::cout << "\t" << xy.objective_value << "\n";
+    }
 
     return 0;
 }

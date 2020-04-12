@@ -33,10 +33,13 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add directory="../../contrib/boost_1_72_0" />
+			<Add directory="../../include" />
 		</Compiler>
 		<Linker>
 			<Add library="libws2_32" />
 		</Linker>
+		<Unit filename="../../include/saga/optimization/ga.hpp" />
+		<Unit filename="../../include/saga/optimization/optimization_problem.hpp" />
 		<Unit filename="main.cpp" />
 		<Extensions />
 	</Project>
