@@ -21,6 +21,7 @@
 				<Option object_output="./obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option parameters="problem.txt" />
 				<Compiler>
 					<Add option="-O2" />
 				</Compiler>
@@ -38,8 +39,14 @@
 		<Linker>
 			<Add library="libws2_32" />
 		</Linker>
+		<Unit filename="../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp" />
+		<Unit filename="../../contrib/boost_1_72_0/libs/filesystem/src/path.cpp" />
+		<Unit filename="../../contrib/boost_1_72_0/libs/filesystem/src/path_traits.cpp" />
+		<Unit filename="../../contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.cpp" />
 		<Unit filename="../../include/saga/optimization/ga.hpp" />
 		<Unit filename="../../include/saga/optimization/optimization_problem.hpp" />
+		<Unit filename="exe_objective.cpp" />
+		<Unit filename="exe_objective.hpp" />
 		<Unit filename="main.cpp" />
 		<Extensions />
 	</Project>

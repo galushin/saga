@@ -15,26 +15,16 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
+#include "exe_objective.hpp"
+
 #include <saga/optimization/ga.hpp>
 #include <saga/optimization/optimization_problem.hpp>
-
-// @todo Удалить эту строку, когда exe_objective будет полностью реализован
-#include <saga/optimization/test_objectives.hpp>
-
-/* Без следующего определения Boost.Process не компилируетя
-https://stackoverflow.com/questions/59337197/boostprocess-on-windows-with-mingw
-*/
-#ifndef __kernel_entry
-    #define __kernel_entry
-#endif
-#include <boost/process.hpp>
 
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <random>
-#include <valarray>
 
 namespace
 {
@@ -47,6 +37,11 @@ namespace
         while(is)
         {
             std::getline(is, reader);
+
+            if(reader.empty())
+            {
+                continue;
+            }
 
             auto const first = reader.begin();
             auto const last = reader.end();
@@ -68,25 +63,6 @@ namespace
 
         return result;
     }
-
-    using Genotype = std::valarray<bool>;
-
-    class exe_objective
-    {
-    public:
-        // @todo Перейти на использование std::string_view?
-        exe_objective(std::string const & path, std::string const & objective_name)
-        {
-            // @todo Реализовать запуск сервера
-        }
-
-        double operator()(Genotype const & arg) const
-        {
-            return saga::boolean_manhattan_norm(arg);
-        }
-
-    private:
-    };
 }
 
 int main(int argc, char * argv[])
@@ -114,7 +90,10 @@ int main(int argc, char * argv[])
     auto kvps = parse_ini_file(problem_file);
 
     // Создаём целевую функцию на основе exe-файла
-    exe_objective objective(kvps.at("exe"), kvps.at("objective"));
+    saga_example::exe_objective server(kvps.at("exe"), kvps.at("objective"));
+
+    using Genotype = saga_example::Genotype;
+    auto objective = [&server](Genotype const & arg) { return server(arg); };
 
     // Настроить задачу оптимизации
     auto const dim = std::stol(kvps.at("dim"));
