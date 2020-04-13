@@ -74,7 +74,7 @@ int main(int argc, char * argv[])
         std::cout << "This programm takes atleast one argument:\n"
                   << "Path to the file with optimization problem\n";
 
-        return 1;
+        return 0;
     }
 
     // Открываем файл с описанием задачи
