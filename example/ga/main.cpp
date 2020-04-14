@@ -63,68 +63,88 @@ namespace
 
         return result;
     }
+
+    std::map<std::string, std::string>
+    open_and_parse_ini_file(std::string const & path)
+    {
+        std::ifstream file(path);
+
+        if(!file)
+        {
+            throw std::runtime_error("Failed to open file " + path);
+        }
+
+        return parse_ini_file(file);
+    }
+
+    int do_main(std::vector<std::string> const & cmd_args)
+    {
+        // Открываем и разбираем файл с описанием задачи
+        auto const problem_kvps = open_and_parse_ini_file(cmd_args.at(1));
+
+        // Создаём целевую функцию на основе exe-файла
+        saga_example::exe_objective server(problem_kvps.at("exe"), problem_kvps.at("objective"));
+
+        using Genotype = saga_example::Genotype;
+        auto objective = [&server](Genotype const & arg) { return server(arg); };
+
+        // Настроить задачу оптимизации
+        auto const dim = std::stol(problem_kvps.at("dim"));
+
+        auto problem = saga::make_optimization_problem_boolean(objective, dim);
+
+        // Запустить генератор случайных чисел
+        // @todo Добавить возможность задать зерно генератора случайных чисел через аргумент программы
+        std::default_random_engine rnd_engine(std::time(nullptr));
+
+        // Настройка генетического алгоритма
+        auto const settings_kvps = open_and_parse_ini_file(cmd_args.at(2));
+
+        saga::GA_settings<Genotype, saga::ga_boolean_crossover_one_point_fn,
+                          saga::selection_ranking> settings;
+
+        settings.population_size = std::stol(settings_kvps.at("population_size"));
+        settings.max_iterations = std::stol(settings_kvps.at("max_iterations"));
+
+        // @todo Настроить операторы и вероятность мутации на основе файла настроек
+
+        // Выполняем оптимизацию
+        auto const result = saga::genetic_algorithm(problem, settings, rnd_engine);
+
+        // Вывести результаты
+        // @todo Что улучшить в выводе результатов?
+        for(auto const & xy : result)
+        {
+            std::copy(saga::begin(xy.solution), saga::end(xy.solution),
+                      std::ostream_iterator<bool>(std::cout));
+            std::cout << "\t" << xy.objective_value << "\n";
+        }
+
+        return 0;
+    }
 }
+// namespace
 
 int main(int argc, char * argv[])
 {
     // Проверка аргументов командной строки
-    if(argc < 2)
+    if(argc < 3)
     {
-        // @todo Добавить про то, что требуется указать файл настроек ГА
-        std::cout << "This programm takes atleast one argument:\n"
-                  << "Path to the file with optimization problem\n";
+        std::cout << "This programm takes atleast two arguments:\n"
+                  << "1. Path to the file with optimization problem\n"
+                  << "2. Path to the file with genetic algorithm settings\n";
 
         return 0;
     }
 
-    // Открываем файл с описанием задачи
-    std::ifstream problem_file(argv[1]);
-
-    if(!problem_file)
+    try
     {
-        std::cerr << "Failed to open optimization problem file: " << argv[1] << "\n";
-        return 1;
+        std::vector<std::string> cmd_args(argv, argv + argc);
+
+        return do_main(cmd_args);
     }
-
-    // Разбор файла
-    auto kvps = parse_ini_file(problem_file);
-
-    // Создаём целевую функцию на основе exe-файла
-    saga_example::exe_objective server(kvps.at("exe"), kvps.at("objective"));
-
-    using Genotype = saga_example::Genotype;
-    auto objective = [&server](Genotype const & arg) { return server(arg); };
-
-    // Настроить задачу оптимизации
-    auto const dim = std::stol(kvps.at("dim"));
-
-    auto problem = saga::make_optimization_problem_boolean(objective, dim);
-
-    // Запустить генератор случайных чисел
-    // @todo Добавить возможность задать зерно генератора случайных чисел через аргумент программы
-    std::default_random_engine rnd_engine(std::time(nullptr));
-
-    // Настройка генетического алгоритма
-    // @todo Возможность настраивать операторы через аргументы программы
-    saga::GA_settings<Genotype, saga::ga_boolean_crossover_one_point_fn,
-                      saga::selection_ranking> settings;
-
-    settings.population_size = 100;
-    settings.max_iterations = 100;
-
-    // @todo Выполнить другие необходимые настройки
-
-    // Выполняем оптимизацию
-    auto const result = saga::genetic_algorithm(problem, settings, rnd_engine);
-
-    // Вывести результаты
-    // @todo Что улучшить в выводе результатов?
-    for(auto const & xy : result)
+    catch(std::exception & e)
     {
-        std::copy(saga::begin(xy.solution), saga::end(xy.solution),
-                  std::ostream_iterator<bool>(std::cout));
-        std::cout << "\t" << xy.objective_value << "\n";
+        std::cerr << e.what() << "\n";
     }
-
-    return 0;
 }
