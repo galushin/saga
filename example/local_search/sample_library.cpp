@@ -6,26 +6,31 @@
 
 #include "./plugin.hpp"
 
+#include <saga/optimization/test_objectives.hpp>
+
 #include <boost/config.hpp>
 
 #include <algorithm>
 
-saga::objective_value_type
-manhattan_norm(saga::boolean_const_span xs)
+namespace
 {
-    return static_cast<saga::objective_value_type>(std::count(xs.begin(), xs.end(), true));
-}
-
-class sample_library_registrar
- : saga::function_regitrar
-{
-protected:
-    void do_init(saga::function_manager & manager) override
+    saga::objective_value_type
+    manhattan_norm(saga::boolean_const_span xs)
     {
-        manager.add(manhattan_norm, "manhattan_norm");
+        return saga::boolean_manhattan_norm(xs);
     }
-};
 
-extern "C" BOOST_SYMBOL_EXPORT sample_library_registrar registrar;
+    class sample_library_registrar
+     : saga::function_regitrar
+    {
+    protected:
+        void do_init(saga::function_manager & manager) override
+        {
+            manager.add(manhattan_norm, "manhattan_norm");
+        }
+    };
 
-sample_library_registrar registrar;
+    extern "C" BOOST_SYMBOL_EXPORT sample_library_registrar registrar;
+
+    sample_library_registrar registrar;
+}

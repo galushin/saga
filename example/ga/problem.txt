@@ -1,0 +1,4 @@
+exe="..\objective_server\bin\Debug\objective_server"
+objective="manhattan norm"
+dim=20
+goal=min
