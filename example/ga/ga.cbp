@@ -11,7 +11,7 @@
 				<Option object_output="./obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="problem.txt" />
+				<Option parameters="problem.txt ga_settings.txt" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
