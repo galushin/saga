@@ -77,6 +77,29 @@ namespace
         return parse_ini_file(file);
     }
 
+    template <class Genotype, class Objective>
+    auto make_objective_compare(Objective const & objective, std::string const & goal)
+    {
+        using Objective_value = decltype(objective(std::declval<Genotype const &>()));
+
+        std::function<bool(Objective_value const &, Objective_value const &)> cmp;
+
+        if(goal == "min")
+        {
+            cmp = std::less<>{};
+        }
+        else if(goal == "max")
+        {
+            cmp = std::greater<>{};
+        }
+        else
+        {
+            throw std::domain_error("Unknown optimization goal " + goal);
+        }
+
+        return cmp;
+    }
+
     int do_main(std::vector<std::string> const & cmd_args)
     {
         // Открываем и разбираем файл с описанием задачи
@@ -91,7 +114,9 @@ namespace
         // Настроить задачу оптимизации
         auto const dim = std::stol(problem_kvps.at("dim"));
 
-        auto problem = saga::make_optimization_problem_boolean(objective, dim);
+        auto objective_cmp = make_objective_compare<Genotype>(objective, problem_kvps.at("goal"));
+
+        auto problem = saga::make_optimization_problem_boolean(objective, dim, objective_cmp);
 
         // Запустить генератор случайных чисел
         // @todo Добавить возможность задать зерно генератора случайных чисел через аргумент программы
