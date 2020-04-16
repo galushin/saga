@@ -36,6 +36,30 @@ namespace saga
         Solution solution;
         ObjectiveValue objective_value;
     };
+
+    template <class Compare>
+    struct comparer_by_objective_value
+    {
+    public:
+        explicit comparer_by_objective_value(Compare comp)
+         : cmp(std::move(comp))
+        {}
+
+        template <class Solution, class ObjValue>
+        bool operator()(evaluated_solution<Solution, ObjValue> const & lhs,
+                        evaluated_solution<Solution, ObjValue> const & rhs) const
+        {
+            return this->cmp(lhs.objective_value, rhs.objective_value);
+        }
+
+        Compare cmp;
+    };
+
+    template <class Compare>
+    auto compare_by_objective_value(Compare cmp)
+    {
+        return comparer_by_objective_value<Compare>(std::move(cmp));
+    }
 }
 // namespace saga
 
