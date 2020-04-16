@@ -137,12 +137,20 @@ namespace
         auto const result = saga::genetic_algorithm(problem, settings, rnd_engine);
 
         // Вывести результаты
-        // @todo Что улучшить в выводе результатов?
+        auto const best_pos
+            = std::min_element(std::begin(result), std::end(result),
+                               saga::compare_by_objective_value(objective_cmp));
+        assert(!result.empty());
+        auto const best_objective_value = best_pos->objective_value;
+
         for(auto const & xy : result)
         {
-            std::copy(saga::begin(xy.solution), saga::end(xy.solution),
-                      std::ostream_iterator<bool>(std::cout));
-            std::cout << "\t" << xy.objective_value << "\n";
+            if(!objective_cmp(best_objective_value, xy.objective_value))
+            {
+                std::copy(saga::begin(xy.solution), saga::end(xy.solution),
+                          std::ostream_iterator<bool>(std::cout));
+                std::cout << "\t" << xy.objective_value << "\n";
+            }
         }
 
         return 0;
