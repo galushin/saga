@@ -100,6 +100,26 @@ namespace
         return cmp;
     }
 
+    double parse_mutation_strength(std::string const & str)
+    {
+        if(str == "weak")
+        {
+            return 0.5;
+        }
+        else if(str == "normal")
+        {
+            return 1.0;
+        }
+        else if(str == "strong")
+        {
+            return 2.0;
+        }
+        else
+        {
+            return std::stod(str);
+        }
+    }
+
     int do_main(std::vector<std::string> const & cmd_args)
     {
         // Открываем и разбираем файл с описанием задачи
@@ -130,8 +150,9 @@ namespace
 
         settings.population_size = std::stol(settings_kvps.at("population_size"));
         settings.max_iterations = std::stol(settings_kvps.at("max_iterations"));
+        settings.mutation_strength = parse_mutation_strength(settings_kvps.at("mutation strength"));
 
-        // @todo Настроить операторы и вероятность мутации на основе файла настроек
+        // @todo Настроить операторы на основе файла настроек
 
         // Выполняем оптимизацию
         auto const result = saga::genetic_algorithm(problem, settings, rnd_engine);
