@@ -120,6 +120,30 @@ namespace
         }
     }
 
+    using Genotype = saga_example::Genotype;
+    using Random_engine = std::default_random_engine;
+    using Crossover = std::function<Genotype(Genotype const &, Genotype const &, Random_engine &)>;
+
+    Crossover make_crossover(std::string const & crossover_name)
+    {
+        if(crossover_name == "one point")
+        {
+            return saga::ga_boolean_crossover_one_point_fn{};
+        }
+        else if(crossover_name == "two point")
+        {
+            return saga::ga_boolean_crossover_two_point_fn{};
+        }
+        else if(crossover_name == "uniform")
+        {
+            return saga::ga_boolean_crossover_uniform_fn{};
+        }
+        else
+        {
+            throw std::domain_error("Unknown crossover type" + crossover_name);
+        }
+    }
+
     int do_main(std::vector<std::string> const & cmd_args)
     {
         // Открываем и разбираем файл с описанием задачи
@@ -128,7 +152,6 @@ namespace
         // Создаём целевую функцию на основе exe-файла
         saga_example::exe_objective server(problem_kvps.at("exe"), problem_kvps.at("objective"));
 
-        using Genotype = saga_example::Genotype;
         auto objective = [&server](Genotype const & arg) { return server(arg); };
 
         // Настроить задачу оптимизации
@@ -140,17 +163,17 @@ namespace
 
         // Запустить генератор случайных чисел
         // @todo Добавить возможность задать зерно генератора случайных чисел через аргумент программы
-        std::default_random_engine rnd_engine(std::time(nullptr));
+        Random_engine rnd_engine(std::time(nullptr));
 
         // Настройка генетического алгоритма
         auto const settings_kvps = open_and_parse_ini_file(cmd_args.at(2));
 
-        saga::GA_settings<Genotype, saga::ga_boolean_crossover_one_point_fn,
-                          saga::selection_ranking> settings;
+        saga::GA_settings<Genotype, Crossover, saga::selection_ranking> settings;
 
         settings.population_size = std::stol(settings_kvps.at("population_size"));
         settings.max_iterations = std::stol(settings_kvps.at("max_iterations"));
         settings.mutation_strength = parse_mutation_strength(settings_kvps.at("mutation strength"));
+        settings.crossover = make_crossover(settings_kvps.at("crossover"));
 
         // @todo Настроить операторы на основе файла настроек
 

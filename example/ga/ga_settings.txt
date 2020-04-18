@@ -1,3 +1,4 @@
 population_size=100
 max_iterations=100
 mutation strength=normal
+crossover=one point
