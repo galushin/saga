@@ -178,7 +178,7 @@ namespace
         // @todo Настроить операторы на основе файла настроек
 
         // Выполняем оптимизацию
-        auto const result = saga::genetic_algorithm(problem, settings, rnd_engine);
+        auto const result = saga::genetic_algorithm_boolean(problem, settings, rnd_engine);
 
         // Вывести результаты
         auto const best_pos

@@ -451,9 +451,10 @@ namespace saga
     }
 
     template <class Population, class Problem, class GA_settings, class UniformRandomBitGegerator>
-    void genetic_algorithm_cycle(Population & population,
-                                 Problem const & problem, GA_settings const & settings,
-                                 UniformRandomBitGegerator & rnd )
+    void genetic_algorithm_boolean_cycle(Population & population,
+                                         Problem const & problem,
+                                         GA_settings const & settings,
+                                         UniformRandomBitGegerator & rnd )
     {
         if(population.empty())
         {
@@ -503,8 +504,9 @@ namespace saga
     }
 
     template <class Problem, class GA_settings, class UniformRandomBitGegerator>
-    auto genetic_algorithm(Problem const & problem, GA_settings const & settings,
-                           UniformRandomBitGegerator & rnd)
+    auto genetic_algorithm_boolean(Problem const & problem,
+                                   GA_settings const & settings,
+                                   UniformRandomBitGegerator & rnd)
     {
         using Genotype = typename GA_settings::genotype_type;
 
@@ -517,7 +519,7 @@ namespace saga
 
         for(auto n = settings.max_iterations; n > 0; -- n)
         {
-            genetic_algorithm_cycle(population, problem, settings, rnd);
+            ::saga::genetic_algorithm_boolean_cycle(population, problem, settings, rnd);
         }
 
         return population;

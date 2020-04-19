@@ -58,7 +58,7 @@ namespace
         settings.selection = selection;
 
         auto const population
-            = saga::genetic_algorithm(problem, settings, saga_test::random_engine());
+            = saga::genetic_algorithm_boolean(problem, settings, saga_test::random_engine());
 
         auto const best = std::min_element(population.begin(), population.end(),
                                            ::compare_by_objective_value{});
@@ -94,7 +94,7 @@ namespace
         settings.selection = selection;
 
         auto const population
-            = saga::genetic_algorithm(problem, settings, saga_test::random_engine());
+            = saga::genetic_algorithm_boolean(problem, settings, saga_test::random_engine());
 
         auto const best = std::max_element(population.begin(), population.end(),
                                            ::compare_by_objective_value{});
