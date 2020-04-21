@@ -47,6 +47,7 @@
 		<Unit filename="../include/saga/optimization/local_search.hpp" />
 		<Unit filename="../include/saga/optimization/optimization_problem.hpp" />
 		<Unit filename="../include/saga/optimization/test_objectives.hpp" />
+		<Unit filename="../include/saga/random/any_distribution.hpp" />
 		<Unit filename="../include/saga/random/iid_distribution.hpp" />
 		<Unit filename="../include/saga/type_traits.hpp" />
 		<Unit filename="../include/saga/view/indices.hpp" />
@@ -58,6 +59,7 @@
 		<Unit filename="math/probability.cpp" />
 		<Unit filename="optimization/ga.cpp" />
 		<Unit filename="optimization/local_search.cpp" />
+		<Unit filename="random/any_distribution.cpp" />
 		<Unit filename="random/iid_distribution.cpp" />
 		<Unit filename="random_engine.cpp" />
 		<Unit filename="random_engine.hpp" />
