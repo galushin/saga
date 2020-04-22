@@ -162,3 +162,17 @@ TEST_CASE("GA boolean : manhattan distance, proportional selection")
     ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_one_point_fn>(selection);
     ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_two_point_fn>(selection);
 }
+
+TEST_CASE("GA boolean : manhattan distance, selection tournament - type-erased")
+{
+    saga::any_selection<saga_test::random_engine_type>
+        selection(saga::selection_tournament(2));
+
+    ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_uniform_fn>(selection);
+    ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_one_point_fn>(selection);
+    ::test_ga_boolean_manhattan_distance_min<saga::ga_boolean_crossover_two_point_fn>(selection);
+
+    ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_uniform_fn>(selection);
+    ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_one_point_fn>(selection);
+    ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_two_point_fn>(selection);
+}

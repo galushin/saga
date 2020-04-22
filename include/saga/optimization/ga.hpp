@@ -20,11 +20,13 @@ SAGA -- это свободной программное обеспечение:
 
 /** @brief saga/optimization/ga.hpp
  @brief Функциональность, связанная с генетическими алгоритмами
+ @todo Разделить на более мелки файлы
 */
 
 #include <saga/optimization/evaluated_solution.hpp>
 #include <saga/optimization/optimization_problem.hpp>
 #include <saga/math/probability.hpp>
+#include <saga/random/any_distribution.hpp>
 #include <saga/random/iid_distribution.hpp>
 
 #include <random>
@@ -81,8 +83,15 @@ namespace saga
     template <class Container, class Compare>
     class selection_tournament_distribution
     {
+    friend bool operator==(selection_tournament_distribution const & lhs,
+                           selection_tournament_distribution const & rhs)
+    {
+        // @todo Более точная реализация
+        return std::addressof(lhs) == std::addressof(rhs);
+    }
+
     public:
-        using result_type = typename Container::size_type;
+        using result_type = typename Container::difference_type;
 
         /**
         @pre <tt>objective_values.empty() == false</tt>
@@ -99,7 +108,7 @@ namespace saga
         {
             assert(!this->obj_values_.empty());
             assert(0 < this->tournament_);
-            assert(static_cast<std::size_t>(this->tournament_) <= this->obj_values_.size());
+            assert(this->tournament_ <= this->obj_values_.size());
         }
 
         template <class UniformRandomBitGenerator>
@@ -185,7 +194,7 @@ namespace saga
             return *std::min_element(selected.begin(), selected.end(), std::move(index_cmp));
         }
 
-        int tournament_ = 2;
+        result_type tournament_ = 2;
         bool repeat_ = true;
         Container obj_values_{};
         Compare cmp_ {};
@@ -292,6 +301,37 @@ namespace saga
 
     private:
         double alpha_ = 2.0;
+    };
+
+    template <class UniformRandomBitGenerator>
+    class any_selection
+    {
+    public:
+        // Типы
+        using objective_value_type = double;
+        using argument_type = saga::span<objective_value_type const>;
+        using compare = std::function<bool(objective_value_type const &, objective_value_type const &)>;
+
+        using distribution_type = saga::any_distribution<typename argument_type::difference_type,
+                                                         UniformRandomBitGenerator>;
+
+        // Создание, копирование, уничтожение
+        any_selection() = default;
+
+        template <class Selection>
+        explicit any_selection(Selection selection)
+         : backend_([selection](argument_type obj_values, compare const & cmp)
+                    { return distribution_type(selection.build_distribution(obj_values, cmp)); })
+        {}
+
+        // Селекция
+        distribution_type build_distribution(argument_type obj_values, compare const & cmp) const
+        {
+            return this->backend_(obj_values, cmp);
+        }
+
+    private:
+        std::function<distribution_type(argument_type, compare const &)> backend_;
     };
 
     class ga_boolean_crossover_uniform_fn
