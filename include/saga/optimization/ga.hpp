@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
  @todo Разделить на более мелки файлы
 */
 
+#include <saga/cpp20/span.hpp>
 #include <saga/optimization/evaluated_solution.hpp>
 #include <saga/optimization/optimization_problem.hpp>
 #include <saga/math/probability.hpp>
