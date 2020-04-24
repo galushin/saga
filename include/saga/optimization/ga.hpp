@@ -97,7 +97,8 @@ namespace saga
         @pre <tt>tournament_size > 0 </tt>
         @pre <tt>tournament_size < objective_values.size()</tt>
         */
-        explicit selection_tournament_distribution(int tournament_size, bool repeat,
+        explicit selection_tournament_distribution(result_type tournament_size,
+                                                   bool repeat,
                                                    Container objective_values,
                                                    Compare cmp)
          : tournament_(tournament_size)
@@ -107,7 +108,7 @@ namespace saga
         {
             assert(!this->obj_values_.empty());
             assert(0 < this->tournament_);
-            assert(this->tournament_ <= this->obj_values_.size());
+            assert(this->tournament_ <= static_cast<result_type>(this->obj_values_.size()));
         }
 
         template <class UniformRandomBitGenerator>
@@ -135,6 +136,11 @@ namespace saga
         }
 
     private:
+        bool is_correct_index(result_type index) const
+        {
+            return 0 <= index && index < static_cast<result_type>(this->obj_values_.size());
+        }
+
         template <class UniformRandomBitGenerator>
         result_type
         selection_repeat(UniformRandomBitGenerator & rnd) const
@@ -142,13 +148,14 @@ namespace saga
             std::uniform_int_distribution<result_type> distr(0, this->obj_values_.size() - 1);
 
             auto best = distr(rnd);
-            assert(0 <= best && best < this->obj_values_.size());
+
+            assert(this->is_correct_index(best));
 
             for(auto num = this->tournament_ - 1; num > 0; -- num)
             {
                 auto cur = distr(rnd);
 
-                assert(0 <= cur && cur < this->obj_values_.size());
+                assert(this->is_correct_index(cur));
 
                 if(this->cmp_(this->obj_values_[cur], this->obj_values_[best]))
                 {
@@ -183,7 +190,7 @@ namespace saga
 
             assert(std::all_of(selected.begin(), selected.end(),
                                [&](result_type const & each)
-                               { return 0 <= each && each < this->obj_values_.size(); }));
+                               { return this->is_correct_index(each); }));
 
             auto index_cmp = [this](result_type const & x, result_type const & y)
             {
