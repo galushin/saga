@@ -36,7 +36,6 @@ namespace saga_example
     class exe_objective
     {
     public:
-        // @todo Перейти на использование std::string_view?
         exe_objective(std::string const & path, std::string const & objective_name);
 
         ~exe_objective();

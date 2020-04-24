@@ -25,6 +25,7 @@ SAGA -- это свободной программное обеспечение:
 #include <iostream>
 #include <map>
 #include <random>
+#include <sstream>
 
 namespace
 {
@@ -50,7 +51,6 @@ namespace
 
             if(pos == last)
             {
-                // @todo обработать ошибку
                 assert(false);
                 continue;
             }
@@ -71,7 +71,7 @@ namespace
 
         if(!file)
         {
-            throw std::runtime_error("Failed to open file " + path);
+            throw std::runtime_error("Failed to open file: " + path);
         }
 
         return parse_ini_file(file);
@@ -94,7 +94,7 @@ namespace
         }
         else
         {
-            throw std::domain_error("Unknown optimization goal " + goal);
+            throw std::runtime_error("Unknown optimization goal: " + goal);
         }
 
         return cmp;
@@ -123,6 +123,7 @@ namespace
     using Genotype = saga_example::Genotype;
     using Random_engine = std::default_random_engine;
     using Crossover = std::function<Genotype(Genotype const &, Genotype const &, Random_engine &)>;
+    using Selection = saga::any_selection<Random_engine>;
 
     Crossover make_crossover(std::string const & crossover_name)
     {
@@ -140,7 +141,44 @@ namespace
         }
         else
         {
-            throw std::domain_error("Unknown crossover type" + crossover_name);
+            throw std::runtime_error("Unknown crossover type: " + crossover_name);
+        }
+    }
+
+    bool starts_with(std::string const & str, std::string const & prefix)
+    {
+        if(str.size() < prefix.size())
+        {
+            return false;
+        }
+
+        return prefix == str.substr(0, prefix.size());
+    }
+
+    Selection parse_selection(std::string const & str)
+    {
+        std::string const tournament_keyword("tournament");
+        if(str == "ranking")
+        {
+            return Selection(saga::selection_ranking{});
+        }
+        else if(str == "proportional")
+        {
+            return Selection(saga::selection_proportional{});
+        }
+        else if(::starts_with(str, tournament_keyword))
+        {
+            int group_size = 2;
+            bool repeat = true;
+
+            std::istringstream is(str.substr(tournament_keyword.size()));
+            is >> group_size >> repeat;
+
+            return Selection(saga::selection_tournament(group_size, repeat));
+        }
+        else
+        {
+            throw std::runtime_error("Unknown selection description: " + str);
         }
     }
 
@@ -168,14 +206,13 @@ namespace
         // Настройка генетического алгоритма
         auto const settings_kvps = open_and_parse_ini_file(cmd_args.at(2));
 
-        saga::GA_settings<Genotype, Crossover, saga::selection_ranking> settings;
+        saga::GA_settings<Genotype, Crossover, saga::any_selection<Random_engine>> settings;
 
         settings.population_size = std::stol(settings_kvps.at("population_size"));
         settings.max_iterations = std::stol(settings_kvps.at("max_iterations"));
-        settings.mutation_strength = parse_mutation_strength(settings_kvps.at("mutation strength"));
-        settings.crossover = make_crossover(settings_kvps.at("crossover"));
-
-        // @todo Настроить операторы на основе файла настроек
+        settings.mutation_strength = ::parse_mutation_strength(settings_kvps.at("mutation strength"));
+        settings.crossover = ::make_crossover(settings_kvps.at("crossover"));
+        settings.selection = ::parse_selection(settings_kvps.at("selection"));
 
         // Выполняем оптимизацию
         auto const result = saga::genetic_algorithm_boolean(problem, settings, rnd_engine);
