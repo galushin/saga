@@ -25,7 +25,6 @@ namespace
 {
     double parse_exe_objective_answer(std::string const & answer)
     {
-        // @todo Обработка ошибок
         std::istringstream is(answer);
         std::string preamble;
         double value;
@@ -40,7 +39,6 @@ namespace saga_example
 {
     exe_objective::exe_objective(std::string const & path, std::string const & objective_name)
     {
-        // @todo Проверить сущестование файла
         this->server_ = BP::child(path + " " + objective_name,
                                   BP::std_out > this->output_,
                                   BP::std_in < this->input_);

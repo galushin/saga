@@ -20,7 +20,6 @@ SAGA -- это свободной программное обеспечение:
 
 /** @brief saga/optimization/ga.hpp
  @brief Функциональность, связанная с генетическими алгоритмами
- @todo Разделить на более мелки файлы
 */
 
 #include <saga/cpp20/span.hpp>
@@ -87,7 +86,6 @@ namespace saga
     friend bool operator==(selection_tournament_distribution const & lhs,
                            selection_tournament_distribution const & rhs)
     {
-        // @todo Более точная реализация
         return std::addressof(lhs) == std::addressof(rhs);
     }
 
@@ -278,7 +276,7 @@ namespace saga
             assert(obj_values.empty() == false);
 
             auto const extr
-                = std::minmax_element(obj_values.begin(), obj_values.end(), std::move(cmp));
+                = std::minmax_element(obj_values.begin(), obj_values.end(), std::ref(cmp));
 
             std::vector<double> weights;
             weights.reserve(obj_values.size());
