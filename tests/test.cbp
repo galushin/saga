@@ -44,6 +44,13 @@
 		<Unit filename="../include/saga/numeric.hpp" />
 		<Unit filename="../include/saga/optimization/evaluated_solution.hpp" />
 		<Unit filename="../include/saga/optimization/ga.hpp" />
+		<Unit filename="../include/saga/optimization/ga/crossover/ga_boolean_crossover_one_point.hpp" />
+		<Unit filename="../include/saga/optimization/ga/crossover/ga_boolean_crossover_two_point.hpp" />
+		<Unit filename="../include/saga/optimization/ga/crossover/ga_boolean_crossover_uniform.hpp" />
+		<Unit filename="../include/saga/optimization/ga/selection/any_selection.hpp" />
+		<Unit filename="../include/saga/optimization/ga/selection/proportional.hpp" />
+		<Unit filename="../include/saga/optimization/ga/selection/ranking.hpp" />
+		<Unit filename="../include/saga/optimization/ga/selection/tournament.hpp" />
 		<Unit filename="../include/saga/optimization/local_search.hpp" />
 		<Unit filename="../include/saga/optimization/optimization_problem.hpp" />
 		<Unit filename="../include/saga/optimization/test_objectives.hpp" />
