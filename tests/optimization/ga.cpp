@@ -15,13 +15,17 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#include <saga/cpp20/span.hpp>
+// Тестируемый файл
 #include <saga/optimization/ga.hpp>
+
+//Инфраструктура тестирования
+#include <catch/catch.hpp>
+#include "../saga_test.hpp"
+
+// Используемое при тестах
+#include <saga/cpp20/span.hpp>
 #include <saga/optimization/test_objectives.hpp>
 
-#include <catch/catch.hpp>
-
-#include "../random_engine.hpp"
 #include <valarray>
 
 namespace
@@ -175,4 +179,28 @@ TEST_CASE("GA boolean : manhattan distance, selection tournament - type-erased")
     ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_uniform_fn>(selection);
     ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_one_point_fn>(selection);
     ::test_ga_boolean_manhattan_distance_max<saga::ga_boolean_crossover_two_point_fn>(selection);
+}
+
+TEST_CASE("tournament_selection_distribution : equal to copy")
+{
+    saga_test::property_checker << [](bool repeat, std::vector<double> const & obj_values)
+    {
+        if(obj_values.empty())
+        {
+            return;
+        }
+
+        bool(*cmp)(double const & x, double const & y)
+            = [](double const & x, double const & y) { return x < y; };
+
+        auto const tournament_size
+            = saga_test::random_uniform(0*obj_values.size() + 1, obj_values.size());
+
+        saga::selection_tournament selection(tournament_size, repeat);
+
+        auto distr1 = selection.build_distribution(obj_values, cmp);
+        auto distr2 = distr1;
+
+        REQUIRE(distr2 == distr1);
+    };
 }

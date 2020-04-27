@@ -36,7 +36,8 @@ namespace saga
         friend bool operator==(selection_tournament_distribution const & lhs,
                                selection_tournament_distribution const & rhs)
         {
-            return std::addressof(lhs) == std::addressof(rhs);
+            return std::tie(lhs.tournament_, lhs.repeat_, lhs.obj_values_)
+                    == std::tie(rhs.tournament_, rhs.repeat_, rhs.obj_values_);
         }
 
     public:
