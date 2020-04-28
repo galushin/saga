@@ -37,7 +37,7 @@ namespace saga
         using reference = typename ForwardCursor::reference;
 
         // Создание, копирование, уничтожение
-        cycled_cursor(ForwardCursor cur)
+        explicit cycled_cursor(ForwardCursor cur)
          : cur_(cur)
          , orig_(std::move(cur))
         {}
