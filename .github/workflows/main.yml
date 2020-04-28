@@ -2,12 +2,11 @@ name: cppcheck
 on: [push]
 
 jobs:
-  build:
-    name: cppcheck
+  clang-tidy:
+    name: clang-tidy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: cppcheck
-        uses: deep5050/cppcheck-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN}}
+      - name: clang-tidy check
+        uses: smay1613/clang-tidy-action@master
+    env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
