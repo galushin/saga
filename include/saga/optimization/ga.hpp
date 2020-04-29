@@ -82,19 +82,25 @@ namespace saga
         std::generate_n(std::back_inserter(population), pop_size - population.size(), gen);
     }
 
-    template <class Genotype, class UniformRandomBitGenerator>
-    void ga_boolean_mutation(Genotype & genotype, saga::probability<double> const & p_mutation,
-                             UniformRandomBitGenerator & rnd)
+    class ga_boolean_mutation_xor_fn
     {
-        std::bernoulli_distribution distr(p_mutation.value());
-
-        for(auto & gen : genotype)
+    public:
+        template <class Genotype, class UniformRandomBitGenerator>
+        void operator()(Genotype & genotype,
+                        saga::probability<double> const & p_mutation,
+                        UniformRandomBitGenerator & rnd) const
         {
-            gen ^= distr(rnd);
-        }
-    }
+            std::bernoulli_distribution distr(p_mutation.value());
 
-    template <class Genotype, class Crossover, class Selection>
+            for(auto & gen : genotype)
+            {
+                gen ^= distr(rnd);
+            }
+        }
+    };
+
+    template <class Genotype, class Crossover, class Selection,
+              class Mutation = saga::ga_boolean_mutation_xor_fn>
     struct GA_settings
     {
     public:
@@ -105,6 +111,7 @@ namespace saga
         double mutation_strength = 1.0;
         Crossover crossover{};
         Selection selection{};
+        Mutation mutation{};
 
         template <class Population, class Compare>
         void change_generation(Population & parents, Population & kids, Compare cmp) const
@@ -126,13 +133,19 @@ namespace saga
 
             parents.swap(kids);
         }
-    };
 
-    auto mutation_probability(double mutation_strength, int genes_count)
-    {
-        auto const avg_mutant_genes = std::min<double>(mutation_strength, genes_count);
-        return saga::probability<double>{avg_mutant_genes / genes_count};
-    }
+        template <class UniformRandomBitGenerator>
+        void mutate(Genotype & genotype, UniformRandomBitGenerator & urbg) const
+        {
+            auto const genes_count = genotype.size();
+
+            auto const avg_mutant_genes = std::min<double>(mutation_strength, genes_count);
+
+            auto const p_mutation = saga::probability<double>{avg_mutant_genes / genes_count};
+
+            this->mutation(genotype, p_mutation, urbg);
+        }
+    };
 
     template <class Population, class Problem, class GA_settings, class UniformRandomBitGegerator>
     void genetic_algorithm_boolean_cycle(Population & population,
@@ -158,9 +171,6 @@ namespace saga
         auto s_distr = settings.selection.build_distribution(obj_values, problem.compare);
 
         // Репродукция: селекция, скрещивание, нормальная мутация
-        auto const p_mutation
-            = ::saga::mutation_probability(settings.mutation_strength, problem.dimension);
-
         std::vector<Individual> kids;
         kids.reserve(settings.population_size);
 
@@ -175,7 +185,7 @@ namespace saga
 
                             auto kid = settings.crossover(population[par_1].solution,
                                                           population[par_2].solution, rnd);
-                            saga::ga_boolean_mutation(kid, p_mutation, rnd);
+                            settings.mutate(kid, rnd);
                             auto obj_value = problem.objective(kid);
 
                             return Individual{std::move(kid), std::move(obj_value)};
