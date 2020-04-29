@@ -69,7 +69,7 @@ install:
     - if [ "$GCC_VERSION" == 5 ]; then export CFLAGS="${CFLAGS} -std=gnu++14"; fi
     - if [ -n "$GCC_VERSION" ]; then export CFLAGS="${CFLAGS} -Wall"; fi
     - if [ -n "$CLANG_VERSION" ]; then export CFLAGS="${CFLAGS} -std=c++14"; fi
-    - if [ -n "$CLANG_VERSION" ]; CXX_FLAGS="${CXX_FLAGS} -stdlib=libc++ -nostdinc++ -cxx-isystem ${TRAVIS_BUILD_DIR}/llvm/include/c++/v1/ -Wno-unused-command-line-argument"; fi
+    - if [ -n "$CLANG_VERSION" ]; then export CFLAGS="${CFLAGS} -stdlib=libc++ -nostdinc++ -cxx-isystem ${TRAVIS_BUILD_DIR}/llvm/include/c++/v1/ -Wno-unused-command-line-argument"; fi
     - which $CXX && $CXX --version
 
 script:
