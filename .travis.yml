@@ -12,7 +12,6 @@ matrix:
           apt:
               packages:
                 - clang-5.0
-                - libstdc++-6-dev
               sources:
                 - ubuntu-toolchain-r-test
                 - llvm-toolchain-xenial-5.0
@@ -68,9 +67,7 @@ install:
     - if [ -n "$GCC_VERSION" ]; then export CXX="g++-${GCC_VERSION}" CC="gcc-${GCC_VERSION}"; fi
     - if [ "$GCC_VERSION" == 5 ]; then export CFLAGS="${CFLAGS} -std=gnu++14 -Wall"; fi
     - if [ -n "$GCC_VERSION" ]; then export CFLAGS="${CFLAGS} -Wall"; fi
-    - if [ -n "$CLANG_VERSION" ]; then export CXX="clang++-${CLANG_VERSION}" CC="clang-${CLANG_VERSION}"; fi
     - which $CXX && $CXX --version
-    - if [ -n "$CLANG_VERSION" ]; then PATH="${PATH}" CXX="$CXX" CC="$CC" ./install_libcxx.sh; fi
 
 script:
     - cd ./tests
