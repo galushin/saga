@@ -58,6 +58,7 @@
 		<Unit filename="../include/saga/random/iid_distribution.hpp" />
 		<Unit filename="../include/saga/type_traits.hpp" />
 		<Unit filename="../include/saga/view/indices.hpp" />
+		<Unit filename="algorithm.cpp" />
 		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
 		<Unit filename="cpp20/span.cpp" />
 		<Unit filename="iterator.cpp" />

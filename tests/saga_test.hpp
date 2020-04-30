@@ -158,7 +158,22 @@ namespace saga_test
     };
 
     template <>
-    struct arbitrary<char>;
+    struct arbitrary<char>
+    {
+    public:
+        template <class UniformRandomBitGenerator>
+        static char generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            if(generation == 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return std::uniform_int_distribution<char>(32, 126)(urbg);
+            }
+        }
+    };
 
     template <class T>
     struct arbitrary<T, std::enable_if_t<std::is_integral<T>::value>>
@@ -173,6 +188,11 @@ namespace saga_test
     template <class T, class A>
     struct arbitrary<std::vector<T, A>>
      : detail::arbitrary_container<std::vector<T, A>>
+    {};
+
+    template <>
+    struct arbitrary<std::string>
+     : detail::arbitrary_container<std::string>
     {};
 
     template <class T, std::size_t N>

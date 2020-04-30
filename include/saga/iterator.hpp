@@ -51,6 +51,26 @@ namespace detail
         }
     };
 
+    struct rbegin_fn
+    {
+        template <class Range>
+        auto operator()(Range && rng) const
+        {
+            using std::rbegin;
+            return rbegin(std::forward<Range>(rng));
+        }
+    };
+
+    struct rend_fn
+    {
+        template <class Range>
+        auto operator()(Range && rng) const
+        {
+            using std::rend;
+            return rend(std::forward<Range>(rng));
+        }
+    };
+
     struct size_fn
     {
         template <class SizedRange>
@@ -193,6 +213,8 @@ namespace detail
     {
         constexpr auto const & begin = detail::static_empty_const<detail::begin_fn>::value;
         constexpr auto const & end = detail::static_empty_const<detail::end_fn>::value;
+        constexpr auto const & rbegin = detail::static_empty_const<detail::rbegin_fn>::value;
+        constexpr auto const & rend = detail::static_empty_const<detail::rend_fn>::value;
 
         constexpr auto const & size = detail::static_empty_const<detail::size_fn>::value;
     }

@@ -145,16 +145,6 @@ namespace
         }
     }
 
-    bool starts_with(std::string const & str, std::string const & prefix)
-    {
-        if(str.size() < prefix.size())
-        {
-            return false;
-        }
-
-        return prefix == str.substr(0, prefix.size());
-    }
-
     Selection parse_selection(std::string const & str)
     {
         std::string const tournament_keyword("tournament");
@@ -166,7 +156,7 @@ namespace
         {
             return Selection(saga::selection_proportional{});
         }
-        else if(::starts_with(str, tournament_keyword))
+        else if(saga::starts_with(str, tournament_keyword))
         {
             int group_size = 2;
             bool repeat = true;

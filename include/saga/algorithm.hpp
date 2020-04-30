@@ -19,8 +19,10 @@ SAGA -- это свободной программное обеспечение:
 #define Z_SAGA_ALGORITHM_HPP_INCLUDED
 
 /** @file saga/algorithm.hpp
- @brief Аналоги алгоритмов STL, работающие с курсорами
+ @brief Аналоги алгоритмов STL, работающие с курсорами и интервалами
 */
+
+#include <saga/iterator.hpp>
 
 #include <saga/detail/static_empty_const.hpp>
 
@@ -93,6 +95,33 @@ namespace saga
         }
     };
 
+    struct starts_with_fn
+    {
+        template <typename InputRange1, typename InputRange2>
+        bool operator()(InputRange1 const & input, InputRange2 const & test) const
+        {
+            auto const test_end = saga::end(test);
+            auto const pos = std::mismatch(saga::begin(input), saga::end(input),
+                                           saga::begin(test), test_end);
+
+            return pos.second == test_end;
+        }
+    };
+
+    struct ends_with_fn
+    {
+    public:
+        template <typename BidirectionalRange1, typename BidirectionalRange2>
+        bool operator()(BidirectionalRange1 const & input, BidirectionalRange2 const & test) const
+        {
+            auto const test_end = saga::rend(test);
+            auto const pos = std::mismatch(saga::rbegin(input), saga::rend(input),
+                                           saga::rbegin(test), test_end);
+
+            return pos.second == test_end;
+        }
+    };
+
 
     namespace
     {
@@ -104,6 +133,9 @@ namespace saga
 
         constexpr auto const & lexicographical_compare
             = detail::static_empty_const<lexicographical_compare_fn>::value;
+
+        constexpr auto const & starts_with = detail::static_empty_const<starts_with_fn>::value;
+        constexpr auto const & ends_with = detail::static_empty_const<ends_with_fn>::value;
     }
 }
 // namespace saga
