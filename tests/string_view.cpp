@@ -104,6 +104,7 @@ TEST_CASE("string_view : ctor from pointer and size")
     constexpr saga::string_view const sv(z_str, num);
 
     static_assert(sv.size() == num, "");
+    static_assert(sv.length() == sv.size(), "");
     static_assert(sv.data() == z_str, "");
 
     saga_test::property_checker << [](std::string const & str)
@@ -113,11 +114,110 @@ TEST_CASE("string_view : ctor from pointer and size")
         saga::string_view const sv(str.c_str(), num);
 
         REQUIRE(sv.size() == num);
+        REQUIRE(sv.length() == sv.size());
         REQUIRE(sv.data() == str.data());
     };
 }
 
-// @todo Конструктор копий
-// @todo Оператор присваивания
+// @todo Проверить, что constant_iterator - это итератор приозвольного доступа и непрерывный итератор
+
+TEST_CASE("string_view : iterators of empty")
+{
+    constexpr saga::string_view const sv0{};
+
+    static_assert(sv0.empty(), "");
+
+    static_assert(sv0.begin() == sv0.end(), "");
+    static_assert(sv0.cbegin() == sv0.begin(), "");
+    static_assert(sv0.cbegin() == sv0.cend(), "");
+
+    /* @todo Добавить, требует constexpr reverse_iterator
+    static_assert(sv0.rbegin() == saga::string_view::reverse_iterator(sv0.end()), "");
+    static_assert(sv0.crbegin() == sv0.rbegin(), "");
+    static_assert(sv0.rend() == saga::string_view::reverse_iterator(sv0.begin()), "");
+    static_assert(sv0.crend() == sv0.rend(), "");
+    */
+}
+
+TEST_CASE("string_view : iterators, common case")
+{
+    saga_test::property_checker << [](std::string const & str)
+    {
+        saga::string_view const sv(str.c_str(), str.size());
+
+        CAPTURE(str);
+        REQUIRE(sv.empty() == str.empty());
+
+        if(!sv.empty())
+        {
+            REQUIRE(std::addressof(*sv.begin()) == sv.data());
+            REQUIRE(sv.cbegin() == sv.begin());
+        }
+
+        REQUIRE(sv.end() == sv.begin() + sv.size());
+        REQUIRE(sv.cend() == sv.end());
+
+        REQUIRE(sv.rbegin() == saga::string_view::reverse_iterator(sv.end()));
+        REQUIRE(sv.crbegin() == sv.rbegin());
+        REQUIRE(sv.rend() == saga::string_view::reverse_iterator(sv.begin()));
+        REQUIRE(sv.crend() == sv.rend());
+    };
+}
+
+// @todo max_size
+
+TEST_CASE("string_view : operator[], front, back")
+{
+    // @todo constexpr opertor[], front, back
+    constexpr char const * z_str = "This is a test string";
+    constexpr auto const num = 7;
+
+    constexpr saga::string_view const sv(z_str, num);
+
+    static_assert(!sv.empty(), "");
+    static_assert(sv.front() == sv[0], "");
+    static_assert(sv.back() == sv[sv.size() - 1], "");
+
+    saga_test::property_checker << [](std::string const & str)
+    {
+        auto const num = saga_test::random_uniform(0*str.size(), str.size());
+
+        saga::string_view const sv(str.c_str(), num);
+
+        for(auto index = 0*sv.size(); index < sv.size(); ++ index)
+        {
+            REQUIRE(sv[index] == str.at(index));
+            REQUIRE(std::addressof(sv[index]) == sv.data() + index);
+        }
+
+        if(!sv.empty())
+        {
+            REQUIRE(sv.front() == sv[0]);
+            REQUIRE(sv.back() == sv[sv.size() - 1]);
+        }
+    };
+}
+
+TEST_CASE("string_view : at")
+{
+    // @todo constexpr at
+    saga_test::property_checker << [](std::string const & str, std::size_t index)
+    {
+        auto const num = saga_test::random_uniform(0*str.size(), str.size());
+
+        saga::string_view const sv(str.c_str(), num);
+
+        if(index < sv.size())
+        {
+            REQUIRE(std::addressof(sv.at(index)) == std::addressof(sv[index]));
+        }
+        else
+        {
+            REQUIRE_THROWS_AS(sv.at(index), std::out_of_range);
+        }
+    };
+}
+
+// @todo data
 
 // @todo Закончить раздел 24.4

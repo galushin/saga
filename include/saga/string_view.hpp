@@ -30,6 +30,9 @@ SAGA -- это свободной программное обеспечение:
  @todo Обобщить тесты на u16string_view, u32string_view, wstring_view и нестандартные характеристики
 */
 
+#include <cassert>
+
+#include <stdexcept>
 #include <string>
 
 namespace saga
@@ -38,6 +41,7 @@ namespace saga
     последовательность символьно-подобных объектов, первый элемент которой имеет индекс ноль.
 
     Сложность операций является константной, если явно не указано иное.
+    @todo constextr для обратных итераторов
     */
     template <class charT, class traits = std::char_traits<charT>>
     class basic_string_view
@@ -65,6 +69,9 @@ namespace saga
         */
         constexpr basic_string_view() noexcept = default;
 
+        constexpr basic_string_view(basic_string_view const & ) noexcept = default;
+        constexpr basic_string_view & operator=(basic_string_view const & ) noexcept = default;
+
         /** @brief Конструктор на основе строки, заверщающейся нулевым символом
         @param str Указатель на начало строки, завершающейся нулевым символом
         @pre <tt>[str, str+traits::length(str))</tt> является корректным интервалом
@@ -89,18 +96,98 @@ namespace saga
          , size_(len)
         {}
 
+        // Итераторы
+        constexpr const_iterator begin() const
+        {
+            return this->data();
+        }
+
+        constexpr const_iterator cbegin() const
+        {
+            return this->begin();
+        }
+
+        constexpr const_iterator end() const
+        {
+            return this->begin() + this->size();
+        }
+
+        constexpr const_iterator cend() const
+        {
+            return this->end();
+        }
+
+        const_reverse_iterator rbegin() const
+        {
+            return reverse_iterator(this->end());
+        }
+
+        const_reverse_iterator crbegin() const
+        {
+            return this->rbegin();
+        }
+
+        const_reverse_iterator rend() const
+        {
+            return reverse_iterator(this->begin());
+        }
+
+        const_reverse_iterator crend() const
+        {
+            return this->rend();
+        }
+
         // Ёмкость
         constexpr size_type size() const
         {
             return this->size_;
         }
 
+        constexpr size_type length() const
+        {
+            return this->size();
+        }
+
+        /**
+        @todo [[nodiscard]]
+        */
         constexpr bool empty() const
         {
-            return true;
+            return 0 == this->size();
         }
 
         // Доступ к элементам
+        constexpr const_reference operator[](size_type pos) const
+        {
+            assert(pos < this->size());
+
+            return this->data()[pos];
+        }
+
+        const_reference at(size_type pos) const
+        {
+            if(pos < this->size())
+            {
+                return (*this)[pos];
+            }
+            else
+            {
+                throw std::out_of_range("string_view::at");
+            }
+        }
+
+        constexpr const_reference front() const
+        {
+            assert(!this->empty());
+            return (*this)[0];
+        }
+
+        constexpr const_reference back() const
+        {
+            assert(!this->empty());
+            return (*this)[this->size() - 1];
+        }
+
         constexpr const_pointer data() const
         {
             return this->data_;
