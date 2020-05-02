@@ -98,15 +98,6 @@ TEST_CASE("string_view : ctor from null-terminated string")
 
 TEST_CASE("string_view : ctor from pointer and size")
 {
-    constexpr char const * z_str = "This is a test string";
-    constexpr auto const num = 7;
-
-    constexpr saga::string_view const sv(z_str, num);
-
-    static_assert(sv.size() == num, "");
-    static_assert(sv.length() == sv.size(), "");
-    static_assert(sv.data() == z_str, "");
-
     saga_test::property_checker << [](std::string const & str)
     {
         auto const num = saga_test::random_uniform(0*str.size(), str.size());
@@ -117,6 +108,18 @@ TEST_CASE("string_view : ctor from pointer and size")
         REQUIRE(sv.length() == sv.size());
         REQUIRE(sv.data() == str.data());
     };
+}
+
+TEST_CASE("string_view : ctor from pointer and size; constexpr")
+{
+    constexpr char const * z_str = "This is a test string";
+    constexpr auto const num = 7;
+
+    constexpr saga::string_view const sv(z_str, num);
+
+    static_assert(sv.size() == num, "");
+    static_assert(sv.length() == sv.size(), "");
+    static_assert(sv.data() == z_str, "");
 }
 
 // @todo Проверить, что constant_iterator - это итератор приозвольного доступа и непрерывный итератор
@@ -168,16 +171,6 @@ TEST_CASE("string_view : iterators, common case")
 
 TEST_CASE("string_view : operator[], front, back")
 {
-    // @todo constexpr opertor[], front, back
-    constexpr char const * z_str = "This is a test string";
-    constexpr auto const num = 7;
-
-    constexpr saga::string_view const sv(z_str, num);
-
-    static_assert(!sv.empty(), "");
-    static_assert(sv.front() == sv[0], "");
-    static_assert(sv.back() == sv[sv.size() - 1], "");
-
     saga_test::property_checker << [](std::string const & str)
     {
         auto const num = saga_test::random_uniform(0*str.size(), str.size());
@@ -198,9 +191,20 @@ TEST_CASE("string_view : operator[], front, back")
     };
 }
 
+TEST_CASE("string_view : operator[], front, back; constexpr")
+{
+    constexpr char const * z_str = "This is a test string";
+    constexpr auto const num = 7;
+
+    constexpr saga::string_view const sv(z_str, num);
+
+    static_assert(!sv.empty(), "");
+    static_assert(sv.front() == sv[0], "");
+    static_assert(sv.back() == sv[sv.size() - 1], "");
+}
+
 TEST_CASE("string_view : at")
 {
-    // @todo constexpr at
     saga_test::property_checker << [](std::string const & str, std::size_t index)
     {
         auto const num = saga_test::random_uniform(0*str.size(), str.size());
@@ -218,6 +222,59 @@ TEST_CASE("string_view : at")
     };
 }
 
-// @todo data
+TEST_CASE("string_view : at; constexpr")
+{
+    constexpr char const * z_str = "This is a test string";
+    constexpr auto const num = 7;
+
+    constexpr saga::string_view const sv(z_str, num);
+
+    static_assert(sv.at(0) == sv[0], "");
+    static_assert(sv.at(1) == sv[1], "");
+    static_assert(sv.at(2) == sv[2], "");
+    static_assert(sv.at(3) == sv[3], "");
+    static_assert(sv.at(4) == sv[4], "");
+    static_assert(sv.at(5) == sv[5], "");
+    static_assert(sv.at(6) == sv[6], "");
+}
+
+// data покрыта тестами выше
+
+// @todo constexpr remove_prefix
+TEST_CASE("string_view : remove_prefix")
+{
+
+    saga_test::property_checker << [](std::string const & str)
+    {
+        auto const num = saga_test::random_uniform(0*str.size(), str.size());
+
+        saga::string_view sv(str.c_str(), str.size());
+
+        auto const sv_old = sv;
+
+        sv.remove_prefix(num);
+
+        REQUIRE(sv.data() == sv_old.data() + num);
+        REQUIRE(sv.size() == sv_old.size() - num);
+    };
+}
+
+// @todo constexpr remove_suffix
+TEST_CASE("string_view : remove_suffix")
+{
+    saga_test::property_checker << [](std::string const & str)
+    {
+        auto const num = saga_test::random_uniform(0*str.size(), str.size());
+
+        saga::string_view sv(str.c_str(), str.size());
+
+        auto const sv_old = sv;
+
+        sv.remove_suffix(num);
+
+        REQUIRE(sv.data() == sv_old.data());
+        REQUIRE(sv.size() == sv_old.size() - num);
+    };
+}
 
 // @todo Закончить раздел 24.4

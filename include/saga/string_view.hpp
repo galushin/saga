@@ -164,16 +164,11 @@ namespace saga
             return this->data()[pos];
         }
 
-        const_reference at(size_type pos) const
+        constexpr const_reference at(size_type pos) const
         {
-            if(pos < this->size())
-            {
-                return (*this)[pos];
-            }
-            else
-            {
-                throw std::out_of_range("string_view::at");
-            }
+            return (pos < this->size())
+                   ? (*this)[pos]
+                   : throw std::out_of_range("string_view::at"), (*this)[pos];
         }
 
         constexpr const_reference front() const
@@ -191,6 +186,20 @@ namespace saga
         constexpr const_pointer data() const
         {
             return this->data_;
+        }
+
+        // Модификаторы
+        void remove_prefix(size_type n)
+        {
+            assert(n <= this->size());
+            this->data_ += n;
+            this->size_ -= n;
+        }
+
+        void remove_suffix(size_type n)
+        {
+            assert(n <= this->size());
+            this->size_ -= n;
         }
 
     private:
