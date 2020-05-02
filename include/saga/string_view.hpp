@@ -24,8 +24,8 @@ SAGA -- это свободной программное обеспечение:
 
  Эти классы можно использовать как нешаблонные параметры там, где требуется последовательность
  символов.
+ Реализация основана на www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/n4727.pdf
 
- @todo Совместимость с std::basic_string
  @todo Совместимость с std::basic_string_view (там где, он есть)
  @todo Обобщить тесты на u16string_view, u32string_view, wstring_view и нестандартные характеристики
 */
@@ -42,10 +42,42 @@ namespace saga
 
     Сложность операций является константной, если явно не указано иное.
     @todo constextr для обратных итераторов
+    @todo Определять операторы автоматически там, где это возможно
     */
     template <class charT, class traits = std::char_traits<charT>>
     class basic_string_view
     {
+        // Функции сравнения
+        friend bool operator==(basic_string_view lhs, basic_string_view rhs) noexcept
+        {
+            return lhs.compare(rhs) == 0;
+        }
+
+        friend bool operator!=(basic_string_view lhs, basic_string_view rhs) noexcept
+        {
+            return !(lhs == rhs);
+        }
+
+        friend bool operator<(basic_string_view lhs, basic_string_view rhs) noexcept
+        {
+            return lhs.compare(rhs) < 0;
+        }
+
+        friend bool operator>(basic_string_view lhs, basic_string_view rhs) noexcept
+        {
+            return rhs < lhs;
+        }
+
+        friend bool operator<=(basic_string_view lhs, basic_string_view rhs) noexcept
+        {
+            return !(rhs < lhs);
+        }
+
+        friend bool operator>=(basic_string_view lhs, basic_string_view rhs) noexcept
+        {
+            return !(lhs < rhs);
+        }
+
     public:
         // Типы
         using traits_type = traits;
@@ -94,6 +126,10 @@ namespace saga
         constexpr basic_string_view(charT const * str, size_type len)
          : data_(str)
          , size_(len)
+        {}
+
+        basic_string_view(std::string const & str)
+         : basic_string_view(str.data(), str.size())
         {}
 
         // Итераторы
@@ -168,7 +204,7 @@ namespace saga
         {
             return (pos < this->size())
                    ? (*this)[pos]
-                   : throw std::out_of_range("string_view::at"), (*this)[pos];
+                   : throw std::out_of_range("saga::string_view::at"), (*this)[pos];
         }
 
         constexpr const_reference front() const
@@ -202,6 +238,122 @@ namespace saga
             this->size_ -= n;
         }
 
+        void swap(basic_string_view & that) noexcept
+        {
+            using std::swap;
+            swap(this->data_, that.data_);
+            swap(this->size_, that.size_);
+        }
+
+        // Строковые операции
+        /**
+        @pre <tt>[s, s+n)</tt> является корректным интервалом
+        */
+        size_type copy(charT * s, size_type n, size_type pos = 0) const
+        {
+            if(pos > this->size())
+            {
+                throw std::out_of_range("saga::string_view::copy");
+            }
+
+            auto const rlen = std::min(n, this->size() - pos);
+
+            traits_type::copy(s, this->data() + pos, rlen);
+
+            return rlen;
+        }
+
+        basic_string_view substr(size_type pos = 0, size_type n = npos) const
+        {
+            if(pos > this->size())
+            {
+                throw std::out_of_range("saga::string_view::substr");
+            }
+
+            auto const rlen = std::min(n, this->size() - pos);
+            return basic_string_view(this->data() + pos, rlen);
+        }
+
+        /**
+        Сложность является линейной по rlen
+        */
+        int compare(basic_string_view str) const noexcept
+        {
+            auto const rlen = std::min(this->size(), str.size());
+
+            auto const cmp_common = traits_type::compare(this->data(), str.data(), rlen);
+
+            if(cmp_common != 0)
+            {
+                return cmp_common;
+            }
+            else if(this->size() < str.size())
+            {
+                return -1;
+            }
+            else
+            {
+                return this->size() - str.size();
+            }
+        }
+
+        int compare(size_type pos1, size_type n1, basic_string_view str) const
+        {
+            return this->substr(pos1, n1).compare(str);
+        }
+
+        int compare(size_type pos1, size_type n1,
+                    basic_string_view str, size_type pos2, size_type n2) const
+        {
+            return this->substr(pos1, n1).compare(str.substr(pos2, n2));
+        }
+
+        int compare(char const * s) const
+        {
+            return this->compare(basic_string_view(s));
+        }
+
+        int compare(size_type pos1, size_type n1, char const * s) const
+        {
+            return this->substr(pos1, n1).compare(basic_string_view(s));
+        }
+
+        int compare(size_type pos1, size_type n1, char const * s, size_type n2) const
+        {
+            return this->substr(pos1, n1).compare(basic_string_view(s, n2));
+        }
+
+        bool starts_with(basic_string_view str) const noexcept
+        {
+            return this->size() >= str.size() && this->compare(0, str.size(), str) == 0;
+        }
+
+        bool starts_with(charT c) const noexcept
+        {
+            return this->starts_with(basic_string_view(&c, 1));
+        }
+
+        bool starts_with(charT const * s) const
+        {
+            return this->starts_with(basic_string_view(s));
+        }
+
+        bool ends_with(basic_string_view str) const noexcept
+        {
+            return this->size() >= str.size()
+                    && this->compare(this->size() - str.size(), str.size(), str) == 0;
+        }
+
+        bool ends_with(charT c) const noexcept
+        {
+            return this->ends_with(basic_string_view(&c, 1));
+        }
+
+        bool ends_with(charT const * s) const
+        {
+            return this->ends_with(basic_string_view(s));
+        }
+
     private:
         const_pointer data_ = nullptr;
         size_type size_ = 0;
@@ -212,6 +364,33 @@ namespace saga
     using u16string_view = basic_string_view<char16_t>;
     using u32string_view = basic_string_view<char32_t>;
     using wstring_view = basic_string_view<wchar_t>;
+
+    // Суффиксы для литералов basic_string_view
+    // @todo constexpr
+    inline namespace literals {
+    inline namespace string_view_literals
+    {
+        string_view operator""_sv(char const * str, std::size_t length) noexcept
+        {
+            return string_view{str, length};
+        }
+
+        u16string_view operator""_sv(char16_t const * str, std::size_t length) noexcept
+        {
+            return u16string_view{str, length};
+        }
+
+        u32string_view operator""_sv(char32_t const * str, std::size_t length) noexcept
+        {
+            return u32string_view{str, length};
+        }
+
+        wstring_view operator""_sv(wchar_t const * str, std::size_t length) noexcept
+        {
+            return wstring_view{str, length};
+        }
+    }
+    }
 }
 //namespace saga
 
