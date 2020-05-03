@@ -30,16 +30,10 @@ using StringView = saga::basic_string_view<char, std::char_traits<char>>;
 static_assert(std::is_same<saga::basic_string_view<char>,
                            saga::basic_string_view<char, std::char_traits<char>>>::value, "");
 
-// @todo 24.4.3 Операторы сравнения
-// @todo 24.4.4 Операторы вставки в поток и извлечения из потока
-
 static_assert(std::is_same<saga::string_view, saga::basic_string_view<char>>::value, "");
 static_assert(std::is_same<saga::u16string_view, saga::basic_string_view<char16_t>>::value, "");
 static_assert(std::is_same<saga::u32string_view, saga::basic_string_view<char32_t>>::value, "");
 static_assert(std::is_same<saga::wstring_view, saga::basic_string_view<wchar_t>>::value, "");
-
-// @todo 24.4.5 Поддержка hash
-// @todo 24.4.6 Литералы
 
 // Типы
 static_assert(std::is_same<saga::string_view::traits_type, std::char_traits<char>>::value, "");
@@ -124,12 +118,28 @@ TEST_CASE("string_view : ctor from pointer and size; constexpr")
 
 TEST_CASE("string_view : ctor from std::string")
 {
+    static_assert(std::is_convertible<std::string, saga::string_view>::value, "");
+
     saga_test::property_checker << [](std::string const & str)
     {
         saga::string_view const sv(str);
 
         REQUIRE(sv.data() == str.data());
         REQUIRE(sv.size() == str.size());
+    };
+}
+
+TEST_CASE("string_view : implicit coversion to string_view")
+{
+    static_assert(std::is_convertible<saga::string_view, std::string>::value, "");
+
+    saga_test::property_checker << [](std::string const & str)
+    {
+        saga::string_view const sv(str);
+
+        std::string const str2 = sv;
+
+        REQUIRE(str == str2);
     };
 }
 
@@ -741,8 +751,19 @@ TEST_CASE("string_view : non-member comparison functions")
     };
 }
 
-// @todo Вставка и извлечение из потока
-// @todo Хэш-функции
+// @todo 24.4.4 Операторы вставки в поток и извлечения из потока
+
+TEST_CASE("string_view : hash")
+{
+    saga_test::property_checker << [](std::string const & str)
+    {
+        saga::string_view const sv(str);
+
+        static_assert(noexcept(std::hash<saga::string_view>{}(sv)), "");
+
+        REQUIRE(std::hash<saga::string_view>{}(sv) == std::hash<std::string>{}(str));
+    };
+}
 
 TEST_CASE("string_view: char literatls")
 {
@@ -750,7 +771,7 @@ TEST_CASE("string_view: char literatls")
 
     static_assert(noexcept("sample string_view literal"_sv), "");
 
-    saga::string_view const actual = "sample string_view literal"_sv;
+    constexpr saga::string_view const actual = "sample string_view literal"_sv;
     saga::string_view const expected("sample string_view literal");
 
     REQUIRE(actual == expected);
@@ -762,7 +783,7 @@ TEST_CASE("string_view: char16_t literatls")
 
     static_assert(noexcept(u"sample string_view literal"_sv), "");
 
-    saga::u16string_view const actual = u"sample string_view literal"_sv;
+    constexpr saga::u16string_view const actual = u"sample string_view literal"_sv;
     saga::u16string_view const expected(u"sample string_view literal");
 
     REQUIRE(actual == expected);
@@ -774,7 +795,7 @@ TEST_CASE("string_view: char32_t literatls")
 
     static_assert(noexcept(U"sample string_view literal"_sv), "");
 
-    saga::u32string_view const actual = U"sample string_view literal"_sv;
+    constexpr saga::u32string_view const actual = U"sample string_view literal"_sv;
     saga::u32string_view const expected(U"sample string_view literal");
 
     REQUIRE(actual == expected);
@@ -786,7 +807,7 @@ TEST_CASE("string_view: wchar_t literatls")
 
     static_assert(noexcept(L"sample string_view literal"_sv), "");
 
-    saga::wstring_view const actual = L"sample string_view literal"_sv;
+    constexpr saga::wstring_view const actual = L"sample string_view literal"_sv;
     saga::wstring_view const expected(L"sample string_view literal");
 
     REQUIRE(actual == expected);

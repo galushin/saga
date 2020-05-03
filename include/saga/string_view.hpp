@@ -42,6 +42,7 @@ namespace saga
 
     Сложность операций является константной, если явно не указано иное.
     @todo constextr для обратных итераторов
+    @todo constextr для всех функций
     @todo Определять операторы автоматически там, где это возможно
     */
     template <class charT, class traits = std::char_traits<charT>>
@@ -131,6 +132,12 @@ namespace saga
         basic_string_view(std::string const & str)
          : basic_string_view(str.data(), str.size())
         {}
+
+        // Неявное преобразование в строку
+        operator std::basic_string<charT, traits>() const
+        {
+            return std::basic_string<charT, traits>(this->data(), this->size());
+        }
 
         // Итераторы
         constexpr const_iterator begin() const
@@ -366,26 +373,25 @@ namespace saga
     using wstring_view = basic_string_view<wchar_t>;
 
     // Суффиксы для литералов basic_string_view
-    // @todo constexpr
     inline namespace literals {
     inline namespace string_view_literals
     {
-        string_view operator""_sv(char const * str, std::size_t length) noexcept
+        constexpr string_view operator""_sv(char const * str, std::size_t length) noexcept
         {
             return string_view{str, length};
         }
 
-        u16string_view operator""_sv(char16_t const * str, std::size_t length) noexcept
+        constexpr u16string_view operator""_sv(char16_t const * str, std::size_t length) noexcept
         {
             return u16string_view{str, length};
         }
 
-        u32string_view operator""_sv(char32_t const * str, std::size_t length) noexcept
+        constexpr u32string_view operator""_sv(char32_t const * str, std::size_t length) noexcept
         {
             return u32string_view{str, length};
         }
 
-        wstring_view operator""_sv(wchar_t const * str, std::size_t length) noexcept
+        constexpr wstring_view operator""_sv(wchar_t const * str, std::size_t length) noexcept
         {
             return wstring_view{str, length};
         }
@@ -393,6 +399,21 @@ namespace saga
     }
 }
 //namespace saga
+
+
+namespace std
+{
+    template <class charT, class traits>
+    struct hash<saga::basic_string_view<charT, traits>>
+    {
+        std::size_t operator()(saga::basic_string_view<charT, traits> sv) const noexcept
+        {
+            // @todo Возможна ли оптимизации с сохранением значения хэша?
+            using String = std::basic_string<charT, traits>;
+            return std::hash<String>{}(String(sv));
+        }
+    };
+}
 
 #endif
 // Z_SAGA_STRING_VIEW_HPP_INCLUDED
