@@ -23,6 +23,8 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
+#include <iomanip>
+#include <sstream>
 
 // Тесты
 using StringView = saga::basic_string_view<char, std::char_traits<char>>;
@@ -77,8 +79,6 @@ static_assert(std::is_nothrow_copy_assignable<saga::string_view>{}, "");
 
 TEST_CASE("string_view : ctor from null-terminated string")
 {
-    // @todo Должен быть constexpr (пока невозможно реализовать, так как char_traits не constexpr)
-
     saga_test::property_checker << [](std::string const & str)
     {
         char const * z_str = str.c_str();
@@ -88,6 +88,14 @@ TEST_CASE("string_view : ctor from null-terminated string")
         REQUIRE(sv.size() == saga::string_view::traits_type::length(z_str));
         REQUIRE(sv.data() == z_str);
     };
+}
+
+TEST_CASE("string_view : construct from nullptr")
+{
+    saga::string_view const sv(nullptr);
+
+    REQUIRE(sv.size() == 0);
+    REQUIRE(sv.data() == nullptr);
 }
 
 TEST_CASE("string_view : ctor from pointer and size")
@@ -124,6 +132,8 @@ TEST_CASE("string_view : ctor from std::string")
     {
         saga::string_view const sv(str);
 
+        static_assert(noexcept(saga::string_view(str)), "");
+
         REQUIRE(sv.data() == str.data());
         REQUIRE(sv.size() == str.size());
     };
@@ -143,7 +153,32 @@ TEST_CASE("string_view : implicit coversion to string_view")
     };
 }
 
-// @todo Проверить, что constant_iterator - это итератор приозвольного доступа и непрерывный итератор
+TEST_CASE("string_veiw : iterators are random access")
+{
+    saga_test::property_checker << [](std::string const & str)
+    {
+        saga::string_view const sv(str);
+
+        REQUIRE(std::is_heap(sv.begin(), sv.end()) == std::is_heap(str.begin(), str.end()));
+    };
+}
+
+TEST_CASE("string_veiw : iterators are сontiguous")
+{
+    saga_test::property_checker << [](std::string const & str)
+    {
+        saga::string_view const sv(str);
+
+        auto const n = sv.size();
+        auto const first = sv.begin();
+
+        for(auto index = 0*n; index < n; ++ index)
+        {
+            REQUIRE(std::addressof(first[index]) == std::addressof(*first) + index);
+        }
+    };
+}
+
 
 TEST_CASE("string_view : iterators of empty")
 {
@@ -154,13 +189,6 @@ TEST_CASE("string_view : iterators of empty")
     static_assert(sv0.begin() == sv0.end(), "");
     static_assert(sv0.cbegin() == sv0.begin(), "");
     static_assert(sv0.cbegin() == sv0.cend(), "");
-
-    /* @todo Добавить, требует constexpr reverse_iterator
-    static_assert(sv0.rbegin() == saga::string_view::reverse_iterator(sv0.end()), "");
-    static_assert(sv0.crbegin() == sv0.rbegin(), "");
-    static_assert(sv0.rend() == saga::string_view::reverse_iterator(sv0.begin()), "");
-    static_assert(sv0.crend() == sv0.rend(), "");
-    */
 }
 
 TEST_CASE("string_view : iterators, common case")
@@ -188,7 +216,17 @@ TEST_CASE("string_view : iterators, common case")
     };
 }
 
-// @todo max_size
+TEST_CASE("string_view : max_size")
+{
+    constexpr saga::string_view const sv{};
+
+    static_assert(noexcept(sv.max_size()), "");
+    static_assert(std::is_same<decltype(sv.max_size()), saga::string_view::size_type>{}, "");
+
+    constexpr auto const ms = sv.max_size();
+
+    REQUIRE(ms >= std::string{}.max_size());
+}
 
 TEST_CASE("string_view : operator[], front, back")
 {
@@ -261,7 +299,6 @@ TEST_CASE("string_view : at; constexpr")
 
 // data покрыта тестами выше
 
-// @todo constexpr remove_prefix
 TEST_CASE("string_view : remove_prefix")
 {
 
@@ -280,7 +317,6 @@ TEST_CASE("string_view : remove_prefix")
     };
 }
 
-// @todo constexpr remove_suffix
 TEST_CASE("string_view : remove_suffix")
 {
     saga_test::property_checker << [](std::string const & str)
@@ -298,7 +334,6 @@ TEST_CASE("string_view : remove_suffix")
     };
 }
 
-// @todo constexpr swap
 TEST_CASE("string_view : swap")
 {
     saga_test::property_checker << [](std::string const & str1, std::string const & str2)
@@ -366,7 +401,6 @@ TEST_CASE("string_view : copy, default pos = 0")
     };
 }
 
-// @todo constexpr substr
 TEST_CASE("string_view : substr")
 {
     saga_test::property_checker << [](std::string const & str)
@@ -432,7 +466,6 @@ TEST_CASE("string_view : default n, default pos")
     };
 }
 
-// @todo constexpr compare - требуется constexpr char_traits
 namespace
 {
     template <class Arithmetic>
@@ -686,9 +719,26 @@ TEST_CASE("string_view : ends_with c-string")
     };
 }
 
+TEST_CASE("string_view : find")
+{
+    saga_test::property_checker << [](std::string const & str1, std::string const & str2)
+    {
+        saga::string_view const sv1(str1);
+        saga::string_view const sv2(str2);
+
+        static_assert(noexcept(sv1.find(sv2)), "");
+
+        CAPTURE(str1, str2);
+
+        REQUIRE(sv1.find(sv2) == str1.find(str2));
+        REQUIRE(sv1.find(sv1) == str1.find(str1));
+    };
+}
+
+// @todo find - тест с гарантированным вхождением
+
 // @todo 24.4.2.7 Поиск
 
-// @todo constexpr в свободных функциях сравнения
 TEST_CASE("string_view : non-member comparison functions")
 {
     saga_test::property_checker << [](std::string const & str1, std::string const & str2)
@@ -751,7 +801,73 @@ TEST_CASE("string_view : non-member comparison functions")
     };
 }
 
-// @todo 24.4.4 Операторы вставки в поток и извлечения из потока
+namespace
+{
+    // Отрицательные значения 'width' означают выравнивание по правому краю.
+    template <typename T>
+    std::string write_padded(const T& s, int width, char fill = 0)
+    {
+        std::ostringstream oss;
+        if (fill != 0)
+        {
+            oss << std::setfill(fill);
+        }
+        if (width < 0)
+        {
+            width = -width;
+            oss << std::right;
+        }
+        oss << std::setw(width) << s;
+        return oss.str();
+    }
+}
+
+TEST_CASE("string_view : ostreaming")
+{
+    saga_test::property_checker << [](std::string const & str)
+    {
+        saga::string_view const sv(str);
+
+        std::ostringstream oss;
+
+        static_assert(std::is_same<decltype(oss << sv), std::ostream &>{}, "");
+
+        std::ostream & result = (oss << sv);
+
+        REQUIRE(std::addressof(result) == std::addressof(oss));
+        REQUIRE(oss.str() == str);
+    };
+}
+
+TEST_CASE("string_view : ostreaming, padding")
+{
+    saga_test::property_checker << [](std::string const & str)
+    {
+        saga::string_view const sv(str);
+
+        for (int w = -64; w < 64; ++w)
+        {
+            REQUIRE(::write_padded(str, w) == ::write_padded(sv, w));
+            REQUIRE(::write_padded(str, w, '#') == ::write_padded(sv, w, '#'));
+        }
+    };
+}
+
+TEST_CASE("string_view : ostreaming, reset width after write")
+{
+    saga_test::property_checker << [](std::string const & str)
+    {
+        saga::string_view const sv(str);
+
+        std::ostringstream oss;
+        oss << "[" << std::setfill('#') << std::setw(5) << str << "]";
+
+        std::ostringstream oss_v;
+        oss_v << "[" << std::setfill('#') << std::setw(5) << sv << "]";
+
+        REQUIRE(oss.str() == oss_v.str());
+    };
+}
 
 TEST_CASE("string_view : hash")
 {

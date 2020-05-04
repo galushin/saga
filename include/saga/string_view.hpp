@@ -25,13 +25,12 @@ SAGA -- это свободной программное обеспечение:
  Эти классы можно использовать как нешаблонные параметры там, где требуется последовательность
  символов.
  Реализация основана на www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/n4727.pdf
-
- @todo Совместимость с std::basic_string_view (там где, он есть)
- @todo Обобщить тесты на u16string_view, u32string_view, wstring_view и нестандартные характеристики
 */
 
 #include <cassert>
 
+#include <algorithm>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -41,9 +40,6 @@ namespace saga
     последовательность символьно-подобных объектов, первый элемент которой имеет индекс ноль.
 
     Сложность операций является константной, если явно не указано иное.
-    @todo constextr для обратных итераторов
-    @todo constextr для всех функций
-    @todo Определять операторы автоматически там, где это возможно
     */
     template <class charT, class traits = std::char_traits<charT>>
     class basic_string_view
@@ -77,6 +73,49 @@ namespace saga
         friend bool operator>=(basic_string_view lhs, basic_string_view rhs) noexcept
         {
             return !(lhs < rhs);
+        }
+
+        // Вставка в поток
+        friend std::basic_ostream<charT, traits> &
+        operator<<(std::basic_ostream<charT, traits> & os, basic_string_view sv)
+        {
+            typename std::basic_ostream<charT, traits>::sentry sentry(os);
+
+            if(sentry)
+            {
+                size_type l_pad = 0;
+                size_type r_pad = 0;
+
+                if(static_cast<size_type>(os.width()) > sv.size())
+                {
+                    auto const pad = os.width() - sv.size();
+
+                    if((os.flags() & os.adjustfield) == os.left)
+                    {
+                        r_pad = pad;
+                    }
+                    else
+                    {
+                        l_pad = pad;
+                    }
+                }
+
+                for(; l_pad > 0; -- l_pad)
+                {
+                    os.rdbuf()->sputc(os.fill());
+                }
+
+                os.rdbuf()->sputn(sv.data(), sv.size());
+
+                for(; r_pad > 0; -- r_pad)
+                {
+                    os.rdbuf()->sputc(os.fill());
+                }
+
+                os.width(0);
+            }
+
+            return os;
         }
 
     public:
@@ -114,7 +153,7 @@ namespace saga
         Сложность пропорциональна <tt>traits::length(str)</tt>
         */
         basic_string_view(charT const * str)
-         : basic_string_view(str, traits_type::length(str))
+         : basic_string_view(str, str == nullptr ? 0 : traits_type::length(str))
         {}
 
         /** @brief Конструктор на основе строки, заверщающейся нулевым символом
@@ -129,7 +168,8 @@ namespace saga
          , size_(len)
         {}
 
-        basic_string_view(std::string const & str)
+        template <class Allocator>
+        basic_string_view(std::basic_string<charT, traits_type, Allocator> const & str) noexcept
          : basic_string_view(str.data(), str.size())
         {}
 
@@ -191,9 +231,11 @@ namespace saga
             return this->size();
         }
 
-        /**
-        @todo [[nodiscard]]
-        */
+        constexpr size_type max_size() const noexcept
+        {
+            return std::numeric_limits<size_type>::max() / sizeof(value_type);
+        }
+
         constexpr bool empty() const
         {
             return 0 == this->size();
@@ -361,6 +403,23 @@ namespace saga
             return this->ends_with(basic_string_view(s));
         }
 
+        // Поиск
+        // @todo Второй параметр
+        size_type find(basic_string_view str) const noexcept
+        {
+            if(str.empty())
+            {
+                return 0;
+            }
+
+            auto const first = this->begin();
+            auto const last = this->end();
+
+            auto const result = std::search(first, last, str.begin(), str.end(), traits_type::eq);
+
+            return result == last ? npos : result - first;
+        }
+
     private:
         const_pointer data_ = nullptr;
         size_type size_ = 0;
@@ -408,7 +467,6 @@ namespace std
     {
         std::size_t operator()(saga::basic_string_view<charT, traits> sv) const noexcept
         {
-            // @todo Возможна ли оптимизации с сохранением значения хэша?
             using String = std::basic_string<charT, traits>;
             return std::hash<String>{}(String(sv));
         }
