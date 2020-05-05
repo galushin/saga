@@ -721,8 +721,46 @@ TEST_CASE("string_view : ends_with c-string")
 
 TEST_CASE("string_view : find")
 {
-    saga_test::property_checker << [](std::string const & str1, std::string const & str2)
+    saga_test::property_checker << [](std::string const & str1, std::string const & str2,
+                                      std::size_t const pos, char const ch)
     {
+        saga::string_view const sv1(str1);
+        saga::string_view const sv2(str2);
+
+        auto const num = saga_test::random_uniform(0*str2.size(), str2.size());
+
+        static_assert(noexcept(sv1.find(sv2)), "");
+        static_assert(noexcept(sv1.find(sv2, pos)), "");
+        static_assert(noexcept(sv1.find(str2.c_str())), "");
+        static_assert(noexcept(sv1.find(str2.c_str(), pos)), "");
+        static_assert(noexcept(sv1.find(str2.c_str(), pos, num)), "");
+        static_assert(noexcept(sv1.find(ch)), "");
+        static_assert(noexcept(sv1.find(ch, pos)), "");
+
+        CAPTURE(str1, str2);
+
+        REQUIRE(sv1.find(sv1) == str1.find(str1));
+        REQUIRE(sv1.find(sv2) == str1.find(str2));
+        REQUIRE(sv2.find(sv1) == str2.find(str1));
+
+        REQUIRE(sv1.find(sv2, pos) == str1.find(str2, pos));
+        REQUIRE(sv2.find(sv1, pos) == str2.find(str1, pos));
+
+        REQUIRE(sv1.find(str2.c_str()) == sv1.find(saga::string_view(str2.c_str())));
+        REQUIRE(sv1.find(str2.c_str(), pos) == sv1.find(saga::string_view(str2.c_str()), pos));
+        REQUIRE(sv1.find(str2.c_str(), pos, num)
+                == sv1.find(saga::string_view(str2.c_str(), num), pos));
+        REQUIRE(sv1.find(ch) == sv1.find(saga::string_view(&ch, 1)));
+        REQUIRE(sv1.find(ch, pos) == sv1.find(saga::string_view(&ch, 1), pos));
+    };
+}
+
+TEST_CASE("string_view : find searches first occurence")
+{
+    saga_test::property_checker << [](std::string const & str1)
+    {
+        std::string const str2 = str1 + str1;
+
         saga::string_view const sv1(str1);
         saga::string_view const sv2(str2);
 
@@ -731,13 +769,198 @@ TEST_CASE("string_view : find")
         CAPTURE(str1, str2);
 
         REQUIRE(sv1.find(sv2) == str1.find(str2));
-        REQUIRE(sv1.find(sv1) == str1.find(str1));
     };
 }
 
-// @todo find - тест с гарантированным вхождением
+TEST_CASE("string_view : rfind")
+{
+    saga_test::property_checker << [](std::string const & str1, std::string const & str2,
+                                      std::size_t const pos, char const ch)
+    {
+        saga::string_view const sv1(str1);
+        saga::string_view const sv2(str2);
 
-// @todo 24.4.2.7 Поиск
+        auto const num = saga_test::random_uniform(0*str2.size(), str2.size());
+
+        static_assert(noexcept(sv1.rfind(sv2)), "");
+        static_assert(noexcept(sv1.rfind(sv2, pos)), "");
+        static_assert(noexcept(sv1.rfind(str2.c_str())), "");
+        static_assert(noexcept(sv1.rfind(str2.c_str(), pos)), "");
+        static_assert(noexcept(sv1.rfind(str2.c_str(), pos, num)), "");
+        static_assert(noexcept(sv1.rfind(ch)), "");
+        static_assert(noexcept(sv1.rfind(ch, pos)), "");
+
+        CAPTURE(str1, str2, pos, num, ch);
+
+        REQUIRE(sv1.rfind(sv1) == str1.rfind(str1));
+        REQUIRE(sv1.rfind(sv2) == str1.rfind(str2));
+        REQUIRE(sv2.rfind(sv1) == str2.rfind(str1));
+
+        REQUIRE(sv1.rfind(sv2, pos) == str1.rfind(str2, pos));
+        REQUIRE(sv2.rfind(sv1, pos) == str2.rfind(str1, pos));
+
+        REQUIRE(sv1.rfind(str2.c_str()) == sv1.rfind(saga::string_view(str2.c_str())));
+        REQUIRE(sv1.rfind(str2.c_str(), pos) == sv1.rfind(saga::string_view(str2.c_str()), pos));
+        REQUIRE(sv1.rfind(str2.c_str(), pos, num)
+                == sv1.rfind(saga::string_view(str2.c_str(), num), pos));
+        REQUIRE(sv1.rfind(ch) == sv1.rfind(saga::string_view(&ch, 1)));
+        REQUIRE(sv1.rfind(ch, pos) == sv1.rfind(saga::string_view(&ch, 1), pos));
+    };
+}
+
+TEST_CASE("string_view : find_first_of")
+{
+    saga_test::property_checker << [](std::string const & str1, std::string const & str2,
+                                      std::size_t const pos, char const ch)
+    {
+        saga::string_view const sv1(str1);
+        saga::string_view const sv2(str2);
+
+        auto const num = saga_test::random_uniform(0*str2.size(), str2.size());
+
+        static_assert(noexcept(sv1.find_first_of(sv2)), "");
+        static_assert(noexcept(sv1.find_first_of(sv2, pos)), "");
+        static_assert(noexcept(sv1.find_first_of(str2.c_str())), "");
+        static_assert(noexcept(sv1.find_first_of(str2.c_str(), pos)), "");
+        static_assert(noexcept(sv1.find_first_of(str2.c_str(), pos, num)), "");
+        static_assert(noexcept(sv1.find_first_of(ch)), "");
+        static_assert(noexcept(sv1.find_first_of(ch, pos)), "");
+
+        CAPTURE(str1, str2, pos, num, ch);
+
+        REQUIRE(sv1.find_first_of(sv1) == str1.find_first_of(str1));
+        REQUIRE(sv1.find_first_of(sv2) == str1.find_first_of(str2));
+        REQUIRE(sv2.find_first_of(sv1) == str2.find_first_of(str1));
+
+        REQUIRE(sv1.find_first_of(sv2, pos) == str1.find_first_of(str2, pos));
+        REQUIRE(sv2.find_first_of(sv1, pos) == str2.find_first_of(str1, pos));
+
+        REQUIRE(sv1.find_first_of(str2.c_str())
+                == sv1.find_first_of(saga::string_view(str2.c_str())));
+        REQUIRE(sv1.find_first_of(str2.c_str(), pos)
+                == sv1.find_first_of(saga::string_view(str2.c_str()), pos));
+        REQUIRE(sv1.find_first_of(str2.c_str(), pos, num)
+                == sv1.find_first_of(saga::string_view(str2.c_str(), num), pos));
+        REQUIRE(sv1.find_first_of(ch) == sv1.find_first_of(saga::string_view(&ch, 1)));
+        REQUIRE(sv1.find_first_of(ch, pos) == sv1.find_first_of(saga::string_view(&ch, 1), pos));
+    };
+}
+
+TEST_CASE("string_view : find_last_of")
+{
+    saga_test::property_checker << [](std::string const & str1, std::string const & str2,
+                                      std::size_t const pos, char const ch)
+    {
+        saga::string_view const sv1(str1);
+        saga::string_view const sv2(str2);
+
+        auto const num = saga_test::random_uniform(0*str2.size(), str2.size());
+
+        static_assert(noexcept(sv1.find_last_of(sv2)), "");
+        static_assert(noexcept(sv1.find_last_of(sv2, pos)), "");
+        static_assert(noexcept(sv1.find_last_of(str2.c_str())), "");
+        static_assert(noexcept(sv1.find_last_of(str2.c_str(), pos)), "");
+        static_assert(noexcept(sv1.find_last_of(str2.c_str(), pos, num)), "");
+        static_assert(noexcept(sv1.find_last_of(ch)), "");
+        static_assert(noexcept(sv1.find_last_of(ch, pos)), "");
+
+        CAPTURE(str1, str2, pos, num, ch);
+
+        REQUIRE(sv1.find_last_of(sv1) == str1.find_last_of(str1));
+        REQUIRE(sv1.find_last_of(sv2) == str1.find_last_of(str2));
+        REQUIRE(sv2.find_last_of(sv1) == str2.find_last_of(str1));
+
+        REQUIRE(sv1.find_last_of(sv2, pos) == str1.find_last_of(str2, pos));
+        REQUIRE(sv2.find_last_of(sv1, pos) == str2.find_last_of(str1, pos));
+
+        REQUIRE(sv1.find_last_of(str2.c_str())
+                == sv1.find_last_of(saga::string_view(str2.c_str())));
+        REQUIRE(sv1.find_last_of(str2.c_str(), pos)
+                == sv1.find_last_of(saga::string_view(str2.c_str()), pos));
+        REQUIRE(sv1.find_last_of(str2.c_str(), pos, num)
+                == sv1.find_last_of(saga::string_view(str2.c_str(), num), pos));
+        REQUIRE(sv1.find_last_of(ch) == sv1.find_last_of(saga::string_view(&ch, 1)));
+        REQUIRE(sv1.find_last_of(ch, pos) == sv1.find_last_of(saga::string_view(&ch, 1), pos));
+    };
+}
+
+TEST_CASE("string_view : find_first_not_of")
+{
+    saga_test::property_checker << [](std::string const & str1, std::string const & str2,
+                                      std::size_t const pos, char const ch)
+    {
+        saga::string_view const sv1(str1);
+        saga::string_view const sv2(str2);
+
+        auto const num = saga_test::random_uniform(0*str2.size(), str2.size());
+
+        static_assert(noexcept(sv1.find_first_not_of(sv2)), "");
+        static_assert(noexcept(sv1.find_first_not_of(sv2, pos)), "");
+        static_assert(noexcept(sv1.find_first_not_of(str2.c_str())), "");
+        static_assert(noexcept(sv1.find_first_not_of(str2.c_str(), pos)), "");
+        static_assert(noexcept(sv1.find_first_not_of(str2.c_str(), pos, num)), "");
+        static_assert(noexcept(sv1.find_first_not_of(ch)), "");
+        static_assert(noexcept(sv1.find_first_not_of(ch, pos)), "");
+
+        CAPTURE(str1, str2, pos, num, ch);
+
+        REQUIRE(sv1.find_first_not_of(sv1) == str1.find_first_not_of(str1));
+        REQUIRE(sv1.find_first_not_of(sv2) == str1.find_first_not_of(str2));
+        REQUIRE(sv2.find_first_not_of(sv1) == str2.find_first_not_of(str1));
+
+        REQUIRE(sv1.find_first_not_of(sv2, pos) == str1.find_first_not_of(str2, pos));
+        REQUIRE(sv2.find_first_not_of(sv1, pos) == str2.find_first_not_of(str1, pos));
+
+        REQUIRE(sv1.find_first_not_of(str2.c_str())
+                == sv1.find_first_not_of(saga::string_view(str2.c_str())));
+        REQUIRE(sv1.find_first_not_of(str2.c_str(), pos)
+                == sv1.find_first_not_of(saga::string_view(str2.c_str()), pos));
+        REQUIRE(sv1.find_first_not_of(str2.c_str(), pos, num)
+                == sv1.find_first_not_of(saga::string_view(str2.c_str(), num), pos));
+        REQUIRE(sv1.find_first_not_of(ch) == sv1.find_first_not_of(saga::string_view(&ch, 1)));
+        REQUIRE(sv1.find_first_not_of(ch, pos) == sv1.find_first_not_of(saga::string_view(&ch, 1), pos));
+    };
+}
+
+/* @todo Раскоментировать
+TEST_CASE("string_view : find_last_not_of")
+{
+    saga_test::property_checker << [](std::string const & str1, std::string const & str2,
+                                      std::size_t const pos, char const ch)
+    {
+        saga::string_view const sv1(str1);
+        saga::string_view const sv2(str2);
+
+        auto const num = saga_test::random_uniform(0*str2.size(), str2.size());
+
+        static_assert(noexcept(sv1.find_last_not_of(sv2)), "");
+        static_assert(noexcept(sv1.find_last_not_of(sv2, pos)), "");
+        static_assert(noexcept(sv1.find_last_not_of(str2.c_str())), "");
+        static_assert(noexcept(sv1.find_last_not_of(str2.c_str(), pos)), "");
+        static_assert(noexcept(sv1.find_last_not_of(str2.c_str(), pos, num)), "");
+        static_assert(noexcept(sv1.find_last_not_of(ch)), "");
+        static_assert(noexcept(sv1.find_last_not_of(ch, pos)), "");
+
+        CAPTURE(str1, str2, pos, num, ch);
+
+        REQUIRE(sv1.find_last_not_of(sv1) == str1.find_last_not_of(str1));
+        REQUIRE(sv1.find_last_not_of(sv2) == str1.find_last_not_of(str2));
+        REQUIRE(sv2.find_last_not_of(sv1) == str2.find_last_not_of(str1));
+
+        REQUIRE(sv1.find_last_not_of(sv2, pos) == str1.find_last_not_of(str2, pos));
+        REQUIRE(sv2.find_last_not_of(sv1, pos) == str2.find_last_not_of(str1, pos));
+
+        REQUIRE(sv1.find_last_not_of(str2.c_str())
+                == sv1.find_last_not_of(saga::string_view(str2.c_str())));
+        REQUIRE(sv1.find_last_not_of(str2.c_str(), pos)
+                == sv1.find_last_not_of(saga::string_view(str2.c_str()), pos));
+        REQUIRE(sv1.find_last_not_of(str2.c_str(), pos, num)
+                == sv1.find_last_not_of(saga::string_view(str2.c_str(), num), pos));
+        REQUIRE(sv1.find_last_not_of(ch) == sv1.find_last_not_of(saga::string_view(&ch, 1)));
+        REQUIRE(sv1.find_last_not_of(ch, pos) == sv1.find_last_not_of(saga::string_view(&ch, 1), pos));
+    };
+}
+*/
 
 TEST_CASE("string_view : non-member comparison functions")
 {

@@ -404,20 +404,219 @@ namespace saga
         }
 
         // Поиск
-        // @todo Второй параметр
-        size_type find(basic_string_view str) const noexcept
+        size_type find(basic_string_view str, size_type pos = 0) const noexcept
         {
-            if(str.empty())
+            if(pos > this->size())
             {
-                return 0;
+                return npos;
             }
 
-            auto const first = this->begin();
+            if(str.empty())
+            {
+                return pos;
+            }
+
+            auto const first = this->begin() + pos;
             auto const last = this->end();
 
             auto const result = std::search(first, last, str.begin(), str.end(), traits_type::eq);
 
             return result == last ? npos : result - first;
+        }
+
+        size_type find(const charT * str, size_type pos = 0) const noexcept
+        {
+            return this->find(basic_string_view(str), pos);
+        }
+
+        size_type find(const charT * str, size_type pos, size_type n) const noexcept
+        {
+            return this->find(basic_string_view(str, n), pos);
+        }
+
+        size_type find(charT c, size_type pos = 0) const noexcept
+        {
+            return this->find(basic_string_view(&c, 1), pos);
+        }
+
+        size_type rfind(basic_string_view str, size_type pos = npos) const noexcept
+        {
+            if(this->size() < str.size())
+            {
+                return npos;
+            }
+
+            if(str.empty())
+            {
+                return std::min(pos, this->size());
+            }
+
+            pos = std::min(pos, this->size());
+
+            auto const first = this->begin();
+            auto const last = this->begin() + str.size() + std::min(pos, this->size() - str.size());
+
+            auto const result = std::find_end(first, last, str.begin(), str.end(), traits_type::eq);
+
+            return (result == last) ? npos : result - first;
+        }
+
+        size_type rfind(charT const * str, size_type pos = npos) const noexcept
+        {
+            return this->rfind(basic_string_view(str), pos);
+        }
+
+        size_type rfind(const charT * str, size_type pos, size_type n) const noexcept
+        {
+            return this->rfind(basic_string_view(str, n), pos);
+        }
+
+        size_type rfind(charT c, size_type pos = npos) const noexcept
+        {
+            return this->rfind(basic_string_view(&c, 1), pos);
+        }
+
+        size_type find_first_of(basic_string_view str, size_type pos = 0) const noexcept
+        {
+            if(str.empty() || pos >= this->size())
+            {
+                return npos;
+            }
+
+            auto const first = this->begin() + pos;
+            auto const last = this->end();
+
+            auto const result
+                = std::find_first_of(first, last, str.begin(), str.end(), traits_type::eq);
+
+            return (result == last) ? npos : result - first;
+        }
+
+        size_type find_first_of(charT const * str, size_type pos = 0) const noexcept
+        {
+            return this->find_first_of(basic_string_view(str), pos);
+        }
+
+        size_type find_first_of(const charT * str, size_type pos, size_type n) const noexcept
+        {
+            return this->find_first_of(basic_string_view(str, n), pos);
+        }
+
+        size_type find_first_of(charT c, size_type pos = 0) const noexcept
+        {
+            return this->find_first_of(basic_string_view(&c, 1), pos);
+        }
+
+        size_type find_last_of(basic_string_view str, size_type pos = npos) const noexcept
+        {
+            if(str.empty())
+            {
+                return npos;
+            }
+
+            pos = std::min(pos, this->size());
+
+            auto const first = this->rend() - pos;
+            auto const last = this->rend();
+
+            auto const result
+                = std::find_first_of(first, last, str.begin(), str.end(), traits_type::eq);
+
+            if(result == last)
+            {
+                return npos;
+            }
+
+            return this->size() - (result - first) - 1;
+        }
+
+        size_type find_last_of(charT const * str, size_type pos = npos) const noexcept
+        {
+            return this->find_last_of(basic_string_view(str), pos);
+        }
+
+        size_type find_last_of(charT const * str, size_type pos, size_type n) const noexcept
+        {
+            return this->find_last_of(basic_string_view(str, n), pos);
+        }
+
+        size_type find_last_of(charT c, size_type pos = npos) const noexcept
+        {
+            return this->find_last_of(basic_string_view(&c, 1), pos);
+        }
+
+        size_type find_first_not_of(basic_string_view str, size_type pos = 0) const noexcept
+        {
+            if(pos >= this->size())
+            {
+                return npos;
+            }
+
+            auto not_in_str = [&](charT c)
+            {
+                return std::find_if(str.begin(), str.end(),
+                                    [&](charT x) { return traits_type::eq(c, x); }) == str.end();
+            };
+
+            auto const first = this->begin();
+            auto const last = this->end();
+
+            auto const result = std::find_if(first, last, not_in_str);
+
+            return result == last ? npos : result - first;
+        }
+
+        size_type find_first_not_of(charT const * str, size_type pos = 0) const noexcept
+        {
+            return this->find_first_not_of(basic_string_view(str), pos);
+        }
+
+        size_type find_first_not_of(charT const * str, size_type pos, size_type n) const noexcept
+        {
+            return this->find_first_not_of(basic_string_view(str, n), pos);
+        }
+
+        size_type find_first_not_of(charT c, size_type pos = 0) const noexcept
+        {
+            return this->find_first_not_of(basic_string_view(&c, 1), pos);
+        }
+
+        size_type find_last_not_of(basic_string_view str, size_type pos = npos) const noexcept
+        {
+            if(this->empty())
+            {
+                return npos;
+            }
+
+            auto not_in_str = [&](charT c)
+            {
+                return std::find_if(str.begin(), str.end(),
+                                    [&](charT x) { return traits_type::eq(c, x); }) == str.end();
+            };
+
+            pos = std::min(pos, this->size() - 1);
+
+            auto const first = const_reverse_iterator(this->begin() + pos + 1);
+            auto const last = this->rend();
+
+            auto const result = std::find_if(first, last, not_in_str);
+
+            return this->size() - (result - first) - 1;
+        }
+
+        size_type find_last_not_of(charT const * str, size_type pos = npos) const noexcept
+        {
+            return this->find_last_not_of(basic_string_view(str), pos);
+        }
+
+        size_type find_last_not_of(charT const * str, size_type pos, size_type n) const noexcept
+        {
+            return this->find_last_not_of(basic_string_view(str, n), pos);
+        }
+
+        size_type find_last_not_of(charT c, size_type pos = npos) const noexcept
+        {
+            return this->find_last_not_of(basic_string_view(&c, 1), pos);
         }
 
     private:
