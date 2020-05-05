@@ -18,6 +18,8 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_EXAMPLE_GA_EXE_OBJECTIVE_H_INCLUDED
 #define Z_SAGA_EXAMPLE_GA_EXE_OBJECTIVE_H_INCLUDED
 
+#include <saga/string_view.hpp>
+
 /* Без следующего определения Boost.Process не компилируетя
 https://stackoverflow.com/questions/59337197/boostprocess-on-windows-with-mingw
 */
@@ -36,7 +38,7 @@ namespace saga_example
     class exe_objective
     {
     public:
-        exe_objective(std::string const & path, std::string const & objective_name);
+        exe_objective(saga::string_view path, saga::string_view objective_name);
 
         ~exe_objective();
 

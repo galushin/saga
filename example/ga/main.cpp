@@ -65,20 +65,20 @@ namespace
     }
 
     std::map<std::string, std::string>
-    open_and_parse_ini_file(std::string const & path)
+    open_and_parse_ini_file(saga::string_view path)
     {
         std::ifstream file(path);
 
         if(!file)
         {
-            throw std::runtime_error("Failed to open file: " + path);
+            throw std::runtime_error("Failed to open file: " + std::string(path));
         }
 
         return parse_ini_file(file);
     }
 
     template <class Genotype, class Objective>
-    auto make_objective_compare(Objective const & objective, std::string const & goal)
+    auto make_objective_compare(Objective const & objective, saga::string_view goal)
     {
         using Objective_value = decltype(objective(std::declval<Genotype const &>()));
 
@@ -94,13 +94,13 @@ namespace
         }
         else
         {
-            throw std::runtime_error("Unknown optimization goal: " + goal);
+            throw std::runtime_error("Unknown optimization goal: " + std::string(goal));
         }
 
         return cmp;
     }
 
-    double parse_mutation_strength(std::string const & str)
+    double parse_mutation_strength(saga::string_view str)
     {
         if(str == "weak")
         {
@@ -125,7 +125,7 @@ namespace
     using Crossover = std::function<Genotype(Genotype const &, Genotype const &, Random_engine &)>;
     using Selection = saga::any_selection<Random_engine>;
 
-    Crossover make_crossover(std::string const & crossover_name)
+    Crossover make_crossover(saga::string_view crossover_name)
     {
         if(crossover_name == "one point")
         {
@@ -141,11 +141,11 @@ namespace
         }
         else
         {
-            throw std::runtime_error("Unknown crossover type: " + crossover_name);
+            throw std::runtime_error("Unknown crossover type: " + std::string(crossover_name));
         }
     }
 
-    Selection parse_selection(std::string const & str)
+    Selection parse_selection(saga::string_view str)
     {
         std::string const tournament_keyword("tournament");
         if(str == "ranking")
@@ -168,7 +168,7 @@ namespace
         }
         else
         {
-            throw std::runtime_error("Unknown selection description: " + str);
+            throw std::runtime_error("Unknown selection description: " + std::string(str));
         }
     }
 
