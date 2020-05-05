@@ -884,6 +884,18 @@ TEST_CASE("string_view : find_last_of")
     };
 }
 
+TEST_CASE("string_view : find_last_of regression")
+{
+    std::string const str1("");
+    std::string const str2("");
+    auto const pos = std::size_t{0};
+
+    saga::string_view const sv1(str1);
+    saga::string_view const sv2(str2);
+
+    REQUIRE(sv1.find_last_of(sv2, pos) == str1.find_last_of(str2, pos));
+}
+
 TEST_CASE("string_view : find_first_not_of")
 {
     saga_test::property_checker << [](std::string const & str1, std::string const & str2,
@@ -922,7 +934,6 @@ TEST_CASE("string_view : find_first_not_of")
     };
 }
 
-/* @todo Раскоментировать
 TEST_CASE("string_view : find_last_not_of")
 {
     saga_test::property_checker << [](std::string const & str1, std::string const & str2,
@@ -960,7 +971,6 @@ TEST_CASE("string_view : find_last_not_of")
         REQUIRE(sv1.find_last_not_of(ch, pos) == sv1.find_last_not_of(saga::string_view(&ch, 1), pos));
     };
 }
-*/
 
 TEST_CASE("string_view : non-member comparison functions")
 {
