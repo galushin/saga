@@ -33,9 +33,9 @@ OBJDIR_RELEASE = ./obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = ./bin/Release/test
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/view/indices.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/string_view.o $(OBJDIR_DEBUG)/view/indices.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/view/indices.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/string_view.o $(OBJDIR_RELEASE)/view/indices.o
 
 all: debug release
 
@@ -86,6 +86,9 @@ $(OBJDIR_DEBUG)/random/iid_distribution.o: random/iid_distribution.cpp
 
 $(OBJDIR_DEBUG)/random_engine.o: random_engine.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c random_engine.cpp -o $(OBJDIR_DEBUG)/random_engine.o
+
+$(OBJDIR_DEBUG)/string_view.o: string_view.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c string_view.cpp -o $(OBJDIR_DEBUG)/string_view.o
 
 $(OBJDIR_DEBUG)/view/indices.o: view/indices.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c view/indices.cpp -o $(OBJDIR_DEBUG)/view/indices.o
@@ -145,6 +148,9 @@ $(OBJDIR_RELEASE)/random/iid_distribution.o: random/iid_distribution.cpp
 
 $(OBJDIR_RELEASE)/random_engine.o: random_engine.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c random_engine.cpp -o $(OBJDIR_RELEASE)/random_engine.o
+
+$(OBJDIR_RELEASE)/string_view.o: string_view.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c string_view.cpp -o $(OBJDIR_RELEASE)/string_view.o
 
 $(OBJDIR_RELEASE)/view/indices.o: view/indices.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c view/indices.cpp -o $(OBJDIR_RELEASE)/view/indices.o

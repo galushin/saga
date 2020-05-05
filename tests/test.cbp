@@ -56,6 +56,7 @@
 		<Unit filename="../include/saga/optimization/test_objectives.hpp" />
 		<Unit filename="../include/saga/random/any_distribution.hpp" />
 		<Unit filename="../include/saga/random/iid_distribution.hpp" />
+		<Unit filename="../include/saga/string_view.hpp" />
 		<Unit filename="../include/saga/type_traits.hpp" />
 		<Unit filename="../include/saga/view/indices.hpp" />
 		<Unit filename="algorithm.cpp" />
@@ -72,6 +73,7 @@
 		<Unit filename="random_engine.cpp" />
 		<Unit filename="random_engine.hpp" />
 		<Unit filename="saga_test.hpp" />
+		<Unit filename="string_view.cpp" />
 		<Unit filename="view/indices.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
