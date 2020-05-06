@@ -176,7 +176,7 @@ namespace detail
         }
 
     private:
-        // @todo оптмизация пустого возвращаемого значения
+        // @todo оптмизация пустого объекта
         BackEnd back_end_ {};
         Container * container_ = nullptr;
     };

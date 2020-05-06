@@ -40,6 +40,7 @@
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
 		<Unit filename="../include/saga/detail/static_empty_const.hpp" />
 		<Unit filename="../include/saga/iterator.hpp" />
+		<Unit filename="../include/saga/iterator/reverse.hpp" />
 		<Unit filename="../include/saga/math/probability.hpp" />
 		<Unit filename="../include/saga/numeric.hpp" />
 		<Unit filename="../include/saga/optimization/evaluated_solution.hpp" />
@@ -63,6 +64,7 @@
 		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
 		<Unit filename="cpp20/span.cpp" />
 		<Unit filename="iterator.cpp" />
+		<Unit filename="iterator/reverse.cpp" />
 		<Unit filename="main.cpp" />
 		<Unit filename="makefile.gcc" />
 		<Unit filename="math/probability.cpp" />
