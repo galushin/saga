@@ -509,14 +509,14 @@ namespace saga
 
         size_type find_last_of(basic_string_view str, size_type pos = npos) const noexcept
         {
-            if(str.empty())
+            if(this->empty())
             {
                 return npos;
             }
 
-            pos = std::min(pos, this->size());
+            pos = std::min(pos, this->size()-1);
 
-            auto const first = this->rend() - pos;
+            auto const first = reverse_iterator(this->begin() + pos + 1);
             auto const last = this->rend();
 
             auto const result
@@ -527,7 +527,7 @@ namespace saga
                 return npos;
             }
 
-            return this->size() - (result - first) - 1;
+            return size_type(last - result - 1);
         }
 
         size_type find_last_of(charT const * str, size_type pos = npos) const noexcept
