@@ -23,6 +23,8 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
+#include <saga/view/indices.hpp>
+
 #include <list>
 #include <deque>
 #include <type_traits>
@@ -75,6 +77,103 @@ namespace
         ::check_reverse_iterator_ctor_for_iterator(std::next(container.begin(), pos));
         ::check_reverse_iterator_ctor_for_iterator(std::next(container.cbegin(), pos));
     }
+
+    template <class Iterator>
+    void check_make_reverse_iterator_for_iterator(Iterator iter)
+    {
+        auto const r_iter = saga::make_reverse_iterator(iter);
+
+        static_assert(std::is_same<decltype(saga::make_reverse_iterator(iter)),
+                                    saga::reverse_iterator<Iterator>>{}, "");
+
+        REQUIRE(r_iter.base() == iter);
+    }
+
+    template <class Container>
+    void check_make_reverse_iterator_for_container(Container container)
+    {
+        auto const pos = saga_test::random_uniform(0*container.size(), container.size());
+
+        ::check_make_reverse_iterator_for_iterator(std::next(container.begin(), pos));
+        ::check_make_reverse_iterator_for_iterator(std::next(container.cbegin(), pos));
+    }
+
+    template <class Container>
+    void check_reverse_iterator_equality_for_container(Container container)
+    {
+        auto const pos1 = saga_test::random_uniform(0*container.size(), container.size());
+        auto const pos2 = saga_test::random_uniform(0*container.size(), container.size());
+
+        saga::reverse_iterator<typename Container::iterator> const it0{};
+        auto const it1 = saga::make_reverse_iterator(std::next(container.begin(), pos1));
+        auto const it1_c = it1;
+        auto const it2 = saga::make_reverse_iterator(std::next(container.cbegin(), pos2));
+
+        static_assert(!std::is_same<decltype(it1), decltype(it2)>{}, "");
+
+        REQUIRE(it0 == it0);
+        REQUIRE(it1 == it1);
+        REQUIRE(it1 == it1_c);
+        REQUIRE(it1_c == it1);
+        REQUIRE(it2 == it2);
+
+        if(!container.empty())
+        {
+            REQUIRE(it1 != it0);
+            REQUIRE(it0 != it1);
+            REQUIRE(it2 != it0);
+            REQUIRE(it0 != it2);
+        }
+
+        REQUIRE((it1 == it2) == (it1.base() == it2.base()));
+        REQUIRE((it1 != it2) == (it1.base() != it2.base()));
+    }
+
+    template <class Container>
+    void check_compatible_ctor_for_container(Container container)
+    {
+        auto const pos = saga_test::random_uniform(0*container.size(), container.size());
+
+        using RIterator= saga::reverse_iterator<typename Container::iterator>;
+        RIterator const r_iter = saga::make_reverse_iterator(std::next(container.begin(), pos));
+
+        using CRIterator= saga::reverse_iterator<typename Container::const_iterator>;
+        CRIterator const cr_iter(r_iter);
+
+        static_assert(!std::is_same<RIterator, CRIterator>{}, "Must be different");
+
+        static_assert(std::is_constructible<CRIterator, RIterator>{},"");
+        static_assert(!std::is_constructible<RIterator, CRIterator>{},"");
+        static_assert(std::is_convertible<RIterator, CRIterator>{},"");
+        static_assert(!std::is_convertible<CRIterator, RIterator>{},"");
+
+
+        REQUIRE(cr_iter == r_iter);
+    }
+
+    template <class Container>
+    void check_compatible_assign_for_container(Container container)
+    {
+        auto const pos1 = saga_test::random_uniform(0*container.size(), container.size());
+        auto const pos2 = saga_test::random_uniform(0*container.size(), container.size());
+
+        using RIterator= saga::reverse_iterator<typename Container::iterator>;
+        using CRIterator= saga::reverse_iterator<typename Container::const_iterator>;
+        static_assert(!std::is_same<RIterator, CRIterator>{}, "Must be different");
+
+        static_assert(std::is_assignable<CRIterator, RIterator>{},"");
+        static_assert(!std::is_assignable<RIterator, CRIterator>{},"");
+
+        auto const r_iter = saga::make_reverse_iterator(std::next(container.begin(), pos1));
+        auto cr_iter = saga::make_reverse_iterator(std::next(container.begin(), pos2));
+        CRIterator cr_iter_def{};
+
+        cr_iter = r_iter;
+        cr_iter_def = r_iter;
+
+        REQUIRE(cr_iter == r_iter);
+        REQUIRE(cr_iter_def == r_iter);
+    }
 }
 
 TEST_CASE("reverse_iterator : default ctor")
@@ -109,4 +208,102 @@ TEST_CASE("reverse_iterator : ctor with value")
         << ::check_reverse_iterator_ctor_for_container<std::vector<int>>;
 }
 
-// @todo make_reverse_iterator
+TEST_CASE("reverse_iterator equality")
+{
+    {
+        constexpr saga::detail::iota_iterator<int> it1(13);
+        constexpr saga::detail::iota_iterator<long> it1_a(13);
+        constexpr saga::detail::iota_iterator<long> it2(42);
+
+        static_assert(it1 == it1_a, "");
+        static_assert(it1 != it2, "");
+
+        constexpr auto const r_it1 = saga::make_reverse_iterator(it1);
+        constexpr auto const r_it1_a = saga::make_reverse_iterator(it1_a);
+        constexpr auto const r_it2 = saga::make_reverse_iterator(it2);
+
+        static_assert(r_it1 == r_it1, "");
+        static_assert(r_it1 == r_it1_a, "");
+        static_assert(r_it1 != r_it2, "");
+    }
+
+    saga_test::property_checker
+        << ::check_reverse_iterator_equality_for_container<std::list<int>>
+        << ::check_reverse_iterator_equality_for_container<std::deque<int>>
+        << ::check_reverse_iterator_equality_for_container<std::vector<int>>;
+}
+
+TEST_CASE("make_reverse_iterator")
+{
+    {
+        using Iterator = saga::detail::iota_iterator<int>;
+
+        constexpr Iterator const iter(42);
+
+        using RIterator = saga::reverse_iterator<Iterator>;
+        static_assert(std::is_same<decltype(saga::make_reverse_iterator(iter)), RIterator>{}, "");
+
+        constexpr auto const r_iter = saga::make_reverse_iterator(iter);
+        static_assert(r_iter.base() == iter, "");
+    }
+
+    saga_test::property_checker
+        << ::check_make_reverse_iterator_for_container<std::list<int>>
+        << ::check_make_reverse_iterator_for_container<std::deque<int>>
+        << ::check_make_reverse_iterator_for_container<std::vector<int>>;
+}
+
+TEST_CASE("reverse_iterator : compatible reverse_iterator ctor")
+{
+    {
+        constexpr saga::detail::iota_iterator<int> const it1(42);
+
+        constexpr auto const r_it1 = saga::make_reverse_iterator(it1);
+        constexpr saga::reverse_iterator<saga::detail::iota_iterator<long>> r_it2(r_it1);
+
+        static_assert(!std::is_same<decltype(r_it1), decltype(r_it2)>{}, "");
+
+        static_assert(r_it2 == r_it1, "");
+    }
+
+    saga_test::property_checker
+        << ::check_compatible_ctor_for_container<std::list<int>>
+        << ::check_compatible_ctor_for_container<std::deque<int>>
+        << ::check_compatible_ctor_for_container<std::vector<int>>;
+}
+
+namespace
+{
+    template <class T, class U>
+    constexpr T test_constexpr_assign(T lhs, U const & rhs)
+    {
+        lhs = rhs;
+        return lhs;
+    }
+}
+
+TEST_CASE("reverse_iterator : compatible reverse_iterator assign")
+{
+    {
+        constexpr saga::detail::iota_iterator<int> const it1(13);
+        constexpr saga::detail::iota_iterator<long> const it2(42);
+
+        static_assert(!std::is_same<decltype(it1), decltype(it2)>{}, "");
+
+        constexpr auto r_it1 = saga::make_reverse_iterator(it1);
+        constexpr auto r_it2 = saga::make_reverse_iterator(it2);
+
+        static_assert(!std::is_same<decltype(r_it1), decltype(r_it2)>{}, "");
+
+        static_assert(r_it2 != r_it1, "");
+
+        constexpr auto r_it2_a = test_constexpr_assign(r_it2, r_it1);
+
+        static_assert(r_it2_a == r_it1, "");
+    }
+
+    saga_test::property_checker
+        << ::check_compatible_assign_for_container<std::list<int>>
+        << ::check_compatible_assign_for_container<std::deque<int>>
+        << ::check_compatible_assign_for_container<std::vector<int>>;
+}

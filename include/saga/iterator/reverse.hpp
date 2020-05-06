@@ -20,6 +20,7 @@ SAGA -- это свободной программное обеспечение:
 
 /** @file saga/iterator/reverse.hpp
  @brief Адаптор итератора, обходящий базовую последовательность в обратном направлении.
+ @todo Совместимость с std::reverse_iterator
 */
 
 #include <iterator>
@@ -29,6 +30,24 @@ namespace saga
     template <class Iterator>
     class reverse_iterator
     {
+        template <class Iterator2>
+        friend
+        constexpr bool operator==(reverse_iterator<Iterator> const & lhs,
+                                  reverse_iterator<Iterator2> const & rhs)
+        {
+            return lhs.base() == rhs.base();
+        }
+
+        template <class Iterator2>
+        friend
+        constexpr bool operator!=(reverse_iterator<Iterator> const & lhs,
+                                  reverse_iterator<Iterator2> const & rhs)
+        {
+            // Стандарт описывает как lhs.current != rhs.current, но для итераторов должно быть
+            // (lhs.current != rhs.current) == !(lhs.current == rhs.current)
+            return !(lhs == rhs);
+        }
+
     public:
         // Типы
         using iterator_type = Iterator;
@@ -45,6 +64,29 @@ namespace saga
          : current_(std::move(iter))
         {}
 
+        /**
+        @brief В отличие от STL, этот конструктор не участвует в разрешении перегрузки, если
+        @c Iterator нельзя сконструировать из @c OtherIterator
+        */
+        template <class OtherIterator,
+                  typename = std::enable_if_t<std::is_constructible<Iterator, OtherIterator const &>{}>>
+        constexpr reverse_iterator(reverse_iterator<OtherIterator> const & other)
+         : current_(other.base())
+        {}
+
+        /**
+        @brief В отличие от STL, этот конструктор не участвует в разрешении перегрузки, если
+        @c Iterator нельзя сконструировать из @c OtherIterator
+        */
+        template <class OtherIterator,
+                  typename = std::enable_if_t<std::is_constructible<Iterator, OtherIterator const &>{}
+                                              && std::is_assignable<Iterator &, OtherIterator const &>{}>>
+        constexpr reverse_iterator & operator=(reverse_iterator<OtherIterator> const & other)
+        {
+            this->current_ = other.base();
+            return *this;
+        }
+
         // Преобразование
         constexpr Iterator base() const
         {
@@ -54,6 +96,13 @@ namespace saga
     private:
         Iterator current_ {};
     };
+
+    template <class Iterator>
+    constexpr reverse_iterator<Iterator>
+    make_reverse_iterator(Iterator iter)
+    {
+        return reverse_iterator<Iterator>(std::move(iter));
+    }
 }
 // namespace saga
 
