@@ -886,12 +886,14 @@ TEST_CASE("string_view : find_last_of")
 
 TEST_CASE("string_view : find_last_of regression")
 {
-    std::string const str1("");
-    std::string const str2("");
+    std::string const str1(" ");
+    std::string const str2(" ");
     auto const pos = std::size_t{0};
 
     saga::string_view const sv1(str1);
     saga::string_view const sv2(str2);
+
+    CAPTURE(str1, str2, pos);
 
     REQUIRE(sv1.find_last_of(sv2, pos) == str1.find_last_of(str2, pos));
 }
