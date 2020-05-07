@@ -24,8 +24,11 @@ SAGA -- это свободной программное обеспечение:
 #include <cassert>
 
 #include <algorithm>
+#include <deque>
+#include <list>
 #include <tuple>
 #include <type_traits>
+#include <vector>
 
 namespace saga_test
 {
@@ -188,6 +191,16 @@ namespace saga_test
     template <class T, class A>
     struct arbitrary<std::vector<T, A>>
      : detail::arbitrary_container<std::vector<T, A>>
+    {};
+
+    template <class T, class A>
+    struct arbitrary<std::list<T, A>>
+     : detail::arbitrary_container<std::list<T, A>>
+    {};
+
+    template <class T, class A>
+    struct arbitrary<std::deque<T, A>>
+     : detail::arbitrary_container<std::deque<T, A>>
     {};
 
     template <>
