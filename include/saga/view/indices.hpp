@@ -46,14 +46,44 @@ namespace saga
                 return !(lhs == rhs);
             }
 
+            template <class Incrementable2>
+            friend
+            constexpr bool operator<(iota_iterator<Incrementable> const & lhs,
+                                     iota_iterator<Incrementable2> const & rhs)
+            {
+                return *lhs < *rhs;
+            }
+
+            template <class Incrementable2>
+            friend
+            constexpr bool operator>(iota_iterator<Incrementable> const & lhs,
+                                     iota_iterator<Incrementable2> const & rhs)
+            {
+                return rhs < lhs;
+            }
+
+            template <class Incrementable2>
+            friend
+            constexpr bool operator<=(iota_iterator<Incrementable> const & lhs,
+                                      iota_iterator<Incrementable2> const & rhs)
+            {
+                return !(lhs > rhs);
+            }
+
+            template <class Incrementable2>
+            friend
+            constexpr bool operator>=(iota_iterator<Incrementable> const & lhs,
+                                      iota_iterator<Incrementable2> const & rhs)
+            {
+                return !(lhs < rhs);
+            }
+
+
         public:
             // Типы
             using iterator_category = std::random_access_iterator_tag;
             using value_type = Incrementable;
-
-            // @todo Придумать, как определить этот тип лушче
             using difference_type = decltype(std::declval<value_type>() - std::declval<value_type>());
-
             using pointer = Incrementable const *;
             using reference = Incrementable const &;
 
@@ -77,8 +107,8 @@ namespace saga
                 return *this;
             }
 
-            // Операции итератора
-            iota_iterator & operator++()
+            // Итератор
+            constexpr iota_iterator & operator++()
             {
                 ++ this->value_;
                 return *this;
@@ -87,6 +117,54 @@ namespace saga
             constexpr reference operator*() const
             {
                 return this->value_;
+            }
+
+            // Двусторонний итератор
+            constexpr iota_iterator &operator--()
+            {
+                -- this->value_;
+                return *this;
+            }
+
+            // Итератор приозвольного доступа
+            constexpr iota_iterator operator+(difference_type num) const
+            {
+                auto result = *this;
+                result += num;
+                return result;
+            }
+
+            constexpr iota_iterator & operator+=(difference_type num)
+            {
+                this->value_ += num;
+                return *this;
+            }
+
+            constexpr iota_iterator operator-(difference_type num) const
+            {
+                auto result = *this;
+                result -= num;
+                return result;
+            }
+
+            constexpr iota_iterator & operator-=(difference_type num)
+            {
+                this->value_ -= num;
+                return *this;
+            }
+
+            constexpr value_type operator[](difference_type num) const
+            {
+                return this->value_ + num;
+            }
+
+            template <class Incrementable2>
+            friend
+            constexpr auto operator-(iota_iterator<Incrementable> const & lhs,
+                                     iota_iterator<Incrementable2> const & rhs)
+            -> decltype(std::declval<Incrementable>() - std::declval<Incrementable2>())
+            {
+                return *lhs - *rhs;
             }
 
         private:

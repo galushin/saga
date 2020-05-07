@@ -20,7 +20,6 @@ SAGA -- это свободной программное обеспечение:
 
 /** @file saga/iterator/reverse.hpp
  @brief Адаптор итератора, обходящий базовую последовательность в обратном направлении.
- @todo Совместимость с std::reverse_iterator
 */
 
 #include <iterator>
@@ -46,6 +45,38 @@ namespace saga
             // Стандарт описывает как lhs.current != rhs.current, но для итераторов должно быть
             // (lhs.current != rhs.current) == !(lhs.current == rhs.current)
             return !(lhs == rhs);
+        }
+
+        template <class Iterator2>
+        friend
+        constexpr bool operator<(reverse_iterator<Iterator> const & lhs,
+                                 reverse_iterator<Iterator2> const & rhs)
+        {
+            return lhs.base() > rhs.base();
+        }
+
+        template <class Iterator2>
+        friend
+        constexpr bool operator>(reverse_iterator<Iterator> const & lhs,
+                                 reverse_iterator<Iterator2> const & rhs)
+        {
+            return lhs.base() < rhs.base();
+        }
+
+        template <class Iterator2>
+        friend
+        constexpr bool operator<=(reverse_iterator<Iterator> const & lhs,
+                                  reverse_iterator<Iterator2> const & rhs)
+        {
+            return lhs.base() >= rhs.base();
+        }
+
+        template <class Iterator2>
+        friend
+        constexpr bool operator>=(reverse_iterator<Iterator> const & lhs,
+                                  reverse_iterator<Iterator2> const & rhs)
+        {
+            return lhs.base() <= rhs.base();
         }
 
     public:
@@ -93,6 +124,91 @@ namespace saga
             return this->current_;
         }
 
+        // Итератор
+        constexpr reference operator*() const
+        {
+            auto tmp = this->current_;
+            -- tmp;
+            return *tmp;
+        }
+
+        constexpr pointer operator->() const
+        {
+            return std::addressof(**this);
+        }
+
+        constexpr reverse_iterator & operator++()
+        {
+            -- this->current_;
+            return *this;
+        }
+
+        constexpr reverse_iterator operator++(int)
+        {
+            auto old_state = *this;
+            ++ *this;
+
+            return old_state;
+        }
+
+        // Двунаправленный итератор
+        constexpr reverse_iterator & operator--()
+        {
+            ++ this->current_;
+            return *this;
+        }
+
+        constexpr reverse_iterator operator--(int)
+        {
+            auto old_state = *this;
+            -- *this;
+            return old_state;
+        }
+
+        // Итератор произвольного доступа
+        constexpr reverse_iterator operator+(difference_type num) const
+        {
+            return reverse_iterator(this->base() - num);
+        }
+
+        constexpr reverse_iterator & operator+=(difference_type num)
+        {
+            this->current_ -= num;
+            return *this;
+        }
+
+        constexpr reverse_iterator operator-(difference_type num) const
+        {
+            return reverse_iterator(this->base() + num);
+        }
+
+        constexpr reverse_iterator & operator-=(difference_type num)
+        {
+            this->current_ += num;
+            return *this;
+        }
+
+        constexpr decltype(auto) operator[](difference_type num) const
+        {
+            return this->base()[-num-1];
+        }
+
+        template <class Iterator2>
+        friend
+        constexpr decltype(std::declval<Iterator2>() - std::declval<Iterator>())
+        operator-(reverse_iterator<Iterator> const & lhs, reverse_iterator<Iterator2> const & rhs)
+        {
+            return rhs.base() - lhs.base();
+        }
+
+        friend
+        constexpr reverse_iterator
+        operator+(typename reverse_iterator<Iterator>::difference_type num,
+                  reverse_iterator const & rhs)
+        {
+            return reverse_iterator(rhs.base() - num);
+        }
+
     private:
         Iterator current_ {};
     };
@@ -102,6 +218,13 @@ namespace saga
     make_reverse_iterator(Iterator iter)
     {
         return reverse_iterator<Iterator>(std::move(iter));
+    }
+
+    template <class Iterator>
+    constexpr Iterator
+    make_reverse_iterator(reverse_iterator<Iterator> const & iter)
+    {
+        return iter.base();
     }
 }
 // namespace saga
