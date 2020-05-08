@@ -18,6 +18,7 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_TEST_RANDOM_ENGINE_HPP_INCLUDED
 #define Z_SAGA_TEST_RANDOM_ENGINE_HPP_INCLUDED
 
+#include <iterator>
 #include <random>
 
 namespace saga_test
@@ -41,6 +42,42 @@ namespace saga_test
         std::uniform_real_distribution<RealType> distr(std::move(lower), std::move(upper));
         return distr(saga_test::random_engine());
     }
+
+    template <class Container>
+    typename Container::iterator
+    random_iterator_of(Container & container)
+    {
+        auto const pos = ::saga_test::random_uniform(0*container.size(), container.size());
+        return std::next(container.begin(), pos);
+    }
+
+    template <class Container>
+    typename Container::const_iterator
+    random_iterator_of(Container const & container)
+    {
+        auto const pos = ::saga_test::random_uniform(0*container.size(), container.size());
+        return std::next(container.begin(), pos);
+    }
+
+    template <class Container>
+    void random_iterator_of(Container && container) = delete;
+
+    template <class Container>
+    typename Container::const_iterator
+    random_const_iterator_of(Container & container)
+    {
+        return ::saga_test::random_iterator_of(static_cast<Container const &>(container));
+    }
+
+    template <class Container>
+    typename Container::const_iterator
+    random_const_iterator_of(Container const & container)
+    {
+        return ::saga_test::random_iterator_of(container);
+    }
+
+    template <class Container>
+    void random_const_iterator_of(Container && container) = delete;
 }
 // namespace saga_test
 

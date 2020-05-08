@@ -62,6 +62,15 @@ namespace saga
     public:
         using type = decltype(size_type::impl<T>(priority_tag<1>{}));
     };
+
+    template <typename... Types>
+    struct declare_void
+    {
+        using type = void;
+    };
+
+    template <typename... Types>
+    using void_t = typename declare_void<Types...>::type;
 }
 // namespace saga
 

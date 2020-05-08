@@ -22,6 +22,9 @@ SAGA -- это свободной программное обеспечение:
 #include "saga_test.hpp"
 #include <catch/catch.hpp>
 
+// Вспомогательные файлы
+#include <string>
+
 // Тесты
 TEST_CASE("starts_with : prefix")
 {
@@ -45,7 +48,7 @@ TEST_CASE("starts_with : common")
     };
 }
 
-TEST_CASE("ends : suffix")
+TEST_CASE("ends_with : suffix")
 {
     saga_test::property_checker << [](std::string const & str)
     {

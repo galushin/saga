@@ -64,10 +64,8 @@ namespace
     template <class Container>
     void check_reverse_iterator_ctor_for_container(Container container)
     {
-        auto const pos = saga_test::random_uniform(0*container.size(), container.size());
-
-        ::check_reverse_iterator_ctor_for_iterator(std::next(container.begin(), pos));
-        ::check_reverse_iterator_ctor_for_iterator(std::next(container.cbegin(), pos));
+        ::check_reverse_iterator_ctor_for_iterator(saga_test::random_iterator_of(container));
+        ::check_reverse_iterator_ctor_for_iterator(saga_test::random_const_iterator_of(container));
     }
 
     template <class Iterator>
@@ -84,17 +82,14 @@ namespace
     template <class Container>
     void check_make_reverse_iterator_for_container(Container container)
     {
-        auto const pos = saga_test::random_uniform(0*container.size(), container.size());
-
-        ::check_make_reverse_iterator_for_iterator(std::next(container.begin(), pos));
-        ::check_make_reverse_iterator_for_iterator(std::next(container.cbegin(), pos));
+        ::check_make_reverse_iterator_for_iterator(saga_test::random_iterator_of(container));
+        ::check_make_reverse_iterator_for_iterator(saga_test::random_const_iterator_of(container));
     }
 
     template <class Container>
     void check_make_reverse_iterator_is_inverse_of_itself(Container const & container)
     {
-        auto const pos = saga_test::random_uniform(0*container.size(), container.size());
-        auto const iter = std::next(container.begin(), pos);
+        auto const iter = saga_test::random_const_iterator_of(container);
 
         auto const r_iter = saga::make_reverse_iterator(iter);
         auto const rr_iter = saga::make_reverse_iterator(r_iter);
@@ -107,13 +102,10 @@ namespace
     template <class Container>
     void check_reverse_iterator_equality_for_container(Container container)
     {
-        auto const pos1 = saga_test::random_uniform(0*container.size(), container.size());
-        auto const pos2 = saga_test::random_uniform(0*container.size(), container.size());
-
         saga::reverse_iterator<typename Container::iterator> const it0{};
-        auto const it1 = saga::make_reverse_iterator(std::next(container.begin(), pos1));
+        auto const it1 = saga::make_reverse_iterator(saga_test::random_iterator_of(container));
         auto const it1_c = it1;
-        auto const it2 = saga::make_reverse_iterator(std::next(container.cbegin(), pos2));
+        auto const it2 = saga::make_reverse_iterator(saga_test::random_const_iterator_of(container));
 
         static_assert(!std::is_same<decltype(it1), decltype(it2)>{}, "");
 
@@ -138,12 +130,11 @@ namespace
     template <class Container>
     void check_compatible_ctor_for_container(Container container)
     {
-        auto const pos = saga_test::random_uniform(0*container.size(), container.size());
+        using RIterator = saga::reverse_iterator<typename Container::iterator>;
+        RIterator const r_iter
+            = saga::make_reverse_iterator(saga_test::random_iterator_of(container));
 
-        using RIterator= saga::reverse_iterator<typename Container::iterator>;
-        RIterator const r_iter = saga::make_reverse_iterator(std::next(container.begin(), pos));
-
-        using CRIterator= saga::reverse_iterator<typename Container::const_iterator>;
+        using CRIterator = saga::reverse_iterator<typename Container::const_iterator>;
         CRIterator const cr_iter(r_iter);
 
         static_assert(!std::is_same<RIterator, CRIterator>{}, "Must be different");
@@ -160,18 +151,15 @@ namespace
     template <class Container>
     void check_compatible_assign_for_container(Container container)
     {
-        auto const pos1 = saga_test::random_uniform(0*container.size(), container.size());
-        auto const pos2 = saga_test::random_uniform(0*container.size(), container.size());
-
-        using RIterator= saga::reverse_iterator<typename Container::iterator>;
-        using CRIterator= saga::reverse_iterator<typename Container::const_iterator>;
+        using RIterator = saga::reverse_iterator<typename Container::iterator>;
+        using CRIterator = saga::reverse_iterator<typename Container::const_iterator>;
         static_assert(!std::is_same<RIterator, CRIterator>{}, "Must be different");
 
         static_assert(std::is_assignable<CRIterator, RIterator>{},"");
         static_assert(!std::is_assignable<RIterator, CRIterator>{},"");
 
-        auto const r_iter = saga::make_reverse_iterator(std::next(container.begin(), pos1));
-        auto cr_iter = saga::make_reverse_iterator(std::next(container.begin(), pos2));
+        auto const r_iter = saga::make_reverse_iterator(saga_test::random_iterator_of(container));
+        auto cr_iter = saga::make_reverse_iterator(saga_test::random_const_iterator_of(container));
         CRIterator cr_iter_def{};
 
         cr_iter = r_iter;
@@ -184,11 +172,8 @@ namespace
     template <class Container>
     void check_reverse_iterator_comparison_for_container(Container container)
     {
-        auto const pos1 = saga_test::random_uniform(0*container.size(), container.size());
-        auto const pos2 = saga_test::random_uniform(0*container.size(), container.size());
-
-        auto const it1 = std::next(container.begin(), pos1);
-        auto const it2 = std::next(container.cbegin(), pos2);
+        auto const it1 = saga_test::random_iterator_of(container);
+        auto const it2 = saga_test::random_const_iterator_of(container);
 
         static_assert(!std::is_same<decltype(it1), decltype(it2)>{}, "");
 
@@ -216,8 +201,7 @@ namespace
     template <class Container>
     void check_reverse_iterator_dereference_for_container(Container container)
     {
-        auto const pos = saga_test::random_uniform(0*container.size(), container.size());
-        auto const iter = std::next(container.begin(), pos);
+        auto const iter = saga_test::random_iterator_of(container);
 
         auto const r_iter = saga::make_reverse_iterator(iter);
 
@@ -234,8 +218,7 @@ namespace
     template <class Container>
     void check_reverse_iterator_increment_and_decrement_for_container(Container container)
     {
-        auto const pos = saga_test::random_uniform(0*container.size(), container.size());
-        auto iter = std::next(container.begin(), pos);
+        auto iter = saga_test::random_iterator_of(container);
         auto r_iter = saga::make_reverse_iterator(iter);
 
         static_assert(std::is_same<decltype(++r_iter), decltype(r_iter) &>{}, "");
@@ -319,8 +302,7 @@ namespace
             REQUIRE(std::addressof(r_iter[n]) == std::addressof(iter[-n-1]));
         }
 
-        auto const pos2 = saga_test::random_uniform(0*container.size(), container.size());
-        auto const iter2 = std::next(container.cbegin(), pos2);
+        auto const iter2 = saga_test::random_iterator_of(container);
         auto const r_iter2 = saga::make_reverse_iterator(iter2);
 
         REQUIRE(r_iter2 - r_iter == (iter - iter2));
