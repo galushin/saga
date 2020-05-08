@@ -20,8 +20,9 @@ SAGA -- это свободной программное обеспечение:
 
 #include "random_engine.hpp"
 
-#include <saga/type_traits.hpp>
 #include <saga/detail/static_empty_const.hpp>
+#include <saga/type_traits.hpp>
+#include <saga/utility/operators.hpp>
 
 #include <cassert>
 
@@ -119,17 +120,12 @@ namespace saga_test
 
         template <class Generator, class Incrementable>
         class function_input_iterator
+         : saga::operators::equality_comparable<function_input_iterator<Generator, Incrementable>>
         {
             friend bool operator==(function_input_iterator const & lhs,
                                    function_input_iterator const & rhs)
             {
                 return lhs.pos_ == rhs.pos_;
-            }
-
-            friend bool operator!=(function_input_iterator const & lhs,
-                                   function_input_iterator const & rhs)
-            {
-                return !(lhs == rhs);
             }
 
         public:

@@ -36,10 +36,18 @@ TEST_CASE("span: types and static constants, static extent")
 
     static_assert(std::is_same<Span::element_type, Element>::value, "");
     static_assert(std::is_same<Span::value_type, Value>::value, "");
-    static_assert(std::is_same<Span::index_type, ptrdiff_t>::value, "");
-    static_assert(std::is_same<Span::difference_type, ptrdiff_t>::value, "");
+    static_assert(std::is_same<Span::index_type, std::ptrdiff_t>::value, "");
+    static_assert(std::is_same<Span::difference_type, std::ptrdiff_t>::value, "");
     static_assert(std::is_same<Span::pointer, Element*>::value, "");
     static_assert(std::is_same<Span::reference, Element&>::value, "");
+
+    struct span_structure
+    {
+        Span::pointer ptr;
+        Span::index_type size;
+    };
+
+    static_assert(sizeof(Span) <= sizeof(span_structure), "");
 
     using Iter = Span::iterator;
     using CIter = Span::const_iterator;

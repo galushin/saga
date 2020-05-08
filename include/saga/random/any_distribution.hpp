@@ -22,23 +22,20 @@ SAGA -- это свободной программное обеспечение:
  @brief Распределение вероятностей со стёртым типом
 */
 
+#include <saga/utility/operators.hpp>
+
 #include <memory>
 
 namespace saga
 {
     template <class Result, class UniformRandomBitGenerator>
     class any_distribution
+     : saga::operators::equality_comparable<any_distribution<Result, UniformRandomBitGenerator>>
     {
-    friend bool operator==(any_distribution const & lhs, any_distribution const & rhs)
-    {
-        return lhs.pimpl_->is_equal(*rhs.pimpl_);
-    }
-
-    // @todo Более идеоматичный код
-    friend bool operator!=(any_distribution const & lhs, any_distribution const & rhs)
-    {
-        return !(lhs == rhs);
-    }
+        friend bool operator==(any_distribution const & lhs, any_distribution const & rhs)
+        {
+            return lhs.pimpl_->is_equal(*rhs.pimpl_);
+        }
 
     public:
         // Типы

@@ -20,6 +20,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/detail/static_empty_const.hpp>
 #include <saga/iterator.hpp>
+#include <saga/utility/operators.hpp>
 
 #include <utility>
 
@@ -29,6 +30,7 @@ namespace saga
     {
         template <class Incrementable>
         class iota_iterator
+         : saga::rel_ops::enable_adl<iota_iterator<Incrementable>>
         {
             template <class Incrementable2>
             friend
@@ -36,14 +38,6 @@ namespace saga
                                       iota_iterator<Incrementable2> const & rhs)
             {
                 return *lhs == *rhs;
-            }
-
-            template <class Incrementable2>
-            friend
-            constexpr bool operator!=(iota_iterator<Incrementable> const & lhs,
-                                      iota_iterator<Incrementable2> const & rhs)
-            {
-                return !(lhs == rhs);
             }
 
             template <class Incrementable2>
