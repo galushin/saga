@@ -30,7 +30,6 @@ SAGA -- это свободной программное обеспечение:
 #include <iterator>
 #include <tuple>
 #include <type_traits>
-#include <vector>
 
 namespace saga_test
 {
