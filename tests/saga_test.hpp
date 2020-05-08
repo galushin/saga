@@ -19,13 +19,15 @@ SAGA -- это свободной программное обеспечение:
 #define Z_SAGA_TEST_HPP_INCLUDED
 
 #include "random_engine.hpp"
+
+#include <saga/type_traits.hpp>
 #include <saga/detail/static_empty_const.hpp>
 
 #include <cassert>
 
+#include <array>
 #include <algorithm>
-#include <deque>
-#include <list>
+#include <iterator>
 #include <tuple>
 #include <type_traits>
 #include <vector>
@@ -116,8 +118,81 @@ namespace saga_test
             }
         };
 
+        template <class Generator, class Incrementable>
+        class function_input_iterator
+        {
+            friend bool operator==(function_input_iterator const & lhs,
+                                   function_input_iterator const & rhs)
+            {
+                return lhs.pos_ == rhs.pos_;
+            }
+
+            friend bool operator!=(function_input_iterator const & lhs,
+                                   function_input_iterator const & rhs)
+            {
+                return !(lhs == rhs);
+            }
+
+        public:
+            // Типы
+            using iterator_category = std::input_iterator_tag;
+            using value_type = std::decay_t<decltype(std::declval<Generator&>()())>;
+            using difference_type = Incrementable;
+            using reference = value_type const &;
+            using pointer = value_type const *;
+
+            // Создание и копирование
+            function_input_iterator(Generator gen, Incrementable pos)
+             : gen_(std::move(gen))
+             , pos_(std::move(pos))
+            {}
+
+            // Итератор
+            reference operator*()
+            {
+                if(!this->has_value_)
+                {
+                    this->value_ = (this->gen_)();
+                    this->has_value_ = true;
+                }
+
+                return this->value_;
+            }
+
+            function_input_iterator & operator++()
+            {
+                if(this->has_value_)
+                {
+                    this->has_value_ = false;
+                }
+                else
+                {
+                    (this->gen_)();
+                }
+
+                ++ this->pos_;
+
+                return *this;
+            }
+
+        private:
+            Generator gen_{};
+            Incrementable pos_{};
+
+            // @todo optional
+            bool has_value_ = false;
+            value_type value_{};
+        };
+
+        template <class Generator, class Incrementable>
+        function_input_iterator<Generator, Incrementable>
+        make_function_input_iterator(Generator gen, Incrementable pos)
+        {
+            return {std::move(gen), std::move(pos)};
+        }
+
         template <class Container>
-        struct arbitrary_container
+        struct arbitrary_sequence_container
         {
         public:
             using value_type = Container;
@@ -135,17 +210,27 @@ namespace saga_test
                     return {};
                 }
 
-                value_type result;
-
-                using Element = typename Container::value_type;
                 std::uniform_int_distribution<generation_t> distr(0, generation);
 
-                std::generate_n(std::back_inserter(result), num,
-                                [&](){ return arbitrary<Element>::generate(distr(urbg), urbg); });
+                using Element = typename Container::value_type;
+                auto element_gen = [&](){ return arbitrary<Element>::generate(distr(urbg), urbg); };
 
-                return result;
+                auto first = ::saga_test::detail::make_function_input_iterator(element_gen, 0*num);
+                auto last = ::saga_test::detail::make_function_input_iterator(element_gen, num);
+
+                return value_type(first, last);
             }
         };
+
+        template <typename T, class SFINAE = void>
+        struct is_sequence_container
+         : std::false_type
+        {};
+
+        template <typename T>
+        struct is_sequence_container<T, saga::void_t<typename T::value_type>>
+         : std::is_constructible<T, typename T::value_type const *, typename T::value_type const *>
+        {};
     }
     // namespace detail
 
@@ -188,24 +273,9 @@ namespace saga_test
      : detail::arbitrary_real<T>
     {};
 
-    template <class T, class A>
-    struct arbitrary<std::vector<T, A>>
-     : detail::arbitrary_container<std::vector<T, A>>
-    {};
-
-    template <class T, class A>
-    struct arbitrary<std::list<T, A>>
-     : detail::arbitrary_container<std::list<T, A>>
-    {};
-
-    template <class T, class A>
-    struct arbitrary<std::deque<T, A>>
-     : detail::arbitrary_container<std::deque<T, A>>
-    {};
-
-    template <>
-    struct arbitrary<std::string>
-     : detail::arbitrary_container<std::string>
+    template <class T>
+    struct arbitrary<T, std::enable_if_t<detail::is_sequence_container<T>::value>>
+     : detail::arbitrary_sequence_container<T>
     {};
 
     template <class T, std::size_t N>
