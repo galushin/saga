@@ -244,24 +244,6 @@ namespace saga
     {
         return saga::lexicographical_compare(saga::cursor::all(lhs), saga::cursor::all(rhs));
     }
-
-    template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
-    bool operator<=(span<T, X> lhs, span<U, Y> rhs)
-    {
-        return !(rhs < lhs);
-    }
-
-    template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
-    bool operator>(span<T, X> lhs, span<U, Y> rhs)
-    {
-        return rhs < lhs;
-    }
-
-    template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
-    bool operator>=(span<T, X> lhs, span<U, Y> rhs)
-    {
-        return !(lhs < rhs);
-    }
 }
 // namespace saga
 

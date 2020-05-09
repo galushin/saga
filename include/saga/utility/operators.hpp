@@ -37,7 +37,38 @@ namespace saga
             {
                 return !(lhs == rhs);
             }
+
+            friend
+            constexpr bool
+            operator>(T const & lhs, T const & rhs) noexcept(noexcept(!(lhs < rhs)))
+            {
+                return rhs < lhs;
+            }
+
+            friend
+            constexpr bool
+            operator<=(T const & lhs, T const & rhs) noexcept(noexcept(!(rhs < lhs)))
+            {
+                return !(rhs < lhs);
+            }
+
+            friend
+            bool operator>=(T const & lhs, T const & rhs) noexcept(noexcept(!(lhs < rhs)))
+            {
+                return !(lhs < rhs);
+            }
         };
+
+        template <class T>
+        struct less_than_comparable
+        {
+        };
+
+        template <class T>
+        struct totally_ordered
+         : equality_comparable<T>
+         , less_than_comparable<T>
+        {};
     }
     //namespace operators
 
@@ -57,6 +88,27 @@ namespace saga
         -> std::enable_if_t<std::is_same<decltype(lhs == rhs), bool>{}, bool>
         {
             return !(lhs == rhs);
+        }
+
+        template <class T, class U>
+        constexpr auto operator>(T const & lhs, U const & rhs) noexcept(noexcept(rhs < lhs))
+        -> std::enable_if_t<std::is_same<decltype(rhs < lhs), bool>{}, bool>
+        {
+            return rhs < lhs;
+        }
+
+        template <class T, class U>
+        constexpr auto operator<=(T const & lhs, U const & rhs) noexcept(noexcept(!(rhs < lhs)))
+        -> std::enable_if_t<std::is_same<decltype(rhs < lhs), bool>{}, bool>
+        {
+            return !(rhs < lhs);
+        }
+
+        template <class T, class U>
+        constexpr auto operator>=(T const & lhs, U const & rhs) noexcept(noexcept(!(lhs < rhs)))
+        -> std::enable_if_t<std::is_same<decltype(lhs < rhs), bool>{}, bool>
+        {
+            return !(lhs < rhs);
         }
     }
     //namespace rel_ops

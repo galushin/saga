@@ -48,31 +48,6 @@ namespace saga
                 return *lhs < *rhs;
             }
 
-            template <class Incrementable2>
-            friend
-            constexpr bool operator>(iota_iterator<Incrementable> const & lhs,
-                                     iota_iterator<Incrementable2> const & rhs)
-            {
-                return rhs < lhs;
-            }
-
-            template <class Incrementable2>
-            friend
-            constexpr bool operator<=(iota_iterator<Incrementable> const & lhs,
-                                      iota_iterator<Incrementable2> const & rhs)
-            {
-                return !(lhs > rhs);
-            }
-
-            template <class Incrementable2>
-            friend
-            constexpr bool operator>=(iota_iterator<Incrementable> const & lhs,
-                                      iota_iterator<Incrementable2> const & rhs)
-            {
-                return !(lhs < rhs);
-            }
-
-
         public:
             // Типы
             using iterator_category = std::random_access_iterator_tag;

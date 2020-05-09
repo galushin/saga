@@ -48,30 +48,6 @@ namespace saga
             return lhs.base() > rhs.base();
         }
 
-        template <class Iterator2>
-        friend
-        constexpr bool operator>(reverse_iterator<Iterator> const & lhs,
-                                 reverse_iterator<Iterator2> const & rhs)
-        {
-            return lhs.base() < rhs.base();
-        }
-
-        template <class Iterator2>
-        friend
-        constexpr bool operator<=(reverse_iterator<Iterator> const & lhs,
-                                  reverse_iterator<Iterator2> const & rhs)
-        {
-            return lhs.base() >= rhs.base();
-        }
-
-        template <class Iterator2>
-        friend
-        constexpr bool operator>=(reverse_iterator<Iterator> const & lhs,
-                                  reverse_iterator<Iterator2> const & rhs)
-        {
-            return lhs.base() <= rhs.base();
-        }
-
     public:
         // Типы
         using iterator_type = Iterator;

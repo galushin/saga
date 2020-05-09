@@ -45,7 +45,7 @@ namespace saga
     */
     template <class charT, class traits = std::char_traits<charT>>
     class basic_string_view
-     : saga::operators::equality_comparable<basic_string_view<charT, traits>>
+     : saga::operators::totally_ordered<basic_string_view<charT, traits>>
     {
         // Функции сравнения
         friend bool operator==(basic_string_view lhs, basic_string_view rhs) noexcept
@@ -56,21 +56,6 @@ namespace saga
         friend bool operator<(basic_string_view lhs, basic_string_view rhs) noexcept
         {
             return lhs.compare(rhs) < 0;
-        }
-
-        friend bool operator>(basic_string_view lhs, basic_string_view rhs) noexcept
-        {
-            return rhs < lhs;
-        }
-
-        friend bool operator<=(basic_string_view lhs, basic_string_view rhs) noexcept
-        {
-            return !(rhs < lhs);
-        }
-
-        friend bool operator>=(basic_string_view lhs, basic_string_view rhs) noexcept
-        {
-            return !(lhs < rhs);
         }
 
         // Вставка в поток
