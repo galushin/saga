@@ -15,13 +15,34 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
+// Тестируемый файл
 #include <saga/view/indices.hpp>
 
+// Тестовая инфраструктура
 #include <catch/catch.hpp>
+#include "../saga_test.hpp"
 
+// Вспомогательные файлы
 #include <saga/iterator.hpp>
 
-#include "../saga_test.hpp"
+#include <forward_list>
+#include <list>
+
+// Тесты
+static_assert(sizeof(saga::detail::iota_iterator<int>) == sizeof(int), "");
+// @todo Проверить категорию iota_iterator - придумать все
+// @todo iota_iterator<void *> - осмысленно?
+
+static_assert(std::is_same<saga::detail::iota_iterator<std::forward_list<int>::iterator>::iterator_category,
+                           std::forward_iterator_tag>{}, "");
+static_assert(std::is_same<saga::detail::iota_iterator<std::list<int>::iterator>::iterator_category,
+                           std::bidirectional_iterator_tag>{}, "");
+static_assert(std::is_same<saga::detail::iota_iterator<std::vector<int>::iterator>::iterator_category,
+                           std::random_access_iterator_tag>{}, "");
+static_assert(std::is_same<saga::detail::iota_iterator<int const *>::iterator_category,
+                           std::random_access_iterator_tag>{}, "");
+static_assert(std::is_same<saga::detail::iota_iterator<int>::iterator_category,
+                           std::random_access_iterator_tag>{}, "");
 
 TEST_CASE("range-for with indices")
 {

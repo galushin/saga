@@ -23,12 +23,77 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/detail/static_empty_const.hpp>
+#include <saga/type_traits.hpp>
 
 #include <cassert>
 #include <iterator>
 
 namespace saga
 {
+    namespace detail
+    {
+        template <class T, bool to_object>
+        struct incrementable_traits_pointer
+        {};
+
+        template <class T>
+        struct incrementable_traits_pointer<T, true>
+        {
+            using difference_type = std::ptrdiff_t;
+        };
+
+        template <class T, class SFINAE = void>
+        struct has_difference_type
+         : std::false_type
+        {};
+
+        template <class T>
+        struct has_difference_type<T, saga::void_t<typename T::difference_type>>
+         : std::true_type
+        {};
+
+        template <class T, class SFINAE = void>
+        struct incrementable_traits_not_pointer
+        {};
+
+        template <class T>
+        struct incrementable_traits_not_pointer<T, std::enable_if_t<has_difference_type<T>{}>>
+        {
+            using difference_type = typename T::difference_type;
+        };
+
+        template <class T, class SFINAE = void>
+        struct has_integral_difference
+         : std::false_type
+        {};
+
+        template <class T>
+        struct has_integral_difference<T, saga::void_t<decltype(std::declval<T const&>() - std::declval<T const&>())>>
+         : std::is_integral<decltype(std::declval<T const&>() - std::declval<T const&>())>
+        {};
+
+        template <class T>
+        struct incrementable_traits_not_pointer<T, std::enable_if_t<!has_difference_type<T>{} && has_integral_difference<T>{}>>
+        {
+            using difference_type = std::make_signed_t<decltype(std::declval<T const&>() - std::declval<T const&>())>;
+        };
+    }
+
+    template <class T>
+    struct incrementable_traits
+     : detail::incrementable_traits_not_pointer<T, void>
+    {};
+
+    template <class T>
+    struct incrementable_traits<T*>
+     : detail::incrementable_traits_pointer<T*, std::is_object<T>{}>
+    {};
+
+    template <class T>
+    struct incrementable_traits<T const>
+     : incrementable_traits<T>
+    {};
+
 namespace detail
 {
     struct begin_fn

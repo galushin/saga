@@ -28,6 +28,19 @@ namespace saga
 {
     namespace detail
     {
+        template <class T, class SFINAE = void>
+        struct iota_iterator_category
+        {
+            // @todo Вычислить по Incrementable
+            using type = std::random_access_iterator_tag;
+        };
+
+        template <class T>
+        struct iota_iterator_category<T, saga::void_t<typename std::iterator_traits<T>::iterator_category>>
+        {
+            using type = typename std::iterator_traits<T>::iterator_category;
+        };
+
         template <class Incrementable>
         class iota_iterator
          : saga::rel_ops::enable_adl<iota_iterator<Incrementable>>
@@ -50,9 +63,13 @@ namespace saga
 
         public:
             // Типы
-            using iterator_category = std::random_access_iterator_tag;
+            using iterator_category = typename iota_iterator_category<Incrementable>::type;
+
             using value_type = Incrementable;
-            using difference_type = decltype(std::declval<value_type>() - std::declval<value_type>());
+
+            using difference_type
+                = typename saga::incrementable_traits<Incrementable>::difference_type;
+
             using pointer = Incrementable const *;
             using reference = Incrementable const &;
 
@@ -77,6 +94,7 @@ namespace saga
             }
 
             // Итератор
+            // @todo Покрыть тестами постфиксные операторы ++ и --
             constexpr iota_iterator & operator++()
             {
                 ++ this->value_;
@@ -88,6 +106,8 @@ namespace saga
                 return this->value_;
             }
 
+            // @todo Оператор ->, нужно покрыть тестами
+
             // Двусторонний итератор
             constexpr iota_iterator &operator--()
             {
@@ -96,6 +116,7 @@ namespace saga
             }
 
             // Итератор приозвольного доступа
+            // @todo Через saga::operators
             constexpr iota_iterator operator+(difference_type num) const
             {
                 auto result = *this;
@@ -109,6 +130,7 @@ namespace saga
                 return *this;
             }
 
+            // @todo Через saga::operators
             constexpr iota_iterator operator-(difference_type num) const
             {
                 auto result = *this;
