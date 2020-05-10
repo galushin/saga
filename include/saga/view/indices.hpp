@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/iterator.hpp>
 #include <saga/utility/operators.hpp>
 
+#include <limits>
 #include <utility>
 
 namespace saga
@@ -30,8 +31,14 @@ namespace saga
     {
         template <class T, class SFINAE = void>
         struct iota_iterator_category
+        {};
+
+        template <class T>
+        struct iota_iterator_category<T,
+            std::enable_if_t<!std::is_same<T, bool>{} && (std::is_integral<T>{}
+                                                          ||(std::numeric_limits<T>::is_specialized
+                                                             && std::numeric_limits<T>::is_integer))>>
         {
-            // @todo Вычислить по Incrementable
             using type = std::random_access_iterator_tag;
         };
 

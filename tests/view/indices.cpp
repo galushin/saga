@@ -24,14 +24,13 @@ SAGA -- это свободной программное обеспечение:
 
 // Вспомогательные файлы
 #include <saga/iterator.hpp>
+#include <saga/type_traits.hpp>
 
 #include <forward_list>
 #include <list>
 
 // Тесты
 static_assert(sizeof(saga::detail::iota_iterator<int>) == sizeof(int), "");
-// @todo Проверить категорию iota_iterator - придумать все
-// @todo iota_iterator<void *> - осмысленно?
 
 static_assert(std::is_same<saga::detail::iota_iterator<std::forward_list<int>::iterator>::iterator_category,
                            std::forward_iterator_tag>{}, "");
@@ -39,10 +38,30 @@ static_assert(std::is_same<saga::detail::iota_iterator<std::list<int>::iterator>
                            std::bidirectional_iterator_tag>{}, "");
 static_assert(std::is_same<saga::detail::iota_iterator<std::vector<int>::iterator>::iterator_category,
                            std::random_access_iterator_tag>{}, "");
+static_assert(std::is_same<saga::detail::iota_iterator<int *>::iterator_category,
+                           std::random_access_iterator_tag>{}, "");
 static_assert(std::is_same<saga::detail::iota_iterator<int const *>::iterator_category,
                            std::random_access_iterator_tag>{}, "");
 static_assert(std::is_same<saga::detail::iota_iterator<int>::iterator_category,
                            std::random_access_iterator_tag>{}, "");
+
+namespace
+{
+    template <class T, class SFINAE = void>
+    struct has_type_typedef
+     : std::false_type
+    {};
+
+    template <class T>
+    struct has_type_typedef<T, saga::void_t<typename T::type>>
+     : std::true_type
+    {};
+}
+
+static_assert(!::has_type_typedef<saga::detail::iota_iterator_category<bool>>{},
+              "operator++ is deprecated for bool");
+static_assert(!::has_type_typedef<saga::detail::iota_iterator_category<double>>{},
+              "operator++ may be not exact");
 
 TEST_CASE("range-for with indices")
 {
