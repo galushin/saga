@@ -94,6 +94,9 @@ namespace saga
      : incrementable_traits<T>
     {};
 
+    template <class T>
+    using incrementable_difference_t = typename incrementable_traits<T>::difference_type;
+
 namespace detail
 {
     struct begin_fn

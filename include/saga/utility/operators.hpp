@@ -37,7 +37,11 @@ namespace saga
             {
                 return !(lhs == rhs);
             }
+        };
 
+        template <class T>
+        struct less_than_comparable
+        {
             friend
             constexpr bool
             operator>(T const & lhs, T const & rhs) noexcept(noexcept(!(lhs < rhs)))
@@ -60,14 +64,69 @@ namespace saga
         };
 
         template <class T>
-        struct less_than_comparable
+        struct incrementable
         {
+            friend constexpr T operator++(T & obj, int)
+            {
+                auto old_value = obj;
+                ++ obj;
+                return old_value;
+            }
+        };
+
+        template <class T>
+        struct decrementable
+        {
+            friend constexpr T operator--(T & obj, int)
+            {
+                auto old_value = obj;
+                -- obj;
+                return old_value;
+            }
+        };
+
+        template <class T, class U>
+        struct addable_with
+        {
+            friend constexpr T operator+(T lhs, U const & rhs)
+            {
+                lhs += rhs;
+                return lhs;
+            }
+
+            friend constexpr T operator+(U const & lhs, T rhs)
+            {
+                rhs += lhs;
+                return rhs;
+            }
+        };
+
+        template <class T, class U>
+        struct subtractable_with
+        {
+            friend constexpr T operator-(T lhs, U const & rhs)
+            {
+                lhs -= rhs;
+                return lhs;
+            }
         };
 
         template <class T>
         struct totally_ordered
          : equality_comparable<T>
          , less_than_comparable<T>
+        {};
+
+        template <class T>
+        struct unit_steppable
+         : incrementable<T>
+         , decrementable<T>
+        {};
+
+        template <class T, class U>
+        struct additive_with
+         : addable_with<T, U>
+         , subtractable_with<T, U>
         {};
     }
     //namespace operators
