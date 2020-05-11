@@ -15,13 +15,127 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
+// Тестируемый файл
 #include <saga/view/indices.hpp>
 
+// Тестовая инфраструктура
 #include <catch/catch.hpp>
-
-#include <saga/iterator.hpp>
-
 #include "../saga_test.hpp"
+
+// Вспомогательные файлы
+#include <saga/iterator.hpp>
+#include <saga/type_traits.hpp>
+
+#include <forward_list>
+#include <list>
+
+// Тесты
+static_assert(sizeof(saga::iota_iterator<int>) == sizeof(int), "");
+
+static_assert(std::is_same<saga::iota_iterator<std::forward_list<int>::iterator>::iterator_category,
+                           std::forward_iterator_tag>{}, "");
+static_assert(std::is_same<saga::iota_iterator<std::list<int>::iterator>::iterator_category,
+                           std::bidirectional_iterator_tag>{}, "");
+static_assert(std::is_same<saga::iota_iterator<std::vector<int>::iterator>::iterator_category,
+                           std::random_access_iterator_tag>{}, "");
+static_assert(std::is_same<saga::iota_iterator<int *>::iterator_category,
+                           std::random_access_iterator_tag>{}, "");
+static_assert(std::is_same<saga::iota_iterator<int const *>::iterator_category,
+                           std::random_access_iterator_tag>{}, "");
+static_assert(std::is_same<saga::iota_iterator<int>::iterator_category,
+                           std::random_access_iterator_tag>{}, "");
+
+namespace
+{
+    template <class T, class SFINAE = void>
+    struct has_type_typedef
+     : std::false_type
+    {};
+
+    template <class T>
+    struct has_type_typedef<T, saga::void_t<typename T::type>>
+     : std::true_type
+    {};
+}
+
+static_assert(!::has_type_typedef<saga::detail::iota_iterator_category<bool>>{},
+              "operator++ is deprecated for bool");
+static_assert(!::has_type_typedef<saga::detail::iota_iterator_category<double>>{},
+              "operator++ may be not exact");
+
+TEST_CASE("iota_iterator : distrance plus iterator")
+{
+    using Iterator = saga::iota_iterator<int>;
+    constexpr int const value = 42;
+    constexpr Iterator iter(value);
+    constexpr Iterator::difference_type num{13};
+
+    static_assert(num + iter == Iterator(value + num), "must be equal");
+    static_assert(num + iter == iter + num, "must be equal");
+}
+
+namespace
+{
+    template <class T>
+    constexpr T constexpr_postfix_increment_and_decrement(T x)
+    {
+        x++;
+        x--;
+        return x;
+    }
+}
+
+TEST_CASE("iota_iterator : postfix ++ and --")
+{
+    {
+        constexpr int const value = 42;
+        constexpr auto const iter = saga::iota_iterator<int>(value);
+        constexpr auto const result = ::constexpr_postfix_increment_and_decrement(iter);
+
+        static_assert(result == iter, "");
+    }
+
+    using Value = int;
+    saga_test::property_checker << [](Value value)
+    {
+        using Iterator = saga::iota_iterator<Value>;
+        Iterator iter(value);
+
+        if(value != std::numeric_limits<Value>::max())
+        {
+            auto const old_iter = iter;
+
+            auto const result = iter++;
+            REQUIRE(result == old_iter);
+
+            REQUIRE(iter == std::next(old_iter));
+        }
+
+        if(value != std::numeric_limits<Value>::max())
+        {
+            auto const old_iter = iter;
+
+            auto const result = iter--;
+            REQUIRE(result == old_iter);
+
+            REQUIRE(iter == std::prev(old_iter));
+        }
+    };
+}
+
+TEST_CASE("iota_iterator : operator->")
+{
+    // @todo constexpr, требует constexpr для std::addressof
+
+    using Value = int;
+    saga_test::property_checker << [](Value value)
+    {
+        using Iterator = saga::iota_iterator<Value>;
+        Iterator iter(value);
+
+        REQUIRE(iter.operator->() == std::addressof(*iter));
+    };
+}
 
 TEST_CASE("range-for with indices")
 {

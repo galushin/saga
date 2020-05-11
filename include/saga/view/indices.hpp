@@ -20,163 +20,157 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/detail/static_empty_const.hpp>
 #include <saga/iterator.hpp>
+#include <saga/utility/operators.hpp>
 
+#include <limits>
 #include <utility>
 
 namespace saga
 {
     namespace detail
     {
-        template <class Incrementable>
-        class iota_iterator
+        template <class T, class SFINAE = void>
+        struct iota_iterator_category
+        {};
+
+        template <class T>
+        struct iota_iterator_category<T,
+            std::enable_if_t<!std::is_same<T, bool>{}
+                             && (std::is_integral<T>{} ||(std::numeric_limits<T>::is_specialized
+                                                          && std::numeric_limits<T>::is_integer))>>
         {
-            template <class Incrementable2>
-            friend
-            constexpr bool operator==(iota_iterator<Incrementable> const & lhs,
-                                      iota_iterator<Incrementable2> const & rhs)
-            {
-                return *lhs == *rhs;
-            }
-
-            template <class Incrementable2>
-            friend
-            constexpr bool operator!=(iota_iterator<Incrementable> const & lhs,
-                                      iota_iterator<Incrementable2> const & rhs)
-            {
-                return !(lhs == rhs);
-            }
-
-            template <class Incrementable2>
-            friend
-            constexpr bool operator<(iota_iterator<Incrementable> const & lhs,
-                                     iota_iterator<Incrementable2> const & rhs)
-            {
-                return *lhs < *rhs;
-            }
-
-            template <class Incrementable2>
-            friend
-            constexpr bool operator>(iota_iterator<Incrementable> const & lhs,
-                                     iota_iterator<Incrementable2> const & rhs)
-            {
-                return rhs < lhs;
-            }
-
-            template <class Incrementable2>
-            friend
-            constexpr bool operator<=(iota_iterator<Incrementable> const & lhs,
-                                      iota_iterator<Incrementable2> const & rhs)
-            {
-                return !(lhs > rhs);
-            }
-
-            template <class Incrementable2>
-            friend
-            constexpr bool operator>=(iota_iterator<Incrementable> const & lhs,
-                                      iota_iterator<Incrementable2> const & rhs)
-            {
-                return !(lhs < rhs);
-            }
-
-
-        public:
-            // Типы
-            using iterator_category = std::random_access_iterator_tag;
-            using value_type = Incrementable;
-            using difference_type = decltype(std::declval<value_type>() - std::declval<value_type>());
-            using pointer = Incrementable const *;
-            using reference = Incrementable const &;
-
-            // Создание, копирование, уничтожение
-            constexpr explicit iota_iterator(Incrementable value)
-             : value_(std::move(value))
-            {}
-
-            template <class OtherIncrementable,
-                      typename = std::enable_if_t<std::is_constructible<Incrementable, OtherIncrementable const &>{}>>
-            constexpr iota_iterator(iota_iterator<OtherIncrementable> const & other)
-             : value_{*other}
-            {}
-
-            template <class OtherIncrementable,
-                      typename = std::enable_if_t<std::is_constructible<Incrementable, OtherIncrementable const &>{}
-                                                && std::is_assignable<Incrementable&, OtherIncrementable const &>{}>>
-            constexpr iota_iterator & operator=(iota_iterator<OtherIncrementable> const & other)
-            {
-                this->value_ = *other;
-                return *this;
-            }
-
-            // Итератор
-            constexpr iota_iterator & operator++()
-            {
-                ++ this->value_;
-                return *this;
-            }
-
-            constexpr reference operator*() const
-            {
-                return this->value_;
-            }
-
-            // Двусторонний итератор
-            constexpr iota_iterator &operator--()
-            {
-                -- this->value_;
-                return *this;
-            }
-
-            // Итератор приозвольного доступа
-            constexpr iota_iterator operator+(difference_type num) const
-            {
-                auto result = *this;
-                result += num;
-                return result;
-            }
-
-            constexpr iota_iterator & operator+=(difference_type num)
-            {
-                this->value_ += num;
-                return *this;
-            }
-
-            constexpr iota_iterator operator-(difference_type num) const
-            {
-                auto result = *this;
-                result -= num;
-                return result;
-            }
-
-            constexpr iota_iterator & operator-=(difference_type num)
-            {
-                this->value_ -= num;
-                return *this;
-            }
-
-            constexpr value_type operator[](difference_type num) const
-            {
-                return this->value_ + num;
-            }
-
-            template <class Incrementable2>
-            friend
-            constexpr auto operator-(iota_iterator<Incrementable> const & lhs,
-                                     iota_iterator<Incrementable2> const & rhs)
-            -> decltype(std::declval<Incrementable>() - std::declval<Incrementable2>())
-            {
-                return *lhs - *rhs;
-            }
-
-        private:
-            Incrementable value_;
+            using type = std::random_access_iterator_tag;
         };
 
+        template <class T>
+        struct iota_iterator_category<T,
+            saga::void_t<typename std::iterator_traits<T>::iterator_category>>
+        {
+            using type = typename std::iterator_traits<T>::iterator_category;
+        };
+    }
+    // namespace detail
+
+    template <class Incrementable>
+    class iota_iterator
+     : saga::rel_ops::enable_adl<iota_iterator<Incrementable>>
+     , saga::operators::additive_with<iota_iterator<Incrementable>,
+                                      saga::incrementable_difference_t<Incrementable>>
+     , saga::operators::unit_steppable<iota_iterator<Incrementable>>
+    {
+        template <class Incrementable2>
+        friend
+        constexpr bool operator==(iota_iterator<Incrementable> const & lhs,
+                                  iota_iterator<Incrementable2> const & rhs)
+        {
+            return *lhs == *rhs;
+        }
+
+        template <class Incrementable2>
+        friend
+        constexpr bool operator<(iota_iterator<Incrementable> const & lhs,
+                                 iota_iterator<Incrementable2> const & rhs)
+        {
+            return *lhs < *rhs;
+        }
+
+    public:
+        // Типы
+        using iterator_category = typename detail::iota_iterator_category<Incrementable>::type;
+
+        using value_type = Incrementable;
+
+        using difference_type = saga::incrementable_difference_t<Incrementable>;
+
+        using pointer = Incrementable const *;
+        using reference = Incrementable const &;
+
+        // Создание, копирование, уничтожение
+        constexpr explicit iota_iterator(Incrementable value)
+         : value_(std::move(value))
+        {}
+
+        template <class OtherIncrementable,
+                  typename = std::enable_if_t<std::is_constructible<Incrementable,
+                                                                    OtherIncrementable const &>{}>>
+        constexpr iota_iterator(iota_iterator<OtherIncrementable> const & other)
+         : value_{*other}
+        {}
+
+        template <class OtherIncrementable,
+                  typename = std::enable_if_t<std::is_constructible<Incrementable,
+                                                                    OtherIncrementable const &>{}
+                                            && std::is_assignable<Incrementable&,
+                                                                  OtherIncrementable const &>{}>>
+        constexpr iota_iterator & operator=(iota_iterator<OtherIncrementable> const & other)
+        {
+            this->value_ = *other;
+            return *this;
+        }
+
+        // Итератор
+        constexpr iota_iterator & operator++()
+        {
+            ++ this->value_;
+            return *this;
+        }
+
+        constexpr reference operator*() const
+        {
+            return this->value_;
+        }
+
+        constexpr pointer operator->() const
+        {
+            return std::addressof(**this);
+        }
+
+        // Двусторонний итератор
+        constexpr iota_iterator &operator--()
+        {
+            -- this->value_;
+            return *this;
+        }
+
+        // Итератор приозвольного доступа
+        constexpr iota_iterator & operator+=(difference_type num)
+        {
+            this->value_ += num;
+            return *this;
+        }
+
+        constexpr iota_iterator & operator-=(difference_type num)
+        {
+            this->value_ -= num;
+            return *this;
+        }
+
+        constexpr value_type operator[](difference_type num) const
+        {
+            return this->value_ + num;
+        }
+
+        template <class Incrementable2>
+        friend
+        constexpr auto operator-(iota_iterator<Incrementable> const & lhs,
+                                 iota_iterator<Incrementable2> const & rhs)
+        -> decltype(std::declval<Incrementable>() - std::declval<Incrementable2>())
+        {
+            return *lhs - *rhs;
+        }
+
+    private:
+        Incrementable value_;
+    };
+
+    namespace detail
+    {
         template <class Incrementable>
         class iota_view
         {
         public:
             // Типы
-            using iterator = saga::detail::iota_iterator<Incrementable>;
+            using iterator = saga::iota_iterator<Incrementable>;
 
             // Создание, копирование, уничтожение
             iota_view(Incrementable from, Incrementable to)
@@ -200,6 +194,7 @@ namespace saga
             Incrementable to_ = {};
         };
     }
+    // namespace detail
 
     namespace view
     {

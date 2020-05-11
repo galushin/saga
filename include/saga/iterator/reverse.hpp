@@ -22,12 +22,15 @@ SAGA -- это свободной программное обеспечение:
  @brief Адаптор итератора, обходящий базовую последовательность в обратном направлении.
 */
 
+#include <saga/utility/operators.hpp>
+
 #include <iterator>
 
 namespace saga
 {
     template <class Iterator>
     class reverse_iterator
+     : saga::rel_ops::enable_adl<reverse_iterator<Iterator>>
     {
         template <class Iterator2>
         friend
@@ -39,44 +42,10 @@ namespace saga
 
         template <class Iterator2>
         friend
-        constexpr bool operator!=(reverse_iterator<Iterator> const & lhs,
-                                  reverse_iterator<Iterator2> const & rhs)
-        {
-            // Стандарт описывает как lhs.current != rhs.current, но для итераторов должно быть
-            // (lhs.current != rhs.current) == !(lhs.current == rhs.current)
-            return !(lhs == rhs);
-        }
-
-        template <class Iterator2>
-        friend
         constexpr bool operator<(reverse_iterator<Iterator> const & lhs,
                                  reverse_iterator<Iterator2> const & rhs)
         {
             return lhs.base() > rhs.base();
-        }
-
-        template <class Iterator2>
-        friend
-        constexpr bool operator>(reverse_iterator<Iterator> const & lhs,
-                                 reverse_iterator<Iterator2> const & rhs)
-        {
-            return lhs.base() < rhs.base();
-        }
-
-        template <class Iterator2>
-        friend
-        constexpr bool operator<=(reverse_iterator<Iterator> const & lhs,
-                                  reverse_iterator<Iterator2> const & rhs)
-        {
-            return lhs.base() >= rhs.base();
-        }
-
-        template <class Iterator2>
-        friend
-        constexpr bool operator>=(reverse_iterator<Iterator> const & lhs,
-                                  reverse_iterator<Iterator2> const & rhs)
-        {
-            return lhs.base() <= rhs.base();
         }
 
     public:

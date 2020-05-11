@@ -354,9 +354,9 @@ TEST_CASE("reverse_iterator : ctor with value")
 TEST_CASE("reverse_iterator equality")
 {
     {
-        constexpr saga::detail::iota_iterator<int> it1(13);
-        constexpr saga::detail::iota_iterator<long> it1_a(13);
-        constexpr saga::detail::iota_iterator<long> it2(42);
+        constexpr saga::iota_iterator<int> it1(13);
+        constexpr saga::iota_iterator<long> it1_a(13);
+        constexpr saga::iota_iterator<long> it2(42);
 
         static_assert(it1 == it1_a, "");
         static_assert(it1 != it2, "");
@@ -379,7 +379,7 @@ TEST_CASE("reverse_iterator equality")
 TEST_CASE("make_reverse_iterator")
 {
     {
-        using Iterator = saga::detail::iota_iterator<int>;
+        using Iterator = saga::iota_iterator<int>;
 
         constexpr Iterator const iter(42);
 
@@ -399,10 +399,10 @@ TEST_CASE("make_reverse_iterator")
 TEST_CASE("reverse_iterator : compatible reverse_iterator ctor")
 {
     {
-        constexpr saga::detail::iota_iterator<int> const it1(42);
+        constexpr saga::iota_iterator<int> const it1(42);
 
         constexpr auto const r_it1 = saga::make_reverse_iterator(it1);
-        constexpr saga::reverse_iterator<saga::detail::iota_iterator<long>> r_it2(r_it1);
+        constexpr saga::reverse_iterator<saga::iota_iterator<long>> r_it2(r_it1);
 
         static_assert(!std::is_same<decltype(r_it1), decltype(r_it2)>{}, "");
 
@@ -428,8 +428,8 @@ namespace
 TEST_CASE("reverse_iterator : compatible reverse_iterator assign")
 {
     {
-        constexpr saga::detail::iota_iterator<int> const it1(13);
-        constexpr saga::detail::iota_iterator<long> const it2(42);
+        constexpr saga::iota_iterator<int> const it1(13);
+        constexpr saga::iota_iterator<long> const it2(42);
 
         static_assert(!std::is_same<decltype(it1), decltype(it2)>{}, "");
 
@@ -454,7 +454,7 @@ TEST_CASE("reverse_iterator : compatible reverse_iterator assign")
 TEST_CASE("reverse_iterator : dereference")
 {
     {
-        constexpr saga::detail::iota_iterator<int> iter(42);
+        constexpr saga::iota_iterator<int> iter(42);
 
         constexpr auto const r_iter = saga::make_reverse_iterator(iter);
 
@@ -486,7 +486,7 @@ namespace
 TEST_CASE("reverse_iterator : increment and decrement")
 {
     {
-        constexpr saga::detail::iota_iterator<long> iter(42);
+        constexpr saga::iota_iterator<long> iter(42);
         constexpr auto r_iter = saga::make_reverse_iterator(iter);
 
         static_assert(::constexpr_increment_decrement(r_iter) == r_iter, "");
@@ -512,7 +512,7 @@ namespace
 TEST_CASE("reverse_iterator : random access operations")
 {
     {
-        constexpr saga::detail::iota_iterator<long> iter(42);
+        constexpr saga::iota_iterator<long> iter(42);
         constexpr auto n = 13;
 
         constexpr auto r_iter = saga::make_reverse_iterator(iter);
@@ -534,9 +534,9 @@ TEST_CASE("reverse_iterator : random access operations")
 TEST_CASE("reverse_iterator : compare")
 {
     {
-        constexpr saga::detail::iota_iterator<int> it1(13);
-        constexpr saga::detail::iota_iterator<long> it1_a(13);
-        constexpr saga::detail::iota_iterator<long> it2(42);
+        constexpr saga::iota_iterator<int> it1(13);
+        constexpr saga::iota_iterator<long> it1_a(13);
+        constexpr saga::iota_iterator<long> it2(42);
 
         constexpr auto const r_it1 = saga::make_reverse_iterator(it1);
         constexpr auto const r_it1_a = saga::make_reverse_iterator(it1_a);
@@ -561,7 +561,7 @@ TEST_CASE("reverse_iterator : compare")
 TEST_CASE("reverse_iterator : make_reverse_iterator is inverse of itself")
 {
     {
-        constexpr auto iter = saga::detail::iota_iterator<long>(42);
+        constexpr auto iter = saga::iota_iterator<long>(42);
         constexpr auto r_iter = saga::make_reverse_iterator(iter);
         constexpr auto rr_iter = saga::make_reverse_iterator(r_iter);
 

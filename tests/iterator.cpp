@@ -27,6 +27,58 @@ SAGA -- это свободной программное обеспечение:
 
 #include <list>
 
+//Тесты
+
+// incrementable_traits
+namespace
+{
+    template <class T>
+    using has_difference_type = saga::detail::has_difference_type<T>;
+
+    struct without_difference_type
+    {};
+
+    static_assert(!::has_difference_type<int>{}, "");
+    static_assert(::has_difference_type<std::vector<int>::iterator>{}, "");
+
+    struct strange_diff
+    {
+        using difference_type = int;
+
+        long operator-(strange_diff const &) const;
+    };
+}
+
+static_assert(!::has_difference_type<saga::incrementable_traits<::without_difference_type>>{},"");
+
+static_assert(std::is_same<saga::incrementable_traits<int*>::difference_type, std::ptrdiff_t>{},"");
+static_assert(!::has_difference_type<saga::incrementable_traits<void(*)()>>{},"");
+static_assert(!::has_difference_type<saga::incrementable_traits<void *>>{},"");
+static_assert(!::has_difference_type<saga::incrementable_traits<void const *>>{},"");
+
+static_assert(std::is_same<saga::incrementable_traits<std::vector<int>>::difference_type,
+                           std::vector<int>::difference_type>{}, "");
+static_assert(std::is_same<saga::incrementable_traits<int>::difference_type, int>{}, "");
+static_assert(std::is_same<saga::incrementable_traits<unsigned long>::difference_type, long>{}, "");
+static_assert(!::has_difference_type<saga::incrementable_traits<double>>{},"");
+static_assert(std::is_same<saga::incrementable_traits<::strange_diff>::difference_type, int>{}, "");
+
+static_assert(!::has_difference_type<saga::incrementable_traits<::without_difference_type const>>{},"");
+
+static_assert(std::is_same<saga::incrementable_traits<int* const>::difference_type, std::ptrdiff_t>{},"");
+static_assert(!::has_difference_type<saga::incrementable_traits<std::add_const_t<void(*)()>>>{},"");
+static_assert(!::has_difference_type<saga::incrementable_traits<void * const>>{},"");
+static_assert(!::has_difference_type<saga::incrementable_traits<void const * const>>{},"");
+
+static_assert(std::is_same<saga::incrementable_traits<std::vector<int> const>::difference_type,
+                           std::vector<int>::difference_type>{}, "");
+static_assert(std::is_same<saga::incrementable_traits<int const>::difference_type, int>{}, "");
+static_assert(std::is_same<saga::incrementable_traits<unsigned long const>::difference_type, long>{}, "");
+static_assert(!::has_difference_type<saga::incrementable_traits<double const>>{},"");
+static_assert(std::is_same<saga::incrementable_traits<::strange_diff const>::difference_type, int>{}, "");
+
+// Итераторы вставки
+
 namespace
 {
     template <class Iterator, class Container>
@@ -41,7 +93,6 @@ namespace
     }
 }
 
-//Тесты
 TEST_CASE("back_emplacer")
 {
     using Size = std::size_t;

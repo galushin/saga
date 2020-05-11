@@ -26,6 +26,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
+#include <saga/utility/operators.hpp>
 
 #include <cassert>
 #include <cstddef>
@@ -58,6 +59,7 @@ namespace saga
     template <class ElementType, std::ptrdiff_t Extent = dynamic_extent>
     class span
      : detail::default_ctor_enabler<(Extent <= 0)>
+     , saga::rel_ops::enable_adl<span<ElementType, Extent>>
     {
     public:
         // Константы и типы
@@ -238,33 +240,9 @@ namespace saga
     }
 
     template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
-    bool operator!=(span<T, X> lhs, span<U, Y> rhs)
-    {
-        return !(lhs == rhs);
-    }
-
-    template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
     bool operator<(span<T, X> lhs, span<U, Y> rhs)
     {
         return saga::lexicographical_compare(saga::cursor::all(lhs), saga::cursor::all(rhs));
-    }
-
-    template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
-    bool operator<=(span<T, X> lhs, span<U, Y> rhs)
-    {
-        return !(rhs < lhs);
-    }
-
-    template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
-    bool operator>(span<T, X> lhs, span<U, Y> rhs)
-    {
-        return rhs < lhs;
-    }
-
-    template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
-    bool operator>=(span<T, X> lhs, span<U, Y> rhs)
-    {
-        return !(lhs < rhs);
     }
 }
 // namespace saga

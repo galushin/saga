@@ -62,6 +62,17 @@ static_assert(saga::string_view::npos == saga::string_view::size_type(-1), "");
 
 static_assert(std::is_nothrow_default_constructible<saga::string_view>{}, "");
 
+namespace
+{
+    struct string_view_struct
+    {
+        saga::string_view::pointer ptr;
+        saga::string_view::size_type size;
+    };
+}
+
+static_assert(sizeof(saga::string_view) <= sizeof(string_view_struct), "");
+
 TEST_CASE("string_view : default ctor")
 {
     static_assert(noexcept(saga::string_view{}), "");
