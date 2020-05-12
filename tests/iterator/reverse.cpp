@@ -574,3 +574,155 @@ TEST_CASE("reverse_iterator : make_reverse_iterator is inverse of itself")
         << ::check_make_reverse_iterator_is_inverse_of_itself<std::deque<long>>
         << ::check_make_reverse_iterator_is_inverse_of_itself<std::vector<int>>;
 }
+
+TEST_CASE("reverse_iterator : equality with std::reverse_iterator")
+{
+    using Container = std::list<int>;
+
+    saga_test::property_checker << [](Container const & container)
+    {
+        auto const ri_std = std::make_reverse_iterator(saga_test::random_iterator_of(container));
+        auto const ri_saga = saga::make_reverse_iterator(saga_test::random_iterator_of(container));
+
+        REQUIRE((ri_std == ri_saga) == (ri_std.base() == ri_saga.base()));
+        REQUIRE((ri_saga == ri_std) == (ri_std == ri_saga));
+
+        REQUIRE((ri_std != ri_saga) == (ri_std.base() != ri_saga.base()));
+        REQUIRE((ri_saga != ri_std) == (ri_std != ri_saga));
+    };
+}
+
+TEST_CASE("reverse_iterator : comparison with std::reverse_iterator")
+{
+    using Container = std::vector<int>;
+
+    saga_test::property_checker << [](Container const & container)
+    {
+        auto const ri_std = std::make_reverse_iterator(saga_test::random_iterator_of(container));
+        auto const ri_saga = saga::make_reverse_iterator(saga_test::random_iterator_of(container));
+
+        REQUIRE((ri_std == ri_saga) == (ri_std.base() == ri_saga.base()));
+        REQUIRE((ri_saga == ri_std) == (ri_std == ri_saga));
+
+        REQUIRE((ri_std != ri_saga) == (ri_std.base() != ri_saga.base()));
+        REQUIRE((ri_saga != ri_std) == (ri_std != ri_saga));
+
+        REQUIRE((ri_std < ri_saga) == (ri_std.base() > ri_saga.base()));
+        REQUIRE((ri_saga < ri_std) == (ri_std > ri_saga));
+
+        REQUIRE((ri_std <= ri_saga) == (ri_std.base() >= ri_saga.base()));
+        REQUIRE((ri_saga <= ri_std) == (ri_std >= ri_saga));
+
+        REQUIRE((ri_std > ri_saga) == (ri_std.base() < ri_saga.base()));
+        REQUIRE((ri_saga > ri_std) == (ri_std < ri_saga));
+
+        REQUIRE((ri_std >= ri_saga) == (ri_std.base() <= ri_saga.base()));
+        REQUIRE((ri_saga >= ri_std) == (ri_std <= ri_saga));
+    };
+}
+
+TEST_CASE("reverse_iterator : ctor from std::reverse_iterator<Iterator>")
+{
+    using Container = std::list<int>;
+
+    saga_test::property_checker << [](Container container)
+    {
+        using Iterator = Container::iterator;
+        using CIterator = Container::const_iterator;
+
+        static_assert(std::is_constructible<saga::reverse_iterator<Iterator>,
+                                             std::reverse_iterator<Iterator>>{}, "");
+        static_assert(std::is_constructible<saga::reverse_iterator<CIterator>,
+                                             std::reverse_iterator<CIterator>>{}, "");
+        static_assert(std::is_constructible<saga::reverse_iterator<CIterator>,
+                                             std::reverse_iterator<Iterator>>{}, "");
+
+        static_assert(!std::is_constructible<Iterator, CIterator>{}, "");
+        static_assert(!std::is_constructible<saga::reverse_iterator<Iterator>,
+                                              std::reverse_iterator<CIterator>>{}, "");
+
+        static_assert(std::is_convertible<saga::reverse_iterator<Iterator>,
+                                           std::reverse_iterator<Iterator>>{}, "");
+        static_assert(std::is_convertible<saga::reverse_iterator<CIterator>,
+                                           std::reverse_iterator<CIterator>>{}, "");
+        static_assert(std::is_convertible<saga::reverse_iterator<Iterator>,
+                                           std::reverse_iterator<CIterator>>{}, "");
+        static_assert(!std::is_convertible<saga::reverse_iterator<CIterator>,
+                                            std::reverse_iterator<Iterator>>{}, "");
+
+        static_assert(std::is_convertible<std::reverse_iterator<Iterator>,
+                                           saga::reverse_iterator<Iterator>>{}, "");
+        static_assert(std::is_convertible<std::reverse_iterator<CIterator>,
+                                           saga::reverse_iterator<CIterator>>{}, "");
+        static_assert(std::is_convertible<std::reverse_iterator<Iterator>,
+                                           saga::reverse_iterator<CIterator>>{}, "");
+        static_assert(!std::is_convertible<std::reverse_iterator<CIterator>,
+                                            saga::reverse_iterator<Iterator>>{}, "");
+
+        auto const iter = saga_test::random_iterator_of(container);
+
+        auto const std_r_iter = std::make_reverse_iterator(iter);
+
+        saga::reverse_iterator<CIterator> saga_r_iter(std_r_iter);
+
+        REQUIRE(saga_r_iter == std_r_iter);
+    };
+}
+
+TEST_CASE("reverse_iterator : assign from std::reverse_iterator<Iterator>")
+{
+    using Container = std::list<int>;
+
+    saga_test::property_checker << [](Container container)
+    {
+        using Iterator = Container::iterator;
+        using CIterator = Container::const_iterator;
+
+        static_assert(std::is_assignable<saga::reverse_iterator<Iterator> &,
+                                         std::reverse_iterator<Iterator> const &>{}, "");
+        static_assert(std::is_assignable<saga::reverse_iterator<CIterator> &,
+                                         std::reverse_iterator<Iterator> const &>{}, "");
+
+        static_assert(!std::is_assignable<saga::reverse_iterator<Iterator> &,
+                                              std::reverse_iterator<CIterator> const &>{}, "");
+
+        auto const std_iter = std::make_reverse_iterator(saga_test::random_iterator_of(container));
+        auto saga_iter = saga::make_reverse_iterator(saga_test::random_const_iterator_of(container));
+
+        saga_iter = std_iter;
+
+        REQUIRE(saga_iter == std_iter);
+    };
+}
+
+TEST_CASE("reverse_iterator difference with std::reverse_iterator")
+{
+    using Container = std::vector<int>;
+
+    saga_test::property_checker << [](Container container)
+    {
+        auto const std_iter = std::make_reverse_iterator(saga_test::random_iterator_of(container));
+        auto const saga_iter = saga::make_reverse_iterator(saga_test::random_const_iterator_of(container));
+
+        REQUIRE((std_iter - saga_iter) == (saga_iter.base() - std_iter.base()));
+        REQUIRE((saga_iter - std_iter) == (std_iter.base() - saga_iter.base()));
+    };
+}
+
+TEST_CASE("make_reverse_iterator(std::reverse_iterator<Iterator>) -> Iterator")
+{
+    using Container = std::list<int>;
+
+    saga_test::property_checker << [](Container const & container)
+    {
+        auto const iter = saga_test::random_iterator_of(container);
+
+        auto const r_iter = std::make_reverse_iterator(iter);
+
+        auto const rr_iter = saga::make_reverse_iterator(r_iter);
+
+        static_assert(std::is_same<decltype(iter), decltype(rr_iter)>{}, "");
+
+        REQUIRE(iter == rr_iter);
+    };
+}
