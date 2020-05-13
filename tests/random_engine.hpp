@@ -44,19 +44,23 @@ namespace saga_test
     }
 
     template <class Container>
+    auto random_position_of(Container const & container)
+    {
+        return ::saga_test::random_uniform(0*container.size(), container.size());
+    }
+
+    template <class Container>
     typename Container::iterator
     random_iterator_of(Container & container)
     {
-        auto const pos = ::saga_test::random_uniform(0*container.size(), container.size());
-        return std::next(container.begin(), pos);
+        return std::next(container.begin(), ::saga_test::random_position_of(container));
     }
 
     template <class Container>
     typename Container::const_iterator
     random_iterator_of(Container const & container)
     {
-        auto const pos = ::saga_test::random_uniform(0*container.size(), container.size());
-        return std::next(container.begin(), pos);
+        return std::next(container.begin(), ::saga_test::random_position_of(container));
     }
 
     template <class Container>

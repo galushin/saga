@@ -131,7 +131,7 @@ TEST_CASE("span : initialization from pointer and size")
     saga_test::property_checker
     << [](std::vector<Element> const & src)
     {
-        auto const offset = saga_test::random_uniform(0*src.size(), src.size());
+        auto const offset = saga_test::random_position_of(src);
         auto const num = saga_test::random_uniform(0*src.size(), src.size() - offset);
 
         auto const ptr = src.data() + offset;
@@ -300,7 +300,7 @@ TEST_CASE("span : first and last")
     {
         saga::span<Element const> const s(src);
 
-        auto const n = saga_test::random_uniform(0*s.size(), s.size());
+        auto const n = saga_test::random_position_of(s);
 
         auto const s1 = s.first(n);
         auto const s2 = s.last(n);
@@ -324,7 +324,7 @@ TEST_CASE("span : subspan")
     {
         saga::span<Element const> const s_all(src);
 
-        auto const offset = saga_test::random_uniform(0*s_all.size(), s_all.size());
+        auto const offset = saga_test::random_position_of(s_all);
 
         auto const s_part = s_all.subspan(offset, saga::dynamic_extent);
         static_assert(std::is_same<decltype(s_part), decltype(s_all)>::value, "");
@@ -336,7 +336,7 @@ TEST_CASE("span : subspan")
     {
         saga::span<Element const> const s_all(src);
 
-        auto const offset = saga_test::random_uniform(0*s_all.size(), s_all.size());
+        auto const offset = saga_test::random_position_of(s_all);
 
         auto const s_part = s_all.subspan(offset);
         static_assert(std::is_same<decltype(s_part), decltype(s_all)>::value, "");
@@ -348,7 +348,7 @@ TEST_CASE("span : subspan")
     {
         saga::span<Element const> const s_all(src);
 
-        auto const offset = saga_test::random_uniform(0*s_all.size(), s_all.size());
+        auto const offset = saga_test::random_position_of(s_all);
         auto const num = saga_test::random_uniform(0*s_all.size(), s_all.size() - offset);
 
         auto const s_part = s_all.subspan(offset, num);
