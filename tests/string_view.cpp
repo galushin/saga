@@ -113,7 +113,7 @@ TEST_CASE("string_view : ctor from pointer and size")
 {
     saga_test::property_checker << [](std::string const & str)
     {
-        auto const num = saga_test::random_uniform(0*str.size(), str.size());
+        auto const num = saga_test::random_position_of(str);
 
         saga::string_view const sv(str.c_str(), num);
 
@@ -243,7 +243,7 @@ TEST_CASE("string_view : operator[], front, back")
 {
     saga_test::property_checker << [](std::string const & str)
     {
-        auto const num = saga_test::random_uniform(0*str.size(), str.size());
+        auto const num = saga_test::random_position_of(str);
 
         saga::string_view const sv(str.c_str(), num);
 
@@ -277,7 +277,7 @@ TEST_CASE("string_view : at")
 {
     saga_test::property_checker << [](std::string const & str, std::size_t index)
     {
-        auto const num = saga_test::random_uniform(0*str.size(), str.size());
+        auto const num = saga_test::random_position_of(str);
 
         saga::string_view const sv(str.c_str(), num);
 
@@ -315,7 +315,7 @@ TEST_CASE("string_view : remove_prefix")
 
     saga_test::property_checker << [](std::string const & str)
     {
-        auto const num = saga_test::random_uniform(0*str.size(), str.size());
+        auto const num = saga_test::random_position_of(str);
 
         saga::string_view sv(str.c_str(), str.size());
 
@@ -332,7 +332,7 @@ TEST_CASE("string_view : remove_suffix")
 {
     saga_test::property_checker << [](std::string const & str)
     {
-        auto const num = saga_test::random_uniform(0*str.size(), str.size());
+        auto const num = saga_test::random_position_of(str);
 
         saga::string_view sv(str.c_str(), str.size());
 
@@ -372,7 +372,7 @@ TEST_CASE("string_view : copy")
 
         std::string str_dest = str_dest_old;
 
-        auto const num = saga_test::random_uniform(0*str_dest.size(), str_dest.size());
+        auto const num = saga_test::random_position_of(str_dest);
         auto const pos = saga_test::random_uniform(0*str_src.size(), 2*str_src.size());
 
         if(pos <= str_src.size())
@@ -402,7 +402,7 @@ TEST_CASE("string_view : copy, default pos = 0")
         std::string str_dest_1 = str_dest_old;
         std::string str_dest_2 = str_dest_old;
 
-        auto const num = saga_test::random_uniform(0*str_dest_1.size(), str_dest_1.size());
+        auto const num = saga_test::random_position_of(str_dest_1);
 
         auto const r1 = sv.copy(std::addressof(str_dest_1[0]), num);
         auto const r2 = sv.copy(std::addressof(str_dest_2[0]), num, 0);
@@ -738,7 +738,7 @@ TEST_CASE("string_view : find")
         saga::string_view const sv1(str1);
         saga::string_view const sv2(str2);
 
-        auto const num = saga_test::random_uniform(0*str2.size(), str2.size());
+        auto const num = saga_test::random_position_of(str2);
 
         static_assert(noexcept(sv1.find(sv2)), "");
         static_assert(noexcept(sv1.find(sv2, pos)), "");
@@ -791,7 +791,7 @@ TEST_CASE("string_view : rfind")
         saga::string_view const sv1(str1);
         saga::string_view const sv2(str2);
 
-        auto const num = saga_test::random_uniform(0*str2.size(), str2.size());
+        auto const num = saga_test::random_position_of(str2);
 
         static_assert(noexcept(sv1.rfind(sv2)), "");
         static_assert(noexcept(sv1.rfind(sv2, pos)), "");
@@ -827,7 +827,7 @@ TEST_CASE("string_view : find_first_of")
         saga::string_view const sv1(str1);
         saga::string_view const sv2(str2);
 
-        auto const num = saga_test::random_uniform(0*str2.size(), str2.size());
+        auto const num = saga_test::random_position_of(str2);
 
         static_assert(noexcept(sv1.find_first_of(sv2)), "");
         static_assert(noexcept(sv1.find_first_of(sv2, pos)), "");
@@ -865,7 +865,7 @@ TEST_CASE("string_view : find_last_of")
         saga::string_view const sv1(str1);
         saga::string_view const sv2(str2);
 
-        auto const num = saga_test::random_uniform(0*str2.size(), str2.size());
+        auto const num = saga_test::random_position_of(str2);
 
         static_assert(noexcept(sv1.find_last_of(sv2)), "");
         static_assert(noexcept(sv1.find_last_of(sv2, pos)), "");
@@ -917,7 +917,7 @@ TEST_CASE("string_view : find_first_not_of")
         saga::string_view const sv1(str1);
         saga::string_view const sv2(str2);
 
-        auto const num = saga_test::random_uniform(0*str2.size(), str2.size());
+        auto const num = saga_test::random_position_of(str2);
 
         static_assert(noexcept(sv1.find_first_not_of(sv2)), "");
         static_assert(noexcept(sv1.find_first_not_of(sv2, pos)), "");
@@ -955,7 +955,7 @@ TEST_CASE("string_view : find_last_not_of")
         saga::string_view const sv1(str1);
         saga::string_view const sv2(str2);
 
-        auto const num = saga_test::random_uniform(0*str2.size(), str2.size());
+        auto const num = saga_test::random_position_of(str2);
 
         static_assert(noexcept(sv1.find_last_not_of(sv2)), "");
         static_assert(noexcept(sv1.find_last_not_of(sv2, pos)), "");

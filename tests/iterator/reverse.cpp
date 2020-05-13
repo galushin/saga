@@ -266,7 +266,7 @@ namespace
     template <class Container>
     void check_reverse_iterator_random_access_operations(Container container)
     {
-        auto const pos = saga_test::random_uniform(0*container.size(), container.size());
+        auto const pos = saga_test::random_position_of(container);
         auto const iter = std::next(container.begin(), pos);
         auto const r_iter = saga::make_reverse_iterator(iter);
 
