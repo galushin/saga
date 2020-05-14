@@ -46,7 +46,7 @@ TEST_CASE("iid_distribution<bernoully_distribution, std::valarray>")
 {
     saga_test::property_checker << [](saga_test::container_size<int> const dim)
     {
-        saga::iid_distribution<std::bernoulli_distribution, std::valarray<bool>> distr(dim);
+        saga::iid_distribution_deduced<std::bernoulli_distribution, std::valarray> distr(dim);
 
         auto const value = distr(saga_test::random_engine());
 
@@ -58,7 +58,25 @@ TEST_CASE("iid_distribution<bernoully_distribution, std::valarray>")
     };
 }
 
-TEST_CASE("iid_distribution<normal_distribution>, std::valarray>")
+#include <vector>
+
+TEST_CASE("iid_distribution<bernoully_distribution, std::vector>")
+{
+    saga_test::property_checker << [](saga_test::container_size<int> const dim)
+    {
+        saga::iid_distribution_deduced<std::bernoulli_distribution, std::vector> distr(dim);
+
+        auto const value = distr(saga_test::random_engine());
+
+        using Value = std::remove_cv_t<decltype(value)>;
+
+        static_assert(std::is_same<Value, std::vector<bool>>::value, "Must be same!");
+
+        REQUIRE(value.size() == dim);
+    };
+}
+
+TEST_CASE("iid_distribution<normal_distribution, std::valarray>")
 {
     saga_test::property_checker
     << [](saga_test::container_size<int> const dim)
