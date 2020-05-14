@@ -39,6 +39,10 @@ namespace saga
     template <class Distribution, class Container = std::vector<typename Distribution::result_type>>
     class iid_distribution
     {
+        static_assert(std::is_constructible<typename Container::value_type,
+                                            typename Distribution::result_type>{}, "");
+        static_assert(std::is_assignable<typename Container::value_type &,
+                                            typename Distribution::result_type>{}, "");
     public:
         // Типы
         /// @brief Тип порождаемых значений
@@ -96,6 +100,10 @@ namespace saga
         size_type dim_;
         Distribution distr_;
     };
+
+    template <class Distribution, template <class...> class Container_template>
+    using iid_distribution_deduced
+        = iid_distribution<Distribution, Container_template<typename Distribution::result_type>>;
 }
 // namespace saga
 
