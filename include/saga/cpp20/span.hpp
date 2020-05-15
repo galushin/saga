@@ -163,7 +163,7 @@ namespace saga
             return this->size_;
         }
 
-        constexpr index_type size_bytes() const
+        constexpr index_type size_bytes() const noexcept
         {
             return this->size() * sizeof(element_type);
         }
