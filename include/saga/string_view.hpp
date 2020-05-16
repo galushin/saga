@@ -27,6 +27,7 @@ SAGA -- это свободной программное обеспечение:
  Реализация основана на www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/n4727.pdf
 */
 
+#include <saga/iterator/reverse.hpp>
 #include <saga/utility/operators.hpp>
 
 #include <cassert>
@@ -111,7 +112,7 @@ namespace saga
         using const_reference = value_type const &;
         using const_iterator = const_pointer;
         using iterator = const_iterator;
-        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+        using const_reverse_iterator = saga::reverse_iterator<const_iterator>;
         using reverse_iterator = const_reverse_iterator;
         using size_type = std::size_t;
         using difference_type = std::ptrdiff_t;
@@ -183,22 +184,22 @@ namespace saga
             return this->end();
         }
 
-        const_reverse_iterator rbegin() const
+        constexpr const_reverse_iterator rbegin() const
         {
             return reverse_iterator(this->end());
         }
 
-        const_reverse_iterator crbegin() const
+        constexpr const_reverse_iterator crbegin() const
         {
             return this->rbegin();
         }
 
-        const_reverse_iterator rend() const
+        constexpr const_reverse_iterator rend() const
         {
             return reverse_iterator(this->begin());
         }
 
-        const_reverse_iterator crend() const
+        constexpr const_reverse_iterator crend() const
         {
             return this->rend();
         }

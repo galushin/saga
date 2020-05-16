@@ -53,7 +53,7 @@ static_assert(std::is_convertible<std::iterator_traits<SV_const_iterator>::itera
 
 static_assert(std::is_same<saga::string_view::iterator, saga::string_view::const_iterator>{}, "");
 static_assert(std::is_same<saga::string_view::const_reverse_iterator,
-                           std::reverse_iterator<saga::string_view::const_iterator>>{},"");
+                           saga::reverse_iterator<saga::string_view::const_iterator>>{},"");
 static_assert(std::is_same<saga::string_view::reverse_iterator,
                            saga::string_view::const_reverse_iterator>{}, "");
 static_assert(std::is_same<saga::string_view::size_type, std::size_t>{}, "");
@@ -200,6 +200,10 @@ TEST_CASE("string_view : iterators of empty")
     static_assert(sv0.begin() == sv0.end(), "");
     static_assert(sv0.cbegin() == sv0.begin(), "");
     static_assert(sv0.cbegin() == sv0.cend(), "");
+
+    static_assert(sv0.rbegin() == sv0.rend(), "");
+    static_assert(sv0.crbegin() == sv0.rbegin(), "");
+    static_assert(sv0.crbegin() == sv0.crend(), "");
 }
 
 TEST_CASE("string_view : iterators, common case")
