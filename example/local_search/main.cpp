@@ -100,7 +100,8 @@ int main(int argc, char * argv[])
         return objective_impl(s);
     };
 
-    std::mt19937 random_engine(std::time(nullptr));
+    std::seed_seq seed{std::time(nullptr)};
+    std::mt19937 random_engine(seed);
 
     auto const x_init = init_distr(random_engine);
     std::copy(std::begin(x_init), std::end(x_init), std::ostream_iterator<int>(std::cout));
