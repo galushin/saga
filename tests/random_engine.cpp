@@ -23,8 +23,9 @@ namespace saga_test
 {
     random_engine_type & random_engine()
     {
-        static random_engine_type
-            instance(static_cast<random_engine_type::result_type>(std::time(nullptr)));
+        std::seed_seq seed{std::time(nullptr)};
+
+        static random_engine_type instance(seed);
 
         return instance;
     }

@@ -191,7 +191,8 @@ namespace
 
         // Запустить генератор случайных чисел
         // @todo Добавить возможность задать зерно генератора случайных чисел через аргумент программы
-        Random_engine rnd_engine(std::time(nullptr));
+        std::seed_seq seed{std::time(nullptr)};
+        Random_engine rnd_engine(seed);
 
         // Настройка генетического алгоритма
         auto const settings_kvps = open_and_parse_ini_file(cmd_args.at(2));
