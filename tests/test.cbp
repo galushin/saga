@@ -59,6 +59,7 @@
 		<Unit filename="../include/saga/random/iid_distribution.hpp" />
 		<Unit filename="../include/saga/string_view.hpp" />
 		<Unit filename="../include/saga/type_traits.hpp" />
+		<Unit filename="../include/saga/utility/equality_comparable_box.hpp" />
 		<Unit filename="../include/saga/utility/operators.hpp" />
 		<Unit filename="../include/saga/view/indices.hpp" />
 		<Unit filename="algorithm.cpp" />
@@ -77,6 +78,8 @@
 		<Unit filename="random_engine.hpp" />
 		<Unit filename="saga_test.hpp" />
 		<Unit filename="string_view.cpp" />
+		<Unit filename="type_traits.cpp" />
+		<Unit filename="utility/equality_comparable_box.cpp" />
 		<Unit filename="view/indices.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />

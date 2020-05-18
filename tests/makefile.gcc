@@ -33,9 +33,9 @@ OBJDIR_RELEASE = ./obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = ./bin/Release/test
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/string_view.o $(OBJDIR_DEBUG)/view/indices.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/string_view.o $(OBJDIR_DEBUG)/type_traits.o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o $(OBJDIR_DEBUG)/view/indices.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/string_view.o $(OBJDIR_RELEASE)/view/indices.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/string_view.o $(OBJDIR_RELEASE)/type_traits.o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o $(OBJDIR_RELEASE)/view/indices.o
 
 all: debug release
 
@@ -49,6 +49,7 @@ before_debug:
 	test -d $(OBJDIR_DEBUG)/math || mkdir -p $(OBJDIR_DEBUG)/math
 	test -d $(OBJDIR_DEBUG)/optimization || mkdir -p $(OBJDIR_DEBUG)/optimization
 	test -d $(OBJDIR_DEBUG)/random || mkdir -p $(OBJDIR_DEBUG)/random
+	test -d $(OBJDIR_DEBUG)/utility || mkdir -p $(OBJDIR_DEBUG)/utility
 	test -d $(OBJDIR_DEBUG)/view || mkdir -p $(OBJDIR_DEBUG)/view
 
 after_debug: 
@@ -66,7 +67,7 @@ $(OBJDIR_DEBUG)/cpp20/span.o: cpp20/span.cpp
 
 $(OBJDIR_DEBUG)/iterator.o: iterator.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c iterator.cpp -o $(OBJDIR_DEBUG)/iterator.o
-	
+
 $(OBJDIR_DEBUG)/iterator/reverse.o: iterator/reverse.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c iterator/reverse.cpp -o $(OBJDIR_DEBUG)/iterator/reverse.o
 
@@ -94,6 +95,12 @@ $(OBJDIR_DEBUG)/random_engine.o: random_engine.cpp
 $(OBJDIR_DEBUG)/string_view.o: string_view.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c string_view.cpp -o $(OBJDIR_DEBUG)/string_view.o
 
+$(OBJDIR_DEBUG)/type_traits.o: type_traits.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c type_traits.cpp -o $(OBJDIR_DEBUG)/type_traits.o
+
+$(OBJDIR_DEBUG)/utility/equality_comparable_box.o: utility/equality_comparable_box.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c utility/equality_comparable_box.cpp -o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o
+
 $(OBJDIR_DEBUG)/view/indices.o: view/indices.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c view/indices.cpp -o $(OBJDIR_DEBUG)/view/indices.o
 
@@ -106,6 +113,7 @@ clean_debug:
 	rm -rf $(OBJDIR_DEBUG)/math
 	rm -rf $(OBJDIR_DEBUG)/optimization
 	rm -rf $(OBJDIR_DEBUG)/random
+	rm -rf $(OBJDIR_DEBUG)/utility
 	rm -rf $(OBJDIR_DEBUG)/view
 
 before_release: 
@@ -116,6 +124,7 @@ before_release:
 	test -d $(OBJDIR_RELEASE)/math || mkdir -p $(OBJDIR_RELEASE)/math
 	test -d $(OBJDIR_RELEASE)/optimization || mkdir -p $(OBJDIR_RELEASE)/optimization
 	test -d $(OBJDIR_RELEASE)/random || mkdir -p $(OBJDIR_RELEASE)/random
+	test -d $(OBJDIR_RELEASE)/utility || mkdir -p $(OBJDIR_RELEASE)/utility
 	test -d $(OBJDIR_RELEASE)/view || mkdir -p $(OBJDIR_RELEASE)/view
 
 after_release: 
@@ -161,6 +170,12 @@ $(OBJDIR_RELEASE)/random_engine.o: random_engine.cpp
 $(OBJDIR_RELEASE)/string_view.o: string_view.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c string_view.cpp -o $(OBJDIR_RELEASE)/string_view.o
 
+$(OBJDIR_RELEASE)/type_traits.o: type_traits.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c type_traits.cpp -o $(OBJDIR_RELEASE)/type_traits.o
+
+$(OBJDIR_RELEASE)/utility/equality_comparable_box.o: utility/equality_comparable_box.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c utility/equality_comparable_box.cpp -o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o
+
 $(OBJDIR_RELEASE)/view/indices.o: view/indices.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c view/indices.cpp -o $(OBJDIR_RELEASE)/view/indices.o
 
@@ -169,10 +184,11 @@ clean_release:
 	rm -rf ./bin/Release
 	rm -rf $(OBJDIR_RELEASE)
 	rm -rf $(OBJDIR_RELEASE)/cpp20
-	rm -rf $(OBJDIR_RELEASE)/reverse
+	rm -rf $(OBJDIR_RELEASE)/iterator
 	rm -rf $(OBJDIR_RELEASE)/math
 	rm -rf $(OBJDIR_RELEASE)/optimization
 	rm -rf $(OBJDIR_RELEASE)/random
+	rm -rf $(OBJDIR_RELEASE)/utility
 	rm -rf $(OBJDIR_RELEASE)/view
 
 .PHONY: before_debug after_debug clean_debug before_release after_release clean_release
