@@ -22,6 +22,8 @@ SAGA -- это свободной программное обеспечение:
  @brief Реализация турнирной селекции
 */
 
+#include <saga/utility/equality_comparable_box.hpp>
+
 #include <cassert>
 
 #include <algorithm>
@@ -32,14 +34,9 @@ namespace saga
 {
     template <class Container, class Compare>
     class selection_tournament_distribution
+     : private saga::equality_comparable_box<Compare>
     {
-        friend bool operator==(selection_tournament_distribution const & lhs,
-                               selection_tournament_distribution const & rhs)
-        {
-            return std::tie(lhs.tournament_, lhs.repeat_, lhs.obj_values_)
-                    == std::tie(rhs.tournament_, rhs.repeat_, rhs.obj_values_);
-        }
-
+        using compare_base = saga::equality_comparable_box<Compare>;
     public:
         using result_type = typename Container::difference_type;
 
@@ -52,10 +49,10 @@ namespace saga
                                                    bool repeat,
                                                    Container objective_values,
                                                    Compare cmp)
-         : tournament_(tournament_size)
+         : compare_base(std::move(cmp))
+         , tournament_(tournament_size)
          , repeat_(repeat)
          , obj_values_(std::move(objective_values))
-         , cmp_(std::move(cmp))
         {
             assert(!this->obj_values_.empty());
             assert(0 < this->tournament_);
@@ -86,7 +83,25 @@ namespace saga
             return this->obj_values_.size() - 1;
         }
 
+        // Равенство и неравенство
+        friend bool operator==(selection_tournament_distribution const & lhs,
+                               selection_tournament_distribution const & rhs)
+        {
+            return lhs.members() == rhs.members();
+        }
+
     private:
+        auto members() const
+        {
+            return std::tie(this->tournament_, this->repeat_, this->obj_values_,
+                            static_cast<compare_base const &>(*this));
+        }
+
+        Compare const & compare() const
+        {
+            return compare_base::value();
+        }
+
         bool is_correct_index(result_type index) const
         {
             return 0 <= index && index < static_cast<result_type>(this->obj_values_.size());
@@ -108,7 +123,7 @@ namespace saga
 
                 assert(this->is_correct_index(cur));
 
-                if(this->cmp_(this->obj_values_[cur], this->obj_values_[best]))
+                if(this->compare()(this->obj_values_[cur], this->obj_values_[best]))
                 {
                    best = std::move(cur);
                 }
@@ -145,7 +160,7 @@ namespace saga
 
             auto index_cmp = [this](result_type const & x, result_type const & y)
             {
-                return this->cmp_(this->obj_values_[x], this->obj_values_[y]);
+                return this->compare()(this->obj_values_[x], this->obj_values_[y]);
             };
 
             return *std::min_element(selected.begin(), selected.end(), std::move(index_cmp));
@@ -154,7 +169,6 @@ namespace saga
         result_type tournament_ = 2;
         bool repeat_ = true;
         Container obj_values_{};
-        Compare cmp_ {};
     };
 
     class selection_tournament

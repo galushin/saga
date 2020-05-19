@@ -71,6 +71,25 @@ namespace saga
 
     template <typename... Types>
     using void_t = typename declare_void<Types...>::type;
+
+    namespace detail
+    {
+        template <class T, class SFINAE = void>
+        struct is_equality_comparable
+         : std::false_type
+        {};
+
+        template <class T>
+        struct is_equality_comparable<T, void_t<decltype(std::declval<T const>() == std::declval<T const>())>>
+         : std::is_same<bool, decltype(std::declval<T const>() == std::declval<T const>())>
+        {};
+    }
+    // namespace detail
+
+    template <class T>
+    struct is_equality_comparable
+     : detail::is_equality_comparable<T>
+    {};
 }
 // namespace saga
 
