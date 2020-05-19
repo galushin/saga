@@ -34,58 +34,107 @@ namespace saga
         struct generic_eqaulity
         {
         private:
-            template <class T>
-            constexpr static auto impl(T const & lhs, T const & rhs, priority_tag<1>)
-            -> std::enable_if_t<saga::is_equality_comparable<T>{}, bool>
+            template <class T, class = std::enable_if_t<saga::is_equality_comparable<T>{}>>
+            constexpr static bool impl(T const & lhs, T const & rhs, priority_tag<2>)
             {
                 return lhs == rhs;
             }
 
-            template <class T>
-            constexpr static auto impl(T const &, T const &, priority_tag<0>)
-            -> std::enable_if_t<std::is_empty<T>{}, bool>
+            template <class T, class = std::enable_if_t<std::is_empty<T>{}>>
+            constexpr static bool impl(T const &, T const &, priority_tag<1>)
             {
                 return true;
+            }
+
+            template <class T>
+            constexpr static bool impl(T const & lhs, T const & rhs, priority_tag<0>)
+            {
+                return std::addressof(lhs) == std::addressof(rhs);
             }
 
         public:
             template <class T>
             constexpr bool operator()(T const & lhs, T const & rhs) const
             {
-                return this->impl(lhs, rhs, priority_tag<1>{});
+                return this->impl(lhs, rhs, priority_tag<2>{});
             }
+        };
+
+        template <class T, bool is_empty = std::is_empty<T>{}>
+        struct empty_base_wrapper
+        {
+        public:
+            // Типы
+            using value_type = T;
+
+            // Создание, копирование, уничтожение
+            // @todo Условный explicit?
+            // @todo Ограничить?
+            template <class... Args>
+            explicit constexpr empty_base_wrapper(Args &&... args)
+             : value_(std::forward<Args>(args)...)
+            {}
+
+            // Доступ к значению
+            constexpr value_type & value() &;
+
+            constexpr value_type const & value() const &
+            {
+                return this->value_;
+            }
+
+            constexpr value_type && value() &&;
+
+        private:
+            T value_;
+        };
+
+        template <class T>
+        struct empty_base_wrapper<T, true>
+         : private T
+        {
+            using Base = T;
+        public:
+            // Типы
+            using value_type = T;
+
+            // Создание, копирование, уничтожение
+            // @todo Условный explicit?
+            // @todo Ограничить?
+            template <class... Args>
+            explicit constexpr empty_base_wrapper(Args &&... args)
+             : Base(std::forward<Args>(args)...)
+            {}
+
+            // Доступ к значению
+            constexpr value_type & value() &;
+
+            constexpr value_type const & value() const &
+            {
+                return *this;
+            }
+
+            constexpr value_type && value() &&;
         };
     }
     // namespace detail
 
-    // @todo Оптимизация пустого объекта
     template <class T>
     class equality_comparable_box
-     : saga::operators::equality_comparable<equality_comparable_box<T>>
+     : detail::empty_base_wrapper<T>
+     , saga::operators::equality_comparable<equality_comparable_box<T>>
     {
+        using Inherited = detail::empty_base_wrapper<T>;
+
     public:
         // Типы
         using value_type = T;
 
         // Конструктор
-        constexpr equality_comparable_box()
-         : value_()
-        {}
-
-        // @todo Условный explicit?
-        constexpr explicit equality_comparable_box(T value)
-         : value_(std::move(value))
-        {}
+        using Inherited::Inherited;
 
         // Доступ к значению
-        T & value() &;
-
-        constexpr T const & value() const &
-        {
-            return this->value_;
-        }
-
-        T && value() &&;
+        using Inherited::value;
 
         // Равенство и неравенство
         friend
@@ -94,9 +143,6 @@ namespace saga
         {
             return detail::generic_eqaulity{}(lhs.value(), rhs.value());
         }
-
-    private:
-        T value_;
     };
 }
 // namespace saga

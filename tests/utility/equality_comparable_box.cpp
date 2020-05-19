@@ -31,7 +31,7 @@ SAGA -- это свободной программное обеспечение:
 namespace
 {
     template <class T>
-    class without_equality
+    struct without_equality
     {
         T value;
     };
@@ -115,7 +115,6 @@ namespace
     void check_equality_comparable_box_empty()
     {
         static_assert(std::is_empty<Value>{}, "");
-        static_assert(!saga::is_equality_comparable<Value>{}, "");
 
         constexpr auto const value_1 = Value{};
         constexpr auto const value_2 = Value{};
@@ -132,10 +131,26 @@ namespace
 
 TEST_CASE("equality_comparable_box : empty")
 {
+    static_assert(!saga::is_equality_comparable<std::greater<>>{}, "");
     check_equality_comparable_box_empty<std::greater<>>();
-    // @todo check_equality_comparable_box_empty<saga::equality_comparable_box<std::greater<>>>();
+
+    check_equality_comparable_box_empty<saga::equality_comparable_box<std::greater<>>>();
 }
 
-// @todo Пустые типы с оператором равно
+TEST_CASE("equality_comparable_box : not empty without equality")
+{
+    using Value = ::without_equality<int>;
 
-// @todo Непустные типы без оператора ==
+    static_assert(!std::is_empty<Value>{}, "");
+    static_assert(!saga::is_equality_comparable<Value>{}, "");
+
+    constexpr auto const value = Value{42};
+
+    constexpr saga::equality_comparable_box<Value> const obj_1(value);
+    constexpr saga::equality_comparable_box<Value> const obj_2(value);
+
+    // @todo constexpr - требует constexpr для addressof
+    REQUIRE(obj_1 == obj_1);
+    REQUIRE(obj_2 == obj_2);
+    REQUIRE(obj_1 != obj_2);
+}
