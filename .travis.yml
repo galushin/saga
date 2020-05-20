@@ -1,6 +1,7 @@
 sudo: required
 dist: trusty
 language: cpp
+if: commit_message != "cppcheck report added/updated"
 
 matrix:
     include:
