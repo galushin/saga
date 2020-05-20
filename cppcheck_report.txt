@@ -1,21 +1,3 @@
-[contrib/boost_1_72_0/libs/filesystem/src/error_handling.hpp:59] -> [contrib/boost_1_72_0/libs/filesystem/src/directory.cpp:326]: (style) Local variable error shadows outer function
-[contrib/boost_1_72_0/libs/filesystem/src/error_handling.hpp:59] -> [contrib/boost_1_72_0/libs/filesystem/src/directory.cpp:364]: (style) Local variable error shadows outer function
-[contrib/boost_1_72_0/libs/filesystem/src/directory.cpp:428]: (style) The scope of the variable 'err' can be reduced.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:0]: (information) Too many #ifdef configurations - cppcheck only checks 12 of 19 configurations. Use --force to check all configurations.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1408] -> [contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1742]: (style) Local variable permissions shadows outer function
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1408] -> [contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1830]: (style) Local variable permissions shadows outer function
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:523]: (style) Struct 'handle_wrapper' has a constructor with 1 argument that is not explicit.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1455]: (information) Skipping configuration 'AT_FDCWD;AT_SYMLINK_NOFOLLOW;BOOST_POSIX_API' since the value of 'AT_FDCWD' is unknown. Use -D if you want to check it. You can use -U to skip it explicitly.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1456]: (information) Skipping configuration 'AT_FDCWD;AT_SYMLINK_NOFOLLOW;BOOST_POSIX_API' since the value of 'AT_SYMLINK_NOFOLLOW' is unknown. Use -D if you want to check it. You can use -U to skip it explicitly.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:413]: (style) The scope of the variable 'sz_write' can be reduced.
-[contrib/boost_1_72_0/libs/filesystem/src/path.cpp:768]: (style) The scope of the variable 'was_net' can be reduced.
-[contrib/boost_1_72_0/libs/filesystem/src/path.cpp:734]: (error) Invalid iterator 'itr' used.
-[contrib/boost_1_72_0/libs/filesystem/src/path.cpp:736]: (error) Invalid iterator 'itr' used.
-[contrib/boost_1_72_0/libs/filesystem/src/path.cpp:737]: (error) Invalid iterator 'itr' used.
-[contrib/boost_1_72_0/libs/filesystem/src/path.cpp:738]: (error) Invalid iterator 'itr' used.
-[contrib/boost_1_72_0/libs/filesystem/src/path.cpp:739]: (error) Invalid iterator 'itr' used.
-[contrib/boost_1_72_0/libs/filesystem/src/path.cpp:746]: (error) Invalid iterator 'itr' used.
-[contrib/boost_1_72_0/libs/filesystem/src/path.cpp:747]: (error) Invalid iterator 'itr' used.
 [example/ga/exe_objective.cpp:57]: (style) Consider using std::transform algorithm instead of a raw loop.
 [example/local_search/sample_library.cpp:27]: (performance, inconclusive) Technically the member function '::sample_library_registrar::do_init' can be static (but you may consider moving to unnamed namespace).
 [tests/saga_test.hpp:63]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
@@ -30,35 +12,4 @@
 [tests/utility/equality_comparable_box.cpp:147]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/view/indices.cpp:108]: (performance) Prefer prefix ++/-- operators for non-primitive types.
 [tests/view/indices.cpp:118]: (performance) Prefer prefix ++/-- operators for non-primitive types.
-[contrib/boost_1_72_0/libs/filesystem/src/path_traits.cpp:129]: (style) The function 'convert' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:973]: (style) The function 'create_directory_symlink' is never used.
-[contrib/boost_1_72_0/libs/date_time/src/gregorian/greg_month.cpp:111]: (style) The function 'create_facet_def' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:996]: (style) The function 'create_hard_link' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/directory.cpp:139]: (style) The function 'dispatch' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.cpp:36]: (style) The function 'do_in' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.cpp:56]: (style) The function 'do_out' is never used.
-[contrib/boost_1_72_0/libs/system/src/error_code.cpp:25]: (style) The function 'dummy_exported_function' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1121]: (style) The function 'equivalent' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1214]: (style) The function 'file_size' is never used.
-[contrib/boost_1_72_0/libs/date_time/src/gregorian/greg_month.cpp:124]: (style) The function 'generate_locale' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1248]: (style) The function 'hard_link_count' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1277]: (style) The function 'initial_path' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1287]: (style) The function 'is_empty' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1316]: (style) The function 'last_write_time' is never used.
-[contrib/boost_1_72_0/libs/date_time/src/gregorian/date_generators.cpp:23]: (style) The function 'nth_as_str' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/portability.cpp:92]: (style) The function 'portable_directory_name' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/portability.cpp:101]: (style) The function 'portable_file_name' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:734]: (style) The function 'possible_large_file_size_support' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/directory.cpp:591]: (style) The function 'recursive_directory_iterator_construct' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/directory.cpp:808]: (style) The function 'recursive_directory_iterator_increment' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/directory.cpp:659]: (style) The function 'recursive_directory_iterator_pop' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1585]: (style) The function 'relative' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1598]: (style) The function 'remove' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1614]: (style) The function 'remove_all' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1635]: (style) The function 'resize_file' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1648]: (style) The function 'space' is never used.
-[contrib/boost_1_72_0/libs/date_time/src/gregorian/greg_month.cpp:73]: (style) The function 'special_value_from_string' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1921]: (style) The function 'system_complete' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/operations.cpp:1846]: (style) The function 'temp_directory_path' is never used.
-[contrib/boost_1_72_0/libs/filesystem/src/unique_path.cpp:127]: (style) The function 'unique_path' is never used.
 (information) Cppcheck cannot find all the include files (use --check-config for details)
