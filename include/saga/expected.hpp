@@ -27,12 +27,63 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/detail/static_empty_const.hpp>
 
+#include <stdexcept>
+
 namespace saga
 {
+    template <class Error>
+    class bad_expected_access;
+
+    template <>
+    class bad_expected_access<void>
+     : public std::exception
+    {
+    public:
+        bad_expected_access() = default;
+    };
+
+    template <class Error>
+    class bad_expected_access
+     : public bad_expected_access<void>
+    {
+    public:
+        explicit bad_expected_access(Error error)
+         : error_(std::move(error))
+        {}
+
+        Error & error() &
+        {
+            return this->error_;
+        }
+
+        Error const & error() const &
+        {
+            return this->error_;
+        }
+
+        Error && error() &&
+        {
+            return std::move(this->error_);
+        }
+
+        Error const && error() const &&
+        {
+            return std::move(this->error_);
+        }
+
+        char const * what() const noexcept override
+        {
+            return "saga::bad_expected_access";
+        }
+
+    private:
+        Error error_;
+    };
+
     struct unexpect_t
     {
         // @todo Покрыть explicit проверками
-        explicit unexpect_t() = default;
+        unexpect_t() = default;
     };
 
     constexpr auto const & unexpect = detail::static_empty_const<unexpect_t>::value;
