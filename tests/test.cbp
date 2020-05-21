@@ -39,6 +39,7 @@
 		<Unit filename="../include/saga/cursor/cycle.hpp" />
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
 		<Unit filename="../include/saga/detail/static_empty_const.hpp" />
+		<Unit filename="../include/saga/expected.hpp" />
 		<Unit filename="../include/saga/iterator.hpp" />
 		<Unit filename="../include/saga/iterator/reverse.hpp" />
 		<Unit filename="../include/saga/math/probability.hpp" />
@@ -65,6 +66,7 @@
 		<Unit filename="algorithm.cpp" />
 		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
 		<Unit filename="cpp20/span.cpp" />
+		<Unit filename="expected.cpp" />
 		<Unit filename="iterator.cpp" />
 		<Unit filename="iterator/reverse.cpp" />
 		<Unit filename="main.cpp" />
