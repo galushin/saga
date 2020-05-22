@@ -31,6 +31,58 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    //@todo Найти лучшее место, так как используется ещё и в optional
+    struct in_place_t
+    {
+        // @todo Почему конструкторе без аргументов должен быть явным?
+    };
+    // @todo in_place
+
+    template <class Error>
+    class unexpected
+    {
+    public:
+        // Конструкторы
+        constexpr unexpected(unexpected const &) = default;
+
+        // @todo unexpected(unexpected &&);
+
+        template <class... Args,
+                  class = std::enable_if_t<std::is_constructible<Error, Args...>{}>>
+        constexpr explicit unexpected(saga::in_place_t, Args&&... args)
+         : value_(std::forward<Args>(args)...)
+        {}
+
+        // @todo explicit
+        template <class U, class... Args,
+                  class = std::enable_if_t<std::is_constructible<Error, std::initializer_list<U> &, Args...>{}>>
+        constexpr unexpected(saga::in_place_t, std::initializer_list<U> init, Args &&... args)
+         : value_(init, std::forward<Args>(args)...)
+        {}
+
+        // @todo Конструктор на основе одного аргумента
+        // @todo Конструктор на основе unexpected<Other> const &
+        // @todo Конструктор на основе unexpected<Other> &&
+
+        // @todo Присваивание
+
+        // @todo Доступ к значению
+        constexpr Error const & value() const &
+        {
+            return this->value_;
+        }
+        // @todo value() &
+        // @todo value() &&
+        // @todo value() const &&
+
+        // @todo Обмен - член и друг
+        // @todo Проверка на равенство
+
+    private:
+        Error value_;
+    };
+    // @todo Подсказка для вывода типа шаблонных параметров
+
     template <class Error>
     class bad_expected_access;
 
@@ -48,7 +100,8 @@ namespace saga
     {
     public:
         explicit bad_expected_access(Error error)
-         : error_(std::move(error))
+         : bad_expected_access<void>{}
+         , error_(std::move(error))
         {}
 
         Error & error() &

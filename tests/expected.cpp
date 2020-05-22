@@ -25,10 +25,126 @@ SAGA -- это свободной программное обеспечение:
 
 // Вспомогательне файлы
 #include <stdexcept>
+#include <set>
 
 // Тесты
 
-// bad_expected_access
+// @todo 5. Шаблон класса unexpected
+static_assert(std::is_copy_constructible<saga::unexpected<int>>{}, "");
+static_assert(std::is_move_constructible<saga::unexpected<int>>{}, "");
+
+// Есть конструктор с in_place_t и любым числом аргументов
+static_assert(std::is_constructible<std::vector<int>, std::size_t, int>{}, "");
+static_assert(std::is_constructible<saga::unexpected<std::vector<int>>,
+                                    saga::in_place_t, std::size_t, int>{}, "");
+
+// Конструктор с in_place_t является explicit:
+static_assert(std::is_constructible<std::vector<int>>{}, "");
+static_assert(std::is_constructible<saga::unexpected<std::vector<int>>, saga::in_place_t>{}, "");
+static_assert(!std::is_convertible<saga::in_place_t, saga::unexpected<std::vector<int>>>{}, "");
+
+// Конструктор с in_place_t не участвует в разрешение перегрузки, когда его нельзя вызывать
+static_assert(!std::is_constructible<int, std::vector<int>>{}, "");
+static_assert(!std::is_constructible<saga::unexpected<int>,
+                                     saga::in_place_t, std::vector<int>>{}, "");
+
+static_assert(!std::is_constructible<int, std::initializer_list<int>&, int>{}, "");
+static_assert(!std::is_constructible<saga::unexpected<int>,
+                                     saga::in_place_t, std::initializer_list<int>&, int>{}, "");
+
+TEST_CASE("unexpected: placement constructor")
+{
+    {
+        constexpr saga::unexpected<int> err0(saga::in_place_t{});
+
+        static_assert(err0.value() == 0, "");
+        static_assert(noexcept(err0.value()), "");
+
+        constexpr int value = 42;
+        constexpr saga::unexpected<int> err1(saga::in_place_t{}, value);
+        static_assert(err1.value() == value, "");
+    }
+
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> num, int filler)
+    {
+        std::vector<int> const expected(num, filler);
+
+        saga::unexpected<std::vector<int>> const actual(saga::in_place_t{}, num, filler);
+
+        REQUIRE(actual.value() == expected);
+    };
+}
+
+TEST_CASE("unexpected: placement constructor with initializer list")
+{
+    saga_test::property_checker << [](int value1, int value2)
+    {
+        std::vector<int> const expected{value1, value2};
+
+        saga::unexpected<std::vector<int>> const actual(saga::in_place_t{}, {value1, value2});
+
+        REQUIRE(actual.value() == expected);
+    };
+}
+
+TEST_CASE("unexpected: placement constructor with initializer list and more args")
+{
+    {
+        struct initializer_list_consumer
+        {
+            constexpr initializer_list_consumer(std::initializer_list<int> inits, int arg)
+             : value(arg)
+            {
+                for(auto const & each : inits)
+                {
+                    value += each;
+                }
+            }
+
+            int value = 0;
+        };
+
+        constexpr saga::unexpected<initializer_list_consumer> unex(saga::in_place_t{}, {1, 2, 3, 4}, 5);
+    }
+
+    saga_test::property_checker << [](int value1, int value2)
+    {
+        using Compare = bool(*)(int const &, int const &);
+        using Container = std::set<int, Compare>;
+
+        auto const cmp = Compare([](int const & x, int const & y) { return x < y; });
+
+        Container const expected({value1, value2}, cmp);
+
+        saga::unexpected<Container> const actual(saga::in_place_t{}, {value1, value2}, cmp);
+
+        REQUIRE(actual.value() == expected);
+    };
+}
+
+TEST_CASE("unexpected : copy constructor")
+{
+    {
+        constexpr int value = 42;
+        constexpr saga::unexpected<int> err1(saga::in_place_t{}, value);
+        static_assert(err1.value() == value, "");
+
+        constexpr saga::unexpected<int> err2(err1);
+
+        static_assert(err1.value() == err2.value(), "");
+    }
+
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> num, int filler)
+    {
+        saga::unexpected<std::vector<int>> const obj1(saga::in_place_t{}, num, filler);
+
+        saga::unexpected<std::vector<int>> const obj2(obj1);
+
+        REQUIRE(obj1.value() == obj2.value());
+    };
+}
+
+// 6. bad_expected_access
 namespace
 {
     static_assert(std::is_base_of<saga::bad_expected_access<void>,
