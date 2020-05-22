@@ -33,9 +33,9 @@ OBJDIR_RELEASE = ./obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = ./bin/Release/test
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/string_view.o $(OBJDIR_DEBUG)/type_traits.o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o $(OBJDIR_DEBUG)/view/indices.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/expected.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/string_view.o $(OBJDIR_DEBUG)/type_traits.o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o $(OBJDIR_DEBUG)/view/indices.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/string_view.o $(OBJDIR_RELEASE)/type_traits.o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o $(OBJDIR_RELEASE)/view/indices.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/expected.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/string_view.o $(OBJDIR_RELEASE)/type_traits.o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o $(OBJDIR_RELEASE)/view/indices.o
 
 all: debug release
 
@@ -64,6 +64,9 @@ $(OBJDIR_DEBUG)/algorithm.o: algorithm.cpp
 
 $(OBJDIR_DEBUG)/cpp20/span.o: cpp20/span.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c cpp20/span.cpp -o $(OBJDIR_DEBUG)/cpp20/span.o
+
+$(OBJDIR_DEBUG)/expected.o: expected.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c expected.cpp -o $(OBJDIR_DEBUG)/expected.o
 
 $(OBJDIR_DEBUG)/iterator.o: iterator.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c iterator.cpp -o $(OBJDIR_DEBUG)/iterator.o
@@ -139,6 +142,9 @@ $(OBJDIR_RELEASE)/algorithm.o: algorithm.cpp
 
 $(OBJDIR_RELEASE)/cpp20/span.o: cpp20/span.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c cpp20/span.cpp -o $(OBJDIR_RELEASE)/cpp20/span.o
+
+$(OBJDIR_RELEASE)/expected.o: expected.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c expected.cpp -o $(OBJDIR_RELEASE)/expected.o
 
 $(OBJDIR_RELEASE)/iterator.o: iterator.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c iterator.cpp -o $(OBJDIR_RELEASE)/iterator.o
