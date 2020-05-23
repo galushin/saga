@@ -290,11 +290,25 @@ namespace
          : value(std::move(init_value))
         {}
 
-        throws_on_move(throws_on_move const &) noexcept(false);
-        throws_on_move(throws_on_move &&) noexcept(false);
+        throws_on_move(throws_on_move const & that) noexcept(false)
+         : value(that.value)
+        {}
 
-        throws_on_move & operator=(throws_on_move const &) noexcept(false);
-        throws_on_move & operator=(throws_on_move &&) noexcept(false);
+        throws_on_move(throws_on_move && that) noexcept(false)
+         : value(std::move(that.value))
+        {}
+
+        throws_on_move & operator=(throws_on_move const & that) noexcept(false)
+        {
+            this->value = that.value;
+            return *this;
+        }
+
+        throws_on_move & operator=(throws_on_move && that) noexcept(false)
+        {
+            this->value = std::move(that.value);
+            return *this;
+        }
 
         friend bool operator==(throws_on_move const & lhs, throws_on_move const & rhs)
         {
