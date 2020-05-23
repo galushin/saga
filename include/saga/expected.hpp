@@ -34,27 +34,6 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
-    // @todo Удалить
-    namespace detail
-    {
-        namespace swap_adl_ns
-        {
-            using std::swap;
-
-            template <class T>
-            struct is_nothrow_swappable
-            {
-                static constexpr bool value
-                    = noexcept(swap(std::declval<T&>(), std::declval<T&>()));
-            };
-        }
-
-        template <class T>
-        struct is_nothrow_swappable
-         : std::integral_constant<bool, swap_adl_ns::is_nothrow_swappable<T>::value>
-        {};
-    }
-
     //@todo Найти лучшее место, так как используется ещё и в optional
     struct in_place_t
     {
@@ -109,7 +88,7 @@ namespace saga
         // @todo value() &&
         // @todo value() const &&
 
-        void swap(unexpected & that) noexcept(saga::detail::is_nothrow_swappable<Error>::value)
+        void swap(unexpected & that) noexcept(saga::is_nothrow_swappable<Error>::value)
         {
             using std::swap;
             swap(this->value_, that.value_);

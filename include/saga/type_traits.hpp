@@ -1,4 +1,4 @@
-/* (c) 2019 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2019-2020 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -40,6 +40,9 @@ namespace saga
     struct priority_tag<0>
     {};
 
+    // bool_constant
+    template <bool B>
+    using bool_constant = std::integral_constant<bool, B>;
     /** @brief Определение типа для предсставления размера, используемого данным типом, например,
     контейнером
 
@@ -102,6 +105,17 @@ namespace saga
             struct is_swappable_with<T, U, swap_enabler<T, U>>
              : std::true_type
             {};
+
+            template <class T, class U, class SFINAE = void>
+            struct is_nothrow_swappable_with
+             : std::false_type
+            {};
+
+            template <class T, class U>
+            struct is_nothrow_swappable_with<T, U, std::enable_if_t<is_swappable_with<T, U>::value>>
+             : saga::bool_constant<noexcept(swap(std::declval<T>(), std::declval<U>()))
+                                   && noexcept(swap(std::declval<U>(), std::declval<T>()))>
+            {};
         }
 
         template <class T, class SFINAE = void>
@@ -113,6 +127,17 @@ namespace saga
         struct is_swappable<T, void_t<T&>>
          : detail::swap_adl_ns::is_swappable_with<T &, T &>
         {};
+
+        template <class T, class SFINAE = void>
+        struct is_nothrow_swappable
+         : std::false_type
+        {};
+
+        template <class T>
+        struct is_nothrow_swappable<T, void_t<T&>>
+         : detail::swap_adl_ns::is_nothrow_swappable_with<T &, T &>
+        {};
+
     }
 
     template <class T, class U>
@@ -123,6 +148,16 @@ namespace saga
     template <class T>
     struct is_swappable
      : detail::is_swappable<T>
+    {};
+
+    template <class T, class U>
+    struct is_nothrow_swappable_with
+     : detail::swap_adl_ns::is_nothrow_swappable_with<T, U>
+    {};
+
+    template <class T>
+    struct is_nothrow_swappable
+     : detail::is_nothrow_swappable<T>
     {};
 
     // is_equality_comparable

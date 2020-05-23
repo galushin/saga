@@ -79,28 +79,61 @@ static_assert(check_remove_cvref_t_for<std::string>(), "");
 static_assert(check_remove_cvref_t_for<int[2]>(), "");
 static_assert(check_remove_cvref_t_for<double(std::string)>(), "");
 
-// is_swappable_with
+// семейство is_swappable
 namespace
 {
-    struct struct_1 { int value; };
-    struct struct_2 { int value; };
+    struct struct_1
+    {
+        struct_1(struct_1 const &) = delete;
+        struct_1(struct_1 &&) = delete;
+        struct_1 & operator=(struct_1 const &) = delete;
+        struct_1 & operator=(struct_1 &&) = delete;
+
+        friend void swap(struct_1 &, struct_1 &) noexcept
+        {}
+    };
+
+    struct struct_2
+    {
+        struct_2(struct_2 const &) = delete;
+        struct_2(struct_2 &&) = delete;
+        struct_2 & operator=(struct_2 const &) = delete;
+        struct_2 & operator=(struct_2 &&) = delete;
+
+        friend void swap(struct_2 &, struct_2 &) noexcept(false)
+        {}
+    };
+
     struct struct_3 { int value; };
+    struct struct_4 {};
 
-    void swap(struct_1 &, struct_2 &) {}
-    void swap(struct_2 &, struct_1 &) {}
+    void swap(struct_1 &, struct_2 &) noexcept(false) {}
+    void swap(struct_2 &, struct_1 &) noexcept(false) {}
 
-    void swap(struct_2 &, struct_3 &) {}
+    void swap(struct_2 &, struct_3 &) noexcept(false) {}
     void swap(struct_3 &, struct_2 &) = delete;
+
+    void swap(struct_1 &, struct_4 &) noexcept {};
+    void swap(struct_4 &, struct_1 &) noexcept {};
+
+    void swap(struct_2 &, struct_4 &) noexcept {};
+    void swap(struct_4 &, struct_2 &) noexcept(false) {};
 
     struct rvalue_swap
     {
         friend void swap(rvalue_swap &, rvalue_swap &) = delete;
-        friend void swap(rvalue_swap &&, rvalue_swap &&) {}
+        friend void swap(rvalue_swap &&, rvalue_swap &&) noexcept(false) {}
+    };
+
+    struct rvalue_swap_noexcept
+    {
+        friend void swap(rvalue_swap_noexcept &, rvalue_swap_noexcept &) = delete;
+        friend void swap(rvalue_swap_noexcept &&, rvalue_swap_noexcept &&) noexcept {}
     };
 
     struct deleted_swap
     {
-        friend void swap(deleted_swap &, deleted_swap &) = delete;
+        friend void swap(deleted_swap &, deleted_swap &) noexcept = delete;
     };
 
     namespace ambiguous_swap_ns
@@ -109,7 +142,7 @@ namespace
         {};
 
         template <class T>
-        void swap(T &, T &)
+        void swap(T &, T &) noexcept
         {}
     }
 }
@@ -130,6 +163,10 @@ static_assert(saga::is_swappable_with<struct_2&, struct_1&>::value, "");
 static_assert(!saga::is_swappable_with<struct_2&, struct_3&>::value, "");
 static_assert(!saga::is_swappable_with<struct_3&, struct_1&>::value, "");
 static_assert(!saga::is_swappable_with<struct_3&, struct_2&>::value, "");
+
+// is_swappable_with не удаляет cv-квалификатор
+static_assert(!saga::is_swappable_with<struct_1 const &, struct_2 &>::value, "");
+static_assert(!saga::is_swappable_with<struct_1 &, struct_2 const &>::value, "");
 
 // is_swappable_with защищён он void
 static_assert(!saga::is_swappable_with<void, int>{}, "");
@@ -157,15 +194,90 @@ static_assert(!saga::is_swappable<int() const &&>{}, "");
 // is_swappable добавляет lvalue-ссылку
 static_assert(saga::is_swappable<int>{}, "");
 static_assert(saga::is_swappable<int &>{}, "");
+static_assert(saga::is_swappable<struct_1>{}, "");
+static_assert(saga::is_swappable<struct_2>{}, "");
 static_assert(!saga::is_swappable<rvalue_swap>{}, "");
 static_assert(!saga::is_swappable<rvalue_swap &&>{}, "");
+
+// is_swappable не удаляет cv-квалификатор
+static_assert(saga::is_swappable<int const &>{}, "");
 
 // is_swappable - удалённый или неоднозначный swap
 static_assert(!saga::is_swappable<deleted_swap>{}, "");
 static_assert(!saga::is_swappable<ambiguous_swap_ns::ambiguous_swap>{}, "");
 
-// @todo is_nothrow_swappable_with
-// @todo is_nothrow_swappable
+// is_nothrow_swappable_with
+// is_nothrow_swappable_with не добавляет lvalue-ссылку
+static_assert(!saga::is_nothrow_swappable_with<int, int>::value, "");
+static_assert(!saga::is_nothrow_swappable_with<struct_1, struct_1>::value, "");
+static_assert(saga::is_nothrow_swappable_with<struct_1 &, struct_1 &>::value, "");
+
+static_assert(!saga::is_nothrow_swappable_with<rvalue_swap, rvalue_swap>::value, "");
+static_assert(!saga::is_nothrow_swappable_with<rvalue_swap &&, rvalue_swap &&>::value, "");
+static_assert(!saga::is_nothrow_swappable_with<rvalue_swap &, rvalue_swap &>::value, "");
+
+static_assert(saga::is_nothrow_swappable_with<rvalue_swap_noexcept, rvalue_swap_noexcept>::value, "");
+static_assert(saga::is_nothrow_swappable_with<rvalue_swap_noexcept &&, rvalue_swap_noexcept &&>::value, "");
+static_assert(!saga::is_nothrow_swappable_with<rvalue_swap_noexcept &, rvalue_swap_noexcept &>::value, "");
+
+// is_nothrow_swappable_with правильно обрабатывает гетерогенный обмен
+static_assert(saga::is_swappable_with<struct_1&, struct_2&>::value, "");
+static_assert(!saga::is_nothrow_swappable_with<struct_1&, struct_2&>::value, "");
+
+static_assert(!saga::is_nothrow_swappable_with<struct_1&, struct_3&>::value, "");
+static_assert(!saga::is_nothrow_swappable_with<struct_2&, struct_1&>::value, "");
+static_assert(!saga::is_nothrow_swappable_with<struct_2&, struct_3&>::value, "");
+static_assert(!saga::is_nothrow_swappable_with<struct_3&, struct_1&>::value, "");
+static_assert(!saga::is_nothrow_swappable_with<struct_3&, struct_2&>::value, "");
+static_assert(!saga::is_nothrow_swappable_with<struct_2&, struct_4&>::value, "");
+static_assert(!saga::is_nothrow_swappable_with<struct_4&, struct_2&>::value, "");
+
+static_assert(saga::is_nothrow_swappable_with<struct_1&, struct_4&>::value, "");
+static_assert(saga::is_nothrow_swappable_with<struct_4&, struct_1&>::value, "");
+
+// is_nothrow_swappable_with не удаляет cv-квалификатор
+static_assert(!saga::is_nothrow_swappable_with<struct_1 const&, struct_4&>::value, "");
+static_assert(!saga::is_nothrow_swappable_with<struct_1&, struct_4 const&>::value, "");
+
+// is_nothrow_swappable_with защищён он void
+static_assert(!saga::is_nothrow_swappable_with<void, int>{}, "");
+static_assert(!saga::is_nothrow_swappable_with<int, void>{}, "");
+static_assert(!saga::is_nothrow_swappable_with<void const, void const volatile>{}, "");
+
+// is_nothrow_swappable
+// is_nothrow_swappable для типов, на которые нельзя сформировать ссылки
+static_assert(!saga::is_nothrow_swappable<void>{}, "");
+static_assert(!saga::is_nothrow_swappable<void const>{}, "");
+static_assert(!saga::is_nothrow_swappable<void volatile>{}, "");
+static_assert(!saga::is_nothrow_swappable<void const volatile>{}, "");
+static_assert(!saga::is_nothrow_swappable<int() const>{}, "");
+static_assert(!saga::is_nothrow_swappable<int() volatile>{}, "");
+static_assert(!saga::is_nothrow_swappable<int() const volatile>{}, "");
+static_assert(!saga::is_nothrow_swappable<int() &>{}, "");
+static_assert(!saga::is_nothrow_swappable<int() &&>{}, "");
+static_assert(!saga::is_nothrow_swappable<int() const &>{}, "");
+static_assert(!saga::is_nothrow_swappable<int() const &&>{}, "");
+static_assert(!saga::is_nothrow_swappable<int() volatile &>{}, "");
+static_assert(!saga::is_nothrow_swappable<int() volatile &&>{}, "");
+static_assert(!saga::is_nothrow_swappable<int() const &>{}, "");
+static_assert(!saga::is_nothrow_swappable<int() const &&>{}, "");
+
+// is_nothrow_swappable добавляет lvalue-ссылку
+static_assert(saga::is_swappable<struct_1>{}, "");
+static_assert(saga::is_nothrow_swappable<struct_1>{}, "");
+
+static_assert(saga::is_swappable<struct_2>{}, "");
+static_assert(!saga::is_nothrow_swappable<struct_2>{}, "");
+
+static_assert(!saga::is_nothrow_swappable<rvalue_swap_noexcept>{}, "");
+static_assert(!saga::is_nothrow_swappable<rvalue_swap_noexcept &&>{}, "");
+
+// is_nothrow_swappable не удаляет cv-квалификатор
+static_assert(!saga::is_nothrow_swappable<struct_1 const>{}, "");
+
+// is_swappable - удалённый или неоднозначный swap
+static_assert(!saga::is_nothrow_swappable<deleted_swap>{}, "");
+static_assert(!saga::is_nothrow_swappable<ambiguous_swap_ns::ambiguous_swap>{}, "");
 
 // is_equality_comparable
 static_assert(saga::is_equality_comparable<int>{}, "Must be true");
