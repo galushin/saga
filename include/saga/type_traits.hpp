@@ -72,6 +72,14 @@ namespace saga
     template <typename... Types>
     using void_t = typename declare_void<Types...>::type;
 
+    template <class T>
+    struct remove_cvref
+     : std::remove_cv<std::remove_reference_t<T>>
+    {};
+
+    template <class T>
+    using remove_cvref_t = typename remove_cvref<T>::type;
+
     namespace detail
     {
         template <class T, class SFINAE = void>

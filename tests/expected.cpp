@@ -144,6 +144,41 @@ TEST_CASE("unexpected : copy constructor")
     };
 }
 
+// Конструктор с одним значением не участвует в разрешение перегрузки, когда его нельзя вызывать
+static_assert(!std::is_constructible<int, std::vector<int>>{}, "");
+static_assert(!std::is_constructible<saga::unexpected<int>, std::vector<int>>{}, "");
+
+// Конструктор с одним аргументом является explicit:
+static_assert(std::is_constructible<saga::unexpected<std::string>, std::string>{}, "");
+static_assert(!std::is_convertible<std::string, saga::unexpected<std::string>>{}, "");
+
+static_assert(std::is_constructible<saga::unexpected<std::vector<int>>, std::size_t>{}, "");
+static_assert(!std::is_convertible<std::size_t, saga::unexpected<std::vector<int>>>{}, "");
+
+TEST_CASE("unexpected: one argument constructor - without conversion")
+{
+    {
+        constexpr int value = 42;
+        constexpr saga::unexpected<int> err1(value);
+
+        static_assert(err1.value() == value, "");
+    }
+
+    {
+        constexpr int value = 42;
+        constexpr saga::unexpected<long> err1(value);
+
+        static_assert(err1.value() == value, "");
+    }
+
+    saga_test::property_checker << [](std::string const & value)
+    {
+        saga::unexpected<std::string> err1(value);
+
+        REQUIRE(err1.value() == value);
+    };
+}
+
 // 6. bad_expected_access
 namespace
 {

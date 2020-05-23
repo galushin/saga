@@ -26,6 +26,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/detail/static_empty_const.hpp>
+#include <saga/type_traits.hpp>
 
 #include <stdexcept>
 
@@ -60,7 +61,14 @@ namespace saga
          : value_(init, std::forward<Args>(args)...)
         {}
 
-        // @todo Конструктор на основе одного аргумента
+        template <class Err = Error,
+                  class = std::enable_if_t<std::is_constructible<Error, Err>{}>,
+                  class = std::enable_if_t<!std::is_same<saga::remove_cvref_t<Err>, in_place_t>{}>,
+                  class = std::enable_if_t<!std::is_same<saga::remove_cvref_t<Err>, unexpected>{}>>
+        constexpr explicit unexpected(Err && value)
+         : value_(std::forward<Err>(value))
+        {}
+
         // @todo Конструктор на основе unexpected<Other> const &
         // @todo Конструктор на основе unexpected<Other> &&
 
