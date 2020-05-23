@@ -25,6 +25,61 @@ SAGA -- это свободной программное обеспечение:
 #include <string>
 
 // Тесты
+// remove_cvref
+namespace
+{
+    template <class Type>
+    constexpr bool check_remove_cvref_for()
+    {
+        static_assert(std::is_same<typename saga::remove_cvref<Type>::type, Type>{}, "");
+        static_assert(std::is_same<typename saga::remove_cvref<Type const>::type, Type>{}, "");
+        static_assert(std::is_same<typename saga::remove_cvref<Type volatile>::type, Type>{}, "");
+        static_assert(std::is_same<typename saga::remove_cvref<Type const volatile>::type, Type>{}, "");
+        static_assert(std::is_same<typename saga::remove_cvref<Type &>::type, Type>{}, "");
+        static_assert(std::is_same<typename saga::remove_cvref<Type const &>::type, Type>{}, "");
+        static_assert(std::is_same<typename saga::remove_cvref<Type volatile &>::type, Type>{}, "");
+        static_assert(std::is_same<typename saga::remove_cvref<Type const volatile &>::type, Type>{}, "");
+        static_assert(std::is_same<typename saga::remove_cvref<Type &&>::type, Type>{}, "");
+        static_assert(std::is_same<typename saga::remove_cvref<Type const &&>::type, Type>{}, "");
+        static_assert(std::is_same<typename saga::remove_cvref<Type volatile &&>::type, Type>{}, "");
+        static_assert(std::is_same<typename saga::remove_cvref<Type const volatile &&>::type, Type>{}, "");
+
+        return true;
+    }
+}
+
+static_assert(check_remove_cvref_for<std::string>(), "");
+static_assert(check_remove_cvref_for<int[2]>(), "");
+static_assert(check_remove_cvref_for<double(std::string)>(), "");
+
+// remove_cvref_t
+namespace
+{
+    template <class Type>
+    constexpr bool check_remove_cvref_t_for()
+    {
+        static_assert(std::is_same<saga::remove_cvref_t<Type>, Type>{}, "");
+        static_assert(std::is_same<saga::remove_cvref_t<Type const>, Type>{}, "");
+        static_assert(std::is_same<saga::remove_cvref_t<Type volatile>, Type>{}, "");
+        static_assert(std::is_same<saga::remove_cvref_t<Type const volatile>, Type>{}, "");
+        static_assert(std::is_same<saga::remove_cvref_t<Type &>, Type>{}, "");
+        static_assert(std::is_same<saga::remove_cvref_t<Type const &>, Type>{}, "");
+        static_assert(std::is_same<saga::remove_cvref_t<Type volatile &>, Type>{}, "");
+        static_assert(std::is_same<saga::remove_cvref_t<Type const volatile &>, Type>{}, "");
+        static_assert(std::is_same<saga::remove_cvref_t<Type &&>, Type>{}, "");
+        static_assert(std::is_same<saga::remove_cvref_t<Type const &&>, Type>{}, "");
+        static_assert(std::is_same<saga::remove_cvref_t<Type volatile &&>, Type>{}, "");
+        static_assert(std::is_same<saga::remove_cvref_t<Type const volatile &&>, Type>{}, "");
+
+        return true;
+    }
+}
+
+static_assert(check_remove_cvref_t_for<std::string>(), "");
+static_assert(check_remove_cvref_t_for<int[2]>(), "");
+static_assert(check_remove_cvref_t_for<double(std::string)>(), "");
+
+// is_equality_comparable
 static_assert(saga::is_equality_comparable<int>{}, "Must be true");
 static_assert(saga::is_equality_comparable<std::string>{}, "Must be true");
 static_assert(!saga::is_equality_comparable<std::greater<int>>{}, "Must be false");
