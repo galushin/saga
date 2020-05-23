@@ -67,7 +67,7 @@ namespace saga
         // @todo Присваивание
 
         // @todo Доступ к значению
-        constexpr Error const & value() const &
+        constexpr Error const & value() const & noexcept
         {
             return this->value_;
         }
