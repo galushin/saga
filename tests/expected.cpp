@@ -150,7 +150,7 @@ namespace
     struct move_only
     {
     public:
-        constexpr move_only(T init_value)
+        constexpr explicit move_only(T init_value)
          : value(std::move(init_value))
         {}
 
@@ -286,7 +286,7 @@ namespace
     template <class T>
     struct throws_on_move
     {
-        throws_on_move(T init_value)
+        explicit throws_on_move(T init_value)
          : value(std::move(init_value))
         {}
 

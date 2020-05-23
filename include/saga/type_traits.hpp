@@ -26,6 +26,7 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    // priority_tag
     /** @brief Тип-тэг для задания приоритета перегрузок
     @tparam P уровень приоритета: чем больше это значение, тем выше приоритет
     */
@@ -38,7 +39,6 @@ namespace saga
     template <>
     struct priority_tag<0>
     {};
-
 
     /** @brief Определение типа для предсставления размера, используемого данным типом, например,
     контейнером
@@ -63,6 +63,7 @@ namespace saga
         using type = decltype(size_type::impl<T>(priority_tag<1>{}));
     };
 
+    // void_t
     template <typename... Types>
     struct declare_void
     {
@@ -72,6 +73,7 @@ namespace saga
     template <typename... Types>
     using void_t = typename declare_void<Types...>::type;
 
+    // remove_cvref
     template <class T>
     struct remove_cvref
      : std::remove_cv<std::remove_reference_t<T>>
@@ -80,6 +82,50 @@ namespace saga
     template <class T>
     using remove_cvref_t = typename remove_cvref<T>::type;
 
+    // is_swappable
+    namespace detail
+    {
+        namespace swap_adl_ns
+        {
+            template <class T, class U, class SFINAE = void>
+            struct is_swappable_with
+             : std::false_type
+            {};
+
+            using std::swap;
+
+            template <class T, class U>
+            using swap_enabler = void_t<decltype(swap(std::declval<T>(), std::declval<U>())),
+                                        decltype(swap(std::declval<U>(), std::declval<T>()))>;
+
+            template <class T, class U>
+            struct is_swappable_with<T, U, swap_enabler<T, U>>
+             : std::true_type
+            {};
+        }
+
+        template <class T, class SFINAE = void>
+        struct is_swappable
+         : std::false_type
+        {};
+
+        template <class T>
+        struct is_swappable<T, void_t<T&>>
+         : detail::swap_adl_ns::is_swappable_with<T &, T &>
+        {};
+    }
+
+    template <class T, class U>
+    struct is_swappable_with
+     : detail::swap_adl_ns::is_swappable_with<T, U>
+    {};
+
+    template <class T>
+    struct is_swappable
+     : detail::is_swappable<T>
+    {};
+
+    // is_equality_comparable
     namespace detail
     {
         template <class T, class SFINAE = void>

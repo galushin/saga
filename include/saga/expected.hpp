@@ -34,6 +34,7 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    // @todo Удалить
     namespace detail
     {
         namespace swap_adl_ns
