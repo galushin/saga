@@ -27,11 +27,33 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/detail/static_empty_const.hpp>
 #include <saga/type_traits.hpp>
+#include <saga/utility/operators.hpp>
 
+#include <utility>
 #include <stdexcept>
 
 namespace saga
 {
+    namespace detail
+    {
+        namespace swap_adl_ns
+        {
+            using std::swap;
+
+            template <class T>
+            struct is_nothrow_swappable
+            {
+                static constexpr bool value
+                    = noexcept(swap(std::declval<T&>(), std::declval<T&>()));
+            };
+        }
+
+        template <class T>
+        struct is_nothrow_swappable
+         : std::integral_constant<bool, swap_adl_ns::is_nothrow_swappable<T>::value>
+        {};
+    }
+
     //@todo Найти лучшее место, так как используется ещё и в optional
     struct in_place_t
     {
@@ -46,7 +68,7 @@ namespace saga
         // Конструкторы
         constexpr unexpected(unexpected const &) = default;
 
-        // @todo unexpected(unexpected &&);
+        constexpr unexpected(unexpected &&) = default;
 
         template <class... Args,
                   class = std::enable_if_t<std::is_constructible<Error, Args...>{}>>
@@ -72,7 +94,10 @@ namespace saga
         // @todo Конструктор на основе unexpected<Other> const &
         // @todo Конструктор на основе unexpected<Other> &&
 
-        // @todo Присваивание
+        // @todo Присваивание - копирующее
+        // @todo Присваивание - с перемещением
+        // @todo Присваивание - копирующее обобщённое
+        // @todo Присваивание - с перемещением обобщённое
 
         // @todo Доступ к значению
         constexpr Error const & value() const & noexcept
@@ -83,8 +108,31 @@ namespace saga
         // @todo value() &&
         // @todo value() const &&
 
-        // @todo Обмен - член и друг
-        // @todo Проверка на равенство
+        void swap(unexpected & that) noexcept(saga::detail::is_nothrow_swappable<Error>::value)
+        {
+            using std::swap;
+            swap(this->value_, that.value_);
+        }
+
+        // @todo Не должна участвовать в разрешении перегрузки, если !is_swappable_v<Error>
+        friend void swap(unexpected & lhs, unexpected & rhs) noexcept(noexcept(lhs.swap(rhs)))
+        {
+            lhs.swap(rhs);
+        }
+
+        template <class Error2>
+        friend
+        constexpr bool operator==(unexpected<Error> const & lhs, unexpected<Error2> const & rhs)
+        {
+            return lhs.value() == rhs.value();
+        }
+
+        template <class Error2>
+        friend
+        constexpr bool operator!=(unexpected<Error> const & lhs, unexpected<Error2> const & rhs)
+        {
+            return !(lhs == rhs);
+        }
 
     private:
         Error value_;

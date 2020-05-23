@@ -144,6 +144,55 @@ TEST_CASE("unexpected : copy constructor")
     };
 }
 
+namespace
+{
+    template <class T>
+    struct move_only
+    {
+    public:
+        constexpr move_only(T init_value)
+         : value(std::move(init_value))
+        {}
+
+        move_only(move_only const &) = delete;
+        move_only(move_only &&) = default;
+
+        T value;
+    };
+
+    template <class T>
+    constexpr T use_constexpr_move(T x)
+    {
+        auto y = std::move(x);
+
+        return y;
+    }
+}
+
+TEST_CASE("unexpected : move constructor")
+{
+    {
+        constexpr int value = 17;
+
+        constexpr auto obj
+            = use_constexpr_move(saga::unexpected<move_only<int>>(saga::in_place_t{}, value));
+
+        static_assert(obj.value().value == value, "");
+    }
+
+    using Value = std::vector<int>;
+    saga_test::property_checker << [](Value const & value)
+    {
+        saga::unexpected<Value> obj1(value);
+        auto const obj1_old = obj1;
+
+        saga::unexpected<Value> const obj2(std::move(obj1));
+
+        REQUIRE(obj2 == obj1_old);
+        REQUIRE(obj1.value().empty());
+    };
+}
+
 // Конструктор с одним значением не участвует в разрешение перегрузки, когда его нельзя вызывать
 static_assert(!std::is_constructible<int, std::vector<int>>{}, "");
 static_assert(!std::is_constructible<saga::unexpected<int>, std::vector<int>>{}, "");
@@ -155,7 +204,7 @@ static_assert(!std::is_convertible<std::string, saga::unexpected<std::string>>{}
 static_assert(std::is_constructible<saga::unexpected<std::vector<int>>, std::size_t>{}, "");
 static_assert(!std::is_convertible<std::size_t, saga::unexpected<std::vector<int>>>{}, "");
 
-TEST_CASE("unexpected: one argument constructor - without conversion")
+TEST_CASE("unexpected: one argument constructor")
 {
     {
         constexpr int value = 42;
@@ -176,6 +225,147 @@ TEST_CASE("unexpected: one argument constructor - without conversion")
         saga::unexpected<std::string> err1(value);
 
         REQUIRE(err1.value() == value);
+    };
+}
+
+namespace
+{
+    template <class Value>
+    void check_swap_member(Value const & value1, Value const & value2)
+    {
+        saga::unexpected<Value> err1(value1);
+        saga::unexpected<Value> err2(value2);
+
+        auto const err1_old = err1;
+        auto const err2_old = err2;
+
+        err1.swap(err2);
+
+        REQUIRE(err1 == err2_old);
+        REQUIRE(err2 == err1_old);
+
+        using std::swap;
+        static_assert(noexcept(err1.swap(err2))
+                      == noexcept(swap(std::declval<Value&>(), std::declval<Value&>())), "");
+    }
+}
+
+TEST_CASE("unexpected : swap - noexcept(true)")
+{
+    using Value = int;
+    {
+        using std::swap;
+        static_assert(noexcept(swap(std::declval<Value&>(), std::declval<Value&>())), "");
+    }
+
+    saga_test::property_checker << [](Value const & value1, Value const & value2)
+    {
+        saga::unexpected<Value> err1(value1);
+        saga::unexpected<Value> err2(value2);
+
+        auto const err1_old = err1;
+        auto const err2_old = err2;
+
+        err1.swap(err2);
+
+        REQUIRE(err1 == err2_old);
+        REQUIRE(err2 == err1_old);
+
+        swap(err1, err2);
+
+        REQUIRE(err1 == err1_old);
+        REQUIRE(err2 == err2_old);
+
+        static_assert(noexcept(err1.swap(err2)), "");
+        static_assert(noexcept(swap(err1, err2)), "");
+    };
+}
+
+namespace
+{
+    template <class T>
+    struct throws_on_move
+    {
+        throws_on_move(T init_value)
+         : value(std::move(init_value))
+        {}
+
+        throws_on_move(throws_on_move const &) noexcept(false);
+        throws_on_move(throws_on_move &&) noexcept(false);
+
+        throws_on_move & operator=(throws_on_move const &) noexcept(false);
+        throws_on_move & operator=(throws_on_move &&) noexcept(false);
+
+        friend bool operator==(throws_on_move const & lhs, throws_on_move const & rhs)
+        {
+            return lhs.value == rhs.value;
+        }
+
+        T value;
+    };
+}
+
+TEST_CASE("unexpected : swap - noexcept(false)")
+{
+    using Value = ::throws_on_move<int>;
+    {
+        using std::swap;
+        static_assert(!noexcept(swap(std::declval<Value&>(), std::declval<Value&>())), "");
+    }
+
+    saga_test::property_checker << [](int const & value1, int const & value2)
+    {
+        saga::unexpected<Value> err1(saga::in_place_t{}, value1);
+        saga::unexpected<Value> err2(saga::in_place_t{}, value2);
+
+        auto const err1_old = err1;
+        auto const err2_old = err2;
+
+        err1.swap(err2);
+
+        REQUIRE(err1 == err2_old);
+        REQUIRE(err2 == err1_old);
+
+        swap(err1, err2);
+
+        REQUIRE(err1 == err1_old);
+        REQUIRE(err2 == err2_old);
+
+        static_assert(!noexcept(err1.swap(err2)), "");
+        static_assert(!noexcept(swap(err1, err2)), "");
+    };
+}
+
+// @todo swap не определено, если нельзя обменять объекты типа шаблонного параметра
+
+TEST_CASE("unexpected : operators == and !=")
+{
+    {
+        constexpr int value1 = 42;
+        constexpr long value2 = 13;
+
+        constexpr saga::unexpected<int> lhs(value1);
+        constexpr saga::unexpected<long> rhs(value2);
+
+        static_assert(lhs == lhs, "");
+        static_assert(rhs == rhs, "");
+
+        static_assert((lhs == rhs) == (value1 == value2), "");
+        static_assert((lhs == rhs) == (lhs.value() == rhs.value()), "");
+        static_assert((lhs != rhs) == !(lhs == rhs), "");
+    }
+
+    saga_test::property_checker << [](int value1, long value2)
+    {
+        saga::unexpected<int> const lhs(value1);
+        saga::unexpected<long> const rhs(value2);
+
+        REQUIRE(lhs == lhs);
+        REQUIRE(rhs == rhs);
+
+        REQUIRE((lhs == rhs) == (value1 == value2));
+        REQUIRE((lhs == rhs) == (lhs.value() == rhs.value()));
+        REQUIRE((lhs != rhs) == !(lhs == rhs));
     };
 }
 
