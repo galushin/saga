@@ -231,6 +231,80 @@ TEST_CASE("unexpected: one argument constructor")
 namespace
 {
     template <class T>
+    constexpr T copy_assign_and_return(T lhs, T const & rhs)
+    {
+        lhs = rhs;
+
+        return lhs;
+    }
+
+    template <class T>
+    constexpr T move_assign_and_return(T lhs, T rhs)
+    {
+        lhs = std::move(rhs);
+
+        return lhs;
+    }
+}
+
+TEST_CASE("unexpected : copy assign")
+{
+    {
+        constexpr saga::unexpected<int> obj1(2020);
+        constexpr saga::unexpected<int> obj2(42);
+
+        constexpr auto result = ::copy_assign_and_return(obj1, obj2);
+        static_assert(result == obj2, "");
+    }
+
+    using Value = int;
+
+    saga_test::property_checker << [](Value const & value_1, Value const & value_2)
+    {
+        saga::unexpected<Value> const obj1(value_1);
+        saga::unexpected<Value> obj2(value_2);
+
+        obj2 = obj1;
+
+        REQUIRE(obj2 == obj1);
+
+        static_assert(std::is_same<decltype(obj2 = obj1), saga::unexpected<Value>&>{}, "");
+    };
+}
+
+TEST_CASE("unexpected : move assign")
+{
+    {
+        constexpr saga::unexpected<int> obj1(2020);
+        constexpr saga::unexpected<int> obj2(42);
+
+        constexpr auto result = ::move_assign_and_return(obj1, obj2);
+        static_assert(result == obj2, "");
+    }
+
+    using Value = int;
+
+    saga_test::property_checker << [](Value const & value_1, Value const & value_2)
+    {
+        using Unexpected = saga::unexpected<std::unique_ptr<Value>>;
+
+        Unexpected obj1(std::make_unique<Value>(value_1));
+        auto const obj1_old_ptr = obj1.value().get();
+
+        Unexpected obj2(std::make_unique<Value>(value_2));
+
+        obj2 = std::move(obj1);
+
+        REQUIRE(obj2.value().get() == obj1_old_ptr);
+        REQUIRE(obj1.value() == nullptr);
+
+        static_assert(std::is_same<decltype(obj2 = std::move(obj1)), Unexpected &>{}, "");
+    };
+}
+
+namespace
+{
+    template <class T>
     constexpr saga::unexpected<T> assign_to_value(saga::unexpected<T> obj, T const & new_value)
     {
         obj.value() = new_value;

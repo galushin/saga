@@ -74,8 +74,9 @@ namespace saga
         // @todo Конструктор на основе unexpected<Other> const &
         // @todo Конструктор на основе unexpected<Other> &&
 
-        // @todo Присваивание - копирующее
-        // @todo Присваивание - с перемещением
+        constexpr unexpected & operator=(unexpected const &) = default;
+        constexpr unexpected & operator=(unexpected &&) = default;
+
         // @todo Присваивание - копирующее обобщённое
         // @todo Присваивание - с перемещением обобщённое
 
