@@ -77,7 +77,15 @@ namespace saga
         constexpr unexpected & operator=(unexpected const &) = default;
         constexpr unexpected & operator=(unexpected &&) = default;
 
-        // @todo Присваивание - копирующее обобщённое
+        // @todo Значение по умолчанию - когда есть неоднозначность?
+        template <class Err>
+        constexpr std::enable_if_t<std::is_assignable<Error &, Err const &>{}, unexpected &>
+        operator=(unexpected<Err> const & other)
+        {
+            this->value_ = other.value();
+            return *this;
+        }
+
         // @todo Присваивание - с перемещением обобщённое
 
         // Доступ к значению

@@ -230,16 +230,16 @@ TEST_CASE("unexpected: one argument constructor")
 
 namespace
 {
-    template <class T>
-    constexpr T copy_assign_and_return(T lhs, T const & rhs)
+    template <class T, class U>
+    constexpr T copy_assign_and_return(T lhs, U const & rhs)
     {
         lhs = rhs;
 
         return lhs;
     }
 
-    template <class T>
-    constexpr T move_assign_and_return(T lhs, T rhs)
+    template <class T, class U>
+    constexpr T move_assign_and_return(T lhs, U rhs)
     {
         lhs = std::move(rhs);
 
@@ -264,11 +264,12 @@ TEST_CASE("unexpected : copy assign")
         saga::unexpected<Value> const obj1(value_1);
         saga::unexpected<Value> obj2(value_2);
 
-        obj2 = obj1;
+        static_assert(std::is_same<decltype(obj2 = obj1), saga::unexpected<Value>&>{}, "");
+
+        auto const & result = (obj2 = obj1);
 
         REQUIRE(obj2 == obj1);
-
-        static_assert(std::is_same<decltype(obj2 = obj1), saga::unexpected<Value>&>{}, "");
+        REQUIRE(std::addressof(result) == std::addressof(obj2));
     };
 }
 
@@ -293,12 +294,44 @@ TEST_CASE("unexpected : move assign")
 
         Unexpected obj2(std::make_unique<Value>(value_2));
 
-        obj2 = std::move(obj1);
+        static_assert(std::is_same<decltype(obj2 = std::move(obj1)), Unexpected &>{}, "");
+        auto const & result = (obj2 = std::move(obj1));
 
         REQUIRE(obj2.value().get() == obj1_old_ptr);
         REQUIRE(obj1.value() == nullptr);
+        REQUIRE(std::addressof(result) == std::addressof(obj2));
 
-        static_assert(std::is_same<decltype(obj2 = std::move(obj1)), Unexpected &>{}, "");
+    };
+}
+
+TEST_CASE("unexpected : compatible copy assign")
+{
+    static_assert(std::is_assignable<long &, int const &>{}, "");
+    static_assert(std::is_assignable<saga::unexpected<long> &, saga::unexpected<int> const &>{},"");
+
+    static_assert(!std::is_assignable<int &, std::vector<int>>{},"");
+    static_assert(!std::is_assignable<saga::unexpected<int> &,
+                                      saga::unexpected<std::vector<int>> const &>{},"");
+
+    {
+        constexpr saga::unexpected<long> obj1(2020);
+        constexpr saga::unexpected<int> const obj2(34);
+
+        constexpr auto result = ::copy_assign_and_return(obj1, obj2);
+
+        static_assert(result.value() == obj2.value(), "");
+    }
+
+    saga_test::property_checker << [](long value1, int value2)
+    {
+        saga::unexpected<long> obj1(value1);
+        saga::unexpected<int> const obj2(value2);
+
+        static_assert(std::is_same<decltype(obj1 = obj2), decltype((obj1))>{}, "");
+        auto const & result = (obj1 = obj2);
+
+        REQUIRE(obj1.value() == obj2.value());
+        REQUIRE(std::addressof(result) == std::addressof(obj1));
     };
 }
 
