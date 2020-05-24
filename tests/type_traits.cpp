@@ -199,9 +199,6 @@ static_assert(saga::is_swappable<struct_2>{}, "");
 static_assert(!saga::is_swappable<rvalue_swap>{}, "");
 static_assert(!saga::is_swappable<rvalue_swap &&>{}, "");
 
-// is_swappable не удаляет cv-квалификатор
-static_assert(!saga::is_swappable<int const &>{}, "");
-
 // is_swappable - удалённый или неоднозначный swap
 static_assert(!saga::is_swappable<deleted_swap>{}, "");
 static_assert(!saga::is_swappable<ambiguous_swap_ns::ambiguous_swap>{}, "");
