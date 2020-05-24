@@ -26,11 +26,105 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/detail/static_empty_const.hpp>
+#include <saga/type_traits.hpp>
+#include <saga/utility/operators.hpp>
 
+#include <utility>
 #include <stdexcept>
 
 namespace saga
 {
+    //@todo Найти лучшее место, так как используется ещё и в optional
+    struct in_place_t
+    {
+        // @todo Почему конструкторе без аргументов должен быть явным?
+    };
+    // @todo in_place
+
+    template <class Error>
+    class unexpected
+    {
+    public:
+        // Конструкторы
+        constexpr unexpected(unexpected const &) = default;
+
+        constexpr unexpected(unexpected &&) = default;
+
+        template <class... Args,
+                  class = std::enable_if_t<std::is_constructible<Error, Args...>{}>>
+        constexpr explicit unexpected(saga::in_place_t, Args&&... args)
+         : value_(std::forward<Args>(args)...)
+        {}
+
+        // @todo explicit
+        template <class U, class... Args,
+                  class = std::enable_if_t<std::is_constructible<Error, std::initializer_list<U> &, Args...>{}>>
+        constexpr unexpected(saga::in_place_t, std::initializer_list<U> init, Args &&... args)
+         : value_(init, std::forward<Args>(args)...)
+        {}
+
+        template <class Err = Error,
+                  class = std::enable_if_t<std::is_constructible<Error, Err>{}>,
+                  class = std::enable_if_t<!std::is_same<saga::remove_cvref_t<Err>, in_place_t>{}>,
+                  class = std::enable_if_t<!std::is_same<saga::remove_cvref_t<Err>, unexpected>{}>>
+        constexpr explicit unexpected(Err && value)
+         : value_(std::forward<Err>(value))
+        {}
+
+        // @todo Конструктор на основе unexpected<Other> const &
+        // @todo Конструктор на основе unexpected<Other> &&
+
+        // @todo Присваивание - копирующее
+        // @todo Присваивание - с перемещением
+        // @todo Присваивание - копирующее обобщённое
+        // @todo Присваивание - с перемещением обобщённое
+
+        // @todo Доступ к значению
+        constexpr Error const & value() const & noexcept
+        {
+            return this->value_;
+        }
+        // @todo value() &
+        // @todo value() &&
+        // @todo value() const &&
+
+        void swap(unexpected & that) noexcept(saga::is_nothrow_swappable<Error>::value)
+        {
+            using std::swap;
+            swap(this->value_, that.value_);
+        }
+
+        template <class Error2>
+        friend
+        constexpr bool operator==(unexpected<Error> const & lhs, unexpected<Error2> const & rhs)
+        {
+            return lhs.value() == rhs.value();
+        }
+
+        template <class Error2>
+        friend
+        constexpr bool operator!=(unexpected<Error> const & lhs, unexpected<Error2> const & rhs)
+        {
+            return !(lhs == rhs);
+        }
+
+    private:
+        Error value_;
+    };
+    // @todo Подсказка для вывода типа шаблонных параметров
+
+    // @todo Можно ли превратить в скрытых друзей?
+    template <class Error>
+    std::enable_if_t<saga::is_swappable<Error>{}, void>
+    swap(unexpected<Error> & lhs, unexpected<Error> & rhs) noexcept(noexcept(lhs.swap(rhs)))
+    {
+        lhs.swap(rhs);
+    }
+
+    template <class Error>
+    std::enable_if_t<!saga::is_swappable<Error>{}, void>
+    swap(unexpected<Error> & lhs, unexpected<Error> & rhs) = delete;
+
     template <class Error>
     class bad_expected_access;
 
@@ -48,7 +142,8 @@ namespace saga
     {
     public:
         explicit bad_expected_access(Error error)
-         : error_(std::move(error))
+         : bad_expected_access<void>{}
+         , error_(std::move(error))
         {}
 
         Error & error() &
