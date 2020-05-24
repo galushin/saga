@@ -8,9 +8,10 @@
 [tests/saga_test.hpp:319]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/saga_test.hpp:323]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/saga_test.hpp:352]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/expected.cpp:153]: (style) Struct 'move_only' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:289]: (style) Struct 'throws_on_move' has a constructor with 1 argument that is not explicit.
 [tests/string_view.cpp:906]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/type_traits.cpp:85]: (style) struct member 'struct_1::value' is never used.
+[tests/type_traits.cpp:86]: (style) struct member 'struct_2::value' is never used.
+[tests/type_traits.cpp:87]: (style) struct member 'struct_3::value' is never used.
 [tests/utility/equality_comparable_box.cpp:147]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/view/indices.cpp:108]: (performance) Prefer prefix ++/-- operators for non-primitive types.
 [tests/view/indices.cpp:118]: (performance) Prefer prefix ++/-- operators for non-primitive types.
