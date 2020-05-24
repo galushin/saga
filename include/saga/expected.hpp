@@ -94,12 +94,6 @@ namespace saga
             swap(this->value_, that.value_);
         }
 
-        // @todo Не должна участвовать в разрешении перегрузки, если !is_swappable_v<Error>
-        friend void swap(unexpected & lhs, unexpected & rhs) noexcept(noexcept(lhs.swap(rhs)))
-        {
-            lhs.swap(rhs);
-        }
-
         template <class Error2>
         friend
         constexpr bool operator==(unexpected<Error> const & lhs, unexpected<Error2> const & rhs)
@@ -118,6 +112,18 @@ namespace saga
         Error value_;
     };
     // @todo Подсказка для вывода типа шаблонных параметров
+
+    // @todo Можно ли превратить в скрытых друзей?
+    template <class Error>
+    std::enable_if_t<saga::is_swappable<Error>{}, void>
+    swap(unexpected<Error> & lhs, unexpected<Error> & rhs) noexcept(noexcept(lhs.swap(rhs)))
+    {
+        lhs.swap(rhs);
+    }
+
+    template <class Error>
+    std::enable_if_t<!saga::is_swappable<Error>{}, void>
+    swap(unexpected<Error> & lhs, unexpected<Error> & rhs) = delete;
 
     template <class Error>
     class bad_expected_access;

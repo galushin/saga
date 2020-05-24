@@ -104,7 +104,7 @@ namespace
         {}
     };
 
-    struct struct_3 { int value; };
+    struct struct_3 {};
     struct struct_4 {};
 
     void swap(struct_1 &, struct_2 &) noexcept(false) {}

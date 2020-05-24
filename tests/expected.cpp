@@ -278,41 +278,30 @@ TEST_CASE("unexpected : swap - noexcept(true)")
 
         static_assert(noexcept(err1.swap(err2)), "");
         static_assert(noexcept(swap(err1, err2)), "");
+
+        static_assert(saga::is_swappable<saga::unexpected<Value>>{}, "");
+        static_assert(saga::is_nothrow_swappable<saga::unexpected<Value>>{}, "");
     };
 }
 
 namespace
 {
     template <class T>
-    struct throws_on_move
+    struct throwing_swap
     {
-        explicit throws_on_move(T init_value)
+        explicit throwing_swap(T init_value)
          : value(std::move(init_value))
         {}
 
-        throws_on_move(throws_on_move const & that) noexcept(false)
-         : value(that.value)
-        {}
-
-        throws_on_move(throws_on_move && that) noexcept(false)
-         : value(std::move(that.value))
-        {}
-
-        throws_on_move & operator=(throws_on_move const & that) noexcept(false)
-        {
-            this->value = that.value;
-            return *this;
-        }
-
-        throws_on_move & operator=(throws_on_move && that) noexcept(false)
-        {
-            this->value = std::move(that.value);
-            return *this;
-        }
-
-        friend bool operator==(throws_on_move const & lhs, throws_on_move const & rhs)
+        friend bool operator==(throwing_swap const & lhs, throwing_swap const & rhs)
         {
             return lhs.value == rhs.value;
+        }
+
+        friend void swap(throwing_swap & lhs, throwing_swap & rhs) noexcept(false)
+        {
+            using std::swap;
+            swap(lhs.value, rhs.value);
         }
 
         T value;
@@ -321,7 +310,7 @@ namespace
 
 TEST_CASE("unexpected : swap - noexcept(false)")
 {
-    using Value = ::throws_on_move<int>;
+    using Value = ::throwing_swap<int>;
     {
         using std::swap;
         static_assert(!noexcept(swap(std::declval<Value&>(), std::declval<Value&>())), "");
@@ -347,10 +336,31 @@ TEST_CASE("unexpected : swap - noexcept(false)")
 
         static_assert(!noexcept(err1.swap(err2)), "");
         static_assert(!noexcept(swap(err1, err2)), "");
+
+        static_assert(saga::is_swappable<saga::unexpected<Value>>{}, "");
+        static_assert(!saga::is_nothrow_swappable<saga::unexpected<Value>>{}, "");
     };
 }
 
-// @todo swap не определено, если нельзя обменять объекты типа шаблонного параметра
+namespace
+{
+    struct deleted_swap
+    {
+        deleted_swap() = default;
+
+        deleted_swap(deleted_swap const &) = delete;
+        deleted_swap(deleted_swap &&) = delete;
+        deleted_swap & operator=(deleted_swap const &) = delete;
+        deleted_swap & operator=(deleted_swap &&) = delete;
+
+        friend void swap(deleted_swap &, deleted_swap &) noexcept = delete;
+    };
+
+    static_assert(!saga::is_swappable<deleted_swap>{}, "");
+    static_assert(!saga::is_swappable<saga::unexpected<deleted_swap>>{}, "");
+    static_assert(!saga::is_nothrow_swappable<deleted_swap>{}, "");
+    static_assert(!saga::is_nothrow_swappable<saga::unexpected<deleted_swap>>{}, "");
+}
 
 TEST_CASE("unexpected : operators == and !=")
 {
