@@ -79,14 +79,26 @@ namespace saga
         // @todo Присваивание - копирующее обобщённое
         // @todo Присваивание - с перемещением обобщённое
 
-        // @todo Доступ к значению
+        // Доступ к значению
         constexpr Error const & value() const & noexcept
         {
             return this->value_;
         }
-        // @todo value() &
-        // @todo value() &&
-        // @todo value() const &&
+
+        constexpr Error & value() & noexcept
+        {
+            return this->value_;
+        }
+
+        constexpr Error && value() && noexcept
+        {
+            return std::move(this->value_);
+        }
+
+        constexpr Error const && value() const && noexcept
+        {
+            return std::move(this->value_);
+        }
 
         void swap(unexpected & that) noexcept(saga::is_nothrow_swappable<Error>::value)
         {

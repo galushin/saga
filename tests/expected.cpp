@@ -230,6 +230,104 @@ TEST_CASE("unexpected: one argument constructor")
 
 namespace
 {
+    template <class T>
+    constexpr saga::unexpected<T> assign_to_value(saga::unexpected<T> obj, T const & new_value)
+    {
+        obj.value() = new_value;
+        return obj;
+    }
+}
+
+TEST_CASE("unexpected : value() &")
+{
+    {
+        constexpr int init_value = 42;
+        constexpr int new_value = 17;
+
+        constexpr saga::unexpected<int> err(init_value);
+        constexpr auto new_err = ::assign_to_value(err, new_value);
+
+        static_assert(new_err.value() == new_value, "");
+    }
+
+    using Value = std::string;
+
+    saga_test::property_checker << [](Value const & init_value, Value const & new_value)
+    {
+        saga::unexpected<Value> obj(init_value);
+
+        static_assert(std::is_same<decltype(obj.value()), Value &>{}, "");
+        static_assert(noexcept(obj.value()), "");
+
+        obj.value() = new_value;
+
+        auto const & c_ref = obj;
+        REQUIRE(c_ref.value() == new_value);
+    };
+}
+
+namespace
+{
+    template <class T>
+    constexpr T use_constexpr_value(saga::unexpected<T> obj)
+    {
+        return std::move(obj).value();
+    }
+}
+
+TEST_CASE("unexpected : value() &&")
+{
+    {
+        constexpr int init_value = 42;
+
+        constexpr saga::unexpected<int> err(init_value);
+
+        constexpr auto sink = ::use_constexpr_value(err);
+
+        static_assert(sink == init_value, "");
+    }
+
+    using Value = std::vector<int>;
+
+    saga_test::property_checker << [](Value const & value)
+    {
+        saga::unexpected<Value> obj(value);
+
+        Value const sink = std::move(obj).value();
+
+        static_assert(std::is_same<decltype(std::move(obj).value()), Value &&>{}, "");
+        static_assert(noexcept(std::move(obj).value()), "");
+
+        REQUIRE(sink == value);
+
+        auto const & c_ref = obj;
+        REQUIRE(c_ref.value().empty());
+    };
+}
+
+TEST_CASE("unexpected : value() const &&")
+{
+    {
+        constexpr int init_value = 42;
+        constexpr saga::unexpected<int> err(init_value);
+
+        static_assert(std::move(err).value() == init_value, "");
+    }
+
+    using Value = int;
+    saga_test::property_checker << [](Value const & value)
+    {
+        saga::unexpected<Value> const obj(value);
+
+        static_assert(std::is_same<decltype(std::move(obj).value()), Value const &&>{}, "");
+        static_assert(noexcept(std::move(obj).value()), "");
+
+        REQUIRE(std::move(obj).value() == value);
+    };
+}
+
+namespace
+{
     template <class Value>
     void check_swap_member(Value const & value1, Value const & value2)
     {
