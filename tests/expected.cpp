@@ -337,6 +337,55 @@ TEST_CASE("unexpected : compatible copy assign")
 
 namespace
 {
+    class Base
+    {
+    public:
+        virtual ~Base() {};
+    };
+
+    class Derived
+     : public Base
+    {};
+}
+
+TEST_CASE("unexpected : compatible move assign")
+{
+    static_assert(std::is_assignable<std::unique_ptr<Base> &, std::unique_ptr<Derived>>{}, "");
+    static_assert(std::is_assignable<saga::unexpected<std::unique_ptr<Base>> &,
+                                     saga::unexpected<std::unique_ptr<Derived>>>{}, "");
+    static_assert(!std::is_assignable<std::unique_ptr<long> &, std::unique_ptr<int>>{}, "");
+    static_assert(!std::is_assignable<saga::unexpected<std::unique_ptr<long>> &,
+                                      saga::unexpected<std::unique_ptr<int>>>{}, "");
+
+    {
+        constexpr saga::unexpected<long> obj1(2505);
+        constexpr saga::unexpected<int> obj2(2020);
+
+        constexpr auto result = ::move_assign_and_return(obj1, obj2);
+
+        static_assert(result == obj2, "");
+    }
+    {
+        saga::unexpected<std::unique_ptr<Base>> obj1(saga::in_place_t{});
+        saga::unexpected<std::unique_ptr<Derived>> obj2(std::make_unique<Derived>());
+
+        REQUIRE(obj1.value().get() == nullptr);
+        REQUIRE(obj2.value().get() != nullptr);
+
+        auto const obj2_ptr = obj2.value().get();
+
+        static_assert(std::is_same<decltype(obj1 = std::move(obj2)), decltype((obj1))>{}, "");
+        auto const & result = (obj1 = std::move(obj2));
+
+        REQUIRE(obj2.value().get() == nullptr);
+        REQUIRE(obj1.value().get() == obj2_ptr);
+
+        REQUIRE(std::addressof(result) == std::addressof(obj1));
+    };
+}
+
+namespace
+{
     template <class T>
     constexpr saga::unexpected<T> assign_to_value(saga::unexpected<T> obj, T const & new_value)
     {
