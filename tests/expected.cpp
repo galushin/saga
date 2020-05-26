@@ -230,6 +230,91 @@ TEST_CASE("unexpected: one argument constructor")
 
 namespace
 {
+    // Нет конструктора для несовместимого
+    static_assert(!std::is_constructible<int, std::vector<int>>{}, "");
+    static_assert(!std::is_constructible<saga::unexpected<int>,
+                                         saga::unexpected<std::vector<int>>>{}, "");
+
+    struct explicit_ctor_from_int
+    {
+        constexpr explicit explicit_ctor_from_int(int value)
+         : value(value)
+        {}
+
+        int value;
+    };
+}
+
+TEST_CASE("unexpected : constructor from compatible unexpected - explicit")
+{
+    // Конструктор из совместимного unexpected - явный
+    static_assert(std::is_constructible<explicit_ctor_from_int, int>{}, "");
+    static_assert(std::is_constructible<saga::unexpected<explicit_ctor_from_int>,
+                                        saga::unexpected<int>>{}, "");
+    static_assert(!std::is_convertible<int, explicit_ctor_from_int>{}, "");
+    static_assert(!std::is_convertible<saga::unexpected<int>,
+                                       saga::unexpected<explicit_ctor_from_int>>{}, "");
+
+    {
+        // @todo constexpr - указатели?
+        constexpr saga::unexpected<int> src(42);
+        constexpr saga::unexpected<explicit_ctor_from_int> obj(src);
+
+        static_assert(obj.value().value == src.value(), "");
+    }
+
+    static_assert(std::is_constructible<std::vector<int>, std::size_t>{}, "");
+    static_assert(std::is_constructible<saga::unexpected<std::vector<int>>,
+                                        saga::unexpected<std::size_t>>{}, "");
+    static_assert(!std::is_convertible<std::size_t, std::vector<int>>{}, "");
+    static_assert(!std::is_convertible<saga::unexpected<std::size_t>,
+                                       saga::unexpected<std::vector<int>>>{}, "");
+
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> num)
+    {
+        saga::unexpected<std::size_t> const elem_count(num);
+        saga::unexpected<std::vector<int>> const err(elem_count);
+
+        REQUIRE(err.value() == std::vector<int>(num));
+    };
+}
+
+TEST_CASE("unexpected : constructor from compatible unexpected - implicit")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    static_assert(std::is_constructible<Value2, Value1>{}, "");
+    static_assert(std::is_convertible<Value1, Value2>{}, "");
+
+    static_assert(std::is_constructible<saga::unexpected<Value2>, saga::unexpected<Value1>>{}, "");
+    static_assert(std::is_convertible<saga::unexpected<Value1>, saga::unexpected<Value2>>{}, "");
+
+    {
+        constexpr Value1 value{42};
+        constexpr saga::unexpected<Value1> const obj1(value);
+
+        constexpr saga::unexpected<Value2> const obj2(obj1);
+
+        constexpr auto const value2 = Value2(value);
+
+        static_assert(obj2.value() == value2, "");
+    }
+
+    saga_test::property_checker << [](Value1 const & value)
+    {
+        saga::unexpected<Value1> const obj1(value);
+
+        saga::unexpected<Value2> const obj2(obj1);
+
+        auto const value2 = Value2(value);
+
+        REQUIRE(obj2.value() == value2);
+    };
+}
+
+namespace
+{
     template <class T, class U>
     constexpr T copy_assign_and_return(T lhs, U const & rhs)
     {

@@ -71,7 +71,24 @@ namespace saga
          : value_(std::forward<Err>(value))
         {}
 
-        // @todo Конструктор на основе unexpected<Other> const &
+        // Конструктор на основе unexpected<Other> const &
+        // @todo Реализовать все остальные ограничения кроме первого
+        template <class Err,
+                  std::enable_if_t<std::is_convertible<Err const &, Error>{}, bool> = false,
+                  class = std::enable_if_t<std::is_constructible<Error, Err>{}>>
+        constexpr unexpected(unexpected<Err> const & other)
+         : value_(other.value())
+        {}
+
+        // Конструктор на основе unexpected<Other> const &
+        // @todo Реализовать все остальные ограничения кроме первого
+        template <class Err,
+                  std::enable_if_t<!std::is_convertible<Err const &, Error>{}, bool> = false,
+                  class = std::enable_if_t<std::is_constructible<Error, Err>{}>>
+        constexpr explicit unexpected(unexpected<Err> const & other)
+         : value_(other.value())
+        {}
+
         // @todo Конструктор на основе unexpected<Other> &&
 
         constexpr unexpected & operator=(unexpected const &) = default;
