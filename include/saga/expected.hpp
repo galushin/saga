@@ -80,7 +80,6 @@ namespace saga
          : value_(other.value())
         {}
 
-        // Конструктор на основе unexpected<Other> const &
         // @todo Реализовать все остальные ограничения кроме первого
         template <class Err,
                   std::enable_if_t<!std::is_convertible<Err const &, Error>{}, bool> = false,
@@ -89,7 +88,22 @@ namespace saga
          : value_(other.value())
         {}
 
-        // @todo Конструктор на основе unexpected<Other> &&
+        // Конструктор на основе unexpected<Other> &&
+        // @todo Ограничения типа - сделано только первое
+        template <class Err,
+                  std::enable_if_t<std::is_convertible<Err, Error>{}, bool> = false,
+                  class = std::enable_if_t<std::is_constructible<Error, Err>{}>>
+        constexpr unexpected(unexpected<Err> && other)
+         : value_(std::move(other).value())
+        {}
+
+        // @todo Ограничения типа - сделано только первое
+        template <class Err,
+                  std::enable_if_t<!std::is_convertible<Err, Error>{}, bool> = false,
+                  class = std::enable_if_t<std::is_constructible<Error, Err>{}>>
+        constexpr explicit unexpected(unexpected<Err> && other)
+         : value_(std::move(other).value())
+        {}
 
         constexpr unexpected & operator=(unexpected const &) = default;
         constexpr unexpected & operator=(unexpected &&) = default;

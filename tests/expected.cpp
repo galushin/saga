@@ -245,29 +245,28 @@ namespace
     };
 }
 
-TEST_CASE("unexpected : constructor from compatible unexpected - explicit")
+TEST_CASE("unexpected : copy constructor from compatible unexpected - explicit")
 {
     // Конструктор из совместимного unexpected - явный
-    static_assert(std::is_constructible<explicit_ctor_from_int, int>{}, "");
+    static_assert(std::is_constructible<explicit_ctor_from_int, int const &>{}, "");
     static_assert(std::is_constructible<saga::unexpected<explicit_ctor_from_int>,
-                                        saga::unexpected<int>>{}, "");
-    static_assert(!std::is_convertible<int, explicit_ctor_from_int>{}, "");
-    static_assert(!std::is_convertible<saga::unexpected<int>,
+                                        saga::unexpected<int> const &>{}, "");
+    static_assert(!std::is_convertible<int const &, explicit_ctor_from_int>{}, "");
+    static_assert(!std::is_convertible<saga::unexpected<int> const &,
                                        saga::unexpected<explicit_ctor_from_int>>{}, "");
 
     {
-        // @todo constexpr - указатели?
         constexpr saga::unexpected<int> src(42);
         constexpr saga::unexpected<explicit_ctor_from_int> obj(src);
 
         static_assert(obj.value().value == src.value(), "");
     }
 
-    static_assert(std::is_constructible<std::vector<int>, std::size_t>{}, "");
+    static_assert(std::is_constructible<std::vector<int>, std::size_t const &>{}, "");
     static_assert(std::is_constructible<saga::unexpected<std::vector<int>>,
-                                        saga::unexpected<std::size_t>>{}, "");
-    static_assert(!std::is_convertible<std::size_t, std::vector<int>>{}, "");
-    static_assert(!std::is_convertible<saga::unexpected<std::size_t>,
+                                        saga::unexpected<std::size_t> const &>{}, "");
+    static_assert(!std::is_convertible<std::size_t const &, std::vector<int>>{}, "");
+    static_assert(!std::is_convertible<saga::unexpected<std::size_t> const &,
                                        saga::unexpected<std::vector<int>>>{}, "");
 
     saga_test::property_checker << [](saga_test::container_size<std::size_t> num)
@@ -279,7 +278,7 @@ TEST_CASE("unexpected : constructor from compatible unexpected - explicit")
     };
 }
 
-TEST_CASE("unexpected : constructor from compatible unexpected - implicit")
+TEST_CASE("unexpected : copy constructor from compatible unexpected - implicit")
 {
     using Value1 = int;
     using Value2 = long;
@@ -310,6 +309,78 @@ TEST_CASE("unexpected : constructor from compatible unexpected - implicit")
         auto const value2 = Value2(value);
 
         REQUIRE(obj2.value() == value2);
+    };
+}
+
+namespace
+{
+    class Base
+    {
+    public:
+        virtual ~Base() {};
+    };
+
+    class Derived
+     : public Base
+    {};
+}
+
+TEST_CASE("unexpected : compatrible move ctor - explciit")
+{
+    // Конструктор из совместимного unexpected - явный
+    static_assert(std::is_constructible<explicit_ctor_from_int, int>{}, "");
+    static_assert(std::is_constructible<saga::unexpected<explicit_ctor_from_int>,
+                                        saga::unexpected<int>>{}, "");
+    static_assert(!std::is_convertible<int, explicit_ctor_from_int>{}, "");
+    static_assert(!std::is_convertible<saga::unexpected<int>,
+                                       saga::unexpected<explicit_ctor_from_int>>{}, "");
+
+    {
+        constexpr int value = 42;
+        constexpr saga::unexpected<explicit_ctor_from_int> obj{saga::unexpected<int>(value)};
+
+        static_assert(obj.value().value == value, "");
+    }
+
+    static_assert(std::is_constructible<std::vector<int>, std::size_t>{}, "");
+    static_assert(std::is_constructible<saga::unexpected<std::vector<int>>,
+                                        saga::unexpected<std::size_t>>{}, "");
+    static_assert(!std::is_convertible<std::size_t, std::vector<int>>{}, "");
+    static_assert(!std::is_convertible<saga::unexpected<std::size_t>,
+                                       saga::unexpected<std::vector<int>>>{}, "");
+
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> num)
+    {
+        saga::unexpected<std::size_t> const elem_count(num);
+        saga::unexpected<std::vector<int>> const err(elem_count);
+
+        REQUIRE(err.value() == std::vector<int>(num));
+    };
+}
+
+TEST_CASE("unexpected : compatible move ctor - implicit")
+{
+    static_assert(std::is_constructible<std::unique_ptr<Base>, std::unique_ptr<Derived>>{}, "");
+    static_assert(std::is_assignable<saga::unexpected<std::unique_ptr<Base>>,
+                                     saga::unexpected<std::unique_ptr<Derived>>>{}, "");
+    static_assert(!std::is_constructible<std::unique_ptr<long>, std::unique_ptr<int>>{}, "");
+    static_assert(!std::is_constructible<saga::unexpected<std::unique_ptr<long>>,
+                                         saga::unexpected<std::unique_ptr<int>>>{}, "");
+
+    {
+        constexpr int value = 2020;
+        constexpr saga::unexpected<long> obj{saga::unexpected<int>(value)};
+
+        static_assert(obj.value() == value, "");
+    }
+    {
+        saga::unexpected<std::unique_ptr<Derived>> src(std::make_unique<Derived>());
+        auto const src_ptr = src.value().get();
+
+        saga::unexpected<std::unique_ptr<Base>> const obj(std::move(src));
+
+        REQUIRE(obj.value().get() == src_ptr);
+        REQUIRE(src.value().get() == nullptr);
     };
 }
 
@@ -418,19 +489,6 @@ TEST_CASE("unexpected : compatible copy assign")
         REQUIRE(obj1.value() == obj2.value());
         REQUIRE(std::addressof(result) == std::addressof(obj1));
     };
-}
-
-namespace
-{
-    class Base
-    {
-    public:
-        virtual ~Base() {};
-    };
-
-    class Derived
-     : public Base
-    {};
 }
 
 TEST_CASE("unexpected : compatible move assign")
