@@ -790,6 +790,24 @@ TEST_CASE("unexpected : operators == and !=")
     };
 }
 
+// Вывод шаблонных параметров
+#if __cpp_deduction_guides >= 201703
+TEST_CASE("unexpected : CTAD")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](Value const & value)
+    {
+        saga::unexpected const obj(value);
+
+        static_assert(std::is_same<decltype(obj), saga::unexpected<Value> const>{}, "");
+
+        REQUIRE(obj.value() == value);
+    };
+}
+#endif
+// __cpp_deduction_guides
+
 // 6. bad_expected_access
 namespace
 {
