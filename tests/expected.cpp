@@ -230,6 +230,403 @@ TEST_CASE("unexpected: one argument constructor")
 
 namespace
 {
+    // Нет конструктора для несовместимого
+    static_assert(!std::is_constructible<int, std::vector<int>>{}, "");
+    static_assert(!std::is_constructible<saga::unexpected<int>,
+                                         saga::unexpected<std::vector<int>>>{}, "");
+
+    struct explicit_ctor_from_int
+    {
+        constexpr explicit explicit_ctor_from_int(int value)
+         : value(value)
+        {}
+
+        int value;
+    };
+}
+
+TEST_CASE("unexpected : copy constructor from compatible unexpected - explicit")
+{
+    // Конструктор из совместимного unexpected - явный
+    static_assert(std::is_constructible<explicit_ctor_from_int, int const &>{}, "");
+    static_assert(std::is_constructible<saga::unexpected<explicit_ctor_from_int>,
+                                        saga::unexpected<int> const &>{}, "");
+    static_assert(!std::is_convertible<int const &, explicit_ctor_from_int>{}, "");
+    static_assert(!std::is_convertible<saga::unexpected<int> const &,
+                                       saga::unexpected<explicit_ctor_from_int>>{}, "");
+
+    {
+        constexpr saga::unexpected<int> src(42);
+        constexpr saga::unexpected<explicit_ctor_from_int> obj(src);
+
+        static_assert(obj.value().value == src.value(), "");
+    }
+
+    static_assert(std::is_constructible<std::vector<int>, std::size_t const &>{}, "");
+    static_assert(std::is_constructible<saga::unexpected<std::vector<int>>,
+                                        saga::unexpected<std::size_t> const &>{}, "");
+    static_assert(!std::is_convertible<std::size_t const &, std::vector<int>>{}, "");
+    static_assert(!std::is_convertible<saga::unexpected<std::size_t> const &,
+                                       saga::unexpected<std::vector<int>>>{}, "");
+
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> num)
+    {
+        saga::unexpected<std::size_t> const elem_count(num);
+        saga::unexpected<std::vector<int>> const err(elem_count);
+
+        REQUIRE(err.value() == std::vector<int>(num));
+    };
+}
+
+TEST_CASE("unexpected : copy constructor from compatible unexpected - implicit")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    static_assert(std::is_constructible<Value2, Value1>{}, "");
+    static_assert(std::is_convertible<Value1, Value2>{}, "");
+
+    static_assert(std::is_constructible<saga::unexpected<Value2>, saga::unexpected<Value1>>{}, "");
+    static_assert(std::is_convertible<saga::unexpected<Value1>, saga::unexpected<Value2>>{}, "");
+
+    {
+        constexpr Value1 value{42};
+        constexpr saga::unexpected<Value1> const obj1(value);
+
+        constexpr saga::unexpected<Value2> const obj2(obj1);
+
+        constexpr auto const value2 = Value2(value);
+
+        static_assert(obj2.value() == value2, "");
+    }
+
+    saga_test::property_checker << [](Value1 const & value)
+    {
+        saga::unexpected<Value1> const obj1(value);
+
+        saga::unexpected<Value2> const obj2(obj1);
+
+        auto const value2 = Value2(value);
+
+        REQUIRE(obj2.value() == value2);
+    };
+}
+
+namespace
+{
+    class Base
+    {
+    public:
+        virtual ~Base() {};
+    };
+
+    class Derived
+     : public Base
+    {};
+}
+
+TEST_CASE("unexpected : compatrible move ctor - explciit")
+{
+    // Конструктор из совместимного unexpected - явный
+    static_assert(std::is_constructible<explicit_ctor_from_int, int>{}, "");
+    static_assert(std::is_constructible<saga::unexpected<explicit_ctor_from_int>,
+                                        saga::unexpected<int>>{}, "");
+    static_assert(!std::is_convertible<int, explicit_ctor_from_int>{}, "");
+    static_assert(!std::is_convertible<saga::unexpected<int>,
+                                       saga::unexpected<explicit_ctor_from_int>>{}, "");
+
+    {
+        constexpr int value = 42;
+        constexpr saga::unexpected<explicit_ctor_from_int> obj{saga::unexpected<int>(value)};
+
+        static_assert(obj.value().value == value, "");
+    }
+
+    static_assert(std::is_constructible<std::vector<int>, std::size_t>{}, "");
+    static_assert(std::is_constructible<saga::unexpected<std::vector<int>>,
+                                        saga::unexpected<std::size_t>>{}, "");
+    static_assert(!std::is_convertible<std::size_t, std::vector<int>>{}, "");
+    static_assert(!std::is_convertible<saga::unexpected<std::size_t>,
+                                       saga::unexpected<std::vector<int>>>{}, "");
+
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> num)
+    {
+        saga::unexpected<std::size_t> const elem_count(num);
+        saga::unexpected<std::vector<int>> const err(elem_count);
+
+        REQUIRE(err.value() == std::vector<int>(num));
+    };
+}
+
+TEST_CASE("unexpected : compatible move ctor - implicit")
+{
+    static_assert(std::is_constructible<std::unique_ptr<Base>, std::unique_ptr<Derived>>{}, "");
+    static_assert(std::is_assignable<saga::unexpected<std::unique_ptr<Base>>,
+                                     saga::unexpected<std::unique_ptr<Derived>>>{}, "");
+    static_assert(!std::is_constructible<std::unique_ptr<long>, std::unique_ptr<int>>{}, "");
+    static_assert(!std::is_constructible<saga::unexpected<std::unique_ptr<long>>,
+                                         saga::unexpected<std::unique_ptr<int>>>{}, "");
+
+    {
+        constexpr int value = 2020;
+        constexpr saga::unexpected<long> obj{saga::unexpected<int>(value)};
+
+        static_assert(obj.value() == value, "");
+    }
+    {
+        saga::unexpected<std::unique_ptr<Derived>> src(std::make_unique<Derived>());
+        auto const src_ptr = src.value().get();
+
+        saga::unexpected<std::unique_ptr<Base>> const obj(std::move(src));
+
+        REQUIRE(obj.value().get() == src_ptr);
+        REQUIRE(src.value().get() == nullptr);
+    };
+}
+
+namespace
+{
+    template <class T, class U>
+    constexpr T copy_assign_and_return(T lhs, U const & rhs)
+    {
+        lhs = rhs;
+
+        return lhs;
+    }
+
+    template <class T, class U>
+    constexpr T move_assign_and_return(T lhs, U rhs)
+    {
+        lhs = std::move(rhs);
+
+        return lhs;
+    }
+}
+
+TEST_CASE("unexpected : copy assign")
+{
+    {
+        constexpr saga::unexpected<int> obj1(2020);
+        constexpr saga::unexpected<int> obj2(42);
+
+        constexpr auto result = ::copy_assign_and_return(obj1, obj2);
+        static_assert(result == obj2, "");
+    }
+
+    using Value = int;
+
+    saga_test::property_checker << [](Value const & value_1, Value const & value_2)
+    {
+        saga::unexpected<Value> const obj1(value_1);
+        saga::unexpected<Value> obj2(value_2);
+
+        static_assert(std::is_same<decltype(obj2 = obj1), saga::unexpected<Value>&>{}, "");
+
+        auto const & result = (obj2 = obj1);
+
+        REQUIRE(obj2 == obj1);
+        REQUIRE(std::addressof(result) == std::addressof(obj2));
+    };
+}
+
+TEST_CASE("unexpected : move assign")
+{
+    {
+        constexpr saga::unexpected<int> obj1(2020);
+        constexpr saga::unexpected<int> obj2(42);
+
+        constexpr auto result = ::move_assign_and_return(obj1, obj2);
+        static_assert(result == obj2, "");
+    }
+
+    using Value = int;
+
+    saga_test::property_checker << [](Value const & value_1, Value const & value_2)
+    {
+        using Unexpected = saga::unexpected<std::unique_ptr<Value>>;
+
+        Unexpected obj1(std::make_unique<Value>(value_1));
+        auto const obj1_old_ptr = obj1.value().get();
+
+        Unexpected obj2(std::make_unique<Value>(value_2));
+
+        static_assert(std::is_same<decltype(obj2 = std::move(obj1)), Unexpected &>{}, "");
+        auto const & result = (obj2 = std::move(obj1));
+
+        REQUIRE(obj2.value().get() == obj1_old_ptr);
+        REQUIRE(obj1.value() == nullptr);
+        REQUIRE(std::addressof(result) == std::addressof(obj2));
+
+    };
+}
+
+TEST_CASE("unexpected : compatible copy assign")
+{
+    static_assert(std::is_assignable<long &, int const &>{}, "");
+    static_assert(std::is_assignable<saga::unexpected<long> &, saga::unexpected<int> const &>{},"");
+
+    static_assert(!std::is_assignable<int &, std::vector<int>>{},"");
+    static_assert(!std::is_assignable<saga::unexpected<int> &,
+                                      saga::unexpected<std::vector<int>> const &>{},"");
+
+    {
+        constexpr saga::unexpected<long> obj1(2020);
+        constexpr saga::unexpected<int> const obj2(34);
+
+        constexpr auto result = ::copy_assign_and_return(obj1, obj2);
+
+        static_assert(result.value() == obj2.value(), "");
+    }
+
+    saga_test::property_checker << [](long value1, int value2)
+    {
+        saga::unexpected<long> obj1(value1);
+        saga::unexpected<int> const obj2(value2);
+
+        static_assert(std::is_same<decltype(obj1 = obj2), decltype((obj1))>{}, "");
+        auto const & result = (obj1 = obj2);
+
+        REQUIRE(obj1.value() == obj2.value());
+        REQUIRE(std::addressof(result) == std::addressof(obj1));
+    };
+}
+
+TEST_CASE("unexpected : compatible move assign")
+{
+    static_assert(std::is_assignable<std::unique_ptr<Base> &, std::unique_ptr<Derived>>{}, "");
+    static_assert(std::is_assignable<saga::unexpected<std::unique_ptr<Base>> &,
+                                     saga::unexpected<std::unique_ptr<Derived>>>{}, "");
+    static_assert(!std::is_assignable<std::unique_ptr<long> &, std::unique_ptr<int>>{}, "");
+    static_assert(!std::is_assignable<saga::unexpected<std::unique_ptr<long>> &,
+                                      saga::unexpected<std::unique_ptr<int>>>{}, "");
+
+    {
+        constexpr saga::unexpected<long> obj1(2505);
+        constexpr saga::unexpected<int> obj2(2020);
+
+        constexpr auto result = ::move_assign_and_return(obj1, obj2);
+
+        static_assert(result == obj2, "");
+    }
+    {
+        saga::unexpected<std::unique_ptr<Base>> obj1(saga::in_place_t{});
+        saga::unexpected<std::unique_ptr<Derived>> obj2(std::make_unique<Derived>());
+
+        REQUIRE(obj1.value().get() == nullptr);
+        REQUIRE(obj2.value().get() != nullptr);
+
+        auto const obj2_ptr = obj2.value().get();
+
+        static_assert(std::is_same<decltype(obj1 = std::move(obj2)), decltype((obj1))>{}, "");
+        auto const & result = (obj1 = std::move(obj2));
+
+        REQUIRE(obj2.value().get() == nullptr);
+        REQUIRE(obj1.value().get() == obj2_ptr);
+
+        REQUIRE(std::addressof(result) == std::addressof(obj1));
+    };
+}
+
+namespace
+{
+    template <class T>
+    constexpr saga::unexpected<T> assign_to_value(saga::unexpected<T> obj, T const & new_value)
+    {
+        obj.value() = new_value;
+        return obj;
+    }
+}
+
+TEST_CASE("unexpected : value() &")
+{
+    {
+        constexpr int init_value = 42;
+        constexpr int new_value = 17;
+
+        constexpr saga::unexpected<int> err(init_value);
+        constexpr auto new_err = ::assign_to_value(err, new_value);
+
+        static_assert(new_err.value() == new_value, "");
+    }
+
+    using Value = std::string;
+
+    saga_test::property_checker << [](Value const & init_value, Value const & new_value)
+    {
+        saga::unexpected<Value> obj(init_value);
+
+        static_assert(std::is_same<decltype(obj.value()), Value &>{}, "");
+        static_assert(noexcept(obj.value()), "");
+
+        obj.value() = new_value;
+
+        auto const & c_ref = obj;
+        REQUIRE(c_ref.value() == new_value);
+    };
+}
+
+namespace
+{
+    template <class T>
+    constexpr T use_constexpr_value(saga::unexpected<T> obj)
+    {
+        return std::move(obj).value();
+    }
+}
+
+TEST_CASE("unexpected : value() &&")
+{
+    {
+        constexpr int init_value = 42;
+
+        constexpr saga::unexpected<int> err(init_value);
+
+        constexpr auto sink = ::use_constexpr_value(err);
+
+        static_assert(sink == init_value, "");
+    }
+
+    using Value = std::vector<int>;
+
+    saga_test::property_checker << [](Value const & value)
+    {
+        saga::unexpected<Value> obj(value);
+
+        Value const sink = std::move(obj).value();
+
+        static_assert(std::is_same<decltype(std::move(obj).value()), Value &&>{}, "");
+        static_assert(noexcept(std::move(obj).value()), "");
+
+        REQUIRE(sink == value);
+
+        auto const & c_ref = obj;
+        REQUIRE(c_ref.value().empty());
+    };
+}
+
+TEST_CASE("unexpected : value() const &&")
+{
+    {
+        constexpr int init_value = 42;
+        constexpr saga::unexpected<int> err(init_value);
+
+        static_assert(std::move(err).value() == init_value, "");
+    }
+
+    using Value = int;
+    saga_test::property_checker << [](Value const & value)
+    {
+        saga::unexpected<Value> const obj(value);
+
+        static_assert(std::is_same<decltype(std::move(obj).value()), Value const &&>{}, "");
+        static_assert(noexcept(std::move(obj).value()), "");
+
+        REQUIRE(std::move(obj).value() == value);
+    };
+}
+
+namespace
+{
     template <class Value>
     void check_swap_member(Value const & value1, Value const & value2)
     {
@@ -392,6 +789,24 @@ TEST_CASE("unexpected : operators == and !=")
         REQUIRE((lhs != rhs) == !(lhs == rhs));
     };
 }
+
+// Вывод шаблонных параметров
+#if __cpp_deduction_guides >= 201703
+TEST_CASE("unexpected : CTAD")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](Value const & value)
+    {
+        saga::unexpected const obj(value);
+
+        static_assert(std::is_same<decltype(obj), saga::unexpected<Value> const>{}, "");
+
+        REQUIRE(obj.value() == value);
+    };
+}
+#endif
+// __cpp_deduction_guides
 
 // 6. bad_expected_access
 namespace

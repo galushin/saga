@@ -22,7 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Класс для представления ожидаемого объекта. Объект типа expected<T, E> содержит объект
  типа T или объект типа unexpected<E> и управляет временем жизни содержащихся в нём объектов.
 
- Реализация основана на http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0323r8.html
+ Реализация основана на http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0323r9.html
 */
 
 #include <saga/detail/static_empty_const.hpp>
@@ -34,6 +34,22 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    namespace detail
+    {
+        template <class From, class To>
+        constexpr bool can_convert()
+        {
+            return std::is_constructible<To, From&>{}
+                    or std::is_constructible<To, From>{}
+                    or std::is_constructible<To, From const &>{}
+                    or std::is_constructible<To, From const>{}
+                    or std::is_convertible<From &, To>{}
+                    or std::is_convertible<From, To>{}
+                    or std::is_convertible<From const &, To>{}
+                    or std::is_convertible<From const, To>{};
+        }
+    }
+
     //@todo Найти лучшее место, так как используется ещё и в optional
     struct in_place_t
     {
@@ -56,10 +72,9 @@ namespace saga
          : value_(std::forward<Args>(args)...)
         {}
 
-        // @todo explicit
         template <class U, class... Args,
                   class = std::enable_if_t<std::is_constructible<Error, std::initializer_list<U> &, Args...>{}>>
-        constexpr unexpected(saga::in_place_t, std::initializer_list<U> init, Args &&... args)
+        constexpr explicit unexpected(saga::in_place_t, std::initializer_list<U> init, Args &&... args)
          : value_(init, std::forward<Args>(args)...)
         {}
 
@@ -71,22 +86,80 @@ namespace saga
          : value_(std::forward<Err>(value))
         {}
 
-        // @todo Конструктор на основе unexpected<Other> const &
-        // @todo Конструктор на основе unexpected<Other> &&
+        // Конструктор на основе unexpected<Other> const &
+        template <class Err,
+                  std::enable_if_t<std::is_convertible<Err const &, Error>{}, bool> = false,
+                  class = std::enable_if_t<std::is_constructible<Error, Err>{}>,
+                  class = std::enable_if_t<!detail::can_convert<unexpected<Err>, Error>()>>
+        constexpr unexpected(unexpected<Err> const & other)
+         : value_(other.value())
+        {}
 
-        // @todo Присваивание - копирующее
-        // @todo Присваивание - с перемещением
-        // @todo Присваивание - копирующее обобщённое
-        // @todo Присваивание - с перемещением обобщённое
+        // @todo Реализовать все остальные ограничения кроме первого
+        template <class Err,
+                  std::enable_if_t<!std::is_convertible<Err const &, Error>{}, bool> = false,
+                  class = std::enable_if_t<std::is_constructible<Error, Err>{}>,
+                  class = std::enable_if_t<!detail::can_convert<unexpected<Err>, Error>()>>
+        constexpr explicit unexpected(unexpected<Err> const & other)
+         : value_(other.value())
+        {}
 
-        // @todo Доступ к значению
+        // Конструктор на основе unexpected<Other> &&
+        template <class Err,
+                  std::enable_if_t<std::is_convertible<Err, Error>{}, bool> = false,
+                  class = std::enable_if_t<std::is_constructible<Error, Err>{}>,
+                  class = std::enable_if_t<!detail::can_convert<unexpected<Err>, Error>()>>
+        constexpr unexpected(unexpected<Err> && other)
+         : value_(std::move(other).value())
+        {}
+
+        template <class Err,
+                  std::enable_if_t<!std::is_convertible<Err, Error>{}, bool> = false,
+                  class = std::enable_if_t<std::is_constructible<Error, Err>{}>,
+                  class = std::enable_if_t<!detail::can_convert<unexpected<Err>, Error>()>>
+        constexpr explicit unexpected(unexpected<Err> && other)
+         : value_(std::move(other).value())
+        {}
+
+        constexpr unexpected & operator=(unexpected const &) = default;
+        constexpr unexpected & operator=(unexpected &&) = default;
+
+        template <class Err = Error>
+        constexpr std::enable_if_t<std::is_assignable<Error &, Err const &>{}, unexpected &>
+        operator=(unexpected<Err> const & other)
+        {
+            this->value_ = other.value();
+            return *this;
+        }
+
+        template <class Err = Error>
+        constexpr std::enable_if_t<std::is_assignable<Error &, Err>{}, unexpected &>
+        operator=(unexpected<Err> && other)
+        {
+            this->value_ = std::move(other).value();
+            return *this;
+        }
+
+        // Доступ к значению
         constexpr Error const & value() const & noexcept
         {
             return this->value_;
         }
-        // @todo value() &
-        // @todo value() &&
-        // @todo value() const &&
+
+        constexpr Error & value() & noexcept
+        {
+            return this->value_;
+        }
+
+        constexpr Error && value() && noexcept
+        {
+            return std::move(this->value_);
+        }
+
+        constexpr Error const && value() const && noexcept
+        {
+            return std::move(this->value_);
+        }
 
         void swap(unexpected & that) noexcept(saga::is_nothrow_swappable<Error>::value)
         {
@@ -111,7 +184,6 @@ namespace saga
     private:
         Error value_;
     };
-    // @todo Подсказка для вывода типа шаблонных параметров
 
     // @todo Можно ли превратить в скрытых друзей?
     template <class Error>
@@ -124,6 +196,12 @@ namespace saga
     template <class Error>
     std::enable_if_t<!saga::is_swappable<Error>{}, void>
     swap(unexpected<Error> & lhs, unexpected<Error> & rhs) = delete;
+
+#if __cpp_deduction_guides >= 201703
+    template <class Error>
+    unexpected(Error) -> unexpected<Error>;
+#endif
+// __cpp_deduction_guides
 
     template <class Error>
     class bad_expected_access;
