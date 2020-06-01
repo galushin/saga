@@ -234,7 +234,7 @@ namespace saga_test
     {
     public:
         template <class UniformRandomBitGenerator>
-        static bool generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        static bool generate(generation_t, UniformRandomBitGenerator & urbg)
         {
             return std::bernoulli_distribution(0.5)(urbg);
         }

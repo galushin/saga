@@ -113,11 +113,11 @@ namespace
     void swap(struct_2 &, struct_3 &) noexcept(false) {}
     void swap(struct_3 &, struct_2 &) = delete;
 
-    void swap(struct_1 &, struct_4 &) noexcept {};
-    void swap(struct_4 &, struct_1 &) noexcept {};
+    void swap(struct_1 &, struct_4 &) noexcept {}
+    void swap(struct_4 &, struct_1 &) noexcept {}
 
-    void swap(struct_2 &, struct_4 &) noexcept {};
-    void swap(struct_4 &, struct_2 &) noexcept(false) {};
+    void swap(struct_2 &, struct_4 &) noexcept {}
+    void swap(struct_4 &, struct_2 &) noexcept(false) {}
 
     struct rvalue_swap
     {

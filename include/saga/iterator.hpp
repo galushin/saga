@@ -149,7 +149,7 @@ namespace detail
         }
 
         template <class T, std::size_t N>
-        std::size_t operator()(const T(&arr)[N]) const noexcept
+        std::size_t operator()(const T(&)[N]) const noexcept
         {
             return N;
         }
