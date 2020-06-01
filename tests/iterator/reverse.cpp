@@ -51,7 +51,7 @@ namespace
                                    typename Traits::pointer>{}, "");
         static_assert(std::is_same<typename RIterator::reference,
                                    typename Traits::reference>{}, "");
-    };
+    }
 
     template <class Iterator>
     void check_reverse_iterator_ctor_for_iterator(Iterator iter)
