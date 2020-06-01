@@ -21,6 +21,7 @@ SAGA -- это свободной программное обеспечение:
 /** @file saga/expected.hpp
  @brief Класс для представления ожидаемого объекта. Объект типа expected<T, E> содержит объект
  типа T или объект типа unexpected<E> и управляет временем жизни содержащихся в нём объектов.
+ @todo Ограничения на типы аргументов шаблона
 
  Реализация основана на http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0323r9.html
 */
@@ -260,6 +261,19 @@ namespace saga
     };
 
     constexpr auto const & unexpect = detail::static_empty_const<unexpect_t>::value;
+
+    template <class Value, class Error>
+    class expected
+    {
+    public:
+        // Типы
+        using value_type = Value;
+        using error_type = Error;
+        using unexpected_type = unexpected<Error>;
+
+        template <class Other>
+        using rebind = expected<Other, error_type>;
+    };
 }
 // namespace saga
 

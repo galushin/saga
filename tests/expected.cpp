@@ -29,7 +29,25 @@ SAGA -- это свободной программное обеспечение:
 
 // Тесты
 
-// @todo 5. Шаблон класса unexpected
+// 4. @todo Шаблона класса expected
+// Типы
+TEST_CASE("expected : types")
+{
+    using Value = std::string;
+    using Error = long;
+
+    using Expected = saga::expected<Value, Error>;
+
+    static_assert(std::is_same<Expected::value_type, Value>{}, "");
+    static_assert(std::is_same<Expected::error_type, Error>{}, "");
+    static_assert(std::is_same<Expected::unexpected_type, saga::unexpected<Error>>{}, "");
+
+    using OtherValue = double;
+    static_assert(std::is_same<Expected::rebind<OtherValue>,
+                               saga::expected<OtherValue, Error>>{}, "");
+}
+
+// 5. Шаблон класса unexpected
 static_assert(std::is_copy_constructible<saga::unexpected<int>>{}, "");
 static_assert(std::is_move_constructible<saga::unexpected<int>>{}, "");
 
