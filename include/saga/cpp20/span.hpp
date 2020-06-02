@@ -25,6 +25,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/algorithm.hpp>
+#include <saga/detail/default_ctor_enabler.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/utility/operators.hpp>
 
@@ -40,21 +41,6 @@ namespace saga
 {
     // @todo Должно быть inline
     constexpr std::ptrdiff_t dynamic_extent = -1;
-
-    namespace detail
-    {
-        // @todo Возможно, перенести в файл, так как это может быть полезно в других местах
-        template <bool Enable>
-        struct default_ctor_enabler
-        {};
-
-        template <>
-        struct default_ctor_enabler<false>
-        {
-            default_ctor_enabler() = delete;
-        };
-    }
-    // namespace details
 
     template <class ElementType, std::ptrdiff_t Extent = dynamic_extent>
     class span

@@ -27,6 +27,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/detail/static_empty_const.hpp>
+#include <saga/detail/default_ctor_enabler.hpp>
 #include <saga/type_traits.hpp>
 #include <saga/utility/operators.hpp>
 
@@ -262,9 +263,55 @@ namespace saga
 
     constexpr auto const & unexpect = detail::static_empty_const<unexpect_t>::value;
 
+    namespace detail
+    {
+        template <class Value, class Error>
+        class expected_base
+         : detail::default_ctor_enabler<std::is_default_constructible<Value>{}>
+        {
+            static_assert(!std::is_void<Value>{}, "");
+
+        public:
+            constexpr bool has_value() const
+            {
+                // @todo Настоящая реализация
+                return true;
+            }
+
+            constexpr Value const & value() const &
+            {
+                return this->value_;
+            }
+
+        private:
+            Value value_;
+        };
+
+        template <class Error>
+        class expected_base<void, Error>
+        {
+        public:
+            constexpr bool has_value() const
+            {
+                // @todo Настоящая реализация
+                return true;
+            }
+
+            constexpr void value() const
+            {
+                return;
+            }
+
+        private:
+        };
+    }
+
     template <class Value, class Error>
     class expected
+     : private detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>
     {
+        using Base = detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>;
+
     public:
         // Типы
         using value_type = Value;
@@ -273,6 +320,18 @@ namespace saga
 
         template <class Other>
         using rebind = expected<Other, error_type>;
+
+        // Конструкторы
+        expected() = default;
+
+        // Немодифицирующие операции
+        // @todo noexcept
+        constexpr bool has_value() const
+        {
+            return Base::has_value();
+        }
+
+        using Base::value;
     };
 }
 // namespace saga

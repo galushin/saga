@@ -30,21 +30,106 @@ SAGA -- это свободной программное обеспечение:
 // Тесты
 
 // 4. @todo Шаблона класса expected
+// @todo ограничение размера expected
+
 // Типы
+namespace
+{
+    template <class Value, class Error, class OtherValue>
+    void check_expected_types()
+    {
+        using Expected = saga::expected<Value, Error>;
+
+        static_assert(std::is_same<typename Expected::value_type, Value>{}, "");
+        static_assert(std::is_same<typename Expected::error_type, Error>{}, "");
+        static_assert(std::is_same<typename Expected::unexpected_type,
+                                   saga::unexpected<Error>>{}, "");
+
+        static_assert(std::is_same<typename Expected::template rebind<OtherValue>,
+                                   saga::expected<OtherValue, Error>>{}, "");
+    }
+}
+
 TEST_CASE("expected : types")
 {
-    using Value = std::string;
-    using Error = long;
+    ::check_expected_types<std::string, long, double>();
+    ::check_expected_types<void, long, std::string>();
+}
 
-    using Expected = saga::expected<Value, Error>;
+// 4.1 @todo Конструкторы
+// 4.1.1 @todo Конструктор без аргументов
+static_assert(std::is_default_constructible<saga::expected<double, long>>{}, "");
+static_assert(std::is_default_constructible<saga::expected<void, long>>{}, "");
+static_assert(std::is_default_constructible<saga::expected<std::string, long>>{}, "");
+static_assert(std::is_default_constructible<saga::expected<double, std::string>>{}, "");
+static_assert(std::is_default_constructible<saga::expected<std::vector<int>, std::string>>{}, "");
 
-    static_assert(std::is_same<Expected::value_type, Value>{}, "");
-    static_assert(std::is_same<Expected::error_type, Error>{}, "");
-    static_assert(std::is_same<Expected::unexpected_type, saga::unexpected<Error>>{}, "");
+namespace
+{
+    struct no_default_ctor
+    {
+        no_default_ctor() = delete;
+    };
+}
+static_assert(!std::is_default_constructible<::no_default_ctor>{}, "");
+static_assert(!std::is_default_constructible<saga::expected<::no_default_ctor, long>>{}, "");
 
-    using OtherValue = double;
-    static_assert(std::is_same<Expected::rebind<OtherValue>,
-                               saga::expected<OtherValue, Error>>{}, "");
+TEST_CASE("expected<Value, Error> : default ctor")
+{
+    {
+        using Value = long *;
+        using Error = int;
+
+        constexpr saga::expected<Value, Error> const obj{};
+
+        static_assert(obj.has_value(), "");
+        static_assert(obj.value() == Value{}, "");
+    }
+    {
+        using Value = std::string;
+        using Error = long;
+
+        saga::expected<Value, Error> const obj{};
+
+        REQUIRE(obj.has_value());
+        REQUIRE(obj.value() == Value{});
+    }
+}
+
+namespace
+{
+    template <class T>
+    constexpr bool constexpr_check_void_value(T const & obj)
+    {
+        obj.value();
+
+        using Result = decltype(obj.value());
+        static_assert(std::is_same<Result, void>{}, "");
+
+        return true;
+    }
+}
+
+TEST_CASE("expected<void, Error> : default ctor")
+{
+    {
+        using Value = void;
+        using Error = long;
+
+        constexpr saga::expected<Value, Error> const obj{};
+
+        static_assert(obj.has_value(), "");
+        static_assert(::constexpr_check_void_value(obj), "");
+    }
+    {
+        using Value = void;
+        using Error = std::string;
+
+        saga::expected<Value, Error> const obj{};
+
+        REQUIRE(obj.has_value());
+        REQUIRE_NOTHROW(obj.value());
+    }
 }
 
 // 5. Шаблон класса unexpected
