@@ -31,6 +31,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/type_traits.hpp>
 #include <saga/utility/operators.hpp>
 
+#include <cassert>
 #include <utility>
 #include <stdexcept>
 
@@ -265,36 +266,186 @@ namespace saga
 
     namespace detail
     {
-        template <class Value, class Error>
-        class expected_base
-         : detail::default_ctor_enabler<std::is_default_constructible<Value>{}>
-        {
-            static_assert(!std::is_void<Value>{}, "");
+        struct void_wrapper
+        {};
 
+        template <class Value, class Error>
+        class expected_holder
+        {
         public:
+            // Типы
+            using unexpected_type = unexpected<Error>;
+
+            // Конструкторы и деструктор
+            expected_holder(in_place_t)
+             : has_value_(true)
+             , value_()
+            {}
+
+            expected_holder()
+             : expected_holder(in_place_t{})
+            {}
+
+            expected_holder(unexpect_t)
+             : has_value_(false)
+             , error_(saga::in_place_t{})
+            {}
+
+            ~expected_holder()
+            {
+                // @todo Не вызывать тривиальные деструкторы
+                if(this->has_value())
+                {
+                    this->value_.~Value();
+                }
+                else
+                {
+                    this->error_.~unexpected_type();
+                }
+            }
+
+            // Немодифицирующие операции
+            bool has_value() const
+            {
+                return this->has_value_;
+            }
+
+            Value const & value() const &
+            {
+                assert(this->has_value());
+
+                return this->value_;
+            }
+
+            Error const & error() const &
+            {
+                assert(!this->has_value());
+
+                return this->error_.value();
+            }
+
+        private:
+            bool has_value_ = true;
+            union
+            {
+                Value value_;
+                unexpected_type error_;
+            };
+        };
+
+        template <class Value, class Error>
+        class expected_holder_trivial
+        {
+        public:
+            // Ограничения
+            static_assert(std::is_trivially_destructible<Value>{}, "");
+            static_assert(std::is_trivially_destructible<Error>{}, "");
+
+            // Конструкторы и деструктор
+            constexpr expected_holder_trivial(in_place_t)
+             : has_value_(true)
+             , value_()
+            {}
+
+            constexpr expected_holder_trivial()
+             : expected_holder_trivial(in_place_t{})
+            {}
+
+            constexpr expected_holder_trivial(unexpect_t)
+             : has_value_(false)
+             , error_(saga::in_place_t{})
+            {}
+
+            ~expected_holder_trivial() = default;
+
+            // Немодифицирующие операции
             constexpr bool has_value() const
             {
-                // @todo Настоящая реализация
-                return true;
+                return this->has_value_;
             }
 
             constexpr Value const & value() const &
             {
+                assert(this->has_value());
+
                 return this->value_;
             }
 
+            constexpr Error const & error() const
+            {
+                assert(!this->has_value());
+
+                return this->error_.value();
+            }
+
         private:
-            Value value_;
+            bool has_value_ = true;
+            union
+            {
+                Value value_;
+                unexpected<Error> error_;
+            };
+        };
+
+        template <class Value, class Error>
+        class expected_base
+         : std::conditional_t<std::is_trivially_destructible<Value>{}
+                              && std::is_trivially_destructible<Error>{},
+                              expected_holder_trivial<Value, Error>,
+                              expected_holder<Value, Error>>
+         , detail::default_ctor_enabler<std::is_default_constructible<Value>{}>
+        {
+            using Base = std::conditional_t<std::is_trivially_destructible<Value>{}
+                                            && std::is_trivially_destructible<Error>{},
+                                            expected_holder_trivial<Value, Error>,
+                                            expected_holder<Value, Error>>;
+
+            static_assert(!std::is_void<Value>{}, "");
+
+        public:
+            constexpr expected_base() = default;
+
+            constexpr expected_base(in_place_t);
+
+            constexpr expected_base(unexpect_t)
+             : Base(unexpect_t{})
+            {}
+
+            constexpr bool has_value() const
+            {
+                return Base::has_value();
+            }
+
+            constexpr Value const & value() const &
+            {
+                return Base::value();
+            }
+
+            using Base::error;
         };
 
         template <class Error>
         class expected_base<void, Error>
+         : std::conditional_t<std::is_trivially_destructible<Error>{},
+                              expected_holder_trivial<void_wrapper, Error>,
+                              expected_holder<void_wrapper, Error>>
         {
+            using Base = std::conditional_t<std::is_trivially_destructible<Error>{},
+                                            expected_holder_trivial<void_wrapper, Error>,
+                                            expected_holder<void_wrapper, Error>>;
+
         public:
+            constexpr expected_base()
+             : Base(saga::in_place_t{})
+            {}
+
+            constexpr expected_base(unexpect_t)
+             : Base(saga::unexpect_t{})
+            {}
+
             constexpr bool has_value() const
             {
-                // @todo Настоящая реализация
-                return true;
+                return Base::has_value();
             }
 
             constexpr void value() const
@@ -302,7 +453,7 @@ namespace saga
                 return;
             }
 
-        private:
+            using Base::error;
         };
     }
 
@@ -324,6 +475,10 @@ namespace saga
         // Конструкторы
         expected() = default;
 
+        constexpr expected(unexpect_t)
+         : Base(unexpect_t{})
+        {}
+
         // Немодифицирующие операции
         // @todo noexcept
         constexpr bool has_value() const
@@ -332,6 +487,11 @@ namespace saga
         }
 
         using Base::value;
+
+        constexpr error_type const & error() const &
+        {
+            return Base::error();
+        }
     };
 }
 // namespace saga

@@ -57,7 +57,7 @@ TEST_CASE("expected : types")
 }
 
 // 4.1 @todo Конструкторы
-// 4.1.1 @todo Конструктор без аргументов
+// Конструктор без аргументов
 static_assert(std::is_default_constructible<saga::expected<double, long>>{}, "");
 static_assert(std::is_default_constructible<saga::expected<void, long>>{}, "");
 static_assert(std::is_default_constructible<saga::expected<std::string, long>>{}, "");
@@ -88,6 +88,24 @@ TEST_CASE("expected<Value, Error> : default ctor")
     {
         using Value = std::string;
         using Error = long;
+
+        saga::expected<Value, Error> const obj{};
+
+        REQUIRE(obj.has_value());
+        REQUIRE(obj.value() == Value{});
+    }
+    {
+        using Value = int;
+        using Error = std::string;
+
+        saga::expected<Value, Error> const obj{};
+
+        REQUIRE(obj.has_value());
+        REQUIRE(obj.value() == Value{});
+    }
+    {
+        using Value = std::string;
+        using Error = std::vector<int>;
 
         saga::expected<Value, Error> const obj{};
 
@@ -129,6 +147,69 @@ TEST_CASE("expected<void, Error> : default ctor")
 
         REQUIRE(obj.has_value());
         REQUIRE_NOTHROW(obj.value());
+    }
+}
+
+// Конструктор на основе unexpect_t (без других аргументов)
+TEST_CASE("expected<Value, Error>: ctor from unexpect_t")
+{
+    {
+        using Value = int;
+        using Error = long *;
+
+        constexpr saga::expected<Value, Error> const obj(saga::unexpect);
+
+        static_assert(obj.has_value() == false, "");
+        static_assert(obj.error() == Error{}, "");
+    }
+    {
+        using Value = int;
+        using Error = std::string;
+
+        saga::expected<Value, Error> const obj(saga::unexpect);
+
+        REQUIRE(obj.has_value() == false);
+        REQUIRE_NOTHROW(obj.error() == Error{});
+    }
+    {
+        using Value = std::string;
+        using Error = long;
+
+        saga::expected<Value, Error> const obj(saga::unexpect);
+
+        REQUIRE(obj.has_value() == false);
+        REQUIRE_NOTHROW(obj.error() == Error{});
+    }
+    {
+        using Value = std::vector<int>;
+        using Error = std::string;
+
+        saga::expected<Value, Error> const obj(saga::unexpect);
+
+        REQUIRE(obj.has_value() == false);
+        REQUIRE_NOTHROW(obj.error() == Error{});
+    }
+}
+
+TEST_CASE("expected<void, Error>: ctor from unexpect_t")
+{
+    {
+        using Value = void;
+        using Error = long;
+
+        constexpr saga::expected<Value, Error> const obj(saga::unexpect);
+
+        static_assert(obj.has_value() == false, "");
+        static_assert(obj.error() == Error{}, "");
+    }
+    {
+        using Value = void;
+        using Error = std::string;
+
+        saga::expected<Value, Error> const obj(saga::unexpect);
+
+        REQUIRE(obj.has_value() == false);
+        REQUIRE_NOTHROW(obj.error() == Error{});
     }
 }
 
