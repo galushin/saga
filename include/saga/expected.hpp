@@ -312,7 +312,10 @@ namespace saga
 
             Value const & value() const &
             {
-                assert(this->has_value());
+                if(!this->has_value())
+                {
+                    throw saga::bad_expected_access<Error>(this->error());
+                }
 
                 return this->value_;
             }
@@ -366,7 +369,7 @@ namespace saga
 
             constexpr Value const & value() const &
             {
-                assert(this->has_value());
+                this->throw_if_has_no_value();
 
                 return this->value_;
             }
@@ -379,6 +382,11 @@ namespace saga
             }
 
         private:
+            constexpr void throw_if_has_no_value() const
+            {
+                !this->has_value() ? throw saga::bad_expected_access<Error>(this->error()) : 0;
+            }
+
             bool has_value_ = true;
             union
             {
@@ -450,7 +458,7 @@ namespace saga
 
             constexpr void value() const
             {
-                return;
+                return void(Base::value());
             }
 
             using Base::error;

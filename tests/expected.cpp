@@ -169,7 +169,9 @@ TEST_CASE("expected<Value, Error>: ctor from unexpect_t")
         saga::expected<Value, Error> const obj(saga::unexpect);
 
         REQUIRE(obj.has_value() == false);
-        REQUIRE_NOTHROW(obj.error() == Error{});
+        REQUIRE(obj.error() == Error{});
+
+        REQUIRE_THROWS_AS(obj.value(), saga::bad_expected_access<Error>);
     }
     {
         using Value = std::string;
@@ -178,7 +180,9 @@ TEST_CASE("expected<Value, Error>: ctor from unexpect_t")
         saga::expected<Value, Error> const obj(saga::unexpect);
 
         REQUIRE(obj.has_value() == false);
-        REQUIRE_NOTHROW(obj.error() == Error{});
+        REQUIRE(obj.error() == Error{});
+
+        REQUIRE_THROWS_AS(obj.value(), saga::bad_expected_access<Error>);
     }
     {
         using Value = std::vector<int>;
@@ -187,7 +191,9 @@ TEST_CASE("expected<Value, Error>: ctor from unexpect_t")
         saga::expected<Value, Error> const obj(saga::unexpect);
 
         REQUIRE(obj.has_value() == false);
-        REQUIRE_NOTHROW(obj.error() == Error{});
+        REQUIRE(obj.error() == Error{});
+
+        REQUIRE_THROWS_AS(obj.value(), saga::bad_expected_access<Error>);
     }
 }
 
@@ -209,7 +215,9 @@ TEST_CASE("expected<void, Error>: ctor from unexpect_t")
         saga::expected<Value, Error> const obj(saga::unexpect);
 
         REQUIRE(obj.has_value() == false);
-        REQUIRE_NOTHROW(obj.error() == Error{});
+        REQUIRE(obj.error() == Error{});
+
+        REQUIRE_THROWS_AS(obj.value(), saga::bad_expected_access<Error>);
     }
 }
 
