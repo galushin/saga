@@ -518,8 +518,7 @@ namespace saga
         {}
 
         // Немодифицирующие операции
-        // @todo noexcept
-        constexpr bool has_value() const
+        constexpr bool has_value() const noexcept
         {
             return Base::has_value();
         }

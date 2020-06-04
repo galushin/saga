@@ -196,7 +196,8 @@ TEST_CASE("expected<void, Error>: placement constructor")
     constexpr saga::expected<void, long> obj0(saga::in_place_t{});
 
     static_assert(obj0.has_value(), "");
-    static_assert(noexcept(obj0.value()), "");
+    static_assert(noexcept(obj0.has_value()), "");
+    static_assert((obj0.value(), true), "");
 }
 
 TEST_CASE("expected: placement constructor")
@@ -206,7 +207,7 @@ TEST_CASE("expected: placement constructor")
 
         static_assert(obj0.has_value(), "");
         static_assert(obj0.value() == 0, "");
-        static_assert(noexcept(obj0.value()), "");
+        static_assert(noexcept(obj0.has_value()), "");
 
         constexpr int value = 42;
         constexpr saga::expected<int, long*> obj1(saga::in_place_t{}, value);
