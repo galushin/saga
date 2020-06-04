@@ -277,9 +277,10 @@ namespace saga
             using unexpected_type = unexpected<Error>;
 
             // Конструкторы и деструктор
-            expected_holder(in_place_t)
+            template <class... Args>
+            expected_holder(in_place_t, Args &&... args)
              : has_value_(true)
-             , value_()
+             , value_(std::forward<Args>(args)...)
             {}
 
             expected_holder()
@@ -345,9 +346,10 @@ namespace saga
             static_assert(std::is_trivially_destructible<Error>{}, "");
 
             // Конструкторы и деструктор
-            constexpr expected_holder_trivial(in_place_t)
+            template <class... Args>
+            constexpr expected_holder_trivial(in_place_t, Args &&... args)
              : has_value_(true)
-             , value_()
+             , value_(std::forward<Args>(args)...)
             {}
 
             constexpr expected_holder_trivial()
@@ -408,12 +410,18 @@ namespace saga
                                             expected_holder_trivial<Value, Error>,
                                             expected_holder<Value, Error>>;
 
+            using Enabler = detail::default_ctor_enabler<std::is_default_constructible<Value>{}>;
+
             static_assert(!std::is_void<Value>{}, "");
 
         public:
             constexpr expected_base() = default;
 
-            constexpr expected_base(in_place_t);
+            template <class... Args>
+            constexpr expected_base(in_place_t, Args &&... args)
+             : Base(in_place_t{}, std::forward<Args>(args)...)
+             , Enabler(0)
+            {}
 
             constexpr expected_base(unexpect_t)
              : Base(unexpect_t{})
@@ -445,6 +453,10 @@ namespace saga
         public:
             constexpr expected_base()
              : Base(saga::in_place_t{})
+            {}
+
+            constexpr expected_base(in_place_t)
+             : Base(in_place_t{})
             {}
 
             constexpr expected_base(unexpect_t)
@@ -482,6 +494,24 @@ namespace saga
 
         // Конструкторы
         expected() = default;
+
+        // @todo Не покрыт тестами
+        expected(expected &&);
+
+        template <class... Args,
+                  class = std::enable_if_t<(std::is_void<Value>{} && sizeof...(Args) == 0)
+                                           || (!std::is_void<Value>{}
+                                               && std::is_constructible<Value, Args...>{})>>
+        constexpr explicit expected(saga::in_place_t, Args &&... args)
+         : Base(saga::in_place_t{}, std::forward<Args>(args)...)
+        {}
+
+        template <class U, class... Args,
+                  class = std::enable_if_t<!std::is_void<Value>{}
+                                            && std::is_constructible<Value, std::initializer_list<U> &, Args...>{}>>
+        constexpr explicit expected(in_place_t, std::initializer_list<U> inits, Args &&... args)
+         : Base(saga::in_place_t{}, inits, std::forward<Args>(args)...)
+        {}
 
         constexpr expected(unexpect_t)
          : Base(unexpect_t{})

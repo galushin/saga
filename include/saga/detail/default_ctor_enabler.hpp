@@ -24,12 +24,20 @@ namespace saga
     {
         template <bool Enable>
         struct default_ctor_enabler
-        {};
+        {
+            default_ctor_enabler() = default;
+
+            constexpr explicit default_ctor_enabler(int)
+            {}
+        };
 
         template <>
         struct default_ctor_enabler<false>
         {
             default_ctor_enabler() = delete;
+
+            constexpr explicit default_ctor_enabler(int)
+            {}
         };
     }
     // namespace details
