@@ -260,6 +260,7 @@ TEST_CASE("expected: placement constructor with initializer list and more args")
         constexpr saga::expected<initializer_list_consumer, long>
             obj(saga::in_place_t{}, {1, 2, 3, 4}, 5);
 
+        static_assert(obj.has_value(), "");
         static_assert(obj.value().value == 15, "");
     }
 
@@ -280,7 +281,7 @@ TEST_CASE("expected: placement constructor with initializer list and more args")
     };
 }
 
-// Конструктор на основе unexpect_t (без других аргументов)
+// Конструктор на основе unexpect_t
 TEST_CASE("expected<Value, Error>: ctor from unexpect_t")
 {
     {
@@ -293,7 +294,7 @@ TEST_CASE("expected<Value, Error>: ctor from unexpect_t")
         static_assert(obj.error() == Error{}, "");
     }
     {
-        using Value = int;
+        using Value = void;
         using Error = std::string;
 
         saga::expected<Value, Error> const obj(saga::unexpect);
@@ -349,6 +350,205 @@ TEST_CASE("expected<void, Error>: ctor from unexpect_t")
 
         REQUIRE_THROWS_AS(obj.value(), saga::bad_expected_access<Error>);
     }
+}
+
+// Есть конструктор с unexpect_t и любым числом аргументов
+static_assert(std::is_constructible<std::vector<int>, std::size_t, int>{}, "");
+static_assert(std::is_constructible<saga::expected<std::string, std::vector<int>>,
+                                    saga::unexpect_t, std::size_t, int>{}, "");
+static_assert(std::is_constructible<saga::expected<void, std::vector<int>>,
+                                    saga::unexpect_t, std::size_t, int>{}, "");
+
+// Конструктор с unexpect_t является explicit:
+static_assert(std::is_constructible<std::vector<int>>{}, "");
+static_assert(std::is_constructible<saga::expected<std::string, std::vector<int>>,
+                                    saga::unexpect_t>{}, "");
+static_assert(!std::is_convertible<saga::unexpect_t,
+                                   saga::expected<std::string, std::vector<int>>>{}, "");
+
+// Конструктор с unexpect_t не участвует в разрешение перегрузки, когда его нельзя вызывать
+static_assert(!std::is_constructible<int, std::vector<int>>{}, "");
+static_assert(!std::is_constructible<saga::expected<std::string, int>,
+                                     saga::unexpect_t, std::vector<int>>{}, "");
+
+static_assert(!std::is_constructible<int, std::initializer_list<int>&, int>{}, "");
+static_assert(!std::is_constructible<saga::expected<std::string, int>,
+                                     saga::unexpect_t, std::initializer_list<int>&, int>{}, "");
+
+TEST_CASE("expected: unexpect_t constructor")
+{
+    {
+        constexpr saga::expected<int, long*> obj0(saga::unexpect);
+
+        static_assert(obj0.has_value() == false, "");
+        static_assert(obj0.error() == 0, "");
+
+        constexpr int value = 42;
+        constexpr saga::expected<long *, int> obj1(saga::unexpect, value);
+        static_assert(obj1.has_value() == false, "");
+        static_assert(obj1.error() == value, "");
+    }
+    {
+        constexpr saga::expected<void, long*> obj0(saga::unexpect);
+
+        static_assert(obj0.has_value() == false, "");
+        static_assert(obj0.error() == 0, "");
+
+        constexpr int value = 42;
+        constexpr saga::expected<long *, int> obj1(saga::unexpect, value);
+        static_assert(obj1.has_value() == false, "");
+        static_assert(obj1.error() == value, "");
+    }
+
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> num, int filler)
+    {
+        std::vector<int> const expected(num, filler);
+
+        saga::expected<std::string, std::vector<int>> const actual1(saga::unexpect, num, filler);
+        saga::expected<void, std::vector<int>> const actual2(saga::unexpect, num, filler);
+
+        REQUIRE(!actual1.has_value());
+        REQUIRE(actual1.error() == expected);
+
+        REQUIRE(!actual2.has_value());
+        REQUIRE(actual2.error() == expected);
+
+        try
+        {
+            actual1.value();
+        }
+        catch(saga::bad_expected_access<std::vector<int>> & err)
+        {
+            REQUIRE(err.error() == expected);
+        }
+
+        try
+        {
+            actual2.value();
+        }
+        catch(saga::bad_expected_access<std::vector<int>> & err)
+        {
+            REQUIRE(err.error() == expected);
+        }
+    };
+}
+
+TEST_CASE("expected: unexpect_t constructor with initializer list")
+{
+    saga_test::property_checker << [](int value1, int value2)
+    {
+        std::vector<int> const expected{value1, value2};
+
+        saga::expected<std::string, std::vector<int>> const actual1(saga::unexpect, {value1, value2});
+        saga::expected<void, std::vector<int>> const actual2(saga::unexpect, {value1, value2});
+
+        REQUIRE(!actual1.has_value());
+        REQUIRE(actual1.error() == expected);
+
+        REQUIRE(!actual2.has_value());
+        REQUIRE(actual2.error() == expected);
+
+        try
+        {
+            actual1.value();
+        }
+        catch(saga::bad_expected_access<std::vector<int>> & err)
+        {
+            REQUIRE(err.error() == expected);
+        }
+
+        try
+        {
+            actual2.value();
+        }
+        catch(saga::bad_expected_access<std::vector<int>> & err)
+        {
+            REQUIRE(err.error() == expected);
+        }
+    };
+}
+
+TEST_CASE("expected: unexpect constructor with initializer list and more args")
+{
+    {
+        struct initializer_list_consumer
+        {
+            constexpr initializer_list_consumer(std::initializer_list<int> inits, int arg)
+             : value(arg)
+            {
+                for(auto const & each : inits)
+                {
+                    value += each;
+                }
+            }
+
+            int value = 0;
+        };
+
+        constexpr saga::expected<long, initializer_list_consumer>
+            obj(saga::unexpect, {1, 2, 3, 4}, 5);
+
+        static_assert(!obj.has_value(), "");
+        static_assert(obj.error().value == 15, "");
+    }
+    {
+        struct initializer_list_consumer
+        {
+            constexpr initializer_list_consumer(std::initializer_list<int> inits, int arg)
+             : value(arg)
+            {
+                for(auto const & each : inits)
+                {
+                    value += each;
+                }
+            }
+
+            int value = 0;
+        };
+
+        constexpr saga::expected<void, initializer_list_consumer>
+            obj(saga::unexpect, {1, 2, 3, 4}, 5);
+
+        static_assert(!obj.has_value(), "");
+        static_assert(obj.error().value == 15, "");
+    }
+
+    saga_test::property_checker << [](int value1, int value2)
+    {
+        using Compare = bool(*)(int const &, int const &);
+        using Container = std::set<int, Compare>;
+
+        auto const cmp = Compare([](int const & x, int const & y) { return x < y; });
+
+        Container const expected({value1, value2}, cmp);
+
+        saga::expected<std::string, Container> const actual1(saga::unexpect, {value1, value2}, cmp);
+        saga::expected<void, Container> const actual2(saga::unexpect, {value1, value2}, cmp);
+
+        REQUIRE(!actual1.has_value());
+        REQUIRE(actual1.error() == expected);
+
+        REQUIRE(!actual2.has_value());
+        REQUIRE(actual2.error() == expected);
+
+        try
+        {
+            actual1.value();
+        }
+        catch(saga::bad_expected_access<Container> & err)
+        {
+            REQUIRE(err.error() == expected);
+        }
+
+        try
+        {
+            actual2.value();
+        }
+        catch(saga::bad_expected_access<Container> & err)
+        {
+            REQUIRE(err.error() == expected);
+        }
+    };
 }
 
 // 5. Шаблон класса unexpected

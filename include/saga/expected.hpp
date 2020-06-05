@@ -77,7 +77,8 @@ namespace saga
 
         template <class U, class... Args,
                   class = std::enable_if_t<std::is_constructible<Error, std::initializer_list<U> &, Args...>{}>>
-        constexpr explicit unexpected(saga::in_place_t, std::initializer_list<U> init, Args &&... args)
+        // @todo explicit
+        constexpr unexpected(saga::in_place_t, std::initializer_list<U> init, Args &&... args)
          : value_(init, std::forward<Args>(args)...)
         {}
 
@@ -278,18 +279,31 @@ namespace saga
 
             // Конструкторы и деструктор
             template <class... Args>
-            expected_holder(in_place_t, Args &&... args)
+            explicit expected_holder(in_place_t, Args &&... args)
              : has_value_(true)
              , value_(std::forward<Args>(args)...)
+            {}
+
+            template <class U, class... Args>
+            explicit expected_holder(in_place_t, std::initializer_list<U> inits, Args &&... args)
+             : has_value_(true)
+             , value_(inits, std::forward<Args>(args)...)
             {}
 
             expected_holder()
              : expected_holder(in_place_t{})
             {}
 
-            expected_holder(unexpect_t)
+            template <class... Args>
+            explicit expected_holder(unexpect_t, Args &&... args)
              : has_value_(false)
-             , error_(saga::in_place_t{})
+             , error_(saga::in_place_t{}, std::forward<Args>(args)...)
+            {}
+
+            template <class U, class... Args>
+            explicit expected_holder(unexpect_t, std::initializer_list<U> inits, Args &&... args)
+             : has_value_(false)
+             , error_(saga::in_place_t{}, inits, std::forward<Args>(args)...)
             {}
 
             ~expected_holder()
@@ -347,18 +361,33 @@ namespace saga
 
             // Конструкторы и деструктор
             template <class... Args>
-            constexpr expected_holder_trivial(in_place_t, Args &&... args)
+            constexpr explicit expected_holder_trivial(in_place_t, Args &&... args)
              : has_value_(true)
              , value_(std::forward<Args>(args)...)
+            {}
+
+            template <class U, class... Args>
+            constexpr explicit expected_holder_trivial(in_place_t, std::initializer_list<U> inits,
+                                                       Args &&... args)
+             : has_value_(true)
+             , value_(inits, std::forward<Args>(args)...)
             {}
 
             constexpr expected_holder_trivial()
              : expected_holder_trivial(in_place_t{})
             {}
 
-            constexpr expected_holder_trivial(unexpect_t)
+            template <class... Args>
+            constexpr explicit expected_holder_trivial(unexpect_t, Args &&... args)
              : has_value_(false)
-             , error_(saga::in_place_t{})
+             , error_(saga::in_place_t{}, std::forward<Args>(args)...)
+            {}
+
+            template <class U, class... Args>
+            constexpr explicit expected_holder_trivial(unexpect_t, std::initializer_list<U> inits,
+                                                       Args &&... args)
+             : has_value_(false)
+             , error_(saga::in_place_t{}, inits, std::forward<Args>(args)...)
             {}
 
             ~expected_holder_trivial() = default;
@@ -397,6 +426,7 @@ namespace saga
             };
         };
 
+        // @todo Покрыть тестом инициализацию Enabler во всех конструкторах
         template <class Value, class Error>
         class expected_base
          : std::conditional_t<std::is_trivially_destructible<Value>{}
@@ -418,13 +448,27 @@ namespace saga
             constexpr expected_base() = default;
 
             template <class... Args>
-            constexpr expected_base(in_place_t, Args &&... args)
+            constexpr explicit expected_base(in_place_t, Args &&... args)
              : Base(in_place_t{}, std::forward<Args>(args)...)
              , Enabler(0)
             {}
 
-            constexpr expected_base(unexpect_t)
-             : Base(unexpect_t{})
+            template <class U, class... Args>
+            constexpr explicit expected_base(in_place_t,
+                                             std::initializer_list<U> inits, Args &&... args)
+             : Base(in_place_t{}, inits, std::forward<Args>(args)...)
+             , Enabler(0)
+            {}
+
+            template <class... Args>
+            constexpr explicit expected_base(unexpect_t, Args &&... args)
+             : Base(unexpect_t{}, std::forward<Args>(args)...)
+            {}
+
+            template <class U, class... Args>
+            constexpr explicit expected_base(unexpect_t,
+                                             std::initializer_list<U> inits, Args &&... args)
+             : Base(unexpect_t{}, inits, std::forward<Args>(args)...)
             {}
 
             constexpr bool has_value() const
@@ -455,12 +499,19 @@ namespace saga
              : Base(saga::in_place_t{})
             {}
 
-            constexpr expected_base(in_place_t)
+            constexpr explicit expected_base(in_place_t)
              : Base(in_place_t{})
             {}
 
-            constexpr expected_base(unexpect_t)
-             : Base(saga::unexpect_t{})
+            template <class... Args>
+            constexpr explicit expected_base(unexpect_t, Args &&... args)
+             : Base(saga::unexpect_t{}, std::forward<Args>(args)...)
+            {}
+
+            template <class U, class... Args>
+            constexpr explicit expected_base(unexpect_t,
+                                             std::initializer_list<U> inits, Args &&... args)
+             : Base(saga::unexpect_t{}, inits, std::forward<Args>(args)...)
             {}
 
             constexpr bool has_value() const
@@ -509,12 +560,22 @@ namespace saga
         template <class U, class... Args,
                   class = std::enable_if_t<!std::is_void<Value>{}
                                             && std::is_constructible<Value, std::initializer_list<U> &, Args...>{}>>
-        constexpr explicit expected(in_place_t, std::initializer_list<U> inits, Args &&... args)
+        // @todo explicit
+        constexpr expected(in_place_t, std::initializer_list<U> inits, Args &&... args)
          : Base(saga::in_place_t{}, inits, std::forward<Args>(args)...)
         {}
 
-        constexpr expected(unexpect_t)
-         : Base(unexpect_t{})
+        template <class... Args,
+                  class = std::enable_if_t<std::is_constructible<Error, Args...>{}>>
+        constexpr explicit expected(unexpect_t, Args &&... args)
+         : Base(unexpect_t{}, std::forward<Args>(args)...)
+        {}
+
+        template <class U, class... Args,
+                  class = std::enable_if_t<std::is_constructible<Error, std::initializer_list<U> &, Args...>{}>>
+        // @todo explcit
+        constexpr expected(unexpect_t, std::initializer_list<U> inits, Args &&... args)
+         : Base(unexpect_t{}, inits, std::forward<Args>(args)...)
         {}
 
         // Немодифицирующие операции
