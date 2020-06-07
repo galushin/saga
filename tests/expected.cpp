@@ -83,6 +83,7 @@ TEST_CASE("expected<Value, Error> : default ctor")
         constexpr saga::expected<Value, Error> const obj{};
 
         static_assert(obj.has_value(), "");
+        static_assert(static_cast<bool>(obj), "");
         static_assert(obj.value() == Value{}, "");
     }
     {
@@ -547,6 +548,280 @@ TEST_CASE("expected: unexpect constructor with initializer list and more args")
         catch(saga::bad_expected_access<Container> & err)
         {
             REQUIRE(err.error() == expected);
+        }
+    };
+}
+
+// 4.5 Свойства
+namespace
+{
+    template <class Expected>
+    void check_expected_with_error_value_throws(Expected && obj)
+    {
+        using Error = typename saga::remove_cvref_t<Expected>::error_type;
+
+        assert(!obj.has_value());
+        auto const error_old = obj.error();
+
+        try
+        {
+            std::forward<Expected>(obj).value();
+        }
+        catch(saga::bad_expected_access<Error> & exc)
+        {
+            REQUIRE(exc.error() == error_old);
+        }
+    }
+
+    template <class Value, class Error>
+    void observers_property(saga::expected<Value, Error> & obj, Error const & error)
+    {
+        auto const & c_ref = obj;
+
+        static_assert(!std::is_convertible<saga::expected<Value, Error>, bool>{}, "");
+        static_assert(noexcept(c_ref.has_value()), "");
+        static_assert(noexcept(static_cast<bool>(c_ref)), "");
+
+        static_assert(std::is_same<decltype(obj.error()), Error &>{}, "");
+        static_assert(std::is_same<decltype(c_ref.error()), Error const &>{}, "");
+        static_assert(std::is_same<decltype(std::move(obj).error()), Error &&>{}, "");
+        static_assert(std::is_same<decltype(std::move(c_ref).error()), Error const &&>{}, "");
+
+        REQUIRE(c_ref.has_value() == static_cast<bool>(c_ref));
+
+        if(c_ref.has_value())
+        {
+            obj.value();
+            c_ref.value();
+            std::move(obj).value();
+            std::move(c_ref).value();
+        }
+        else
+        {
+            REQUIRE(obj.error() == error);
+            REQUIRE(std::addressof(c_ref.error()) == std::addressof(obj.error()));
+
+            auto && rvalue_error = std::move(obj).error();
+            auto const && crvalue_error = std::move(c_ref).error();
+
+            REQUIRE(std::addressof(rvalue_error) == std::addressof(obj.error()));
+            REQUIRE(std::addressof(crvalue_error) == std::addressof(obj.error()));
+
+            ::check_expected_with_error_value_throws(obj);
+            ::check_expected_with_error_value_throws(c_ref);
+            ::check_expected_with_error_value_throws(std::move(obj));
+            ::check_expected_with_error_value_throws(std::move(c_ref));
+        }
+    }
+
+    template <class Value, class Error>
+    void observers_property_not_void(saga::expected<Value, Error> & obj,
+                                     Value const & value, Error const & error)
+    {
+        ::observers_property(obj, error);
+
+        auto const & c_ref = obj;
+
+        static_assert(std::is_same<decltype(obj.operator->()), Value *>{}, "");
+        static_assert(std::is_same<decltype(c_ref.operator->()), Value const *>{}, "");
+
+        static_assert(std::is_same<decltype(*obj), Value &>{}, "");
+        static_assert(std::is_same<decltype(*c_ref), Value const &>{}, "");
+        static_assert(std::is_same<decltype(*std::move(obj)), Value &&>{}, "");
+        static_assert(std::is_same<decltype(*std::move(c_ref)), Value const &&>{}, "");
+
+        static_assert(std::is_same<decltype(obj.value()), Value &>{}, "");
+        static_assert(std::is_same<decltype(c_ref.value()), Value const &>{}, "");
+        static_assert(std::is_same<decltype(std::move(obj).value()), Value &&>{}, "");
+        static_assert(std::is_same<decltype(std::move(c_ref).value()), Value const &&>{}, "");
+
+        if(c_ref.has_value())
+        {
+            REQUIRE(obj.operator->() == std::addressof(obj.value()));
+            REQUIRE(c_ref.operator->() == std::addressof(obj.value()));
+            REQUIRE(c_ref.operator->() == std::addressof(c_ref.value()));
+
+            REQUIRE(std::addressof(*obj) == std::addressof(obj.value()));
+            REQUIRE(std::addressof(*c_ref) == std::addressof(obj.value()));
+
+            auto && rvalue_derefenece = *std::move(obj);
+            auto const && crvalue_dereference = *std::move(c_ref);
+
+            REQUIRE(std::addressof(rvalue_derefenece) == std::addressof(obj.value()));
+            REQUIRE(std::addressof(crvalue_dereference) == std::addressof(obj.value()));
+
+            REQUIRE(obj.value() == value);
+            REQUIRE(std::addressof(c_ref.value()) == std::addressof(obj.value()));
+
+            auto && rvalue_value = std::move(obj).value();
+            auto const && crvalue_value = std::move(c_ref).value();
+
+            REQUIRE(std::addressof(rvalue_value) == std::addressof(obj.value()));
+            REQUIRE(std::addressof(crvalue_value) == std::addressof(obj.value()));
+        }
+        else
+        {}
+    }
+
+    template <class Value, class Error, class OtherValue>
+    void check_expected_value_or(saga::expected<Value, Error> const & obj, OtherValue other)
+    {
+        if(obj.has_value())
+        {
+            REQUIRE(obj.value_or(other) == obj.value());
+        }
+        else
+        {
+            REQUIRE(obj.value_or(other) == other);
+        }
+    }
+
+    template <class Error, class Value>
+    constexpr Value
+    check_constexpr_value_ref(Value old_value, Value new_value)
+    {
+        saga::expected<Value, Error> obj(saga::in_place_t{}, old_value);
+
+        obj.value() = new_value;
+
+        return obj.value();
+    }
+
+    template <class Value, class Error>
+    constexpr Error
+    check_constexpr_error_ref(Error old_error, Error new_error)
+    {
+        saga::expected<Value, Error> obj(saga::unexpect, old_error);
+
+        obj.error() = new_error;
+
+        return obj.error();
+    }
+}
+
+TEST_CASE("expected: observers")
+{
+    using Value = std::vector<int>;
+    using Error = std::string;
+
+    saga_test::property_checker << [](Value const & value, Error const & error)
+    {
+        saga::expected<Value, Error> obj_value(saga::in_place_t{}, value);
+        saga::expected<Value, Error> obj_error(saga::unexpect_t{}, error);
+
+        saga::expected<void, Error> obj_void_value(saga::in_place_t{});
+        saga::expected<void, Error> obj_void_error(saga::unexpect_t{}, error);
+
+        ::observers_property_not_void(obj_value, value, error);
+        ::observers_property_not_void(obj_error, value, error);
+        ::observers_property(obj_void_value, error);
+        ::observers_property(obj_void_error, error);
+    };
+
+    {
+        using Value = long;
+        using Error = int;
+        using Expected = saga::expected<Value, Error>;
+
+        constexpr auto value = Value(42);
+        constexpr auto error = Error(0);
+
+        static_assert(Expected(saga::in_place_t{}, value).value() == value, "");
+        static_assert(Expected(saga::unexpect, error).error() == error, "");
+
+        constexpr Expected obj_value(saga::in_place_t{}, value);
+        static_assert(std::move(obj_value).value() == value, "");
+
+        constexpr Expected obj_error(saga::unexpect, error);
+        static_assert(std::move(obj_error).error() == error, "");
+
+        constexpr auto value_new = Value(1);
+        constexpr auto error_new = Error(1);
+
+        static_assert(::check_constexpr_value_ref<Error>(value, value_new) == value_new, "");
+        static_assert(::check_constexpr_error_ref<Value>(error, error_new) == error_new, "");
+    }
+}
+
+TEST_CASE("expected: value_or() const &")
+{
+    using Value = long;
+    using Error = std::string;
+    using OtherValue = int;
+
+    saga_test::property_checker
+    << [](Value const & value, Error const & error, OtherValue const & other)
+    {
+        saga::expected<Value, Error> const obj_value(saga::in_place_t{}, value);
+        saga::expected<Value, Error> const obj_error(saga::unexpect_t{}, error);
+
+        ::check_expected_value_or(obj_value, other);
+        ::check_expected_value_or(obj_error, other);
+    };
+
+    {
+        using Value = long;
+        using Error = void *;
+        using Expected = saga::expected<Value, Error>;
+
+        constexpr auto value = Value(42);
+        constexpr auto error = nullptr;
+        constexpr auto other_value = 13;
+
+        constexpr saga::expected<Value, Error> const obj_value(saga::in_place_t{}, value);
+        constexpr saga::expected<Value, Error> const obj_error(saga::unexpect_t{}, error);
+
+        static_assert(obj_value.value_or(other_value) == value, "");
+        static_assert(obj_error.value_or(other_value) == other_value, "");
+
+        static_assert(Expected(saga::in_place_t{}, value).value_or(other_value) == value, "");
+        static_assert(Expected(saga::unexpect_t{}, error).value_or(other_value) == other_value, "");
+    }
+}
+
+TEST_CASE("expected: value_or() &&")
+{
+    using Value = std::vector<int>;
+    using Error = std::string;
+
+    saga_test::property_checker
+    << [](Value const & value, Error const & error, Value const & other)
+    {
+        {
+            saga::expected<Value, Error> obj_value(saga::in_place_t{}, value);
+
+            auto const result_1 = std::move(obj_value).value_or(other);
+
+            static_assert(std::is_same<decltype(result_1), Value const>{}, "");
+
+            REQUIRE(result_1 == value);
+            REQUIRE(obj_value.value().empty());
+        }
+        {
+            saga::expected<Value, Error> obj_error(saga::unexpect_t{}, error);
+
+            {
+                auto src = other;
+                auto const result_2 = std::move(obj_error).value_or(std::move(src));
+
+                static_assert(std::is_same<decltype(result_2), Value const>{}, "");
+                REQUIRE(result_2 == other);
+                REQUIRE(src.empty());
+
+                REQUIRE(!obj_error.has_value());
+                REQUIRE(obj_error.error() == error);
+            }
+            {
+                auto src = other;
+                auto const result_2 = obj_error.value_or(std::move(src));
+
+                static_assert(std::is_same<decltype(result_2), Value const>{}, "");
+                REQUIRE(result_2 == other);
+                REQUIRE(src.empty());
+
+                REQUIRE(!obj_error.has_value());
+                REQUIRE(obj_error.error() == error);
+            }
         }
     };
 }

@@ -325,14 +325,32 @@ namespace saga
                 return this->has_value_;
             }
 
-            Value const & value() const &
+            Value const & operator*() const &
             {
-                if(!this->has_value())
-                {
-                    throw saga::bad_expected_access<Error>(this->error());
-                }
+                assert(this->has_value());
 
                 return this->value_;
+            }
+
+            Value & operator*() &
+            {
+                assert(this->has_value());
+
+                return this->value_;
+            }
+
+            Value && operator*() &&
+            {
+                assert(this->has_value());
+
+                return std::move(this->value_);
+            }
+
+            Value const && operator*() const &&
+            {
+                assert(this->has_value());
+
+                return std::move(this->value_);
             }
 
             Error const & error() const &
@@ -340,6 +358,27 @@ namespace saga
                 assert(!this->has_value());
 
                 return this->error_.value();
+            }
+
+            Error & error() &
+            {
+                assert(!this->has_value());
+
+                return this->error_.value();
+            }
+
+            Error && error() &&
+            {
+                assert(!this->has_value());
+
+                return std::move(this->error_).value();
+            }
+
+            Error const && error() const &&
+            {
+                assert(!this->has_value());
+
+                return std::move(this->error_).value();
             }
 
         private:
@@ -398,26 +437,63 @@ namespace saga
                 return this->has_value_;
             }
 
-            constexpr Value const & value() const &
+            constexpr Value const & operator*() const &
             {
-                this->throw_if_has_no_value();
+                assert(this->has_value());
 
                 return this->value_;
             }
 
-            constexpr Error const & error() const
+            constexpr Value & operator*() &
+            {
+                assert(this->has_value());
+
+                return this->value_;
+            }
+
+            constexpr Value && operator*() &&
+            {
+                assert(this->has_value());
+
+                return std::move(this->value_);
+            }
+
+            constexpr Value const && operator*() const &&
+            {
+                assert(this->has_value());
+
+                return std::move(this->value_);
+            }
+
+            constexpr Error const & error() const &
             {
                 assert(!this->has_value());
 
                 return this->error_.value();
             }
 
-        private:
-            constexpr void throw_if_has_no_value() const
+            constexpr Error & error() &
             {
-                !this->has_value() ? throw saga::bad_expected_access<Error>(this->error()) : 0;
+                assert(!this->has_value());
+
+                return this->error_.value();
             }
 
+            constexpr Error && error() &&
+            {
+                assert(!this->has_value());
+
+                return std::move(this->error_).value();
+            }
+
+            constexpr Error const && error() const &&
+            {
+                assert(!this->has_value());
+
+                return std::move(this->error_).value();
+            }
+
+        private:
             bool has_value_ = true;
             union
             {
@@ -445,6 +521,7 @@ namespace saga
             static_assert(!std::is_void<Value>{}, "");
 
         public:
+            // Конструкторы
             constexpr expected_base() = default;
 
             template <class... Args>
@@ -471,17 +548,67 @@ namespace saga
              : Base(unexpect_t{}, inits, std::forward<Args>(args)...)
             {}
 
-            constexpr bool has_value() const
+            // Немодифицирующие операции
+            // @todo constexpr - требуется constexpr для std::addressof
+            const Value * operator->() const
             {
-                return Base::has_value();
+                assert(this->has_value());
+
+                return std::addressof(**this);
             }
+
+            Value * operator->()
+            {
+                assert(this->has_value());
+
+                return std::addressof(**this);
+            }
+
+            using Base::operator*;
 
             constexpr Value const & value() const &
             {
-                return Base::value();
+                this->throw_if_has_no_value();
+
+                return **this;
             }
 
+            constexpr Value & value() &
+            {
+                this->throw_if_has_no_value();
+
+                return **this;
+            }
+
+            constexpr Value && value() &&
+            {
+                std::move(*this).throw_if_has_no_value();
+
+                return *std::move(*this);
+            }
+
+            constexpr Value const && value() const &&
+            {
+                std::move(*this).throw_if_has_no_value();
+
+                return *std::move(*this);
+            }
+
+            using Base::has_value;
             using Base::error;
+
+        private:
+            constexpr void throw_if_has_no_value() &&
+            {
+                return this->has_value() ? void()
+                       : throw saga::bad_expected_access<Error>(std::move(*this).error());
+            }
+
+            constexpr void throw_if_has_no_value() const &
+            {
+                return this->has_value() ? void()
+                                         : throw saga::bad_expected_access<Error>(this->error());
+            }
         };
 
         template <class Error>
@@ -495,6 +622,7 @@ namespace saga
                                             expected_holder<void_wrapper, Error>>;
 
         public:
+            // Конструкторы
             constexpr expected_base()
              : Base(saga::in_place_t{})
             {}
@@ -514,14 +642,24 @@ namespace saga
              : Base(saga::unexpect_t{}, inits, std::forward<Args>(args)...)
             {}
 
+            // Немодифицирующие операции
+            using Base::operator*;
+
             constexpr bool has_value() const
             {
                 return Base::has_value();
             }
 
-            constexpr void value() const
+            constexpr void value() &&
             {
-                return void(Base::value());
+                return this->has_value() ? void()
+                        : throw saga::bad_expected_access<Error>(std::move(*this).error());
+            }
+
+            constexpr void value() const &
+            {
+                return this->has_value() ? void()
+                                         : throw saga::bad_expected_access<Error>(this->error());
             }
 
             using Base::error;
@@ -530,7 +668,7 @@ namespace saga
 
     template <class Value, class Error>
     class expected
-     : private detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>
+     : public detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>
     {
         using Base = detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>;
 
@@ -578,17 +716,37 @@ namespace saga
          : Base(unexpect_t{}, inits, std::forward<Args>(args)...)
         {}
 
-        // Немодифицирующие операции
+        // Свойства
+        using Base::operator*;
+
+        constexpr explicit operator bool() const noexcept
+        {
+            return this->has_value();
+        }
+
         constexpr bool has_value() const noexcept
         {
             return Base::has_value();
         }
 
         using Base::value;
+        using Base::error;
 
-        constexpr error_type const & error() const &
+        template <class Other>
+        constexpr Value value_or(Other && other) const &
         {
-            return Base::error();
+            static_assert(std::is_convertible<Other, Value>{}, "");
+
+            return this->has_value() ? **this : static_cast<Value>(std::forward<Other>(other));
+        }
+
+        template <class Other>
+        constexpr Value value_or(Other && other) &&
+        {
+            static_assert(std::is_convertible<Other, Value>{}, "");
+
+            return this->has_value() ? std::move(**this)
+                                     : static_cast<Value>(std::forward<Other>(other));
         }
     };
 }
