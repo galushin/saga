@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Класс для представления ожидаемого объекта. Объект типа expected<T, E> содержит объект
  типа T или объект типа unexpected<E> и управляет временем жизни содержащихся в нём объектов.
  @todo Ограничения на типы аргументов шаблона
+ @todo Проверить размер объектов, довести до минимума
 
  Реализация основана на http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0323r9.html
 */
@@ -294,6 +295,19 @@ namespace saga
              : expected_holder(in_place_t{})
             {}
 
+            expected_holder(expected_holder const & rhs)
+             : has_value_(rhs.has_value())
+            {
+                if(this->has_value())
+                {
+                    new(std::addressof(this->value_)) Value(*rhs);
+                }
+                else
+                {
+                    new(std::addressof(this->error_)) unexpected_type(rhs.error());
+                }
+            }
+
             template <class... Args>
             explicit expected_holder(unexpect_t, Args &&... args)
              : has_value_(false)
@@ -393,6 +407,8 @@ namespace saga
         template <class Value, class Error>
         class expected_holder_trivial
         {
+            using unexpected_type = saga::unexpected<Error>;
+
         public:
             // Ограничения
             static_assert(std::is_trivially_destructible<Value>{}, "");
@@ -415,6 +431,10 @@ namespace saga
             constexpr expected_holder_trivial()
              : expected_holder_trivial(in_place_t{})
             {}
+
+            /* @todo Придумать тест, когда деструктор тривиальный, а конструктор копий - нет
+            */
+            expected_holder_trivial(expected_holder_trivial const & rhs) = default;
 
             template <class... Args>
             constexpr explicit expected_holder_trivial(unexpect_t, Args &&... args)
@@ -497,6 +517,7 @@ namespace saga
             bool has_value_ = true;
             union
             {
+                char no_init_;
                 Value value_;
                 unexpected<Error> error_;
             };
@@ -523,6 +544,8 @@ namespace saga
         public:
             // Конструкторы
             constexpr expected_base() = default;
+
+            expected_base(expected_base const &) = default;
 
             template <class... Args>
             constexpr explicit expected_base(in_place_t, Args &&... args)
@@ -627,6 +650,8 @@ namespace saga
              : Base(saga::in_place_t{})
             {}
 
+            expected_base(expected_base const &) = default;
+
             constexpr explicit expected_base(in_place_t)
              : Base(in_place_t{})
             {}
@@ -664,11 +689,29 @@ namespace saga
 
             using Base::error;
         };
+
+        // @todo Перенести в более подходящее место, может быть полезно в других классах
+        template <bool Enable>
+        struct copy_ctor_enabler
+        {
+            copy_ctor_enabler() = default;
+
+            copy_ctor_enabler(copy_ctor_enabler const &) = default;
+        };
+
+        template <>
+        struct copy_ctor_enabler<false>
+        {
+            copy_ctor_enabler() = default;
+            copy_ctor_enabler(copy_ctor_enabler const &) = delete;
+        };
     }
 
     template <class Value, class Error>
     class expected
      : public detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>
+     , detail::copy_ctor_enabler<(std::is_void<Value>{} || std::is_copy_constructible<Value>{})
+                                  && std::is_copy_constructible<Error>{}>
     {
         using Base = detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>;
 
@@ -683,6 +726,9 @@ namespace saga
 
         // Конструкторы
         expected() = default;
+
+        // @todo Не покрыт тестами
+        expected(expected const &) = default;
 
         // @todo Не покрыт тестами
         expected(expected &&);

@@ -151,8 +151,145 @@ TEST_CASE("expected<void, Error> : default ctor")
     }
 }
 
+// Конструктор копий
+static_assert(std::is_copy_constructible<saga::expected<std::vector<int>, std::string>>{}, "");
+static_assert(std::is_copy_constructible<saga::expected<void, std::string>>{}, "");
+
+static_assert(!std::is_copy_constructible<saga::expected<std::unique_ptr<int>, std::string>>{}, "");
+static_assert(!std::is_copy_constructible<saga::expected<void, std::unique_ptr<int>>>{}, "");
+static_assert(!std::is_copy_constructible<saga::expected<std::unique_ptr<long>,
+                                                         std::unique_ptr<int>>>{}, "");
+
+TEST_CASE("expected<void, Error>: copy constructor")
+{
+    // constexpr
+    {
+        using Value = void;
+        using Error = int;
+
+        constexpr saga::expected<Value, Error> const src{};
+
+        constexpr saga::expected<Value, Error> const obj(src);
+
+        static_assert(obj.has_value(), "");
+    }
+    {
+        using Value = void;
+        using Error = int;
+        constexpr auto error = Error(42);
+
+        constexpr saga::expected<Value, Error> const src(saga::unexpect, error);
+
+        constexpr saga::expected<Value, Error> const obj(src);
+
+        static_assert(!obj.has_value(), "");
+        static_assert(obj.error() == error, "");
+    }
+    // не constexpr
+    {
+        using Value = void;
+        using Error = int;
+
+        saga::expected<Value, Error> const src{};
+
+        saga::expected<Value, Error> const obj(src);
+
+        REQUIRE(obj.has_value());
+    }
+    {
+        using Value = void;
+        using Error = std::string;
+
+        saga::expected<Value, Error> const src{};
+
+        saga::expected<Value, Error> const obj(src);
+
+        REQUIRE(obj.has_value());
+    }
+    {
+        using Value = void;
+        using Error = std::string;
+
+        saga_test::property_checker << [](Error const & error)
+        {
+            saga::expected<Value, Error> const src(saga::unexpect, error);
+
+            saga::expected<Value, Error> const obj(src);
+
+            REQUIRE(!obj.has_value());
+            REQUIRE(obj.error() == error);
+        };
+    }
+}
+
+TEST_CASE("expected<Value, Error>: copy constructor")
+{
+    // constexpr
+    {
+        using Value = long;
+        using Error = int *;
+
+        constexpr auto value = Value(13);
+
+        constexpr saga::expected<Value, Error> const src(saga::in_place_t{}, value);
+
+        constexpr saga::expected<Value, Error> const obj(src);
+
+        static_assert(obj.has_value(), "");
+        static_assert(obj.value() == value, "");
+    }
+    {
+        using Value = long;
+        using Error = int;
+        constexpr auto error = Error(42);
+
+        constexpr saga::expected<Value, Error> const src(saga::unexpect, error);
+
+        constexpr saga::expected<Value, Error> const obj(src);
+
+        static_assert(!obj.has_value(), "");
+        static_assert(obj.error() == error, "");
+    }
+    // не constexpr
+    {
+        using Value = long;
+        using Error = int *;
+
+        auto const value = Value(13);
+
+        saga::expected<Value, Error> const src(saga::in_place_t{}, value);
+
+        saga::expected<Value, Error> const obj(src);
+
+        REQUIRE(obj.has_value());
+        REQUIRE(obj.value() == value);
+    }
+    {
+        using Value = std::vector<int>;
+        using Error = std::string;
+
+        saga_test::property_checker << [](Value const & value)
+        {
+            saga::expected<Value, Error> const src(saga::in_place_t{}, value);
+
+            saga::expected<Value, Error> const obj(src);
+
+            REQUIRE(obj.has_value());
+            REQUIRE(obj.value() == value);
+        }
+        << [](Error const & error)
+        {
+            saga::expected<Value, Error> const src(saga::unexpect, error);
+
+            saga::expected<Value, Error> const obj(src);
+
+            REQUIRE(!obj.has_value());
+            REQUIRE(obj.error() == error);
+        };
+    }
+}
+
 // Конструктор с in_place_t
-// @todo Устранить дублирование с unexpected<T>?
 // Есть конструктор с in_place_t и любым числом аргументов
 static_assert(std::is_constructible<std::vector<int>, std::size_t, int>{}, "");
 static_assert(std::is_constructible<saga::expected<std::vector<int>, std::string>,
