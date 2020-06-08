@@ -794,6 +794,31 @@ namespace saga
             return this->has_value() ? std::move(**this)
                                      : static_cast<Value>(std::forward<Other>(other));
         }
+
+        // Сравнение со значением
+        template <class OtherValue>
+        friend constexpr bool operator==(expected const & obj, OtherValue const & value)
+        {
+            return obj.has_value() ? *obj == value : false;
+        }
+
+        template <class OtherValue>
+        friend constexpr bool operator==(OtherValue const & value, expected const & obj)
+        {
+            return obj.has_value() ? value == *obj : false;
+        }
+
+        template <class OtherValue>
+        friend constexpr bool operator!=(expected const & obj, OtherValue const & value)
+        {
+            return !(obj == value);
+        }
+
+        template <class OtherValue>
+        friend constexpr bool operator!=(OtherValue const & value, expected const & obj)
+        {
+            return !(value == obj);
+        }
     };
 }
 // namespace saga

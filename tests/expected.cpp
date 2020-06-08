@@ -963,6 +963,68 @@ TEST_CASE("expected: value_or() &&")
     };
 }
 
+// @todo 4.6 Сравнение expected
+
+// 4.7 Сравнение со значением
+TEST_CASE("expected : equality with value")
+{
+    {
+        using Value = long;
+        using Error = void *;
+        using OtherValue = int;
+
+        constexpr auto value = Value(42);
+        constexpr auto error = Error(nullptr);
+        constexpr auto other = OtherValue(806);
+
+        constexpr saga::expected<Value, Error> obj_value(saga::in_place_t{}, value);
+        constexpr saga::expected<Value, Error> obj_error(saga::unexpect, error);
+
+        static_assert(value != other, "");
+
+        static_assert(obj_value == value, "");
+        static_assert(value == obj_value, "");
+
+        static_assert(obj_value != other, "");
+        static_assert(other != obj_value, "");
+
+        static_assert(obj_error != value, "");
+        static_assert(other != obj_error, "");
+    }
+
+    using Value = long;
+    using Error = std::string;
+    using OtherValue = int;
+
+    saga_test::property_checker
+    << [](Value const & value, Error const & error, OtherValue const & other)
+    {
+        {
+            saga::expected<Value, Error> const obj_value(saga::in_place_t{}, value);
+
+            REQUIRE(obj_value == value);
+            REQUIRE(value == obj_value);
+
+            REQUIRE((obj_value == other) == (value == other));
+            REQUIRE((obj_value != other) == !(obj_value == other));
+
+            REQUIRE((other == obj_value) == (other == value));
+            REQUIRE((other != obj_value) == !(other == obj_value));
+        }
+        {
+            saga::expected<Value, Error> const obj_value(saga::unexpect, error);
+
+            REQUIRE(obj_value != value);
+            REQUIRE(value != obj_value);
+
+            REQUIRE(!(obj_value == value));
+            REQUIRE(!(value == obj_value));
+        }
+    };
+}
+
+// @todo 4.8 Сравнение со unexpected
+
 // 5. Шаблон класса unexpected
 static_assert(std::is_copy_constructible<saga::unexpected<int>>{}, "");
 static_assert(std::is_move_constructible<saga::unexpected<int>>{}, "");
