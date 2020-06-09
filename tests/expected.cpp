@@ -1012,18 +1012,80 @@ TEST_CASE("expected : equality with value")
             REQUIRE((other != obj_value) == !(other == obj_value));
         }
         {
-            saga::expected<Value, Error> const obj_value(saga::unexpect, error);
+            saga::expected<Value, Error> const obj_error(saga::unexpect, error);
 
-            REQUIRE(obj_value != value);
-            REQUIRE(value != obj_value);
+            REQUIRE(obj_error != value);
+            REQUIRE(value != obj_error);
 
-            REQUIRE(!(obj_value == value));
-            REQUIRE(!(value == obj_value));
+            REQUIRE(!(obj_error == value));
+            REQUIRE(!(value == obj_error));
         }
     };
 }
 
-// @todo 4.8 Сравнение со unexpected
+// 4.8 Сравнение со unexpected
+TEST_CASE("expected : equality with unexpected")
+{
+    {
+        using Value = void *;
+        using Error = long;
+        using OtherError = int;
+
+        constexpr auto value = Value(nullptr);
+        constexpr auto unex = saga::unexpected<Error>(42);
+        constexpr auto other_unex = saga::unexpected<OtherError>(906);
+
+        constexpr saga::expected<Value, Error> obj_value(saga::in_place_t{}, value);
+        constexpr saga::expected<Value, Error> obj_error(saga::unexpect, unex.value());
+
+        static_assert(unex != other_unex, "");
+
+        static_assert(obj_error == unex, "");
+        static_assert(unex == obj_error, "");
+
+        static_assert(obj_error != other_unex, "");
+        static_assert(other_unex != obj_error, "");
+
+        static_assert(obj_value != other_unex, "");
+        static_assert(other_unex != obj_value, "");
+
+        static_assert(obj_value != unex, "");
+        static_assert(unex != obj_value, "");
+    }
+
+    using Value = std::string;
+    using Error = long;
+    using OtherError = int;
+
+    saga_test::property_checker
+    << [](Value const & value, Error const & err, OtherError const & other_err)
+    {
+        saga::unexpected<Error> const unex(err);
+        saga::unexpected<OtherError> const other_unex(other_err);
+
+        {
+            saga::expected<Value, Error> const obj_value(saga::in_place_t{}, value);
+
+            REQUIRE(obj_value != unex);
+            REQUIRE(unex != obj_value);
+
+            REQUIRE(!(obj_value == unex));
+            REQUIRE(!(unex == obj_value));
+        }
+        {
+            saga::expected<Value, Error> const obj_error(saga::unexpect, err);
+
+            REQUIRE(obj_error == unex);
+            REQUIRE(unex == obj_error);
+
+            REQUIRE((obj_error == other_unex) == (unex == other_unex));
+            REQUIRE((other_unex == obj_error) == (other_unex == unex));
+
+            REQUIRE((obj_error != other_unex) == !(obj_error == other_unex));
+            REQUIRE((other_unex != obj_error) == !(other_unex == obj_error));
+        }
+    };
+}
 
 // 5. Шаблон класса unexpected
 static_assert(std::is_copy_constructible<saga::unexpected<int>>{}, "");

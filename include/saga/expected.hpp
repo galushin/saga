@@ -819,6 +819,31 @@ namespace saga
         {
             return !(value == obj);
         }
+
+        // Сравнение с unexpected
+        template <class OtherError>
+        friend constexpr bool operator==(expected const & obj, unexpected<OtherError> const & unex)
+        {
+            return obj.has_value() ? false : obj.error() == unex.value();
+        }
+
+        template <class OtherError>
+        friend constexpr bool operator==(unexpected<OtherError> const & unex, expected const & obj)
+        {
+            return obj.has_value() ? false : obj.error() == unex.value();
+        }
+
+        template <class OtherError>
+        friend constexpr bool operator!=(expected const & obj, unexpected<OtherError> const & unex)
+        {
+            return !(obj == unex);
+        }
+
+        template <class OtherError>
+        friend constexpr bool operator!=(unexpected<OtherError> const & unex, expected const & obj)
+        {
+            return !(unex == obj);
+        }
     };
 }
 // namespace saga
