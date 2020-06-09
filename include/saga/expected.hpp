@@ -38,6 +38,9 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    template <class Value, class Error>
+    class expected;
+
     namespace detail
     {
         template <class From, class To>
@@ -620,6 +623,13 @@ namespace saga
             using Base::has_value;
             using Base::error;
 
+        protected:
+            template <class OtherValue, class OtherError>
+            constexpr bool compare_value_with(expected<OtherValue, OtherError> const & rhs) const
+            {
+                return **this == *rhs;
+            }
+
         private:
             constexpr void throw_if_has_no_value() &&
             {
@@ -688,6 +698,15 @@ namespace saga
             }
 
             using Base::error;
+
+        protected:
+            template <class OtherValue, class OtherError>
+            constexpr bool compare_value_with(expected<OtherValue, OtherError> const &) const
+            {
+                static_assert(std::is_void<OtherValue>{}, "Must be void!");
+
+                return true;
+            }
         };
 
         // @todo Перенести в более подходящее место, может быть полезно в других классах
@@ -705,6 +724,16 @@ namespace saga
             copy_ctor_enabler() = default;
             copy_ctor_enabler(copy_ctor_enabler const &) = delete;
         };
+
+        template <class T>
+        struct is_expected
+         : std::false_type
+        {};
+
+        template <class Value, class Error>
+        struct is_expected<saga::expected<Value, Error>>
+         : std::true_type
+        {};
     }
 
     template <class Value, class Error>
@@ -795,27 +824,57 @@ namespace saga
                                      : static_cast<Value>(std::forward<Other>(other));
         }
 
+        // Операторы равно и не равно
+        template <class OtherValue, class OtherError>
+        friend constexpr
+        bool operator==(expected const & lhs, expected<OtherValue, OtherError> const & rhs)
+        {
+            if(lhs.has_value() != rhs.has_value())
+            {
+                return false;
+            }
+            else if(!lhs.has_value())
+            {
+                return lhs.error() == rhs.error();
+            }
+            else
+            {
+                return lhs.compare_value_with(rhs);
+            }
+        }
+
+        template <class OtherValue, class OtherError>
+        friend constexpr
+        bool operator!=(expected const & lhs, expected<OtherValue, OtherError> const & rhs)
+        {
+            return !(lhs == rhs);
+        }
+
         // Сравнение со значением
         template <class OtherValue>
-        friend constexpr bool operator==(expected const & obj, OtherValue const & value)
+        friend constexpr auto operator==(expected const & obj, OtherValue const & value)
+        -> std::enable_if_t<!detail::is_expected<OtherValue>{}, bool>
         {
             return obj.has_value() ? *obj == value : false;
         }
 
         template <class OtherValue>
-        friend constexpr bool operator==(OtherValue const & value, expected const & obj)
+        friend constexpr auto operator==(OtherValue const & value, expected const & obj)
+        -> std::enable_if_t<!detail::is_expected<OtherValue>{}, bool>
         {
             return obj.has_value() ? value == *obj : false;
         }
 
         template <class OtherValue>
-        friend constexpr bool operator!=(expected const & obj, OtherValue const & value)
+        friend constexpr auto operator!=(expected const & obj, OtherValue const & value)
+        -> std::enable_if_t<!detail::is_expected<OtherValue>{}, bool>
         {
             return !(obj == value);
         }
 
         template <class OtherValue>
-        friend constexpr bool operator!=(OtherValue const & value, expected const & obj)
+        friend constexpr auto operator!=(OtherValue const & value, expected const & obj)
+        -> std::enable_if_t<!detail::is_expected<OtherValue>{}, bool>
         {
             return !(value == obj);
         }

@@ -963,7 +963,136 @@ TEST_CASE("expected: value_or() &&")
     };
 }
 
-// @todo 4.6 Сравнение expected
+// 4.6 Сравнение expected
+TEST_CASE("expected<void, Error> : equality")
+{
+    {
+        constexpr saga::expected<void, int> obj1{};
+        constexpr saga::expected<void, int> obj2(saga::unexpect, 42);
+        constexpr saga::expected<void, long> obj3(saga::unexpect, 2020);
+
+        static_assert(obj1 == obj1, "");
+        static_assert(obj1 != obj2, "");
+        static_assert(obj1 != obj3, "");
+
+        static_assert(obj2 != obj1, "");
+        static_assert(obj2 == obj2, "");
+        static_assert(obj2 != obj3, "");
+
+        static_assert(obj3 != obj1, "");
+        static_assert(obj3 != obj2, "");
+        static_assert(obj3 == obj3, "");
+    }
+
+    using Error1 = char;
+    using Error2 = short;
+
+    static_assert(!std::is_same<Error1, Error2>{}, "");
+
+    saga_test::property_checker << [](Error1 const & err1, Error2 const & err2)
+    {
+        saga::expected<void, Error1> const obj_value_1{};
+        saga::expected<void const, Error2> const obj_value_2{};
+
+        saga::expected<void volatile, Error1> const obj_error_1(saga::unexpect, err1);
+        saga::expected<void volatile const, Error2> const obj_error_2(saga::unexpect, err2);
+
+        REQUIRE(obj_value_1 == obj_value_1);
+        REQUIRE(obj_value_1 == obj_value_2);
+        REQUIRE(obj_value_1 != obj_error_1);
+        REQUIRE(obj_value_1 != obj_error_2);
+
+        REQUIRE(obj_value_2 == obj_value_1);
+        REQUIRE(obj_value_2 == obj_value_2);
+        REQUIRE(obj_value_2 != obj_error_1);
+        REQUIRE(obj_value_2 != obj_error_2);
+
+        REQUIRE(obj_error_1 != obj_value_1);
+        REQUIRE(obj_error_1 != obj_value_2);
+        REQUIRE(obj_error_1 == obj_error_1);
+        REQUIRE((obj_error_1 == obj_error_2) == (err1 == err2));
+        REQUIRE((obj_error_1 != obj_error_2) == !(obj_error_1 == obj_error_2));
+
+        REQUIRE(obj_error_2 != obj_value_1);
+        REQUIRE(obj_error_2 != obj_value_2);
+        REQUIRE(obj_error_2 == obj_error_2);
+        REQUIRE((obj_error_2 == obj_error_1) == (err2 == err1));
+        REQUIRE((obj_error_2 != obj_error_1) == !(obj_error_2 == obj_error_1));
+    };
+}
+
+TEST_CASE("expected<Value, Error> : equality")
+{
+    using Value1 = int;
+    using Value2 = long;
+    using Error1 = char;
+    using Error2 = short;
+
+    {
+        constexpr Value1 val1 = 906;
+        constexpr Value2 val2 = 2020;
+
+        constexpr Error1 err1 = 22;
+        constexpr Error2 err2 = 38;
+
+        constexpr saga::expected<Value1, Error1> obj_value_1(saga::in_place_t{}, val1);
+        constexpr saga::expected<Value2, Error2> obj_value_2(saga::in_place_t{}, val2);
+
+        constexpr saga::expected<Value1, Error1> const obj_error_1(saga::unexpect, err1);
+        constexpr saga::expected<Value2, Error2> const obj_error_2(saga::unexpect, err2);
+
+        static_assert(obj_value_1 == obj_value_1, "");
+        static_assert(obj_value_1 != obj_value_2, "");
+        static_assert(obj_value_1 != obj_error_1, "");
+        static_assert(obj_value_1 != obj_error_2, "");
+
+        static_assert(obj_value_2 != obj_value_1, "");
+        static_assert(obj_value_2 == obj_value_2, "");
+        static_assert(obj_value_2 != obj_error_1, "");
+        static_assert(obj_value_2 != obj_error_2, "");
+
+        static_assert(obj_error_1 != obj_value_1, "");
+        static_assert(obj_error_1 != obj_value_2, "");
+        static_assert(obj_error_1 == obj_error_1, "");
+        static_assert(obj_error_1 != obj_error_2, "");
+
+        static_assert(obj_error_2 != obj_value_1, "");
+        static_assert(obj_error_2 != obj_value_2, "");
+        static_assert(obj_error_2 != obj_error_1, "");
+        static_assert(obj_error_2 == obj_error_2, "");
+    }
+
+    static_assert(!std::is_same<Value1, Value2>{}, "");
+    static_assert(!std::is_same<Error1, Error2>{}, "");
+
+    saga_test::property_checker << [](Value1 const & val1, Value2 const & val2,
+                                      Error1 const & err1, Error2 const & err2)
+    {
+        saga::expected<Value1, Error1> const obj_value_1(saga::in_place_t{}, val1);
+        saga::expected<Value2, Error2> const obj_value_2(saga::in_place_t{}, val2);
+
+        saga::expected<Value1, Error1> const obj_error_1(saga::unexpect, err1);
+        saga::expected<Value2, Error2> const obj_error_2(saga::unexpect, err2);
+
+        REQUIRE(obj_value_1 == obj_value_1);
+        REQUIRE(obj_value_2 == obj_value_2);
+
+        REQUIRE(obj_error_1 == obj_error_1);
+        REQUIRE(obj_error_2 == obj_error_2);
+
+        REQUIRE(obj_value_1 != obj_error_1);
+        REQUIRE(obj_value_1 != obj_error_2);
+
+        REQUIRE(obj_value_2 != obj_error_1);
+        REQUIRE(obj_value_2 != obj_error_2);
+
+        REQUIRE((obj_value_1 == obj_value_2) == (val1 == val2));
+        REQUIRE((obj_error_1 == obj_error_2) == (err1 == err2));
+
+        REQUIRE((obj_value_1 != obj_value_2) == !(obj_value_1 == obj_value_2));
+        REQUIRE((obj_error_1 != obj_error_2) == !(obj_error_1 == obj_error_2));
+    };
+}
 
 // 4.7 Сравнение со значением
 TEST_CASE("expected : equality with value")
