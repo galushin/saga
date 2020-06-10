@@ -70,6 +70,15 @@ namespace
     {
         no_default_ctor() = delete;
     };
+
+    struct explicit_ctor_from_int
+    {
+        constexpr explicit explicit_ctor_from_int(int value)
+         : value(value)
+        {}
+
+        int value;
+    };
 }
 static_assert(!std::is_default_constructible<::no_default_ctor>{}, "");
 static_assert(!std::is_default_constructible<saga::expected<::no_default_ctor, long>>{}, "");
@@ -288,6 +297,102 @@ TEST_CASE("expected<Value, Error>: copy constructor")
         };
     }
 }
+
+// Конструктор на основе unexpected
+static_assert(std::is_constructible<long, int const &>{}, "");
+static_assert(std::is_convertible<int const &, long>{}, "");
+static_assert(std::is_constructible<saga::expected<void, long>,
+                                    saga::unexpected<long> const &>{}, "");
+static_assert(std::is_convertible<saga::unexpected<long> const &,
+                                  saga::expected<void, long>>{}, "");
+static_assert(std::is_constructible<saga::expected<std::string, long>,
+                                    saga::unexpected<long> const &>{}, "");
+static_assert(std::is_convertible<saga::unexpected<long> const &,
+                                  saga::expected<std::string, long>>{}, "");
+
+static_assert(std::is_constructible<std::vector<int>, std::size_t const &>{}, "");
+static_assert(!std::is_convertible<std::size_t const &, std::vector<int>>{}, "");
+static_assert(std::is_constructible<saga::expected<void, std::vector<int>>,
+                                    saga::unexpected<std::size_t> const &>{}, "");
+static_assert(!std::is_convertible<saga::unexpected<std::size_t> const &,
+                                  saga::expected<void, std::vector<int>>>{}, "");
+static_assert(std::is_constructible<saga::expected<std::string, std::vector<int>>,
+                                    saga::unexpected<std::size_t> const &>{}, "");
+static_assert(!std::is_convertible<saga::unexpected<std::size_t> const &,
+                                  saga::expected<std::string, std::vector<int>>>{}, "");
+
+static_assert(!std::is_constructible<int, std::vector<int>>{}, "");
+static_assert(!std::is_constructible<saga::expected<void, int>,
+                                     saga::unexpected<std::vector<int>>>{}, "");
+static_assert(!std::is_constructible<saga::expected<std::string, int>,
+                                     saga::unexpected<std::vector<int>>>{}, "");
+
+TEST_CASE("expected: explicit constructor from unexpected")
+{
+    {
+        using Error = ::explicit_ctor_from_int;
+        using ErrorArg = int;
+
+        static_assert(std::is_constructible<Error, ErrorArg const &>{}, "");
+        static_assert(!std::is_convertible<ErrorArg const &, Error>{}, "");
+
+        constexpr ErrorArg error_arg(2259);
+
+
+        constexpr saga::unexpected<ErrorArg> unex(error_arg);
+
+        constexpr saga::expected<void, Error> ex1(unex);
+        constexpr saga::expected<int, Error> ex2(unex);
+
+        static_assert(!ex1.has_value(), "");
+        static_assert(ex1.error().value == error_arg, "");
+
+        static_assert(!ex2.has_value(), "");
+        static_assert(ex2.error().value == error_arg, "");
+    }
+
+    using Error = std::vector<int>;
+    using ErrorArg = std::size_t;
+
+    saga_test::property_checker << [](saga_test::container_size<ErrorArg> const & error_arg)
+    {
+        saga::unexpected<ErrorArg> const unex_arg(error_arg.value);
+
+        saga::expected<void, Error> const obj(unex_arg);
+
+        REQUIRE(!obj.has_value());
+        REQUIRE(obj.error() == Error(error_arg.value));
+    };
+}
+
+TEST_CASE("expected: implicit constructor from unexpected")
+{
+    using Error = long;
+    using ErrorArg = int;
+
+    {
+        constexpr ErrorArg error_arg(1603);
+
+        constexpr saga::unexpected<ErrorArg> unex_arg(error_arg);
+
+        constexpr saga::expected<void, Error> const obj = unex_arg;
+
+        static_assert(!obj.has_value(), "");
+        static_assert(obj.error() == Error(error_arg), "");
+    }
+
+    saga_test::property_checker << [](ErrorArg const & error_arg)
+    {
+        saga::unexpected<ErrorArg> const unex_arg(error_arg);
+
+        saga::expected<void, Error> const obj = unex_arg;
+
+        REQUIRE(!obj.has_value());
+        REQUIRE(obj.error() == Error(error_arg));
+    };
+}
+
+// @todo Конструктор на основе временного unexpected
 
 // Конструктор с in_place_t
 // Есть конструктор с in_place_t и любым числом аргументов
@@ -1424,15 +1529,6 @@ namespace
     static_assert(!std::is_constructible<int, std::vector<int>>{}, "");
     static_assert(!std::is_constructible<saga::unexpected<int>,
                                          saga::unexpected<std::vector<int>>>{}, "");
-
-    struct explicit_ctor_from_int
-    {
-        constexpr explicit explicit_ctor_from_int(int value)
-         : value(value)
-        {}
-
-        int value;
-    };
 }
 
 TEST_CASE("unexpected : copy constructor from compatible unexpected - explicit")

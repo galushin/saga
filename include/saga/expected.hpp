@@ -762,6 +762,22 @@ namespace saga
         // @todo Не покрыт тестами
         expected(expected &&);
 
+        // @todo Значение по умолчанию не покрыто тестами
+        template <class OtherError,
+                  std::enable_if_t<std::is_constructible<Error, OtherError const &>{}> * = nullptr,
+                  std::enable_if_t<std::is_convertible<OtherError const &, Error>{}> * = nullptr>
+        constexpr expected(saga::unexpected<OtherError> const & unex)
+         : expected(saga::unexpect, unex.value())
+        {}
+
+        // @todo Значение по умолчанию не покрыто тестами
+        template <class OtherError,
+                  std::enable_if_t<std::is_constructible<Error, OtherError const &>{}> * = nullptr,
+                  std::enable_if_t<!std::is_convertible<OtherError const &, Error>{}> * = nullptr>
+        constexpr explicit expected(saga::unexpected<OtherError> const & unex)
+         : expected(saga::unexpect, unex.value())
+        {}
+
         template <class... Args,
                   class = std::enable_if_t<(std::is_void<Value>{} && sizeof...(Args) == 0)
                                            || (!std::is_void<Value>{}
