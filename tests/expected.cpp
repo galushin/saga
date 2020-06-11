@@ -73,13 +73,24 @@ namespace
 
     struct explicit_ctor_from_int
     {
-        constexpr explicit explicit_ctor_from_int(int value)
+        constexpr explicit explicit_ctor_from_int(int value) noexcept
          : value(value)
         {}
 
         int value;
     };
+
+    class Base
+    {
+    public:
+        virtual ~Base() {};
+    };
+
+    class Derived
+     : public Base
+    {};
 }
+
 static_assert(!std::is_default_constructible<::no_default_ctor>{}, "");
 static_assert(!std::is_default_constructible<saga::expected<::no_default_ctor, long>>{}, "");
 
@@ -323,11 +334,11 @@ static_assert(!std::is_convertible<saga::unexpected<std::size_t> const &,
 
 static_assert(!std::is_constructible<int, std::vector<int>>{}, "");
 static_assert(!std::is_constructible<saga::expected<void, int>,
-                                     saga::unexpected<std::vector<int>>>{}, "");
+                                     saga::unexpected<std::vector<int> const &>>{}, "");
 static_assert(!std::is_constructible<saga::expected<std::string, int>,
-                                     saga::unexpected<std::vector<int>>>{}, "");
+                                     saga::unexpected<std::vector<int> const &>>{}, "");
 
-TEST_CASE("expected: explicit constructor from unexpected")
+TEST_CASE("expected: explicit constructor from unexpected const &")
 {
     {
         using Error = ::explicit_ctor_from_int;
@@ -365,7 +376,7 @@ TEST_CASE("expected: explicit constructor from unexpected")
     };
 }
 
-TEST_CASE("expected: implicit constructor from unexpected")
+TEST_CASE("expected: implicit constructor from unexpected const & ")
 {
     using Error = long;
     using ErrorArg = int;
@@ -392,7 +403,99 @@ TEST_CASE("expected: implicit constructor from unexpected")
     };
 }
 
-// @todo Конструктор на основе временного unexpected
+// Конструктор на основе временного unexpected
+static_assert(std::is_constructible<std::unique_ptr<Base>, std::unique_ptr<Derived> &&>{}, "");
+static_assert(std::is_constructible<saga::expected<void, std::unique_ptr<Base>>,
+                                    saga::unexpected<std::unique_ptr<Derived>> &&>{}, "");
+static_assert(std::is_convertible<std::unique_ptr<Derived> &&, std::unique_ptr<Base>>{}, "");
+static_assert(std::is_convertible<saga::unexpected<std::unique_ptr<Derived>> &&,
+                                  saga::expected<std::string, std::unique_ptr<Base>>>{}, "");
+
+static_assert(std::is_constructible<::explicit_ctor_from_int, int &&>{}, "");
+static_assert(!std::is_convertible<int &&, ::explicit_ctor_from_int>{}, "");
+static_assert(std::is_constructible<saga::expected<int, ::explicit_ctor_from_int>,
+                                    saga::unexpected<int>&&>{}, "");
+static_assert(!std::is_convertible<saga::unexpected<int> &&,
+                                   saga::expected<int, ::explicit_ctor_from_int>>{}, "");
+
+static_assert(std::is_nothrow_constructible<long, int>{}, "");
+static_assert(std::is_nothrow_constructible<saga::expected<void, long>,
+                                            saga::unexpected<int> &&>{}, "");
+static_assert(std::is_nothrow_constructible<::explicit_ctor_from_int, int>{}, "");
+static_assert(std::is_nothrow_constructible<saga::expected<void, ::explicit_ctor_from_int>,
+                                            saga::unexpected<int> &&>{}, "");
+
+static_assert(!std::is_nothrow_constructible<std::vector<char>, std::size_t &&>{}, "");
+static_assert(!std::is_nothrow_constructible<saga::expected<double, std::vector<char>>,
+                                             saga::unexpected<std::size_t> &&>{}, "");
+// @todo Покрыть проверкой случай, когда есть неявный конструктор, не являющийся noexcept
+
+TEST_CASE("expected: explicit constructor from unexpected &&")
+{
+    {
+        using Error = ::explicit_ctor_from_int;
+        using ErrorArg = int;
+
+        static_assert(std::is_constructible<Error, ErrorArg const &>{}, "");
+        static_assert(!std::is_convertible<ErrorArg const &, Error>{}, "");
+
+        constexpr ErrorArg error_arg(2259);
+
+        constexpr auto ex1 = saga::expected<void, Error>(saga::unexpected<ErrorArg>(error_arg));
+        constexpr auto ex2 = saga::expected<int, Error>(saga::unexpected<ErrorArg>(error_arg));
+
+        static_assert(!ex1.has_value(), "");
+        static_assert(ex1.error().value == error_arg, "");
+
+        static_assert(!ex2.has_value(), "");
+        static_assert(ex2.error().value == error_arg, "");
+    }
+
+    using Error = std::vector<int>;
+    using ErrorArg = std::size_t;
+
+    saga_test::property_checker << [](saga_test::container_size<ErrorArg> const & error_arg)
+    {
+        auto const obj = saga::expected<void, Error>(saga::unexpected<ErrorArg>(error_arg.value));
+
+        REQUIRE(!obj.has_value());
+        REQUIRE(obj.error() == Error(error_arg.value));
+    };
+
+    {
+        saga::unexpected<std::vector<int>> const unex_old(saga::in_place_t{}, {1, 2, 3, 4, 5});
+        auto unex = unex_old;
+
+        saga::expected<void, std::vector<int>> const obj(std::move(unex));
+
+        REQUIRE(!obj.has_value());
+        REQUIRE(obj.error() == unex_old.value());
+        REQUIRE(unex.value().empty());
+    }
+}
+
+TEST_CASE("expected: implicit constructor from unexpected &&")
+{
+    using Error = long;
+    using ErrorArg = int;
+
+    {
+        constexpr ErrorArg error_arg(1603);
+
+        constexpr saga::expected<void, Error> const obj = saga::unexpected<ErrorArg>(error_arg);
+
+        static_assert(!obj.has_value(), "");
+        static_assert(obj.error() == Error(error_arg), "");
+    }
+
+    saga_test::property_checker << [](ErrorArg const & error_arg)
+    {
+        saga::expected<void, Error> const obj = saga::unexpected<ErrorArg>(error_arg);
+
+        REQUIRE(!obj.has_value());
+        REQUIRE(obj.error() == Error(error_arg));
+    };
+}
 
 // Конструктор с in_place_t
 // Есть конструктор с in_place_t и любым числом аргументов
@@ -1598,19 +1701,6 @@ TEST_CASE("unexpected : copy constructor from compatible unexpected - implicit")
     };
 }
 
-namespace
-{
-    class Base
-    {
-    public:
-        virtual ~Base() {};
-    };
-
-    class Derived
-     : public Base
-    {};
-}
-
 TEST_CASE("unexpected : compatrible move ctor - explciit")
 {
     // Конструктор из совместимного unexpected - явный
@@ -1667,7 +1757,7 @@ TEST_CASE("unexpected : compatible move ctor - implicit")
 
         REQUIRE(obj.value().get() == src_ptr);
         REQUIRE(src.value().get() == nullptr);
-    };
+    }
 }
 
 namespace

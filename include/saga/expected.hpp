@@ -755,8 +755,6 @@ namespace saga
 
         // Конструкторы
         expected() = default;
-
-        // @todo Не покрыт тестами
         expected(expected const &) = default;
 
         // @todo Не покрыт тестами
@@ -776,6 +774,26 @@ namespace saga
                   std::enable_if_t<!std::is_convertible<OtherError const &, Error>{}> * = nullptr>
         constexpr explicit expected(saga::unexpected<OtherError> const & unex)
          : expected(saga::unexpect, unex.value())
+        {}
+
+        // @todo Значение по умолчанию для OtherError
+        // @todo noexcept - не покрыта проверками
+        template <class OtherError,
+                  std::enable_if_t<std::is_constructible<Error, OtherError&&>{}> * = nullptr,
+                  std::enable_if_t<std::is_convertible<OtherError &&, Error>{}> * = nullptr>
+        constexpr expected(unexpected<OtherError> && unex)
+            noexcept(std::is_nothrow_constructible<Error, OtherError &&>{})
+         : Base(saga::unexpect, std::move(unex).value())
+        {}
+
+        // @todo Значение по умолчанию для OtherError
+        // @todo Покрыть тестом, что выполняет перемещение
+        template <class OtherError,
+                  std::enable_if_t<std::is_constructible<Error, OtherError&&>{}> * = nullptr,
+                  std::enable_if_t<!std::is_convertible<OtherError &&, Error>{}> * = nullptr>
+        explicit constexpr expected(unexpected<OtherError> && unex)
+            noexcept(std::is_nothrow_constructible<Error, OtherError &&>{})
+         : Base(saga::unexpect, unex.value())
         {}
 
         template <class... Args,
