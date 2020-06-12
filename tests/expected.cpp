@@ -71,13 +71,15 @@ namespace
         no_default_ctor() = delete;
     };
 
-    struct explicit_ctor_from_int
+    template <class T>
+    struct explicit_ctor_from
     {
-        constexpr explicit explicit_ctor_from_int(int value) noexcept
-         : value(value)
+        // @todo Правильно ли это реализовано?
+        constexpr explicit explicit_ctor_from(T value) noexcept
+         : value(std::move(value))
         {}
 
-        int value;
+        saga::remove_cvref_t<T> value;
     };
 
     class Base
@@ -341,7 +343,7 @@ static_assert(!std::is_constructible<saga::expected<std::string, int>,
 TEST_CASE("expected: explicit constructor from unexpected const &")
 {
     {
-        using Error = ::explicit_ctor_from_int;
+        using Error = ::explicit_ctor_from<int const&>;
         using ErrorArg = int;
 
         static_assert(std::is_constructible<Error, ErrorArg const &>{}, "");
@@ -411,29 +413,46 @@ static_assert(std::is_convertible<std::unique_ptr<Derived> &&, std::unique_ptr<B
 static_assert(std::is_convertible<saga::unexpected<std::unique_ptr<Derived>> &&,
                                   saga::expected<std::string, std::unique_ptr<Base>>>{}, "");
 
-static_assert(std::is_constructible<::explicit_ctor_from_int, int &&>{}, "");
-static_assert(!std::is_convertible<int &&, ::explicit_ctor_from_int>{}, "");
-static_assert(std::is_constructible<saga::expected<int, ::explicit_ctor_from_int>,
+static_assert(std::is_constructible<::explicit_ctor_from<int>, int &&>{}, "");
+static_assert(!std::is_convertible<int &&, ::explicit_ctor_from<int>>{}, "");
+static_assert(std::is_constructible<saga::expected<int, ::explicit_ctor_from<int>>,
                                     saga::unexpected<int>&&>{}, "");
 static_assert(!std::is_convertible<saga::unexpected<int> &&,
-                                   saga::expected<int, ::explicit_ctor_from_int>>{}, "");
+                                   saga::expected<int, ::explicit_ctor_from<int>>>{}, "");
 
 static_assert(std::is_nothrow_constructible<long, int>{}, "");
 static_assert(std::is_nothrow_constructible<saga::expected<void, long>,
                                             saga::unexpected<int> &&>{}, "");
-static_assert(std::is_nothrow_constructible<::explicit_ctor_from_int, int>{}, "");
-static_assert(std::is_nothrow_constructible<saga::expected<void, ::explicit_ctor_from_int>,
+static_assert(std::is_nothrow_constructible<::explicit_ctor_from<int>, int>{}, "");
+static_assert(std::is_nothrow_constructible<saga::expected<void, ::explicit_ctor_from<int>>,
                                             saga::unexpected<int> &&>{}, "");
 
 static_assert(!std::is_nothrow_constructible<std::vector<char>, std::size_t &&>{}, "");
 static_assert(!std::is_nothrow_constructible<saga::expected<double, std::vector<char>>,
                                              saga::unexpected<std::size_t> &&>{}, "");
-// @todo Покрыть проверкой случай, когда есть неявный конструктор, не являющийся noexcept
+
+namespace
+{
+    struct throwing_implicit_ctor_from_int
+    {
+        throwing_implicit_ctor_from_int(int value) noexcept(false)
+         : value(value)
+        {}
+
+        int value;
+    };
+}
+
+static_assert(std::is_constructible<::throwing_implicit_ctor_from_int, int>{}, "");
+static_assert(std::is_convertible<int, ::throwing_implicit_ctor_from_int>{}, "");
+static_assert(!std::is_nothrow_constructible<::throwing_implicit_ctor_from_int, int>{}, "");
+static_assert(!std::is_nothrow_constructible<saga::expected<int, throwing_implicit_ctor_from_int>,
+                                             saga::unexpected<int> &&>{}, "");
 
 TEST_CASE("expected: explicit constructor from unexpected &&")
 {
     {
-        using Error = ::explicit_ctor_from_int;
+        using Error = ::explicit_ctor_from<int>;
         using ErrorArg = int;
 
         static_assert(std::is_constructible<Error, ErrorArg const &>{}, "");
@@ -1637,16 +1656,16 @@ namespace
 TEST_CASE("unexpected : copy constructor from compatible unexpected - explicit")
 {
     // Конструктор из совместимного unexpected - явный
-    static_assert(std::is_constructible<explicit_ctor_from_int, int const &>{}, "");
-    static_assert(std::is_constructible<saga::unexpected<explicit_ctor_from_int>,
+    static_assert(std::is_constructible<explicit_ctor_from<int>, int const &>{}, "");
+    static_assert(std::is_constructible<saga::unexpected<explicit_ctor_from<int>>,
                                         saga::unexpected<int> const &>{}, "");
-    static_assert(!std::is_convertible<int const &, explicit_ctor_from_int>{}, "");
+    static_assert(!std::is_convertible<int const &, explicit_ctor_from<int>>{}, "");
     static_assert(!std::is_convertible<saga::unexpected<int> const &,
-                                       saga::unexpected<explicit_ctor_from_int>>{}, "");
+                                       saga::unexpected<explicit_ctor_from<int>>>{}, "");
 
     {
         constexpr saga::unexpected<int> src(42);
-        constexpr saga::unexpected<explicit_ctor_from_int> obj(src);
+        constexpr saga::unexpected<explicit_ctor_from<int>> obj(src);
 
         static_assert(obj.value().value == src.value(), "");
     }
@@ -1704,16 +1723,16 @@ TEST_CASE("unexpected : copy constructor from compatible unexpected - implicit")
 TEST_CASE("unexpected : compatrible move ctor - explciit")
 {
     // Конструктор из совместимного unexpected - явный
-    static_assert(std::is_constructible<explicit_ctor_from_int, int>{}, "");
-    static_assert(std::is_constructible<saga::unexpected<explicit_ctor_from_int>,
+    static_assert(std::is_constructible<explicit_ctor_from<int>, int>{}, "");
+    static_assert(std::is_constructible<saga::unexpected<explicit_ctor_from<int>>,
                                         saga::unexpected<int>>{}, "");
-    static_assert(!std::is_convertible<int, explicit_ctor_from_int>{}, "");
+    static_assert(!std::is_convertible<int, explicit_ctor_from<int>>{}, "");
     static_assert(!std::is_convertible<saga::unexpected<int>,
-                                       saga::unexpected<explicit_ctor_from_int>>{}, "");
+                                       saga::unexpected<explicit_ctor_from<int>>>{}, "");
 
     {
         constexpr int value = 42;
-        constexpr saga::unexpected<explicit_ctor_from_int> obj{saga::unexpected<int>(value)};
+        constexpr saga::unexpected<explicit_ctor_from<int>> obj{saga::unexpected<int>(value)};
 
         static_assert(obj.value().value == value, "");
     }

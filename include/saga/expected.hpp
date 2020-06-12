@@ -103,7 +103,6 @@ namespace saga
          : value_(other.value())
         {}
 
-        // @todo Реализовать все остальные ограничения кроме первого
         template <class Err,
                   std::enable_if_t<!std::is_convertible<Err const &, Error>{}, bool> = false,
                   class = std::enable_if_t<std::is_constructible<Error, Err>{}>,
@@ -777,7 +776,6 @@ namespace saga
         {}
 
         // @todo Значение по умолчанию для OtherError
-        // @todo noexcept - не покрыта проверками
         template <class OtherError,
                   std::enable_if_t<std::is_constructible<Error, OtherError&&>{}> * = nullptr,
                   std::enable_if_t<std::is_convertible<OtherError &&, Error>{}> * = nullptr>
@@ -787,13 +785,12 @@ namespace saga
         {}
 
         // @todo Значение по умолчанию для OtherError
-        // @todo Покрыть тестом, что выполняет перемещение
         template <class OtherError,
                   std::enable_if_t<std::is_constructible<Error, OtherError&&>{}> * = nullptr,
                   std::enable_if_t<!std::is_convertible<OtherError &&, Error>{}> * = nullptr>
         explicit constexpr expected(unexpected<OtherError> && unex)
             noexcept(std::is_nothrow_constructible<Error, OtherError &&>{})
-         : Base(saga::unexpect, unex.value())
+         : Base(saga::unexpect, std::move(unex).value())
         {}
 
         template <class... Args,
