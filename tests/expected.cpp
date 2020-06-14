@@ -2203,6 +2203,29 @@ TEST_CASE("unexpected : CTAD")
 #endif
 // __cpp_deduction_guides
 
+TEST_CASE("unexpected : make_unexpected")
+{
+    using Value = long;
+
+    {
+        constexpr auto const value = Value(42);
+        constexpr auto const obj = saga::make_unexpected(value);
+
+        static_assert(std::is_same<decltype(obj), saga::unexpected<Value> const>{}, "");
+
+        REQUIRE(obj.value() == value);
+    }
+
+    saga_test::property_checker << [](Value const & value)
+    {
+        auto const obj = saga::make_unexpected(value);
+
+        static_assert(std::is_same<decltype(obj), saga::unexpected<Value> const>{}, "");
+
+        REQUIRE(obj.value() == value);
+    };
+}
+
 // 6. bad_expected_access
 namespace
 {

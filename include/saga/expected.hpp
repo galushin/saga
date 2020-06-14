@@ -211,6 +211,12 @@ namespace saga
 // __cpp_deduction_guides
 
     template <class Error>
+    constexpr unexpected<std::decay_t<Error>> make_unexpected(Error && error)
+    {
+        return unexpected<std::decay_t<Error>>(std::forward<Error>(error));
+    }
+
+    template <class Error>
     class bad_expected_access;
 
     template <>
