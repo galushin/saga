@@ -311,6 +311,83 @@ TEST_CASE("expected<Value, Error>: copy constructor")
     }
 }
 
+// @todo Конструктор с одним аргументом-значением
+static_assert(std::is_constructible<long, int>{}, "");
+static_assert(std::is_convertible<int, long>{}, "");
+static_assert(std::is_constructible<saga::expected<long, std::string>, int>{}, "");
+static_assert(std::is_convertible<int, saga::expected<long, std::string>>{}, "");
+
+static_assert(std::is_constructible<std::vector<int>, std::size_t>{}, "");
+static_assert(!std::is_convertible<std::size_t, std::vector<int>>{}, "");
+static_assert(std::is_constructible<saga::expected<std::vector<int>, long>, std::size_t>{}, "");
+static_assert(!std::is_convertible<std::size_t, saga::expected<std::vector<int>, long>>{}, "");
+
+static_assert(std::is_constructible<saga::expected<std::unique_ptr<int>, long>,
+                                    std::unique_ptr<int>>{}, "");
+static_assert(!std::is_constructible<saga::expected<void, int>, long>{}, "");
+
+static_assert(!std::is_constructible<int, std::vector<int>>{}, "");
+static_assert(!std::is_constructible<saga::expected<int, void*>, std::vector<int>>{}, "");
+
+TEST_CASE("expected : explicit constructor from one argument")
+{
+    {
+        using Value = ::explicit_ctor_from<int>;
+        using Error = long*;
+        using Argument = int;
+
+        static_assert(std::is_constructible<Value, Argument>{}, "");
+        static_assert(!std::is_convertible<Argument, Value>{}, "");
+
+        constexpr auto arg = Argument(1911);
+
+        constexpr saga::expected<Value, Error> obj(arg);
+
+        static_assert(obj.has_value(), "");
+        static_assert(obj.value().value == arg, "");
+    }
+
+    using Value = std::vector<int>;
+    using Error = std::string;
+    using Argument = std::size_t;
+
+    saga_test::property_checker << [](saga_test::container_size<Argument> const & arg)
+    {
+        saga::expected<Value, Error> const obj(arg.value);
+
+        REQUIRE(obj.has_value());
+        REQUIRE(obj.value() == Value(arg.value));
+    };
+}
+
+TEST_CASE("expected : implicit constructor from one argument")
+{
+    {
+        using Value = long;
+        using Error = int *;
+        using Argument = int;
+
+        constexpr auto arg = Argument(17);
+
+        constexpr saga::expected<Value, Error> obj = arg;
+
+        static_assert(obj.has_value(), "");
+        static_assert(obj.value() == Value(arg), "");
+    }
+
+    using Value = long;
+    using Error = std::string;
+    using Argument = int;
+
+    saga_test::property_checker << [](Argument const & arg)
+    {
+        saga::expected<Value, Error> const obj = arg;
+
+        REQUIRE(obj.has_value());
+        REQUIRE(obj.value() == Value(arg));
+    };
+}
+
 // Конструктор на основе unexpected
 static_assert(std::is_constructible<long, int const &>{}, "");
 static_assert(std::is_convertible<int const &, long>{}, "");
@@ -320,6 +397,8 @@ static_assert(std::is_convertible<saga::unexpected<long> const &,
                                   saga::expected<void, long>>{}, "");
 static_assert(std::is_constructible<saga::expected<std::string, long>,
                                     saga::unexpected<long> const &>{}, "");
+static_assert(std::is_constructible<saga::expected<std::string, long>,
+                                    saga::unexpected<long> &>{}, "");
 static_assert(std::is_convertible<saga::unexpected<long> const &,
                                   saga::expected<std::string, long>>{}, "");
 
@@ -563,6 +642,19 @@ TEST_CASE("expected<void, Error>: placement constructor")
     static_assert(obj0.has_value(), "");
     static_assert(noexcept(obj0.has_value()), "");
     static_assert((obj0.value(), true), "");
+}
+
+TEST_CASE("expected: placement constructor with no additional arguments")
+{
+    using Value = std::vector<int>;
+    using Error = std::string;
+
+    {
+        saga::expected<Value, Error> const obj(saga::in_place_t{});
+
+        REQUIRE(obj.has_value());
+        REQUIRE(obj.value() == Value());
+    }
 }
 
 TEST_CASE("expected: placement constructor")

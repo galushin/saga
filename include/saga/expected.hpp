@@ -765,6 +765,24 @@ namespace saga
         // @todo Не покрыт тестами
         expected(expected &&);
 
+        template <class Arg,
+                  std::enable_if_t<std::is_constructible<Value, Arg&&>{}> * = nullptr,
+                  std::enable_if_t<std::is_convertible<Arg&&, Value>{}> * = nullptr>
+        // @todo Значение для Arg по умолчанию
+        // @todo Ограничения типа
+        constexpr expected(Arg && arg)
+         : expected(saga::in_place_t{}, std::forward<Arg>(arg))
+        {}
+
+        template <class Arg,
+                  std::enable_if_t<std::is_constructible<Value, Arg&&>{}> * = nullptr,
+                  std::enable_if_t<!std::is_convertible<Arg&&, Value>{}> * = nullptr>
+        // @todo Значение для Arg по умолчанию
+        // @todo Ограничения типа
+        constexpr explicit expected(Arg && arg)
+         : expected(saga::in_place_t{}, std::forward<Arg>(arg))
+        {}
+
         // @todo Значение по умолчанию не покрыто тестами
         template <class OtherError,
                   std::enable_if_t<std::is_constructible<Error, OtherError const &>{}> * = nullptr,
