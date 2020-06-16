@@ -739,7 +739,18 @@ namespace saga
         struct is_expected<saga::expected<Value, Error>>
          : std::true_type
         {};
+
+        template <class Value, class Error, class Arg>
+        constexpr bool expected_has_ctor_from_arg()
+        {
+            return !std::is_void<Value>{}
+                    && std::is_constructible<Value, Arg&&>{}
+                    && !std::is_same<saga::remove_cvref_t<Arg>, in_place_t>{}
+                    && !std::is_same<saga::remove_cvref_t<Arg>, saga::expected<Value, Error>>{}
+                    && !std::is_same<saga::remove_cvref_t<Arg>, saga::unexpected<Error>>{};
+        }
     }
+    // namespace detail
 
     template <class Value, class Error>
     class expected
@@ -766,7 +777,7 @@ namespace saga
         expected(expected &&);
 
         template <class Arg,
-                  std::enable_if_t<std::is_constructible<Value, Arg&&>{}> * = nullptr,
+                  std::enable_if_t<detail::expected_has_ctor_from_arg<Value, Error, Arg>()> * = nullptr,
                   std::enable_if_t<std::is_convertible<Arg&&, Value>{}> * = nullptr>
         // @todo Значение для Arg по умолчанию
         // @todo Ограничения типа
@@ -775,15 +786,16 @@ namespace saga
         {}
 
         template <class Arg,
-                  std::enable_if_t<std::is_constructible<Value, Arg&&>{}> * = nullptr,
+                  std::enable_if_t<detail::expected_has_ctor_from_arg<Value, Error, Arg>()> * = nullptr,
                   std::enable_if_t<!std::is_convertible<Arg&&, Value>{}> * = nullptr>
         // @todo Значение для Arg по умолчанию
-        // @todo Ограничения типа
+        // @todo Ограничения типа кроме второго не покрыты проверками
         constexpr explicit expected(Arg && arg)
          : expected(saga::in_place_t{}, std::forward<Arg>(arg))
         {}
 
         // @todo Значение по умолчанию не покрыто тестами
+        // @todo Ограничения типа кроме второго не покрыты проверками
         template <class OtherError,
                   std::enable_if_t<std::is_constructible<Error, OtherError const &>{}> * = nullptr,
                   std::enable_if_t<std::is_convertible<OtherError const &, Error>{}> * = nullptr>

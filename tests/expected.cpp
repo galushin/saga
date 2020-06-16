@@ -644,6 +644,35 @@ TEST_CASE("expected<void, Error>: placement constructor")
     static_assert((obj0.value(), true), "");
 }
 
+namespace
+{
+    struct ctor_from_in_place_t
+    {
+        ctor_from_in_place_t() = default;
+        ctor_from_in_place_t(saga::in_place_t)
+         : default_constructed(false)
+        {}
+
+        bool default_constructed = true;
+    };
+}
+
+TEST_CASE("expected: placement ctor over one argument ctor")
+{
+    {
+        constexpr saga::expected<ctor_from_in_place_t, long> obj(saga::in_place_t{});
+
+        static_assert(obj.has_value(), "");
+        static_assert(obj.value().default_constructed == true, "");
+    }
+    {
+        saga::expected<ctor_from_in_place_t, std::string> const obj(saga::in_place_t{});
+
+        REQUIRE(obj.has_value());
+        REQUIRE(obj.value().default_constructed == true);
+    }
+}
+
 TEST_CASE("expected: placement constructor with no additional arguments")
 {
     using Value = std::vector<int>;
