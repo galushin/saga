@@ -555,6 +555,9 @@ namespace saga
 
             expected_base(expected_base const &) = default;
 
+            // @todo Покрыть тестами и реализовать, должен быть = default
+            expected_base(expected_base &&);
+
             template <class... Args>
             constexpr explicit expected_base(in_place_t, Args &&... args)
              : Base(in_place_t{}, std::forward<Args>(args)...)
@@ -667,6 +670,9 @@ namespace saga
 
             expected_base(expected_base const &) = default;
 
+            // @todo Покрыть тестами и реализовать, должен быть = default
+            expected_base(expected_base &&);
+
             constexpr explicit expected_base(in_place_t)
              : Base(in_place_t{})
             {}
@@ -717,17 +723,27 @@ namespace saga
         // @todo Перенести в более подходящее место, может быть полезно в других классах
         template <bool Enable>
         struct copy_ctor_enabler
-        {
-            copy_ctor_enabler() = default;
-
-            copy_ctor_enabler(copy_ctor_enabler const &) = default;
-        };
+        {};
 
         template <>
         struct copy_ctor_enabler<false>
         {
             copy_ctor_enabler() = default;
             copy_ctor_enabler(copy_ctor_enabler const &) = delete;
+            copy_ctor_enabler(copy_ctor_enabler &&) = default;
+        };
+
+        // @todo Перенести в более подходящее место, может быть полезно в других классах
+        template <bool Enable>
+        struct move_ctor_enabler
+        {};
+
+        template <>
+        struct move_ctor_enabler<false>
+        {
+            move_ctor_enabler() = default;
+            move_ctor_enabler(move_ctor_enabler const &) = default;
+            move_ctor_enabler(move_ctor_enabler &&) = delete;
         };
 
         template <class T>
@@ -752,11 +768,20 @@ namespace saga
     }
     // namespace detail
 
+    /** @brief Вспомогательный класс для представения ожидаемого объекта
+    @todo Нет ли здесь потенциальной проблемы с повторяющимися базовыми классами? Вдруг кто-то
+    унаследует от двух expected.
+    @todo Нет ли здесь проблемы с разрастанием размера класса? Может быть объединить
+    move_ctor_enabler и copy_ctor_enabler в один класс? К тому же можно рассмотреть передачу
+    базового класса
+    @todo expected_base не должен беспокоиться о том, что Value может быть void, выделить это в
+    отдельный CRTP-класс
+    */
     template <class Value, class Error>
     class expected
      : public detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>
-     , detail::copy_ctor_enabler<(std::is_void<Value>{} || std::is_copy_constructible<Value>{})
-                                  && std::is_copy_constructible<Error>{}>
+     , detail::copy_ctor_enabler<(std::is_void<Value>{} || std::is_copy_constructible<Value>{}) && std::is_copy_constructible<Error>{}>
+     , detail::move_ctor_enabler<(std::is_void<Value>{} || std::is_move_constructible<Value>{}) && std::is_move_constructible<Error>{}>
     {
         using Base = detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>;
 
@@ -774,7 +799,7 @@ namespace saga
         expected(expected const &) = default;
 
         // @todo Не покрыт тестами
-        expected(expected &&);
+        expected(expected &&) = default;
 
         template <class Arg,
                   std::enable_if_t<detail::expected_has_ctor_from_arg<Value, Error, Arg>()> * = nullptr,

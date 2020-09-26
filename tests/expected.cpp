@@ -311,6 +311,30 @@ TEST_CASE("expected<Value, Error>: copy constructor")
     }
 }
 
+// @tood Конструктор перемещения
+namespace
+{
+    struct not_move_constructible
+    {
+        not_move_constructible(not_move_constructible const &) = delete;
+        not_move_constructible(not_move_constructible &&) = delete;
+    };
+}
+
+static_assert(std::is_move_constructible<saga::expected<int, long>>{}, "");
+static_assert(std::is_move_constructible<saga::expected<std::unique_ptr<int>, long>>{}, "");
+static_assert(std::is_move_constructible<saga::expected<int, std::unique_ptr<long>>>{}, "");
+static_assert(std::is_move_constructible<saga::expected<std::unique_ptr<int>, std::unique_ptr<long>>>{}, "");
+
+static_assert(std::is_move_constructible<saga::expected<void, long>>{}, "");
+static_assert(std::is_move_constructible<saga::expected<void, std::unique_ptr<long>>>{}, "");
+
+static_assert(!std::is_move_constructible<::not_move_constructible>{}, "");
+static_assert(!std::is_move_constructible<saga::expected<::not_move_constructible, long>>{}, "");
+static_assert(!std::is_move_constructible<saga::expected<void, ::not_move_constructible>>{}, "");
+static_assert(!std::is_move_constructible<saga::expected<std::string, ::not_move_constructible>>{}, "");
+static_assert(!std::is_move_constructible<saga::expected<::not_move_constructible, ::not_move_constructible>>{}, "");
+
 // @todo Конструктор с одним аргументом-значением
 static_assert(std::is_constructible<long, int>{}, "");
 static_assert(std::is_convertible<int, long>{}, "");
