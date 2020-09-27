@@ -319,8 +319,14 @@ namespace
         not_move_constructible(not_move_constructible const &) = delete;
         not_move_constructible(not_move_constructible &&) = delete;
     };
+
+    struct throwing_move_ctor
+    {
+        throwing_move_ctor(throwing_move_ctor const &) noexcept(false) {}
+    };
 }
 
+// Наличие конструктора перемещения
 static_assert(std::is_move_constructible<saga::expected<int, long>>{}, "");
 static_assert(std::is_move_constructible<saga::expected<std::unique_ptr<int>, long>>{}, "");
 static_assert(std::is_move_constructible<saga::expected<int, std::unique_ptr<long>>>{}, "");
@@ -334,6 +340,97 @@ static_assert(!std::is_move_constructible<saga::expected<::not_move_constructibl
 static_assert(!std::is_move_constructible<saga::expected<void, ::not_move_constructible>>{}, "");
 static_assert(!std::is_move_constructible<saga::expected<std::string, ::not_move_constructible>>{}, "");
 static_assert(!std::is_move_constructible<saga::expected<::not_move_constructible, ::not_move_constructible>>{}, "");
+
+// noexcept для конструктора перемещения
+static_assert(std::is_nothrow_move_constructible<saga::expected<void, long>>{}, "");
+static_assert(std::is_nothrow_move_constructible<saga::expected<int, long>>{}, "");
+
+static_assert(std::is_nothrow_move_constructible<std::string>{}, "");
+static_assert(std::is_nothrow_move_constructible<saga::expected<int, std::string>>{}, "");
+static_assert(std::is_nothrow_move_constructible<saga::expected<void, std::string>>{}, "");
+static_assert(std::is_nothrow_move_constructible<saga::expected<std::string, long *>>{}, "");
+static_assert(std::is_nothrow_move_constructible<saga::expected<std::string, std::string>>{}, "");
+
+static_assert(!std::is_nothrow_move_constructible<::throwing_move_ctor>{}, "");
+static_assert(!std::is_nothrow_move_constructible<void>{}, "");
+static_assert(!std::is_nothrow_move_constructible<saga::expected<void, ::throwing_move_ctor>>{}, "");
+static_assert(!std::is_nothrow_move_constructible<saga::expected<int, ::throwing_move_ctor>>{}, "");
+static_assert(!std::is_nothrow_move_constructible<saga::expected<std::string, ::throwing_move_ctor>>{}, "");
+static_assert(!std::is_nothrow_move_constructible<saga::expected<::throwing_move_ctor, int>>{}, "");
+static_assert(!std::is_nothrow_move_constructible<saga::expected<::throwing_move_ctor, std::string>>{}, "");
+
+TEST_CASE("expected<void, Error>: move constructor")
+{
+    using Value = void const;
+    // @todo проверить constexpr
+
+    // не constexpr
+    {
+        using Error = int;
+        saga::expected<Value, Error> const src_old(saga::in_place_t{});
+        auto src = src_old;
+
+        saga::expected<Value, Error> const obj(std::move(src));
+
+        REQUIRE(obj == src_old);
+        REQUIRE(src.has_value());
+    }
+
+    {
+        using Error = std::string;
+        saga::expected<Value, Error> const src_old(saga::in_place_t{});
+        auto src = src_old;
+
+        saga::expected<Value, Error> const obj(std::move(src));
+
+        REQUIRE(obj == src_old);
+        REQUIRE(src.has_value());
+    }
+
+    using Error = std::string;
+    saga_test::property_checker << [](Error const & error)
+    {
+        saga::expected<Value, Error> const src_old(saga::unexpect, error);
+        auto src = src_old;
+
+        saga::expected<Value, Error> const obj(std::move(src));
+
+        REQUIRE(obj == src_old);
+        REQUIRE(!src.has_value());
+        REQUIRE(src.error().empty());
+    };
+}
+
+TEST_CASE("expected<Value, Error>: move constructor")
+{
+    using Value = std::vector<int>;
+    using Error = std::string;
+
+    // @todo проверить constexpr
+    // не constexpr
+    saga_test::property_checker << [](Value const & value)
+    {
+        saga::expected<Value, Error> const src_old(saga::in_place, value);
+        auto src = src_old;
+
+        saga::expected<Value, Error> const obj(std::move(src));
+
+        REQUIRE(obj == src_old);
+        REQUIRE(src.has_value());
+        REQUIRE(src.value().empty());
+    }
+    << [](Error const & error)
+    {
+        saga::expected<Value, Error> const src_old(saga::unexpect, error);
+        auto src = src_old;
+
+        saga::expected<Value, Error> const obj(std::move(src));
+
+        REQUIRE(obj == src_old);
+        REQUIRE(!src.has_value());
+        REQUIRE(src.error().empty());
+    };
+}
 
 // @todo Конструктор с одним аргументом-значением
 static_assert(std::is_constructible<long, int>{}, "");

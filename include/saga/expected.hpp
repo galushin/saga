@@ -30,6 +30,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/detail/static_empty_const.hpp>
 #include <saga/detail/default_ctor_enabler.hpp>
 #include <saga/type_traits.hpp>
+#include <saga/utility/in_place.hpp>
 #include <saga/utility/operators.hpp>
 
 #include <cassert>
@@ -56,13 +57,6 @@ namespace saga
                     or std::is_convertible<From const, To>{};
         }
     }
-
-    //@todo Найти лучшее место, так как используется ещё и в optional
-    struct in_place_t
-    {
-        // @todo Почему конструкторе без аргументов должен быть явным?
-    };
-    // @todo in_place
 
     template <class Error>
     class unexpected
@@ -305,6 +299,7 @@ namespace saga
 
             expected_holder(expected_holder const & rhs)
              : has_value_(rhs.has_value())
+             , dummy_{}
             {
                 if(this->has_value())
                 {
@@ -313,6 +308,21 @@ namespace saga
                 else
                 {
                     new(std::addressof(this->error_)) unexpected_type(rhs.error());
+                }
+            }
+
+            expected_holder(expected_holder && rhs)
+                noexcept(std::is_nothrow_move_constructible<Value>{} && std::is_nothrow_move_constructible<Error>{})
+             : has_value_(rhs.has_value())
+             , dummy_{}
+            {
+                if(this->has_value())
+                {
+                    new(std::addressof(this->value_)) Value(std::move(*rhs));
+                }
+                else
+                {
+                    new(std::addressof(this->error_)) unexpected_type(std::move(rhs.error()));
                 }
             }
 
@@ -407,6 +417,7 @@ namespace saga
             bool has_value_ = true;
             union
             {
+                char dummy_;
                 Value value_;
                 unexpected_type error_;
             };
@@ -443,6 +454,10 @@ namespace saga
             /* @todo Придумать тест, когда деструктор тривиальный, а конструктор копий - нет
             */
             expected_holder_trivial(expected_holder_trivial const & rhs) = default;
+
+            /* @todo Придумать тест, когда деструктор тривиальный, а конструктор перемещения - нет
+            */
+            expected_holder_trivial(expected_holder_trivial && rhs) = default;
 
             template <class... Args>
             constexpr explicit expected_holder_trivial(unexpect_t, Args &&... args)
@@ -555,8 +570,7 @@ namespace saga
 
             expected_base(expected_base const &) = default;
 
-            // @todo Покрыть тестами и реализовать, должен быть = default
-            expected_base(expected_base &&);
+            expected_base(expected_base &&) = default;
 
             template <class... Args>
             constexpr explicit expected_base(in_place_t, Args &&... args)
@@ -670,8 +684,7 @@ namespace saga
 
             expected_base(expected_base const &) = default;
 
-            // @todo Покрыть тестами и реализовать, должен быть = default
-            expected_base(expected_base &&);
+            expected_base(expected_base &&) = default;
 
             constexpr explicit expected_base(in_place_t)
              : Base(in_place_t{})
@@ -799,6 +812,7 @@ namespace saga
         expected(expected const &) = default;
 
         // @todo Не покрыт тестами
+        // @todo noexcept
         expected(expected &&) = default;
 
         template <class Arg,
