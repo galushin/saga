@@ -27,6 +27,59 @@ SAGA -- это свободной программное обеспечение:
 #include <stdexcept>
 #include <set>
 
+// Вспомогательные функции и типы для тестирования
+// @todo Подумать, куда можно перенести эти типы
+namespace
+{
+    struct no_default_ctor
+    {
+        no_default_ctor() = delete;
+    };
+
+    template <class T>
+    struct explicit_ctor_from
+    {
+        // @todo Правильно ли это реализовано?
+        constexpr explicit explicit_ctor_from(T value) noexcept
+         : value(std::move(value))
+        {}
+
+        saga::remove_cvref_t<T> value;
+    };
+
+    class Base
+    {
+    public:
+        virtual ~Base() {};
+    };
+
+    class Derived
+     : public Base
+    {};
+
+    template <class T>
+    struct move_only
+    {
+    public:
+        constexpr explicit move_only(T init_value)
+         : value(std::move(init_value))
+        {}
+
+        move_only(move_only const &) = delete;
+        move_only(move_only &&) = default;
+
+        T value;
+    };
+
+    template <class T>
+    constexpr T use_constexpr_move(T x)
+    {
+        auto y = std::move(x);
+
+        return y;
+    }
+}
+
 // Тесты
 
 // 4. @todo Шаблона класса expected
@@ -63,35 +116,6 @@ static_assert(std::is_default_constructible<saga::expected<void, long>>{}, "");
 static_assert(std::is_default_constructible<saga::expected<std::string, long>>{}, "");
 static_assert(std::is_default_constructible<saga::expected<double, std::string>>{}, "");
 static_assert(std::is_default_constructible<saga::expected<std::vector<int>, std::string>>{}, "");
-
-namespace
-{
-    struct no_default_ctor
-    {
-        no_default_ctor() = delete;
-    };
-
-    template <class T>
-    struct explicit_ctor_from
-    {
-        // @todo Правильно ли это реализовано?
-        constexpr explicit explicit_ctor_from(T value) noexcept
-         : value(std::move(value))
-        {}
-
-        saga::remove_cvref_t<T> value;
-    };
-
-    class Base
-    {
-    public:
-        virtual ~Base() {};
-    };
-
-    class Derived
-     : public Base
-    {};
-}
 
 static_assert(!std::is_default_constructible<::no_default_ctor>{}, "");
 static_assert(!std::is_default_constructible<saga::expected<::no_default_ctor, long>>{}, "");
@@ -362,7 +386,6 @@ static_assert(!std::is_nothrow_move_constructible<saga::expected<::throwing_move
 TEST_CASE("expected<void, Error>: move constructor")
 {
     using Value = void const;
-    // @todo проверить constexpr
 
     // не constexpr
     {
@@ -399,37 +422,75 @@ TEST_CASE("expected<void, Error>: move constructor")
         REQUIRE(!src.has_value());
         REQUIRE(src.error().empty());
     };
+
+    {
+        using Error = int;
+        constexpr saga::expected<Value, Error> const src(saga::in_place_t{});
+        constexpr saga::expected<Value, Error> const obj(::use_constexpr_move(src));
+
+        static_assert(obj == src, "");
+    }
+    {
+        using Error = long;
+        constexpr auto const error = Error{42};
+        constexpr saga::expected<Value, Error> const src(saga::unexpect, error);
+        constexpr saga::expected<Value, Error> const obj(::use_constexpr_move(src));
+
+        static_assert(obj == src, "");
+    }
 }
 
 TEST_CASE("expected<Value, Error>: move constructor")
 {
-    using Value = std::vector<int>;
-    using Error = std::string;
-
-    // @todo проверить constexpr
     // не constexpr
-    saga_test::property_checker << [](Value const & value)
     {
-        saga::expected<Value, Error> const src_old(saga::in_place, value);
-        auto src = src_old;
+        using Value = std::vector<int>;
+        using Error = std::string;
 
-        saga::expected<Value, Error> const obj(std::move(src));
+        saga_test::property_checker << [](Value const & value)
+        {
+            saga::expected<Value, Error> const src_old(saga::in_place, value);
+            auto src = src_old;
 
-        REQUIRE(obj == src_old);
-        REQUIRE(src.has_value());
-        REQUIRE(src.value().empty());
+            saga::expected<Value, Error> const obj(std::move(src));
+
+            REQUIRE(obj == src_old);
+            REQUIRE(src.has_value());
+            REQUIRE(src.value().empty());
+        }
+        << [](Error const & error)
+        {
+            saga::expected<Value, Error> const src_old(saga::unexpect, error);
+            auto src = src_old;
+
+            saga::expected<Value, Error> const obj(std::move(src));
+
+            REQUIRE(obj == src_old);
+            REQUIRE(!src.has_value());
+            REQUIRE(src.error().empty());
+        };
     }
-    << [](Error const & error)
+
+    // constexpr
     {
-        saga::expected<Value, Error> const src_old(saga::unexpect, error);
-        auto src = src_old;
+        using Value = long;
+        using Error = int;
 
-        saga::expected<Value, Error> const obj(std::move(src));
+        {
+            constexpr auto const value = Value{42};
+            constexpr saga::expected<Value, Error> const src(saga::in_place_t{}, value);
+            constexpr saga::expected<Value, Error> const obj(::use_constexpr_move(src));
 
-        REQUIRE(obj == src_old);
-        REQUIRE(!src.has_value());
-        REQUIRE(src.error().empty());
-    };
+            static_assert(obj == src, "");
+        }
+        {
+            constexpr auto const error = Error{42};
+            constexpr saga::expected<Value, Error> const src(saga::unexpect, error);
+            constexpr saga::expected<Value, Error> const obj(::use_constexpr_move(src));
+
+            static_assert(obj == src, "");
+        }
+    }
 }
 
 // @todo Конструктор с одним аргументом-значением
@@ -1801,31 +1862,6 @@ TEST_CASE("unexpected : copy constructor")
 
         REQUIRE(obj1.value() == obj2.value());
     };
-}
-
-namespace
-{
-    template <class T>
-    struct move_only
-    {
-    public:
-        constexpr explicit move_only(T init_value)
-         : value(std::move(init_value))
-        {}
-
-        move_only(move_only const &) = delete;
-        move_only(move_only &&) = default;
-
-        T value;
-    };
-
-    template <class T>
-    constexpr T use_constexpr_move(T x)
-    {
-        auto y = std::move(x);
-
-        return y;
-    }
 }
 
 TEST_CASE("unexpected : move constructor")
