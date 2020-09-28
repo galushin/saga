@@ -8,8 +8,11 @@
 [tests/saga_test.hpp:319]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/saga_test.hpp:323]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/saga_test.hpp:352]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/expected.cpp:541]: (style) Struct 'throwing_implicit_ctor_from_int' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:676]: (style) Struct 'ctor_from_in_place_t' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:699]: (style) Struct 'throwing_implicit_ctor_from_int' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:834]: (style) Struct 'ctor_from_in_place_t' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:435]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/expected.cpp:480]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/expected.cpp:487]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/string_view.cpp:906]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/utility/equality_comparable_box.cpp:147]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/view/indices.cpp:108]: (performance) Prefer prefix ++/-- operators for non-primitive types.
