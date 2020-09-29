@@ -120,6 +120,17 @@ static_assert(std::is_default_constructible<saga::expected<std::vector<int>, std
 static_assert(!std::is_default_constructible<::no_default_ctor>{}, "");
 static_assert(!std::is_default_constructible<saga::expected<::no_default_ctor, long>>{}, "");
 
+namespace
+{
+    template <class Value, class Error>
+    void check_expected_default_ctor()
+    {
+        saga::expected<Value, Error> const obj{};
+        REQUIRE(obj.has_value());
+        REQUIRE(obj.value() == Value{});
+    }
+}
+
 TEST_CASE("expected<Value, Error> : default ctor")
 {
     {
@@ -132,33 +143,10 @@ TEST_CASE("expected<Value, Error> : default ctor")
         static_assert(static_cast<bool>(obj), "");
         static_assert(obj.value() == Value{}, "");
     }
-    {
-        using Value = std::string;
-        using Error = long;
 
-        saga::expected<Value, Error> const obj{};
-
-        REQUIRE(obj.has_value());
-        REQUIRE(obj.value() == Value{});
-    }
-    {
-        using Value = int;
-        using Error = std::string;
-
-        saga::expected<Value, Error> const obj{};
-
-        REQUIRE(obj.has_value());
-        REQUIRE(obj.value() == Value{});
-    }
-    {
-        using Value = std::string;
-        using Error = std::vector<int>;
-
-        saga::expected<Value, Error> const obj{};
-
-        REQUIRE(obj.has_value());
-        REQUIRE(obj.value() == Value{});
-    }
+    ::check_expected_default_ctor<std::string, long>();
+    ::check_expected_default_ctor<int, std::string>();
+    ::check_expected_default_ctor<std::string, std::vector<int>>();
 }
 
 namespace
