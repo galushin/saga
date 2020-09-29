@@ -122,38 +122,44 @@ static_assert(!std::is_default_constructible<saga::expected<::no_default_ctor, l
 
 namespace
 {
-    template <class Value, class Error>
+    template <class Value, class Error, std::enable_if_t<!std::is_void<Value>{}> * = nullptr>
     void check_expected_default_ctor()
     {
         saga::expected<Value, Error> const obj{};
         REQUIRE(obj.has_value());
         REQUIRE(obj.value() == Value{});
     }
-}
 
-TEST_CASE("expected<Value, Error> : default ctor")
-{
+    template <class Value, class Error, std::enable_if_t<std::is_void<Value>{}> * = nullptr>
+    void check_expected_default_ctor()
     {
-        using Value = long *;
-        using Error = int;
+        saga::expected<Value, Error> const obj{};
 
-        constexpr saga::expected<Value, Error> const obj{};
+        REQUIRE(obj.has_value());
+        REQUIRE_NOTHROW(obj.value());
 
-        static_assert(obj.has_value(), "");
-        static_assert(static_cast<bool>(obj), "");
-        static_assert(obj.value() == Value{}, "");
+        using Result = decltype(obj.value());
+        static_assert(std::is_same<Result, void>{}, "");
     }
 
-    ::check_expected_default_ctor<std::string, long>();
-    ::check_expected_default_ctor<int, std::string>();
-    ::check_expected_default_ctor<std::string, std::vector<int>>();
-}
-
-namespace
-{
-    template <class T>
-    constexpr bool constexpr_check_void_value(T const & obj)
+    template <class Value, class Error, std::enable_if_t<!std::is_void<Value>{}> * = nullptr>
+    constexpr bool constexpr_check_expected_default_ctor()
     {
+        constexpr saga::expected<Value, Error> obj{};
+
+        static_assert(obj.has_value(), "");
+        static_assert(obj.value() == Value{}, "");
+
+        return true;
+    }
+
+    template <class Value, class Error, std::enable_if_t<std::is_void<Value>{}> * = nullptr>
+    constexpr bool constexpr_check_expected_default_ctor()
+    {
+        constexpr saga::expected<Value, Error> obj{};
+
+        static_assert(obj.has_value(), "");
+
         obj.value();
 
         using Result = decltype(obj.value());
@@ -163,322 +169,34 @@ namespace
     }
 }
 
-TEST_CASE("expected<void, Error> : default ctor")
+// @todo  Убедиться, что есть проверка obj.has_value() == static_cast<bool>(obj)
+
+TEST_CASE("expected<Value, Error> : default ctor")
 {
-    {
-        using Value = void;
-        using Error = long;
+    ::constexpr_check_expected_default_ctor<long *, int>();
+    ::constexpr_check_expected_default_ctor<long, int>();
 
-        constexpr saga::expected<Value, Error> const obj{};
-
-        static_assert(obj.has_value(), "");
-        static_assert(::constexpr_check_void_value(obj), "");
-    }
-    {
-        using Value = void;
-        using Error = std::string;
-
-        saga::expected<Value, Error> const obj{};
-
-        REQUIRE(obj.has_value());
-        REQUIRE_NOTHROW(obj.value());
-    }
+    ::check_expected_default_ctor<int *, long>();
+    ::check_expected_default_ctor<std::string, long>();
+    ::check_expected_default_ctor<int, std::string>();
+    ::check_expected_default_ctor<std::string, std::vector<int>>();
 }
 
-// Конструктор копий
-static_assert(std::is_copy_constructible<saga::expected<std::vector<int>, std::string>>{}, "");
-static_assert(std::is_copy_constructible<saga::expected<void, std::string>>{}, "");
-
-static_assert(!std::is_copy_constructible<saga::expected<std::unique_ptr<int>, std::string>>{}, "");
-static_assert(!std::is_copy_constructible<saga::expected<void, std::unique_ptr<int>>>{}, "");
-static_assert(!std::is_copy_constructible<saga::expected<std::unique_ptr<long>,
-                                                         std::unique_ptr<int>>>{}, "");
-
-TEST_CASE("expected<void, Error>: copy constructor")
+TEST_CASE("expected<void, Error> : constexpr default ctor")
 {
-    // constexpr
-    {
-        using Value = void;
-        using Error = int;
+    ::constexpr_check_expected_default_ctor<void, long>();
+    ::constexpr_check_expected_default_ctor<void const, long>();
+    ::constexpr_check_expected_default_ctor<void volatile, long>();
+    ::constexpr_check_expected_default_ctor<void const volatile, long>();
 
-        constexpr saga::expected<Value, Error> const src{};
-
-        constexpr saga::expected<Value, Error> const obj(src);
-
-        static_assert(obj.has_value(), "");
-    }
-    {
-        using Value = void;
-        using Error = int;
-        constexpr auto error = Error(42);
-
-        constexpr saga::expected<Value, Error> const src(saga::unexpect, error);
-
-        constexpr saga::expected<Value, Error> const obj(src);
-
-        static_assert(!obj.has_value(), "");
-        static_assert(obj.error() == error, "");
-    }
-    // не constexpr
-    {
-        using Value = void;
-        using Error = int;
-
-        saga::expected<Value, Error> const src{};
-
-        saga::expected<Value, Error> const obj(src);
-
-        REQUIRE(obj.has_value());
-    }
-    {
-        using Value = void;
-        using Error = std::string;
-
-        saga::expected<Value, Error> const src{};
-
-        saga::expected<Value, Error> const obj(src);
-
-        REQUIRE(obj.has_value());
-    }
-    {
-        using Value = void;
-        using Error = std::string;
-
-        saga_test::property_checker << [](Error const & error)
-        {
-            saga::expected<Value, Error> const src(saga::unexpect, error);
-
-            saga::expected<Value, Error> const obj(src);
-
-            REQUIRE(!obj.has_value());
-            REQUIRE(obj.error() == error);
-        };
-    }
-}
-
-TEST_CASE("expected<Value, Error>: copy constructor")
-{
-    // constexpr
-    {
-        using Value = long;
-        using Error = int *;
-
-        constexpr auto value = Value(13);
-
-        constexpr saga::expected<Value, Error> const src(saga::in_place_t{}, value);
-
-        constexpr saga::expected<Value, Error> const obj(src);
-
-        static_assert(obj.has_value(), "");
-        static_assert(obj.value() == value, "");
-    }
-    {
-        using Value = long;
-        using Error = int;
-        constexpr auto error = Error(42);
-
-        constexpr saga::expected<Value, Error> const src(saga::unexpect, error);
-
-        constexpr saga::expected<Value, Error> const obj(src);
-
-        static_assert(!obj.has_value(), "");
-        static_assert(obj.error() == error, "");
-    }
-    // не constexpr
-    {
-        using Value = long;
-        using Error = int *;
-
-        auto const value = Value(13);
-
-        saga::expected<Value, Error> const src(saga::in_place_t{}, value);
-
-        saga::expected<Value, Error> const obj(src);
-
-        REQUIRE(obj.has_value());
-        REQUIRE(obj.value() == value);
-    }
-    {
-        using Value = std::vector<int>;
-        using Error = std::string;
-
-        saga_test::property_checker << [](Value const & value)
-        {
-            saga::expected<Value, Error> const src(saga::in_place_t{}, value);
-
-            saga::expected<Value, Error> const obj(src);
-
-            REQUIRE(obj.has_value());
-            REQUIRE(obj.value() == value);
-        }
-        << [](Error const & error)
-        {
-            saga::expected<Value, Error> const src(saga::unexpect, error);
-
-            saga::expected<Value, Error> const obj(src);
-
-            REQUIRE(!obj.has_value());
-            REQUIRE(obj.error() == error);
-        };
-    }
-}
-
-// @tood Конструктор перемещения
-namespace
-{
-    struct not_move_constructible
-    {
-        not_move_constructible(not_move_constructible const &) = delete;
-        not_move_constructible(not_move_constructible &&) = delete;
-    };
-
-    struct throwing_move_ctor
-    {
-        throwing_move_ctor(throwing_move_ctor const &) noexcept(false) {}
-    };
-}
-
-// Наличие конструктора перемещения
-static_assert(std::is_move_constructible<saga::expected<int, long>>{}, "");
-static_assert(std::is_move_constructible<saga::expected<std::unique_ptr<int>, long>>{}, "");
-static_assert(std::is_move_constructible<saga::expected<int, std::unique_ptr<long>>>{}, "");
-static_assert(std::is_move_constructible<saga::expected<std::unique_ptr<int>, std::unique_ptr<long>>>{}, "");
-
-static_assert(std::is_move_constructible<saga::expected<void, long>>{}, "");
-static_assert(std::is_move_constructible<saga::expected<void, std::unique_ptr<long>>>{}, "");
-
-static_assert(!std::is_move_constructible<::not_move_constructible>{}, "");
-static_assert(!std::is_move_constructible<saga::expected<::not_move_constructible, long>>{}, "");
-static_assert(!std::is_move_constructible<saga::expected<void, ::not_move_constructible>>{}, "");
-static_assert(!std::is_move_constructible<saga::expected<std::string, ::not_move_constructible>>{}, "");
-static_assert(!std::is_move_constructible<saga::expected<::not_move_constructible, ::not_move_constructible>>{}, "");
-
-// noexcept для конструктора перемещения
-static_assert(std::is_nothrow_move_constructible<saga::expected<void, long>>{}, "");
-static_assert(std::is_nothrow_move_constructible<saga::expected<int, long>>{}, "");
-
-static_assert(std::is_nothrow_move_constructible<std::string>{}, "");
-static_assert(std::is_nothrow_move_constructible<saga::expected<int, std::string>>{}, "");
-static_assert(std::is_nothrow_move_constructible<saga::expected<void, std::string>>{}, "");
-static_assert(std::is_nothrow_move_constructible<saga::expected<std::string, long *>>{}, "");
-static_assert(std::is_nothrow_move_constructible<saga::expected<std::string, std::string>>{}, "");
-
-static_assert(!std::is_nothrow_move_constructible<::throwing_move_ctor>{}, "");
-static_assert(!std::is_nothrow_move_constructible<void>{}, "");
-static_assert(!std::is_nothrow_move_constructible<saga::expected<void, ::throwing_move_ctor>>{}, "");
-static_assert(!std::is_nothrow_move_constructible<saga::expected<int, ::throwing_move_ctor>>{}, "");
-static_assert(!std::is_nothrow_move_constructible<saga::expected<std::string, ::throwing_move_ctor>>{}, "");
-static_assert(!std::is_nothrow_move_constructible<saga::expected<::throwing_move_ctor, int>>{}, "");
-static_assert(!std::is_nothrow_move_constructible<saga::expected<::throwing_move_ctor, std::string>>{}, "");
-
-TEST_CASE("expected<void, Error>: move constructor")
-{
-    using Value = void const;
-
-    // не constexpr
-    {
-        using Error = int;
-        saga::expected<Value, Error> const src_old(saga::in_place_t{});
-        auto src = src_old;
-
-        saga::expected<Value, Error> const obj(std::move(src));
-
-        REQUIRE(obj == src_old);
-        REQUIRE(src.has_value());
-    }
-
-    {
-        using Error = std::string;
-        saga::expected<Value, Error> const src_old(saga::in_place_t{});
-        auto src = src_old;
-
-        saga::expected<Value, Error> const obj(std::move(src));
-
-        REQUIRE(obj == src_old);
-        REQUIRE(src.has_value());
-    }
-
-    using Error = std::string;
-    saga_test::property_checker << [](Error const & error)
-    {
-        saga::expected<Value, Error> const src_old(saga::unexpect, error);
-        auto src = src_old;
-
-        saga::expected<Value, Error> const obj(std::move(src));
-
-        REQUIRE(obj == src_old);
-        REQUIRE(!src.has_value());
-        REQUIRE(src.error().empty());
-    };
-
-    {
-        using Error = int;
-        constexpr saga::expected<Value, Error> const src(saga::in_place_t{});
-        constexpr saga::expected<Value, Error> const obj(::use_constexpr_move(src));
-
-        static_assert(obj == src, "");
-    }
-    {
-        using Error = long;
-        constexpr auto const error = Error{42};
-        constexpr saga::expected<Value, Error> const src(saga::unexpect, error);
-        constexpr saga::expected<Value, Error> const obj(::use_constexpr_move(src));
-
-        static_assert(obj == src, "");
-    }
-}
-
-TEST_CASE("expected<Value, Error>: move constructor")
-{
-    // не constexpr
-    {
-        using Value = std::vector<int>;
-        using Error = std::string;
-
-        saga_test::property_checker << [](Value const & value)
-        {
-            saga::expected<Value, Error> const src_old(saga::in_place, value);
-            auto src = src_old;
-
-            saga::expected<Value, Error> const obj(std::move(src));
-
-            REQUIRE(obj == src_old);
-            REQUIRE(src.has_value());
-            REQUIRE(src.value().empty());
-        }
-        << [](Error const & error)
-        {
-            saga::expected<Value, Error> const src_old(saga::unexpect, error);
-            auto src = src_old;
-
-            saga::expected<Value, Error> const obj(std::move(src));
-
-            REQUIRE(obj == src_old);
-            REQUIRE(!src.has_value());
-            REQUIRE(src.error().empty());
-        };
-    }
-
-    // constexpr
-    {
-        using Value = long;
-        using Error = int;
-
-        {
-            constexpr auto const value = Value{42};
-            constexpr saga::expected<Value, Error> const src(saga::in_place_t{}, value);
-            constexpr saga::expected<Value, Error> const obj(::use_constexpr_move(src));
-
-            static_assert(obj == src, "");
-        }
-        {
-            constexpr auto const error = Error{42};
-            constexpr saga::expected<Value, Error> const src(saga::unexpect, error);
-            constexpr saga::expected<Value, Error> const obj(::use_constexpr_move(src));
-
-            static_assert(obj == src, "");
-        }
-    }
+    ::check_expected_default_ctor<void, long>();
+    ::check_expected_default_ctor<void, std::string>();
+    ::check_expected_default_ctor<void const, long>();
+    ::check_expected_default_ctor<void const, std::string>();
+    ::check_expected_default_ctor<void volatile, long>();
+    ::check_expected_default_ctor<void volatile, std::string>();
+    ::check_expected_default_ctor<void const volatile, long>();
+    ::check_expected_default_ctor<void const volatile, std::string>();
 }
 
 // @todo Конструктор с одним аргументом-значением
@@ -652,6 +370,548 @@ TEST_CASE("expected: implicit constructor from unexpected const & ")
         REQUIRE(!obj.has_value());
         REQUIRE(obj.error() == Error(error_arg));
     };
+}
+
+// 4.6 Сравнение expected
+TEST_CASE("expected<void, Error> : equality")
+{
+    {
+        constexpr saga::expected<void, int> obj1{};
+        constexpr saga::expected<void, int> obj2(saga::unexpect, 42);
+        constexpr saga::expected<void, long> obj3(saga::unexpect, 2020);
+
+        static_assert(obj1 == obj1, "");
+        static_assert(obj1 != obj2, "");
+        static_assert(obj1 != obj3, "");
+
+        static_assert(obj2 != obj1, "");
+        static_assert(obj2 == obj2, "");
+        static_assert(obj2 != obj3, "");
+
+        static_assert(obj3 != obj1, "");
+        static_assert(obj3 != obj2, "");
+        static_assert(obj3 == obj3, "");
+    }
+
+    using Error1 = char;
+    using Error2 = short;
+
+    static_assert(!std::is_same<Error1, Error2>{}, "");
+
+    saga_test::property_checker << [](Error1 const & err1, Error2 const & err2)
+    {
+        saga::expected<void, Error1> const obj_value_1{};
+        saga::expected<void const, Error2> const obj_value_2{};
+
+        saga::expected<void volatile, Error1> const obj_error_1(saga::unexpect, err1);
+        saga::expected<void volatile const, Error2> const obj_error_2(saga::unexpect, err2);
+
+        REQUIRE(obj_value_1 == obj_value_1);
+        REQUIRE(obj_value_1 == obj_value_2);
+        REQUIRE(obj_value_1 != obj_error_1);
+        REQUIRE(obj_value_1 != obj_error_2);
+
+        REQUIRE(obj_value_2 == obj_value_1);
+        REQUIRE(obj_value_2 == obj_value_2);
+        REQUIRE(obj_value_2 != obj_error_1);
+        REQUIRE(obj_value_2 != obj_error_2);
+
+        REQUIRE(obj_error_1 != obj_value_1);
+        REQUIRE(obj_error_1 != obj_value_2);
+        REQUIRE(obj_error_1 == obj_error_1);
+        REQUIRE((obj_error_1 == obj_error_2) == (err1 == err2));
+        REQUIRE((obj_error_1 != obj_error_2) == !(obj_error_1 == obj_error_2));
+
+        REQUIRE(obj_error_2 != obj_value_1);
+        REQUIRE(obj_error_2 != obj_value_2);
+        REQUIRE(obj_error_2 == obj_error_2);
+        REQUIRE((obj_error_2 == obj_error_1) == (err2 == err1));
+        REQUIRE((obj_error_2 != obj_error_1) == !(obj_error_2 == obj_error_1));
+    };
+}
+
+TEST_CASE("expected<Value, Error> : equality")
+{
+    using Value1 = int;
+    using Value2 = long;
+    using Error1 = char;
+    using Error2 = short;
+
+    {
+        constexpr Value1 val1 = 906;
+        constexpr Value2 val2 = 2020;
+
+        constexpr Error1 err1 = 22;
+        constexpr Error2 err2 = 38;
+
+        constexpr saga::expected<Value1, Error1> obj_value_1(saga::in_place_t{}, val1);
+        constexpr saga::expected<Value2, Error2> obj_value_2(saga::in_place_t{}, val2);
+
+        constexpr saga::expected<Value1, Error1> const obj_error_1(saga::unexpect, err1);
+        constexpr saga::expected<Value2, Error2> const obj_error_2(saga::unexpect, err2);
+
+        static_assert(obj_value_1 == obj_value_1, "");
+        static_assert(obj_value_1 != obj_value_2, "");
+        static_assert(obj_value_1 != obj_error_1, "");
+        static_assert(obj_value_1 != obj_error_2, "");
+
+        static_assert(obj_value_2 != obj_value_1, "");
+        static_assert(obj_value_2 == obj_value_2, "");
+        static_assert(obj_value_2 != obj_error_1, "");
+        static_assert(obj_value_2 != obj_error_2, "");
+
+        static_assert(obj_error_1 != obj_value_1, "");
+        static_assert(obj_error_1 != obj_value_2, "");
+        static_assert(obj_error_1 == obj_error_1, "");
+        static_assert(obj_error_1 != obj_error_2, "");
+
+        static_assert(obj_error_2 != obj_value_1, "");
+        static_assert(obj_error_2 != obj_value_2, "");
+        static_assert(obj_error_2 != obj_error_1, "");
+        static_assert(obj_error_2 == obj_error_2, "");
+    }
+
+    static_assert(!std::is_same<Value1, Value2>{}, "");
+    static_assert(!std::is_same<Error1, Error2>{}, "");
+
+    saga_test::property_checker << [](Value1 const & val1, Value2 const & val2,
+                                      Error1 const & err1, Error2 const & err2)
+    {
+        saga::expected<Value1, Error1> const obj_value_1(saga::in_place_t{}, val1);
+        saga::expected<Value2, Error2> const obj_value_2(saga::in_place_t{}, val2);
+
+        saga::expected<Value1, Error1> const obj_error_1(saga::unexpect, err1);
+        saga::expected<Value2, Error2> const obj_error_2(saga::unexpect, err2);
+
+        REQUIRE(obj_value_1 == obj_value_1);
+        REQUIRE(obj_value_2 == obj_value_2);
+
+        REQUIRE(obj_error_1 == obj_error_1);
+        REQUIRE(obj_error_2 == obj_error_2);
+
+        REQUIRE(obj_value_1 != obj_error_1);
+        REQUIRE(obj_value_1 != obj_error_2);
+
+        REQUIRE(obj_value_2 != obj_error_1);
+        REQUIRE(obj_value_2 != obj_error_2);
+
+        REQUIRE((obj_value_1 == obj_value_2) == (val1 == val2));
+        REQUIRE((obj_error_1 == obj_error_2) == (err1 == err2));
+
+        REQUIRE((obj_value_1 != obj_value_2) == !(obj_value_1 == obj_value_2));
+        REQUIRE((obj_error_1 != obj_error_2) == !(obj_error_1 == obj_error_2));
+    };
+}
+
+// 4.7 Сравнение со значением
+TEST_CASE("expected : equality with value")
+{
+    {
+        using Value = long;
+        using Error = void *;
+        using OtherValue = int;
+
+        constexpr auto value = Value(42);
+        constexpr auto error = Error(nullptr);
+        constexpr auto other = OtherValue(806);
+
+        constexpr saga::expected<Value, Error> obj_value(saga::in_place_t{}, value);
+        constexpr saga::expected<Value, Error> obj_error(saga::unexpect, error);
+
+        static_assert(value != other, "");
+
+        static_assert(obj_value == value, "");
+        static_assert(value == obj_value, "");
+
+        static_assert(obj_value != other, "");
+        static_assert(other != obj_value, "");
+
+        static_assert(obj_error != value, "");
+        static_assert(other != obj_error, "");
+    }
+
+    using Value = long;
+    using Error = std::string;
+    using OtherValue = int;
+
+    saga_test::property_checker
+    << [](Value const & value, Error const & error, OtherValue const & other)
+    {
+        {
+            saga::expected<Value, Error> const obj_value(saga::in_place_t{}, value);
+
+            REQUIRE(obj_value == value);
+            REQUIRE(value == obj_value);
+
+            REQUIRE((obj_value == other) == (value == other));
+            REQUIRE((obj_value != other) == !(obj_value == other));
+
+            REQUIRE((other == obj_value) == (other == value));
+            REQUIRE((other != obj_value) == !(other == obj_value));
+        }
+        {
+            saga::expected<Value, Error> const obj_error(saga::unexpect, error);
+
+            REQUIRE(obj_error != value);
+            REQUIRE(value != obj_error);
+
+            REQUIRE(!(obj_error == value));
+            REQUIRE(!(value == obj_error));
+        }
+    };
+}
+
+// 4.8 Сравнение со unexpected
+TEST_CASE("expected : equality with unexpected")
+{
+    {
+        using Value = void *;
+        using Error = long;
+        using OtherError = int;
+
+        constexpr auto value = Value(nullptr);
+        constexpr auto unex = saga::unexpected<Error>(42);
+        constexpr auto other_unex = saga::unexpected<OtherError>(906);
+
+        constexpr saga::expected<Value, Error> obj_value(saga::in_place_t{}, value);
+        constexpr saga::expected<Value, Error> obj_error(saga::unexpect, unex.value());
+
+        static_assert(unex != other_unex, "");
+
+        static_assert(obj_error == unex, "");
+        static_assert(unex == obj_error, "");
+
+        static_assert(obj_error != other_unex, "");
+        static_assert(other_unex != obj_error, "");
+
+        static_assert(obj_value != other_unex, "");
+        static_assert(other_unex != obj_value, "");
+
+        static_assert(obj_value != unex, "");
+        static_assert(unex != obj_value, "");
+    }
+
+    using Value = std::string;
+    using Error = long;
+    using OtherError = int;
+
+    saga_test::property_checker
+    << [](Value const & value, Error const & err, OtherError const & other_err)
+    {
+        saga::unexpected<Error> const unex(err);
+        saga::unexpected<OtherError> const other_unex(other_err);
+
+        {
+            saga::expected<Value, Error> const obj_value(saga::in_place_t{}, value);
+
+            REQUIRE(obj_value != unex);
+            REQUIRE(unex != obj_value);
+
+            REQUIRE(!(obj_value == unex));
+            REQUIRE(!(unex == obj_value));
+        }
+        {
+            saga::expected<Value, Error> const obj_error(saga::unexpect, err);
+
+            REQUIRE(obj_error == unex);
+            REQUIRE(unex == obj_error);
+
+            REQUIRE((obj_error == other_unex) == (unex == other_unex));
+            REQUIRE((other_unex == obj_error) == (other_unex == unex));
+
+            REQUIRE((obj_error != other_unex) == !(obj_error == other_unex));
+            REQUIRE((other_unex != obj_error) == !(other_unex == obj_error));
+        }
+    };
+}
+
+// Конструктор копий
+static_assert(std::is_copy_constructible<saga::expected<std::vector<int>, std::string>>{}, "");
+static_assert(std::is_copy_constructible<saga::expected<void, std::string>>{}, "");
+
+static_assert(!std::is_copy_constructible<saga::expected<std::unique_ptr<int>, std::string>>{}, "");
+static_assert(!std::is_copy_constructible<saga::expected<void, std::unique_ptr<int>>>{}, "");
+static_assert(!std::is_copy_constructible<saga::expected<std::unique_ptr<long>,
+                                                         std::unique_ptr<int>>>{}, "");
+
+TEST_CASE("expected<void, Error>: copy constructor")
+{
+    // constexpr
+    {
+        using Value = void;
+        using Error = int;
+
+        constexpr saga::expected<Value, Error> const src{};
+
+        constexpr saga::expected<Value, Error> const obj(src);
+
+        static_assert(obj == src, "");
+    }
+    {
+        using Value = void;
+        using Error = int;
+        constexpr auto error = Error(42);
+
+        constexpr saga::expected<Value, Error> const src(saga::unexpect, error);
+
+        constexpr saga::expected<Value, Error> const obj(src);
+
+        static_assert(obj == src, "");
+    }
+    // не constexpr
+    {
+        using Value = void;
+        using Error = int;
+
+        saga::expected<Value, Error> const src{};
+
+        saga::expected<Value, Error> const obj(src);
+
+        REQUIRE(obj == src);
+    }
+    {
+        using Value = void;
+        using Error = std::string;
+
+        saga::expected<Value, Error> const src{};
+
+        saga::expected<Value, Error> const obj(src);
+
+        REQUIRE(obj == src);
+    }
+    {
+        using Value = void;
+        using Error = std::string;
+
+        saga_test::property_checker << [](Error const & error)
+        {
+            saga::expected<Value, Error> const src(saga::unexpect, error);
+
+            saga::expected<Value, Error> const obj(src);
+
+            REQUIRE(obj == src);
+        };
+    }
+}
+
+TEST_CASE("expected<Value, Error>: copy constructor")
+{
+    // constexpr
+    {
+        using Value = long;
+        using Error = int *;
+
+        constexpr auto value = Value(13);
+
+        constexpr saga::expected<Value, Error> const src(saga::in_place_t{}, value);
+
+        constexpr saga::expected<Value, Error> const obj(src);
+
+        static_assert(obj == src, "");
+    }
+    {
+        using Value = long;
+        using Error = int;
+        constexpr auto error = Error(42);
+
+        constexpr saga::expected<Value, Error> const src(saga::unexpect, error);
+
+        constexpr saga::expected<Value, Error> const obj(src);
+
+        static_assert(obj == src, "");
+    }
+    // не constexpr
+    {
+        using Value = long;
+        using Error = int *;
+
+        auto const value = Value(13);
+
+        saga::expected<Value, Error> const src(saga::in_place_t{}, value);
+
+        saga::expected<Value, Error> const obj(src);
+
+        REQUIRE(obj == src);
+    }
+    {
+        using Value = std::vector<int>;
+        using Error = std::string;
+
+        saga_test::property_checker << [](Value const & value)
+        {
+            saga::expected<Value, Error> const src(saga::in_place_t{}, value);
+
+            saga::expected<Value, Error> const obj(src);
+
+            REQUIRE(obj == src);
+        }
+        << [](Error const & error)
+        {
+            saga::expected<Value, Error> const src(saga::unexpect, error);
+
+            saga::expected<Value, Error> const obj(src);
+
+            REQUIRE(obj == src);
+        };
+    }
+}
+
+// @tood Конструктор перемещения
+namespace
+{
+    struct not_move_constructible
+    {
+        not_move_constructible(not_move_constructible const &) = delete;
+        not_move_constructible(not_move_constructible &&) = delete;
+    };
+
+    struct throwing_move_ctor
+    {
+        throwing_move_ctor(throwing_move_ctor const &) noexcept(false) {}
+    };
+}
+
+// Наличие конструктора перемещения
+static_assert(std::is_move_constructible<saga::expected<int, long>>{}, "");
+static_assert(std::is_move_constructible<saga::expected<std::unique_ptr<int>, long>>{}, "");
+static_assert(std::is_move_constructible<saga::expected<int, std::unique_ptr<long>>>{}, "");
+static_assert(std::is_move_constructible<saga::expected<std::unique_ptr<int>, std::unique_ptr<long>>>{}, "");
+
+static_assert(std::is_move_constructible<saga::expected<void, long>>{}, "");
+static_assert(std::is_move_constructible<saga::expected<void, std::unique_ptr<long>>>{}, "");
+
+static_assert(!std::is_move_constructible<::not_move_constructible>{}, "");
+static_assert(!std::is_move_constructible<saga::expected<::not_move_constructible, long>>{}, "");
+static_assert(!std::is_move_constructible<saga::expected<void, ::not_move_constructible>>{}, "");
+static_assert(!std::is_move_constructible<saga::expected<std::string, ::not_move_constructible>>{}, "");
+static_assert(!std::is_move_constructible<saga::expected<::not_move_constructible, ::not_move_constructible>>{}, "");
+
+// noexcept для конструктора перемещения
+static_assert(std::is_nothrow_move_constructible<saga::expected<void, long>>{}, "");
+static_assert(std::is_nothrow_move_constructible<saga::expected<int, long>>{}, "");
+
+static_assert(std::is_nothrow_move_constructible<std::string>{}, "");
+static_assert(std::is_nothrow_move_constructible<saga::expected<int, std::string>>{}, "");
+static_assert(std::is_nothrow_move_constructible<saga::expected<void, std::string>>{}, "");
+static_assert(std::is_nothrow_move_constructible<saga::expected<std::string, long *>>{}, "");
+static_assert(std::is_nothrow_move_constructible<saga::expected<std::string, std::string>>{}, "");
+
+static_assert(!std::is_nothrow_move_constructible<::throwing_move_ctor>{}, "");
+static_assert(!std::is_nothrow_move_constructible<void>{}, "");
+static_assert(!std::is_nothrow_move_constructible<saga::expected<void, ::throwing_move_ctor>>{}, "");
+static_assert(!std::is_nothrow_move_constructible<saga::expected<int, ::throwing_move_ctor>>{}, "");
+static_assert(!std::is_nothrow_move_constructible<saga::expected<std::string, ::throwing_move_ctor>>{}, "");
+static_assert(!std::is_nothrow_move_constructible<saga::expected<::throwing_move_ctor, int>>{}, "");
+static_assert(!std::is_nothrow_move_constructible<saga::expected<::throwing_move_ctor, std::string>>{}, "");
+
+TEST_CASE("expected<void, Error>: move constructor")
+{
+    using Value = void const;
+
+    // не constexpr
+    {
+        using Error = int;
+        saga::expected<Value, Error> const src_old(saga::in_place_t{});
+        auto src = src_old;
+
+        saga::expected<Value, Error> const obj(std::move(src));
+
+        REQUIRE(obj == src_old);
+        REQUIRE(src.has_value());
+    }
+
+    {
+        using Error = std::string;
+        saga::expected<Value, Error> const src_old(saga::in_place_t{});
+        auto src = src_old;
+
+        saga::expected<Value, Error> const obj(std::move(src));
+
+        REQUIRE(obj == src_old);
+        REQUIRE(src.has_value());
+    }
+
+    using Error = std::string;
+    saga_test::property_checker << [](Error const & error)
+    {
+        saga::expected<Value, Error> const src_old(saga::unexpect, error);
+        auto src = src_old;
+
+        saga::expected<Value, Error> const obj(std::move(src));
+
+        REQUIRE(obj == src_old);
+        REQUIRE(!src.has_value());
+        REQUIRE(src.error().empty());
+    };
+
+    {
+        using Error = int;
+        constexpr saga::expected<Value, Error> const src(saga::in_place_t{});
+        constexpr saga::expected<Value, Error> const obj(::use_constexpr_move(src));
+
+        static_assert(obj == src, "");
+    }
+    {
+        using Error = long;
+        constexpr auto const error = Error{42};
+        constexpr saga::expected<Value, Error> const src(saga::unexpect, error);
+        constexpr saga::expected<Value, Error> const obj(::use_constexpr_move(src));
+
+        static_assert(obj == src, "");
+    }
+}
+
+TEST_CASE("expected<Value, Error>: move constructor")
+{
+    // не constexpr
+    {
+        using Value = std::vector<int>;
+        using Error = std::string;
+
+        saga_test::property_checker << [](Value const & value)
+        {
+            saga::expected<Value, Error> const src_old(saga::in_place, value);
+            auto src = src_old;
+
+            saga::expected<Value, Error> const obj(std::move(src));
+
+            REQUIRE(obj == src_old);
+            REQUIRE(src.has_value());
+            REQUIRE(src.value().empty());
+        }
+        << [](Error const & error)
+        {
+            saga::expected<Value, Error> const src_old(saga::unexpect, error);
+            auto src = src_old;
+
+            saga::expected<Value, Error> const obj(std::move(src));
+
+            REQUIRE(obj == src_old);
+            REQUIRE(!src.has_value());
+            REQUIRE(src.error().empty());
+        };
+    }
+
+    // constexpr
+    {
+        using Value = long;
+        using Error = int;
+
+        {
+            constexpr auto const value = Value{42};
+            constexpr saga::expected<Value, Error> const src(saga::in_place_t{}, value);
+            constexpr saga::expected<Value, Error> const obj(::use_constexpr_move(src));
+
+            static_assert(obj == src, "");
+        }
+        {
+            constexpr auto const error = Error{42};
+            constexpr saga::expected<Value, Error> const src(saga::unexpect, error);
+            constexpr saga::expected<Value, Error> const obj(::use_constexpr_move(src));
+
+            static_assert(obj == src, "");
+        }
+    }
 }
 
 // Конструктор на основе временного unexpected
@@ -1477,259 +1737,6 @@ TEST_CASE("expected: value_or() &&")
                 REQUIRE(!obj_error.has_value());
                 REQUIRE(obj_error.error() == error);
             }
-        }
-    };
-}
-
-// 4.6 Сравнение expected
-TEST_CASE("expected<void, Error> : equality")
-{
-    {
-        constexpr saga::expected<void, int> obj1{};
-        constexpr saga::expected<void, int> obj2(saga::unexpect, 42);
-        constexpr saga::expected<void, long> obj3(saga::unexpect, 2020);
-
-        static_assert(obj1 == obj1, "");
-        static_assert(obj1 != obj2, "");
-        static_assert(obj1 != obj3, "");
-
-        static_assert(obj2 != obj1, "");
-        static_assert(obj2 == obj2, "");
-        static_assert(obj2 != obj3, "");
-
-        static_assert(obj3 != obj1, "");
-        static_assert(obj3 != obj2, "");
-        static_assert(obj3 == obj3, "");
-    }
-
-    using Error1 = char;
-    using Error2 = short;
-
-    static_assert(!std::is_same<Error1, Error2>{}, "");
-
-    saga_test::property_checker << [](Error1 const & err1, Error2 const & err2)
-    {
-        saga::expected<void, Error1> const obj_value_1{};
-        saga::expected<void const, Error2> const obj_value_2{};
-
-        saga::expected<void volatile, Error1> const obj_error_1(saga::unexpect, err1);
-        saga::expected<void volatile const, Error2> const obj_error_2(saga::unexpect, err2);
-
-        REQUIRE(obj_value_1 == obj_value_1);
-        REQUIRE(obj_value_1 == obj_value_2);
-        REQUIRE(obj_value_1 != obj_error_1);
-        REQUIRE(obj_value_1 != obj_error_2);
-
-        REQUIRE(obj_value_2 == obj_value_1);
-        REQUIRE(obj_value_2 == obj_value_2);
-        REQUIRE(obj_value_2 != obj_error_1);
-        REQUIRE(obj_value_2 != obj_error_2);
-
-        REQUIRE(obj_error_1 != obj_value_1);
-        REQUIRE(obj_error_1 != obj_value_2);
-        REQUIRE(obj_error_1 == obj_error_1);
-        REQUIRE((obj_error_1 == obj_error_2) == (err1 == err2));
-        REQUIRE((obj_error_1 != obj_error_2) == !(obj_error_1 == obj_error_2));
-
-        REQUIRE(obj_error_2 != obj_value_1);
-        REQUIRE(obj_error_2 != obj_value_2);
-        REQUIRE(obj_error_2 == obj_error_2);
-        REQUIRE((obj_error_2 == obj_error_1) == (err2 == err1));
-        REQUIRE((obj_error_2 != obj_error_1) == !(obj_error_2 == obj_error_1));
-    };
-}
-
-TEST_CASE("expected<Value, Error> : equality")
-{
-    using Value1 = int;
-    using Value2 = long;
-    using Error1 = char;
-    using Error2 = short;
-
-    {
-        constexpr Value1 val1 = 906;
-        constexpr Value2 val2 = 2020;
-
-        constexpr Error1 err1 = 22;
-        constexpr Error2 err2 = 38;
-
-        constexpr saga::expected<Value1, Error1> obj_value_1(saga::in_place_t{}, val1);
-        constexpr saga::expected<Value2, Error2> obj_value_2(saga::in_place_t{}, val2);
-
-        constexpr saga::expected<Value1, Error1> const obj_error_1(saga::unexpect, err1);
-        constexpr saga::expected<Value2, Error2> const obj_error_2(saga::unexpect, err2);
-
-        static_assert(obj_value_1 == obj_value_1, "");
-        static_assert(obj_value_1 != obj_value_2, "");
-        static_assert(obj_value_1 != obj_error_1, "");
-        static_assert(obj_value_1 != obj_error_2, "");
-
-        static_assert(obj_value_2 != obj_value_1, "");
-        static_assert(obj_value_2 == obj_value_2, "");
-        static_assert(obj_value_2 != obj_error_1, "");
-        static_assert(obj_value_2 != obj_error_2, "");
-
-        static_assert(obj_error_1 != obj_value_1, "");
-        static_assert(obj_error_1 != obj_value_2, "");
-        static_assert(obj_error_1 == obj_error_1, "");
-        static_assert(obj_error_1 != obj_error_2, "");
-
-        static_assert(obj_error_2 != obj_value_1, "");
-        static_assert(obj_error_2 != obj_value_2, "");
-        static_assert(obj_error_2 != obj_error_1, "");
-        static_assert(obj_error_2 == obj_error_2, "");
-    }
-
-    static_assert(!std::is_same<Value1, Value2>{}, "");
-    static_assert(!std::is_same<Error1, Error2>{}, "");
-
-    saga_test::property_checker << [](Value1 const & val1, Value2 const & val2,
-                                      Error1 const & err1, Error2 const & err2)
-    {
-        saga::expected<Value1, Error1> const obj_value_1(saga::in_place_t{}, val1);
-        saga::expected<Value2, Error2> const obj_value_2(saga::in_place_t{}, val2);
-
-        saga::expected<Value1, Error1> const obj_error_1(saga::unexpect, err1);
-        saga::expected<Value2, Error2> const obj_error_2(saga::unexpect, err2);
-
-        REQUIRE(obj_value_1 == obj_value_1);
-        REQUIRE(obj_value_2 == obj_value_2);
-
-        REQUIRE(obj_error_1 == obj_error_1);
-        REQUIRE(obj_error_2 == obj_error_2);
-
-        REQUIRE(obj_value_1 != obj_error_1);
-        REQUIRE(obj_value_1 != obj_error_2);
-
-        REQUIRE(obj_value_2 != obj_error_1);
-        REQUIRE(obj_value_2 != obj_error_2);
-
-        REQUIRE((obj_value_1 == obj_value_2) == (val1 == val2));
-        REQUIRE((obj_error_1 == obj_error_2) == (err1 == err2));
-
-        REQUIRE((obj_value_1 != obj_value_2) == !(obj_value_1 == obj_value_2));
-        REQUIRE((obj_error_1 != obj_error_2) == !(obj_error_1 == obj_error_2));
-    };
-}
-
-// 4.7 Сравнение со значением
-TEST_CASE("expected : equality with value")
-{
-    {
-        using Value = long;
-        using Error = void *;
-        using OtherValue = int;
-
-        constexpr auto value = Value(42);
-        constexpr auto error = Error(nullptr);
-        constexpr auto other = OtherValue(806);
-
-        constexpr saga::expected<Value, Error> obj_value(saga::in_place_t{}, value);
-        constexpr saga::expected<Value, Error> obj_error(saga::unexpect, error);
-
-        static_assert(value != other, "");
-
-        static_assert(obj_value == value, "");
-        static_assert(value == obj_value, "");
-
-        static_assert(obj_value != other, "");
-        static_assert(other != obj_value, "");
-
-        static_assert(obj_error != value, "");
-        static_assert(other != obj_error, "");
-    }
-
-    using Value = long;
-    using Error = std::string;
-    using OtherValue = int;
-
-    saga_test::property_checker
-    << [](Value const & value, Error const & error, OtherValue const & other)
-    {
-        {
-            saga::expected<Value, Error> const obj_value(saga::in_place_t{}, value);
-
-            REQUIRE(obj_value == value);
-            REQUIRE(value == obj_value);
-
-            REQUIRE((obj_value == other) == (value == other));
-            REQUIRE((obj_value != other) == !(obj_value == other));
-
-            REQUIRE((other == obj_value) == (other == value));
-            REQUIRE((other != obj_value) == !(other == obj_value));
-        }
-        {
-            saga::expected<Value, Error> const obj_error(saga::unexpect, error);
-
-            REQUIRE(obj_error != value);
-            REQUIRE(value != obj_error);
-
-            REQUIRE(!(obj_error == value));
-            REQUIRE(!(value == obj_error));
-        }
-    };
-}
-
-// 4.8 Сравнение со unexpected
-TEST_CASE("expected : equality with unexpected")
-{
-    {
-        using Value = void *;
-        using Error = long;
-        using OtherError = int;
-
-        constexpr auto value = Value(nullptr);
-        constexpr auto unex = saga::unexpected<Error>(42);
-        constexpr auto other_unex = saga::unexpected<OtherError>(906);
-
-        constexpr saga::expected<Value, Error> obj_value(saga::in_place_t{}, value);
-        constexpr saga::expected<Value, Error> obj_error(saga::unexpect, unex.value());
-
-        static_assert(unex != other_unex, "");
-
-        static_assert(obj_error == unex, "");
-        static_assert(unex == obj_error, "");
-
-        static_assert(obj_error != other_unex, "");
-        static_assert(other_unex != obj_error, "");
-
-        static_assert(obj_value != other_unex, "");
-        static_assert(other_unex != obj_value, "");
-
-        static_assert(obj_value != unex, "");
-        static_assert(unex != obj_value, "");
-    }
-
-    using Value = std::string;
-    using Error = long;
-    using OtherError = int;
-
-    saga_test::property_checker
-    << [](Value const & value, Error const & err, OtherError const & other_err)
-    {
-        saga::unexpected<Error> const unex(err);
-        saga::unexpected<OtherError> const other_unex(other_err);
-
-        {
-            saga::expected<Value, Error> const obj_value(saga::in_place_t{}, value);
-
-            REQUIRE(obj_value != unex);
-            REQUIRE(unex != obj_value);
-
-            REQUIRE(!(obj_value == unex));
-            REQUIRE(!(unex == obj_value));
-        }
-        {
-            saga::expected<Value, Error> const obj_error(saga::unexpect, err);
-
-            REQUIRE(obj_error == unex);
-            REQUIRE(unex == obj_error);
-
-            REQUIRE((obj_error == other_unex) == (unex == other_unex));
-            REQUIRE((other_unex == obj_error) == (other_unex == unex));
-
-            REQUIRE((obj_error != other_unex) == !(obj_error == other_unex));
-            REQUIRE((other_unex != obj_error) == !(other_unex == obj_error));
         }
     };
 }
