@@ -351,6 +351,22 @@ namespace saga
                 }
             }
 
+            // emplace
+            Value & emplace()
+            {
+                // @todo Не вызывать тривиальный деструктор
+                if(!this->has_value())
+                {
+                    // @todo Доказать, что это безопасно при наличии исключений
+                    this->error_.~unexpected<Error>();
+
+                    new(&this->value_) Value{};
+                    this->has_value_ = true;
+                }
+
+                return this->value_;
+            }
+
             // Немодифицирующие операции
             bool has_value() const
             {
@@ -423,6 +439,7 @@ namespace saga
             };
         };
 
+        // @todo Уменьшить дублирование с expected_holder
         template <class Value, class Error>
         class expected_holder_trivial
         {
@@ -473,6 +490,22 @@ namespace saga
             {}
 
             ~expected_holder_trivial() = default;
+
+            // emplace
+            Value & emplace()
+            {
+                // @todo Не вызывать тривиальный деструктор
+                if(!this->has_value())
+                {
+                    // @todo Доказать, что это безопасно при наличии исключений
+                    this->error_.~unexpected<Error>();
+
+                    new(&this->value_) Value{};
+                    this->has_value_ = true;
+                }
+
+                return this->value_;
+            }
 
             // Немодифицирующие операции
             constexpr bool has_value() const
@@ -596,6 +629,10 @@ namespace saga
              : Base(unexpect_t{}, inits, std::forward<Args>(args)...)
             {}
 
+            // emplace
+            // @todo исправить сигнатуру, покрыть тестами
+            void emplace();
+
             // Немодифицирующие операции
             // @todo constexpr - требуется constexpr для std::addressof
             const Value * operator->() const
@@ -700,6 +737,12 @@ namespace saga
                                              std::initializer_list<U> inits, Args &&... args)
              : Base(saga::unexpect_t{}, inits, std::forward<Args>(args)...)
             {}
+
+            // Размещение
+            void emplace()
+            {
+                static_cast<void>(Base::emplace());
+            }
 
             // Немодифицирующие операции
             using Base::operator*;
@@ -896,6 +939,8 @@ namespace saga
         constexpr expected(unexpect_t, std::initializer_list<U> inits, Args &&... args)
          : Base(unexpect_t{}, inits, std::forward<Args>(args)...)
         {}
+
+        using Base::emplace;
 
         // Свойства
         using Base::operator*;

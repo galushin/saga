@@ -1467,6 +1467,59 @@ TEST_CASE("expected: unexpect constructor with initializer list and more args")
     };
 }
 
+// @todo emplace
+namespace
+{
+    template <class Value, class Error>
+    void check_expected_emplace(saga::expected<Value, Error> obj)
+    {
+        static_assert(std::is_void<Value>{}, "");
+
+        obj.emplace();
+
+        REQUIRE(obj.has_value());
+        REQUIRE_NOTHROW(obj.value());
+
+        static_assert(std::is_same<decltype(obj.emplace()), void>{}, "");
+    }
+
+    template <class Value, class Error>
+    void check_expected_emplace_for_unexpected(Error const & error)
+    {
+        return ::check_expected_emplace(saga::expected<Value, Error>(saga::unexpect, error));
+    }
+
+    template <class Error>
+    void check_expected_void_emplace_with_value()
+    {
+        ::check_expected_emplace<void, Error>({});
+        ::check_expected_emplace<void const, Error>({});
+        ::check_expected_emplace<void volatile, Error>({});
+        ::check_expected_emplace<void const volatile, Error>({});
+    }
+
+    template <class Error>
+    void check_expected_void_emplace_with_error(Error const & error)
+    {
+        ::check_expected_emplace_for_unexpected<void>(error);
+        ::check_expected_emplace_for_unexpected<void const>(error);
+        ::check_expected_emplace_for_unexpected<void volatile>(error);
+        ::check_expected_emplace_for_unexpected<void const volatile>(error);
+    }
+}
+
+TEST_CASE("expected<void, Error>::emplace")
+{
+    check_expected_void_emplace_with_value<int>();
+    check_expected_void_emplace_with_value<std::string>();
+
+    saga_test::property_checker
+        << ::check_expected_void_emplace_with_error<int>
+        << ::check_expected_void_emplace_with_error<std::string>;
+}
+
+// @todo expected<Value, Error>
+
 // 4.5 Свойства
 namespace
 {
