@@ -352,16 +352,72 @@ namespace saga
             }
 
             // emplace
-            Value & emplace()
+            template <class... Args>
+            Value & emplace(Args &&... args)
             {
-                // @todo Не вызывать тривиальный деструктор
-                if(!this->has_value())
+                if(this->has_value())
                 {
+                    this->value_ = Value(std::forward<Args>(args)...);
+                }
+                else
+                {
+                    // @todo Оптимизации для std::is_nothrow_constructible<Value, Args...>
+                    // и std::is_nothrow_move_constructible<Value>
+
                     // @todo Доказать, что это безопасно при наличии исключений
+                    static_assert(std::is_nothrow_move_constructible<Error>{}, "");
+
+                    unexpected_type tmp(unexpected_type(this->error()));
+
+                    // @todo Не вызывать тривиальный деструктор?
                     this->error_.~unexpected<Error>();
 
-                    new(&this->value_) Value{};
-                    this->has_value_ = true;
+                    try
+                    {
+                        new(std::addressof(this->value_)) Value(std::forward<Args>(args)...);
+                        this->has_value_ = true;
+                    }
+                    catch(...)
+                    {
+                        new(std::addressof(this->error_)) unexpected_type(std::move(tmp));
+                        throw;
+                    }
+
+                }
+
+                return this->value_;
+            }
+
+            template <class U, class... Args>
+            Value & emplace(std::initializer_list<U> inits, Args &&... args)
+            {
+                if(this->has_value())
+                {
+                    this->value_ = Value(inits, std::forward<Args>(args)...);
+                }
+                else
+                {
+                    // @todo Оптимизации для std::is_nothrow_constructible<Value, Args...>
+                    // и std::is_nothrow_move_constructible<Value>
+
+                    // @todo Доказать, что это безопасно при наличии исключений
+                    static_assert(std::is_nothrow_move_constructible<Error>{}, "");
+
+                    unexpected_type tmp(unexpected_type(this->error()));
+
+                    // @todo Не вызывать тривиальный деструктор?
+                    this->error_.~unexpected<Error>();
+
+                    try
+                    {
+                        new(std::addressof(this->value_)) Value(inits, std::forward<Args>(args)...);
+                        this->has_value_ = true;
+                    }
+                    catch(...)
+                    {
+                        new(std::addressof(this->error_)) unexpected_type(std::move(tmp));
+                        throw;
+                    }
                 }
 
                 return this->value_;
@@ -443,6 +499,9 @@ namespace saga
         template <class Value, class Error>
         class expected_holder_trivial
         {
+            static_assert(std::is_trivially_destructible<Value>{}, "");
+            static_assert(std::is_trivially_destructible<Error>{}, "");
+
             using unexpected_type = saga::unexpected<Error>;
 
         public:
@@ -492,16 +551,71 @@ namespace saga
             ~expected_holder_trivial() = default;
 
             // emplace
-            Value & emplace()
+            template <class... Args>
+            Value & emplace(Args &&... args)
             {
-                // @todo Не вызывать тривиальный деструктор
-                if(!this->has_value())
+                if(this->has_value())
                 {
+                    this->value_ = Value(std::forward<Args>(args)...);
+                }
+                else
+                {
+                    // @todo Оптимизации для std::is_nothrow_constructible<Value, Args...>
+                    // и std::is_nothrow_move_constructible<Value>
+
                     // @todo Доказать, что это безопасно при наличии исключений
+                    static_assert(std::is_nothrow_move_constructible<Error>{}, "");
+
+                    unexpected_type tmp(unexpected_type(this->error()));
+
+                    // @todo Не вызывать тривиальный деструктор?
                     this->error_.~unexpected<Error>();
 
-                    new(&this->value_) Value{};
-                    this->has_value_ = true;
+                    try
+                    {
+                        new(std::addressof(this->value_)) Value(std::forward<Args>(args)...);
+                        this->has_value_ = true;
+                    }
+                    catch(...)
+                    {
+                        new(std::addressof(this->error_)) unexpected_type(std::move(tmp));
+                        throw;
+                    }
+                }
+
+                return this->value_;
+            }
+
+            template <class U, class... Args>
+            Value & emplace(std::initializer_list<U> inits, Args &&... args)
+            {
+                if(this->has_value())
+                {
+                    this->value_ = Value(inits, std::forward<Args>(args)...);
+                }
+                else
+                {
+                    // @todo Оптимизации для std::is_nothrow_constructible<Value, Args...>
+                    // и std::is_nothrow_move_constructible<Value>
+
+                    // @todo Доказать, что это безопасно при наличии исключений
+                    static_assert(std::is_nothrow_move_constructible<Error>{}, "");
+
+                    unexpected_type tmp(unexpected_type(this->error()));
+
+                    // @todo Не вызывать тривиальный деструктор?
+                    this->error_.~unexpected<Error>();
+
+                    try
+                    {
+                        new(std::addressof(this->value_)) Value(inits, std::forward<Args>(args)...);
+                        this->has_value_ = true;
+                    }
+                    catch(...)
+                    {
+                        new(std::addressof(this->error_)) unexpected_type(std::move(tmp));
+                        throw;
+                    }
                 }
 
                 return this->value_;
@@ -621,6 +735,7 @@ namespace saga
             template <class... Args>
             constexpr explicit expected_base(unexpect_t, Args &&... args)
              : Base(unexpect_t{}, std::forward<Args>(args)...)
+             , Enabler(0)
             {}
 
             template <class U, class... Args>
@@ -630,8 +745,17 @@ namespace saga
             {}
 
             // emplace
-            // @todo исправить сигнатуру, покрыть тестами
-            void emplace();
+            template <class... Args>
+            Value & emplace(Args &&... args)
+            {
+                return Base::emplace(std::forward<Args>(args)...);
+            }
+
+            template <class U, class... Args>
+            Value & emplace(std::initializer_list<U> inits, Args &&... args)
+            {
+                return Base::emplace(inits, std::forward<Args>(args)...);
+            }
 
             // Немодифицирующие операции
             // @todo constexpr - требуется constexpr для std::addressof

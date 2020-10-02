@@ -1467,11 +1467,11 @@ TEST_CASE("expected: unexpect constructor with initializer list and more args")
     };
 }
 
-// @todo emplace
+// emplace
 namespace
 {
     template <class Value, class Error>
-    void check_expected_emplace(saga::expected<Value, Error> obj)
+    void check_expected_emplace_void(saga::expected<Value, Error> obj)
     {
         static_assert(std::is_void<Value>{}, "");
 
@@ -1486,16 +1486,16 @@ namespace
     template <class Value, class Error>
     void check_expected_emplace_for_unexpected(Error const & error)
     {
-        return ::check_expected_emplace(saga::expected<Value, Error>(saga::unexpect, error));
+        return ::check_expected_emplace_void(saga::expected<Value, Error>(saga::unexpect, error));
     }
 
     template <class Error>
     void check_expected_void_emplace_with_value()
     {
-        ::check_expected_emplace<void, Error>({});
-        ::check_expected_emplace<void const, Error>({});
-        ::check_expected_emplace<void volatile, Error>({});
-        ::check_expected_emplace<void const volatile, Error>({});
+        ::check_expected_emplace_void<void, Error>({});
+        ::check_expected_emplace_void<void const, Error>({});
+        ::check_expected_emplace_void<void volatile, Error>({});
+        ::check_expected_emplace_void<void const volatile, Error>({});
     }
 
     template <class Error>
@@ -1505,6 +1505,41 @@ namespace
         ::check_expected_emplace_for_unexpected<void const>(error);
         ::check_expected_emplace_for_unexpected<void volatile>(error);
         ::check_expected_emplace_for_unexpected<void const volatile>(error);
+    }
+
+    // @todo Может быть параметризовать и тип new_value?
+    template <class Value, class Error>
+    void check_expected_emplace_not_void(saga::expected<Value, Error> obj, Value const & value)
+    {
+        static_assert(!std::is_void<Value>{}, "");
+
+        auto & result = obj.emplace(value);
+
+        REQUIRE(obj.has_value());
+        REQUIRE(obj.value() == value);
+        REQUIRE(std::addressof(result) == std::addressof(obj.value()));
+
+        static_assert(std::is_same<decltype(result), Value &>{}, "");
+    }
+
+    template <class Value, class Error>
+    void check_expected_emplace_in_value(Value const & old_value, Value const & new_value)
+    {
+        saga::expected<Value, Error> obj(saga::in_place, old_value);
+
+        REQUIRE(obj.has_value());
+
+        ::check_expected_emplace_not_void(obj, new_value);
+    }
+
+    template <class Value, class Error>
+    void check_expected_emplace_in_error(Error const & error, Value const & value)
+    {
+        saga::expected<Value, Error> obj(saga::unexpect, error);
+
+        REQUIRE(!obj.has_value());
+
+        ::check_expected_emplace_not_void(obj, value);
     }
 }
 
@@ -1518,7 +1553,109 @@ TEST_CASE("expected<void, Error>::emplace")
         << ::check_expected_void_emplace_with_error<std::string>;
 }
 
-// @todo expected<Value, Error>
+TEST_CASE("expected<Value, Error>::emplace in value")
+{
+    // @todo Проверить для разных типов аргументов emplace
+    saga_test::property_checker
+        << ::check_expected_emplace_in_value<long, int*>
+        << ::check_expected_emplace_in_value<std::string, int*>
+        << ::check_expected_emplace_in_value<std::string, std::vector<int>>
+        << ::check_expected_emplace_in_value<int, std::vector<int>>;
+}
+
+TEST_CASE("expected<Value, Error>::emplace in error")
+{
+    // @todo Проверить для разных типов аргументов emplace
+    saga_test::property_checker
+        << ::check_expected_emplace_in_error<long, int>
+        << ::check_expected_emplace_in_error<std::string, int>
+        << ::check_expected_emplace_in_error<std::string, std::vector<int>>
+        << ::check_expected_emplace_in_error<int, std::vector<int>>;
+}
+
+TEST_CASE("expected<Value, Error>::emplace with initializer_list")
+{
+    {
+        // @todo Устранить дублирование с другими случаями использования этого класса
+        struct initializer_list_consumer
+        {
+            constexpr initializer_list_consumer(std::initializer_list<int> inits, int arg)
+             : value(arg)
+            {
+                for(auto const & each : inits)
+                {
+                    value += each;
+                }
+            }
+
+            int value = 0;
+
+            bool operator==(initializer_list_consumer const & other) const
+            {
+                return this->value == other.value;
+            }
+        };
+
+        using Value = initializer_list_consumer;
+        using Error = long;
+
+        static_assert(std::is_trivially_destructible<Value>{} &&
+                      std::is_trivially_destructible<Error>{}, "");
+
+        using Expected = saga::expected<Value, Error>;
+
+        Expected const expected(saga::in_place_t{}, {1, 2, 3, 4}, 5);
+
+        {
+            Expected obj(saga::unexpect, 42);
+            auto & result = obj.emplace({1, 2, 3, 4}, 5);
+
+            REQUIRE(obj == expected);
+            REQUIRE(std::addressof(result) == std::addressof(obj.value()));
+            static_assert(std::is_same<decltype(result), Value &>{}, "");
+        }
+
+        {
+            Expected obj(saga::in_place, {13}, 42);
+            auto & result = obj.emplace({1, 2, 3, 4}, 5);
+
+            REQUIRE(obj == expected);
+            REQUIRE(std::addressof(result) == std::addressof(obj.value()));
+            static_assert(std::is_same<decltype(result), Value &>{}, "");
+        }
+    }
+
+    saga_test::property_checker << [](int value1, int value2)
+    {
+        using Compare = bool(*)(int const &, int const &);
+        using Container = std::set<int, Compare>;
+
+        auto const cmp = Compare([](int const & x, int const & y) { return x < y; });
+
+        using Error = std::string;
+        static_assert(!std::is_trivially_destructible<Container>{} ||
+                      std::is_trivially_destructible<Error>{}, "");
+        using Expected = saga::expected<Container, Error>;
+        Expected const expected(saga::in_place_t{}, {value1, value2}, cmp);
+
+        {
+            Expected obj(saga::unexpect, "abc");
+            auto & result = obj.emplace({value1, value2}, cmp);
+
+            REQUIRE(obj == expected);
+            REQUIRE(std::addressof(result) == std::addressof(obj.value()));
+            static_assert(std::is_same<decltype(result), Container &>{}, "");
+        }
+        {
+            Expected obj(saga::in_place);
+            auto & result = obj.emplace({value1, value2}, cmp);
+
+            REQUIRE(obj == expected);
+            REQUIRE(std::addressof(result) == std::addressof(obj.value()));
+            static_assert(std::is_same<decltype(result), Container &>{}, "");
+        }
+    };
+}
 
 // 4.5 Свойства
 namespace
