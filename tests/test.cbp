@@ -62,6 +62,7 @@
 		<Unit filename="../include/saga/string_view.hpp" />
 		<Unit filename="../include/saga/type_traits.hpp" />
 		<Unit filename="../include/saga/utility/equality_comparable_box.hpp" />
+		<Unit filename="../include/saga/utility/in_place.hpp" />
 		<Unit filename="../include/saga/utility/operators.hpp" />
 		<Unit filename="../include/saga/view/indices.hpp" />
 		<Unit filename="algorithm.cpp" />
