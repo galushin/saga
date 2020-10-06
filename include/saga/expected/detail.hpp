@@ -45,6 +45,44 @@ namespace saga
         struct expected_no_init
         {};
 
+        /** @brief Определяет деструктор
+        @todo Специализация для случаев, когда деструкторы тривиальные
+        */
+        template <class Value, class Error,
+                  bool = std::is_trivially_destructible<Value>::value,
+                  bool = std::is_trivially_destructible<Error>::value>
+        struct expected_destructible
+        {
+        public:
+            using unexpected_type = saga::unexpected<Error>;
+
+            expected_storage_state state = expected_storage_state::not_initialized;
+            union
+            {
+                expected_no_init no_init = expected_no_init{};
+                Value value;
+                unexpected_type error;
+            };
+
+            expected_destructible()
+             : no_init{}
+            {}
+
+            ~expected_destructible()
+            {
+                static_assert(std::is_trivially_destructible<expected_no_init>::value, "");
+
+                if(this->state == expected_storage_state::value)
+                {
+                    this->value.~Value();
+                }
+                else if(this->state == expected_storage_state::unexpected)
+                {
+                    this->error.~unexpected_type();
+                }
+            }
+        };
+
         template <class Value, class Error>
         class expected_storage
         {
@@ -54,57 +92,42 @@ namespace saga
             using unexpected_type = unexpected<Error>;
 
             // Конструкторы и деструктор
-            expected_storage()
-             : state_(expected_storage_state::not_initialized)
-             , no_init_()
-            {}
+            expected_storage() = default;
 
-            ~expected_storage()
-            {
-                static_assert(std::is_trivially_destructible<expected_no_init>{}, "");
-
-                if(this->state() == expected_storage_state::value)
-                {
-                    this->value_.~Value();
-                }
-                else if(this->state() == expected_storage_state::unexpected)
-                {
-                    this->error_.~unexpected_type();
-                }
-            }
+            ~expected_storage() = default;
 
             // Свойства
             expected_storage_state state() const
             {
-                return this->state_;
+                return this->storage_.state;
             }
 
             Value const & operator*() const
             {
                 assert(this->state() == expected_storage_state::value);
 
-                return this->value_;
+                return this->storage_.value;
             }
 
             Value & operator*()
             {
                 assert(this->state() == expected_storage_state::value);
 
-                return this->value_;
+                return this->storage_.value;
             }
 
             Error const & error() const
             {
                 assert(this->state() == expected_storage_state::unexpected);
 
-                return this->error_.value();
+                return this->storage_.error.value();
             }
 
             Error & error()
             {
                 assert(this->state() == expected_storage_state::unexpected);
 
-                return this->error_.value();
+                return this->storage_.error.value();
             }
 
             // Модифицирующие операции
@@ -113,36 +136,32 @@ namespace saga
             {
                 if(this->state() == expected_storage_state::value)
                 {
-                    this->value_ = Value(std::forward<Args>(args)...);
+                    **this = Value(std::forward<Args>(args)...);
                 }
                 else if(this->state() == expected_storage_state::not_initialized)
                 {
-                    // @todo Нужно ли восстановить no_init_?
-                    new(std::addressof(this->value_)) Value(std::forward<Args>(args)...);
-                    this->state_ = expected_storage_state::value;
+                    // @todo Нужно ли восстановить no_init_ в случае исключения?
+                    this->init_value(std::forward<Args>(args)...);
                 }
                 else
                 {
                     // @todo Оптимизация для случаев, когда конструкторы не возбуждают исключения
-                    auto tmp_error = this->error_;
+                    auto tmp_error = this->error();
 
-                    error_.~unexpected_type();
+                    this->destroy_error();
 
                     try
                     {
-                        new(std::addressof(this->value_)) Value(std::forward<Args>(args)...);
-                        this->state_ = expected_storage_state::value;
+                        this->init_value(std::forward<Args>(args)...);
                     }
                     catch(...)
                     {
-                        new(std::addressof(this->error_)) unexpected_type(std::move(tmp_error));
+                        this->init_error(std::move(tmp_error));
                         throw;
                     }
                 }
 
-                assert(this->state() == expected_storage_state::value);
-
-                return this->value_;
+                return **this;
             }
 
             template <class U, class... Args>
@@ -151,36 +170,32 @@ namespace saga
                 // @todo Можно ли как-то уменьшить дублирование?
                 if(this->state() == expected_storage_state::value)
                 {
-                    this->value_ = Value(inits, std::forward<Args>(args)...);
+                    **this = Value(inits, std::forward<Args>(args)...);
                 }
                 else if(this->state() == expected_storage_state::not_initialized)
                 {
                     // @todo Нужно ли восстановить no_init_ в случае исключения?
-                    new(std::addressof(this->value_)) Value(inits, std::forward<Args>(args)...);
-                    this->state_ = expected_storage_state::value;
+                    this->init_value(inits, std::forward<Args>(args)...);
                 }
                 else
                 {
                     // @todo Оптимизация для случаев, когда конструкторы не возбуждают исключения
-                    auto tmp_error = this->error_;
+                    auto tmp_error = this->error();
 
-                    error_.~unexpected_type();
+                    this->destroy_error();
 
                     try
                     {
-                        new(std::addressof(this->value_)) Value(inits, std::forward<Args>(args)...);
-                        this->state_ = expected_storage_state::value;
+                        this->init_value(inits, std::forward<Args>(args)...);
                     }
                     catch(...)
                     {
-                        new(std::addressof(this->error_)) unexpected_type(std::move(tmp_error));
+                        this->init_error(std::move(tmp_error));
                         throw;
                     }
                 }
 
-                assert(this->state() == expected_storage_state::value);
-
-                return this->value_;
+                return **this;
             }
 
             template <class... Args>
@@ -188,28 +203,23 @@ namespace saga
             {
                 if(this->state() == expected_storage_state::unexpected)
                 {
-                    this->error_ = unexpected_type(saga::in_place, std::forward<Args>(args)...);
+                    this->storage_.error = unexpected_type(saga::in_place, std::forward<Args>(args)...);
                 }
                 else if(this->state() == expected_storage_state::not_initialized)
                 {
                     // @todo Нужно ли восстановить no_init_ в случае исключения?
-                    new(std::addressof(this->error_)) unexpected_type(saga::in_place, std::forward<Args>(args)...);
-                    this->state_ = expected_storage_state::unexpected;
+                    this->init_error(std::forward<Args>(args)...);
                 }
                 else
                 {
                     // @todo Оптимизация для случаев, когда конструкторы не возбуждают исключения
-                    value_.~Value();
+                    this->destroy_value();
 
-                    unexpected_type tmp(saga::in_place, std::forward<Args>(args)...);
-
-                    new(std::addressof(this->error_)) unexpected_type(std::move(tmp));
-                    this->state_ = expected_storage_state::unexpected;
+                    Error tmp(std::forward<Args>(args)...);
+                    this->init_error(std::move(tmp));
                 }
 
-                assert(this->state() == expected_storage_state::unexpected);
-
-                return this->error_.value();
+                return this->error();
             }
 
             template <class U, class... Args>
@@ -217,38 +227,84 @@ namespace saga
             {
                 if(this->state() == expected_storage_state::unexpected)
                 {
-                    this->error_ = unexpected_type(saga::in_place, inits, std::forward<Args>(args)...);
+                    this->storage_.error = unexpected_type(saga::in_place, inits, std::forward<Args>(args)...);
                 }
                 else if(this->state() == expected_storage_state::not_initialized)
                 {
                     // @todo Нужно ли восстановить no_init_ в случае исключения?
-                    new(std::addressof(this->error_)) unexpected_type(saga::in_place, inits, std::forward<Args>(args)...);
-                    this->state_ = expected_storage_state::unexpected;
+                    this->init_error(inits, std::forward<Args>(args)...);
                 }
                 else
                 {
                     // @todo Оптимизация для случаев, когда конструкторы не возбуждают исключения
-                    value_.~Value();
+                    this->destroy_value();
 
-                    unexpected_type tmp(saga::in_place, inits, std::forward<Args>(args)...);
+                    Error tmp(inits, std::forward<Args>(args)...);
 
-                    new(std::addressof(this->error_)) unexpected_type(std::move(tmp));
-                    this->state_ = expected_storage_state::unexpected;
+                    this->init_error(std::move(tmp));
                 }
 
-                assert(this->state() == expected_storage_state::unexpected);
-
-                return this->error_.value();
+                return this->error();
             }
 
         private:
-            expected_storage_state state_;
-            union
+            void destroy_value()
             {
-                expected_no_init no_init_;
-                Value value_;
-                unexpected_type error_;
-            };
+                assert(this->storage_.state == expected_storage_state::value);
+
+                this->storage_.value.~Value();
+                this->storage_.state = expected_storage_state::not_initialized;
+            }
+
+            void destroy_error()
+            {
+                assert(this->storage_.state == expected_storage_state::unexpected);
+
+                this->storage_.error.~unexpected_type();
+                this->storage_.state = expected_storage_state::not_initialized;
+            }
+
+            template <class... Args>
+            void init_value(Args &&... args)
+            {
+                assert(this->storage_.state == expected_storage_state::not_initialized);
+
+                new(std::addressof(this->storage_.value)) Value(std::forward<Args>(args)...);
+                this->storage_.state = expected_storage_state::value;
+            }
+
+            template <class U, class... Args>
+            void init_value(std::initializer_list<U> inits, Args &&... args)
+            {
+                assert(this->storage_.state == expected_storage_state::not_initialized);
+
+                new(std::addressof(this->storage_.value)) Value(inits, std::forward<Args>(args)...);
+                this->storage_.state = expected_storage_state::value;
+            }
+
+            template <class... Args>
+            void init_error(Args &&... args)
+            {
+                assert(this->storage_.state == expected_storage_state::not_initialized);
+
+                new(std::addressof(this->storage_.error))
+                    unexpected_type(saga::in_place, std::forward<Args>(args)...);
+
+                this->storage_.state = expected_storage_state::unexpected;
+            }
+
+            template <class U, class... Args>
+            void init_error(std::initializer_list<U> inits, Args &&... args)
+            {
+                assert(this->storage_.state == expected_storage_state::not_initialized);
+
+                new(std::addressof(this->storage_.error))
+                    unexpected_type(saga::in_place, inits, std::forward<Args>(args)...);
+
+                this->storage_.state = expected_storage_state::unexpected;
+            }
+
+            detail::expected_destructible<Value, Error> storage_;
         };
 
         /**
