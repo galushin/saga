@@ -83,6 +83,9 @@ namespace saga
             }
         };
 
+        /** @brief Определяет конструкторы и emplace
+        @todo Убедиться, что класс соответствует описанию
+        */
         template <class Value, class Error>
         class expected_storage
         {
@@ -312,22 +315,22 @@ namespace saga
         */
         template <class Value, class Error>
         class expected_holder
+         : private expected_storage<Value, Error>
         {
-        public:
-            // Типы
-            using unexpected_type = unexpected<Error>;
+            using Base = expected_storage<Value, Error>;
 
+        public:
             // Конструкторы и деструктор
             template <class... Args>
             explicit expected_holder(in_place_t, Args &&... args)
             {
-                storage_.emplace_value(std::forward<Args>(args)...);
+                Base::emplace_value(std::forward<Args>(args)...);
             }
 
             template <class U, class... Args>
             explicit expected_holder(in_place_t, std::initializer_list<U> inits, Args &&... args)
             {
-                storage_.emplace_value(inits, std::forward<Args>(args)...);
+                Base::emplace_value(inits, std::forward<Args>(args)...);
             }
 
             expected_holder()
@@ -338,11 +341,11 @@ namespace saga
             {
                 if(rhs.has_value())
                 {
-                    storage_.emplace_value(*rhs);
+                    Base::emplace_value(*rhs);
                 }
                 else
                 {
-                    storage_.emplace_unexpected(rhs.error());
+                    Base::emplace_unexpected(rhs.error());
                 }
             }
 
@@ -351,24 +354,24 @@ namespace saga
             {
                 if(rhs.has_value())
                 {
-                    storage_.emplace_value(std::move(*rhs));
+                    Base::emplace_value(std::move(*rhs));
                 }
                 else
                 {
-                    storage_.emplace_unexpected(std::move(rhs.error()));
+                    Base::emplace_unexpected(std::move(rhs.error()));
                 }
             }
 
             template <class... Args>
             explicit expected_holder(unexpect_t, Args &&... args)
             {
-                storage_.emplace_unexpected(std::forward<Args>(args)...);
+                Base::emplace_unexpected(std::forward<Args>(args)...);
             }
 
             template <class U, class... Args>
             explicit expected_holder(unexpect_t, std::initializer_list<U> inits, Args &&... args)
             {
-                storage_.emplace_unexpected(inits, std::forward<Args>(args)...);
+                Base::emplace_unexpected(inits, std::forward<Args>(args)...);
             }
 
             ~expected_holder() = default;
@@ -377,81 +380,78 @@ namespace saga
             template <class... Args>
             Value & emplace(Args &&... args)
             {
-                return storage_.emplace_value(std::forward<Args>(args)...);
+                return Base::emplace_value(std::forward<Args>(args)...);
             }
 
             template <class U, class... Args>
             Value & emplace(std::initializer_list<U> inits, Args &&... args)
             {
-                return this->storage_.emplace_value(inits, std::forward<Args>(args)...);
+                return Base::emplace_value(inits, std::forward<Args>(args)...);
             }
 
             // Немодифицирующие операции
             bool has_value() const
             {
-                assert(storage_.state() != expected_storage_state::not_initialized);
+                assert(Base::state() != expected_storage_state::not_initialized);
 
-                return storage_.state() == expected_storage_state::value;
+                return Base::state() == expected_storage_state::value;
             }
 
             Value const & operator*() const &
             {
                 assert(this->has_value());
 
-                return *storage_;
+                return Base::operator*();
             }
 
             Value & operator*() &
             {
                 assert(this->has_value());
 
-                return *storage_;
+                return Base::operator*();
             }
 
             Value && operator*() &&
             {
                 assert(this->has_value());
 
-                return std::move(*storage_);
+                return std::move(Base::operator*());
             }
 
             Value const && operator*() const &&
             {
                 assert(this->has_value());
 
-                return std::move(*storage_);
+                return std::move(Base::operator*());
             }
 
             Error const & error() const &
             {
                 assert(!this->has_value());
 
-                return storage_.error();
+                return Base::error();
             }
 
             Error & error() &
             {
                 assert(!this->has_value());
 
-                return storage_.error();
+                return Base::error();
             }
 
             Error && error() &&
             {
                 assert(!this->has_value());
 
-                return std::move(storage_.error());
+                return std::move(Base::error());
             }
 
             Error const && error() const &&
             {
                 assert(!this->has_value());
 
-                return std::move(storage_.error());
+                return std::move(Base::error());
             }
-
-        private:
-            detail::expected_storage<Value, Error> storage_;
         };
 
         // @todo Уменьшить дублирование с expected_holder
