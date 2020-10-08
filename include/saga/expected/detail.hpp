@@ -83,11 +83,10 @@ namespace saga
             }
         };
 
-        /** @brief Определяет конструкторы и emplace
-        @todo Убедиться, что класс соответствует описанию
+        /** @brief Определяет конструкторы с in_place_t и unexpect_t, а также и emplace
         */
         template <class Value, class Error>
-        class expected_storage
+        class expected_constructors
         {
             // @todo static_assert(std::is_nothrow_move_constructible<saga::unexpected<Error>>{}, "");
         public:
@@ -95,9 +94,33 @@ namespace saga
             using unexpected_type = unexpected<Error>;
 
             // Конструкторы и деструктор
-            expected_storage() = default;
+            expected_constructors() = default;
 
-            ~expected_storage() = default;
+            template <class... Args>
+            explicit expected_constructors(in_place_t, Args &&... args)
+            {
+                this->init_value(std::forward<Args>(args)...);
+            }
+
+            template <class U, class... Args>
+            explicit expected_constructors(in_place_t, std::initializer_list<U> inits, Args &&... args)
+            {
+                this->init_value(inits, std::forward<Args>(args)...);
+            }
+
+            template <class... Args>
+            explicit expected_constructors(unexpect_t, Args &&... args)
+            {
+                this->init_error(std::forward<Args>(args)...);
+            }
+
+            template <class U, class... Args>
+            explicit expected_constructors(unexpect_t, std::initializer_list<U> inits, Args &&... args)
+            {
+                this->init_error(inits, std::forward<Args>(args)...);
+            }
+
+            ~expected_constructors() = default;
 
             // Свойства
             expected_storage_state state() const
@@ -135,23 +158,25 @@ namespace saga
 
             // Модифицирующие операции
             template <class... Args>
-            Value & emplace_value(Args &&... args)
+            Value & emplace(Args &&... args)
             {
-                if(this->state() == expected_storage_state::value)
+                // @todo Нужна ли эта ветка?
+                if(this->state() == expected_storage_state::not_initialized)
                 {
-                    **this = Value(std::forward<Args>(args)...);
-                }
-                else if(this->state() == expected_storage_state::not_initialized)
-                {
-                    // @todo Нужно ли восстановить no_init_ в случае исключения?
                     this->init_value(std::forward<Args>(args)...);
+                }
+                else if(this->state() == expected_storage_state::value)
+                {
+                    this->storage_.value = Value(std::forward<Args>(args)...);
                 }
                 else
                 {
-                    // @todo Оптимизация для случаев, когда конструкторы не возбуждают исключения
-                    auto tmp_error = this->error();
+                    // @todo Оптимизация для случаев, когда исключение не возбуждается
+                    // @todo Стандарт требует unexpected(this->error()). Правильно ли мы делаем?
+                    auto tmp = this->error();
 
-                    this->destroy_error();
+                    this->storage_.error.~unexpected_type();
+                    this->storage_.state = expected_storage_state::not_initialized;
 
                     try
                     {
@@ -159,7 +184,7 @@ namespace saga
                     }
                     catch(...)
                     {
-                        this->init_error(std::move(tmp_error));
+                        this->init_error(std::move(tmp));
                         throw;
                     }
                 }
@@ -167,121 +192,13 @@ namespace saga
                 return **this;
             }
 
-            template <class U, class... Args>
-            Value & emplace_value(std::initializer_list<U> inits, Args &&... args)
-            {
-                // @todo Можно ли как-то уменьшить дублирование?
-                if(this->state() == expected_storage_state::value)
-                {
-                    **this = Value(inits, std::forward<Args>(args)...);
-                }
-                else if(this->state() == expected_storage_state::not_initialized)
-                {
-                    // @todo Нужно ли восстановить no_init_ в случае исключения?
-                    this->init_value(inits, std::forward<Args>(args)...);
-                }
-                else
-                {
-                    // @todo Оптимизация для случаев, когда конструкторы не возбуждают исключения
-                    auto tmp_error = this->error();
-
-                    this->destroy_error();
-
-                    try
-                    {
-                        this->init_value(inits, std::forward<Args>(args)...);
-                    }
-                    catch(...)
-                    {
-                        this->init_error(std::move(tmp_error));
-                        throw;
-                    }
-                }
-
-                return **this;
-            }
-
-            template <class... Args>
-            Error & emplace_unexpected(Args &&... args)
-            {
-                if(this->state() == expected_storage_state::unexpected)
-                {
-                    this->storage_.error = unexpected_type(saga::in_place, std::forward<Args>(args)...);
-                }
-                else if(this->state() == expected_storage_state::not_initialized)
-                {
-                    // @todo Нужно ли восстановить no_init_ в случае исключения?
-                    this->init_error(std::forward<Args>(args)...);
-                }
-                else
-                {
-                    // @todo Оптимизация для случаев, когда конструкторы не возбуждают исключения
-                    this->destroy_value();
-
-                    Error tmp(std::forward<Args>(args)...);
-                    this->init_error(std::move(tmp));
-                }
-
-                return this->error();
-            }
-
-            template <class U, class... Args>
-            Error & emplace_unexpected(std::initializer_list<U> inits, Args &&... args)
-            {
-                if(this->state() == expected_storage_state::unexpected)
-                {
-                    this->storage_.error = unexpected_type(saga::in_place, inits, std::forward<Args>(args)...);
-                }
-                else if(this->state() == expected_storage_state::not_initialized)
-                {
-                    // @todo Нужно ли восстановить no_init_ в случае исключения?
-                    this->init_error(inits, std::forward<Args>(args)...);
-                }
-                else
-                {
-                    // @todo Оптимизация для случаев, когда конструкторы не возбуждают исключения
-                    this->destroy_value();
-
-                    Error tmp(inits, std::forward<Args>(args)...);
-
-                    this->init_error(std::move(tmp));
-                }
-
-                return this->error();
-            }
-
-        private:
-            void destroy_value()
-            {
-                assert(this->storage_.state == expected_storage_state::value);
-
-                this->storage_.value.~Value();
-                this->storage_.state = expected_storage_state::not_initialized;
-            }
-
-            void destroy_error()
-            {
-                assert(this->storage_.state == expected_storage_state::unexpected);
-
-                this->storage_.error.~unexpected_type();
-                this->storage_.state = expected_storage_state::not_initialized;
-            }
-
+        protected:
             template <class... Args>
             void init_value(Args &&... args)
             {
                 assert(this->storage_.state == expected_storage_state::not_initialized);
 
                 new(std::addressof(this->storage_.value)) Value(std::forward<Args>(args)...);
-                this->storage_.state = expected_storage_state::value;
-            }
-
-            template <class U, class... Args>
-            void init_value(std::initializer_list<U> inits, Args &&... args)
-            {
-                assert(this->storage_.state == expected_storage_state::not_initialized);
-
-                new(std::addressof(this->storage_.value)) Value(inits, std::forward<Args>(args)...);
                 this->storage_.state = expected_storage_state::value;
             }
 
@@ -296,17 +213,7 @@ namespace saga
                 this->storage_.state = expected_storage_state::unexpected;
             }
 
-            template <class U, class... Args>
-            void init_error(std::initializer_list<U> inits, Args &&... args)
-            {
-                assert(this->storage_.state == expected_storage_state::not_initialized);
-
-                new(std::addressof(this->storage_.error))
-                    unexpected_type(saga::in_place, inits, std::forward<Args>(args)...);
-
-                this->storage_.state = expected_storage_state::unexpected;
-            }
-
+        private:
             detail::expected_destructible<Value, Error> storage_;
         };
 
@@ -315,79 +222,49 @@ namespace saga
         */
         template <class Value, class Error>
         class expected_holder
-         : private expected_storage<Value, Error>
+         : private expected_constructors<Value, Error>
         {
-            using Base = expected_storage<Value, Error>;
+            using Base = expected_constructors<Value, Error>;
 
         public:
             // Конструкторы и деструктор
-            template <class... Args>
-            explicit expected_holder(in_place_t, Args &&... args)
-            {
-                Base::emplace_value(std::forward<Args>(args)...);
-            }
-
-            template <class U, class... Args>
-            explicit expected_holder(in_place_t, std::initializer_list<U> inits, Args &&... args)
-            {
-                Base::emplace_value(inits, std::forward<Args>(args)...);
-            }
+            using Base::Base;
 
             expected_holder()
-             : expected_holder(in_place_t{})
+             : Base(in_place_t{})
             {}
 
             expected_holder(expected_holder const & rhs)
+             : Base()
             {
                 if(rhs.has_value())
                 {
-                    Base::emplace_value(*rhs);
+                    Base::init_value(*rhs);
                 }
                 else
                 {
-                    Base::emplace_unexpected(rhs.error());
+                    Base::init_error(rhs.error());
                 }
             }
 
             expected_holder(expected_holder && rhs)
                 noexcept(std::is_nothrow_move_constructible<Value>{} && std::is_nothrow_move_constructible<Error>{})
+             : Base()
             {
                 if(rhs.has_value())
                 {
-                    Base::emplace_value(std::move(*rhs));
+                    Base::init_value(std::move(*rhs));
                 }
                 else
                 {
-                    Base::emplace_unexpected(std::move(rhs.error()));
+                    Base::init_error(std::move(rhs.error()));
                 }
-            }
-
-            template <class... Args>
-            explicit expected_holder(unexpect_t, Args &&... args)
-            {
-                Base::emplace_unexpected(std::forward<Args>(args)...);
-            }
-
-            template <class U, class... Args>
-            explicit expected_holder(unexpect_t, std::initializer_list<U> inits, Args &&... args)
-            {
-                Base::emplace_unexpected(inits, std::forward<Args>(args)...);
             }
 
             ~expected_holder() = default;
 
-            // emplace
-            template <class... Args>
-            Value & emplace(Args &&... args)
-            {
-                return Base::emplace_value(std::forward<Args>(args)...);
-            }
-
-            template <class U, class... Args>
-            Value & emplace(std::initializer_list<U> inits, Args &&... args)
-            {
-                return Base::emplace_value(inits, std::forward<Args>(args)...);
-            }
+            // Модифицирующие операции
+            using Base::emplace;
 
             // Немодифицирующие операции
             bool has_value() const
@@ -704,12 +581,14 @@ namespace saga
             {}
 
             // emplace
+            // @todo Ограничения типа
             template <class... Args>
             Value & emplace(Args &&... args)
             {
                 return Base::emplace(std::forward<Args>(args)...);
             }
 
+            // @todo Ограничения типа
             template <class U, class... Args>
             Value & emplace(std::initializer_list<U> inits, Args &&... args)
             {
