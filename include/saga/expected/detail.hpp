@@ -83,7 +83,7 @@ namespace saga
             }
         };
 
-        /** @brief Определяет конструкторы с in_place_t и unexpect_t, а также и emplace
+        /** @brief Определяет конструкторы с in_place_t и unexpect_t
         */
         template <class Value, class Error>
         class expected_constructors
@@ -156,42 +156,6 @@ namespace saga
                 return this->storage_.error.value();
             }
 
-            // Модифицирующие операции
-            template <class... Args>
-            Value & emplace(Args &&... args)
-            {
-                // @todo Нужна ли эта ветка?
-                if(this->state() == expected_storage_state::not_initialized)
-                {
-                    this->init_value(std::forward<Args>(args)...);
-                }
-                else if(this->state() == expected_storage_state::value)
-                {
-                    this->storage_.value = Value(std::forward<Args>(args)...);
-                }
-                else
-                {
-                    // @todo Оптимизация для случаев, когда исключение не возбуждается
-                    // @todo Стандарт требует unexpected(this->error()). Правильно ли мы делаем?
-                    auto tmp = this->error();
-
-                    this->storage_.error.~unexpected_type();
-                    this->storage_.state = expected_storage_state::not_initialized;
-
-                    try
-                    {
-                        this->init_value(std::forward<Args>(args)...);
-                    }
-                    catch(...)
-                    {
-                        this->init_error(std::move(tmp));
-                        throw;
-                    }
-                }
-
-                return **this;
-            }
-
         protected:
             template <class... Args>
             void init_value(Args &&... args)
@@ -211,6 +175,12 @@ namespace saga
                     unexpected_type(saga::in_place, std::forward<Args>(args)...);
 
                 this->storage_.state = expected_storage_state::unexpected;
+            }
+
+            void destroy_error()
+            {
+                this->storage_.error.~unexpected_type();
+                this->storage_.state = expected_storage_state::not_initialized;
             }
 
         private:
@@ -262,9 +232,6 @@ namespace saga
             }
 
             ~expected_holder() = default;
-
-            // Модифицирующие операции
-            using Base::emplace;
 
             // Немодифицирующие операции
             bool has_value() const
@@ -329,9 +296,41 @@ namespace saga
 
                 return std::move(Base::error());
             }
+
+            // Модифицирующие операции
+            template <class... Args>
+            Value & emplace(Args &&... args)
+            {
+                assert(this->state() != expected_storage_state::not_initialized);
+
+                if(this->has_value())
+                {
+                    **this = Value(std::forward<Args>(args)...);
+                }
+                else
+                {
+                    // @todo Оптимизация для случаев, когда исключение не возбуждается
+                    // @todo Стандарт требует unexpected(this->error()). Правильно ли мы делаем?
+                    auto tmp = this->error();
+
+                    this->destroy_error();
+
+                    try
+                    {
+                        this->init_value(std::forward<Args>(args)...);
+                    }
+                    catch(...)
+                    {
+                        this->init_error(std::move(tmp));
+                        throw;
+                    }
+                }
+
+                return **this;
+            }
         };
 
-        // @todo Уменьшить дублирование с expected_holder
+        // @todo Уменьшить дублирование с expected_holder и возможно вообще устранить этот класс
         template <class Value, class Error>
         class expected_holder_trivial
         {
