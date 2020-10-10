@@ -27,6 +27,8 @@ SAGA -- это свободной программное обеспечение:
 /// @cond false
 namespace saga
 {
+    // @todo Покрыть тестами функции, не имеющие определения
+
     template <class Value, class Error>
     class expected;
 
@@ -35,262 +37,350 @@ namespace saga
         struct void_wrapper
         {};
 
-        enum class expected_storage_state
-        {
-            not_initialized = 0,
-            value,
-            unexpected
-        };
-
-        struct expected_no_init
+        struct expected_uninitialized
         {};
 
-        /** @brief Определяет деструктор
-        @todo Специализация для случаев, когда деструкторы тривиальные
-        */
         template <class Value, class Error,
-                  bool = std::is_trivially_destructible<Value>::value,
-                  bool = std::is_trivially_destructible<Error>::value>
+                  bool Value_trivially_destructible = std::is_trivially_destructible<Value>::value,
+                  bool Error_trivially_destructible = std::is_trivially_destructible<Error>::value>
         struct expected_destructible
         {
         public:
+            // Переменные-члены
             using unexpected_type = saga::unexpected<Error>;
-
-            expected_storage_state state = expected_storage_state::not_initialized;
             union
             {
-                expected_no_init no_init = expected_no_init{};
-                Value value;
-                unexpected_type error;
+                expected_uninitialized no_init_;
+                Value value_;
+                unexpected_type error_;
             };
 
-            expected_destructible()
-             : no_init{}
+            bool has_value_ = false;
+
+            // Конструкторы и деструктор
+            explicit expected_destructible(expected_uninitialized)
+             : no_init_{}
+             , has_value_(false)
+            {}
+
+            template <class... Args>
+            constexpr explicit expected_destructible(in_place_t, Args &&... args)
+             : value_(std::forward<Args>(args)...)
+             , has_value_(true)
+            {}
+
+            template <class... Args>
+            constexpr explicit expected_destructible(unexpect_t, Args &&... args)
+             : error_(saga::in_place_t{}, std::forward<Args>(args)...)
+             , has_value_(false)
             {}
 
             ~expected_destructible()
             {
-                static_assert(std::is_trivially_destructible<expected_no_init>::value, "");
-
-                if(this->state == expected_storage_state::value)
+                if(this->has_value_)
                 {
-                    this->value.~Value();
+                    this->value_.~Value();
                 }
-                else if(this->state == expected_storage_state::unexpected)
+                else
                 {
-                    this->error.~unexpected_type();
+                    this->error_.~unexpected();
                 }
             }
         };
 
-        /** @brief Определяет конструкторы с in_place_t и unexpect_t
-        */
         template <class Value, class Error>
-        class expected_constructors
+        struct expected_destructible<Value, Error, true, true>
         {
-            // @todo static_assert(std::is_nothrow_move_constructible<saga::unexpected<Error>>{}, "");
+            static_assert(std::is_trivially_destructible<Value>{}, "");
+            static_assert(std::is_trivially_destructible<Error>{}, "");
+
         public:
-            // Типы
-            using unexpected_type = unexpected<Error>;
+            // Переменные-члены
+            using unexpected_type = saga::unexpected<Error>;
+            union
+            {
+                Value value_;
+                unexpected_type error_;
+            };
+
+            bool has_value_ = false;
 
             // Конструкторы и деструктор
-            expected_constructors() = default;
+            template <class... Args>
+            constexpr explicit expected_destructible(in_place_t, Args &&... args)
+             : value_(std::forward<Args>(args)...)
+             , has_value_(true)
+            {}
 
             template <class... Args>
-            explicit expected_constructors(in_place_t, Args &&... args)
-            {
-                this->init_value(std::forward<Args>(args)...);
-            }
+            constexpr explicit expected_destructible(unexpect_t, Args &&... args)
+             : error_(saga::in_place_t{}, std::forward<Args>(args)...)
+             , has_value_(false)
+            {}
 
-            template <class U, class... Args>
-            explicit expected_constructors(in_place_t, std::initializer_list<U> inits, Args &&... args)
-            {
-                this->init_value(inits, std::forward<Args>(args)...);
-            }
+            ~expected_destructible() = default;
+        };
+
+        /** @brief Определяет деструктор
+        @todo Уменьшить дублирование между специализациями
+        */
+        template <class Value, class Error>
+        class expected_storage
+        {
+            using unexpected_type = unexpected<Error>;
+
+        public:
+            // Создание и копирование
+            template <class... Args>
+            constexpr explicit expected_storage(in_place_t, Args &&... args)
+             : impl_(in_place_t{}, std::forward<Args>(args)...)
+            {}
 
             template <class... Args>
-            explicit expected_constructors(unexpect_t, Args &&... args)
-            {
-                this->init_error(std::forward<Args>(args)...);
-            }
+            constexpr explicit expected_storage(unexpect_t, Args &&... args)
+             : impl_(unexpect_t{}, std::forward<Args>(args)...)
+            {}
 
-            template <class U, class... Args>
-            explicit expected_constructors(unexpect_t, std::initializer_list<U> inits, Args &&... args)
-            {
-                this->init_error(inits, std::forward<Args>(args)...);
-            }
-
-            ~expected_constructors() = default;
+            // Уничтожение
+            ~expected_storage() = default;
 
             // Свойства
-            expected_storage_state state() const
+            constexpr bool has_value() const
             {
-                return this->storage_.state;
+                return this->impl_.has_value_;
             }
 
-            Value const & operator*() const
+            constexpr Value const & operator*() const
             {
-                assert(this->state() == expected_storage_state::value);
-
-                return this->storage_.value;
+                assert(this->has_value());
+                return this->impl_.value_;
             }
 
-            Value & operator*()
+            constexpr Value & operator*()
             {
-                assert(this->state() == expected_storage_state::value);
-
-                return this->storage_.value;
+                assert(this->has_value());
+                return this->impl_.value_;
             }
 
-            Error const & error() const
+            constexpr Error const & error() const
             {
-                assert(this->state() == expected_storage_state::unexpected);
-
-                return this->storage_.error.value();
+                assert(!this->has_value());
+                return this->impl_.error_.value();
             }
 
-            Error & error()
+            constexpr Error & error()
             {
-                assert(this->state() == expected_storage_state::unexpected);
+                assert(!this->has_value());
+                return this->impl_.error_.value();
+            }
 
-                return this->storage_.error.value();
+            // Модифицирующие опреации
+            template <class... Args>
+            Value & emplace(Args &&... args)
+            {
+                if(this->has_value())
+                {
+                    **this = Value(std::forward<Args>(args)...);
+                }
+                else
+                {
+                    // @todo Оптимизация для случая, когда конструкторы не порождают исключения
+                    auto tmp = unexpected_type(this->error());
+
+                    this->impl_.error_.~unexpected_type();
+
+                    try
+                    {
+                        new(std::addressof(this->impl_.value_)) Value(std::forward<Args>(args)...);
+                        this->impl_.has_value_ = true;
+                    }
+                    catch(...)
+                    {
+                        new(std::addressof(this->impl_.error_)) unexpected_type(std::move(tmp));
+                        throw;
+                    }
+                }
+                assert(this->has_value());
+
+                return **this;
             }
 
         protected:
-            template <class... Args>
-            void init_value(Args &&... args)
+            expected_storage(std::nullptr_t, expected_storage const & rhs)
+             : impl_(expected_uninitialized{})
             {
-                assert(this->storage_.state == expected_storage_state::not_initialized);
-
-                new(std::addressof(this->storage_.value)) Value(std::forward<Args>(args)...);
-                this->storage_.state = expected_storage_state::value;
+                if(rhs.has_value())
+                {
+                    new(std::addressof(this->impl_.value_)) Value(*rhs);
+                }
+                else
+                {
+                    new(std::addressof(this->impl_.error_)) unexpected_type(rhs.error());
+                }
+                this->impl_.has_value_ = rhs.has_value();
             }
 
-            template <class... Args>
-            void init_error(Args &&... args)
+            expected_storage(std::nullptr_t, expected_storage && rhs)
+             : impl_(expected_uninitialized{})
             {
-                assert(this->storage_.state == expected_storage_state::not_initialized);
-
-                new(std::addressof(this->storage_.error))
-                    unexpected_type(saga::in_place, std::forward<Args>(args)...);
-
-                this->storage_.state = expected_storage_state::unexpected;
-            }
-
-            void destroy_error()
-            {
-                this->storage_.error.~unexpected_type();
-                this->storage_.state = expected_storage_state::not_initialized;
+                if(rhs.has_value())
+                {
+                    new(std::addressof(this->impl_.value_)) Value(std::move(*rhs));
+                }
+                else
+                {
+                    new(std::addressof(this->impl_.error_)) unexpected_type(std::move(rhs.error()));
+                }
+                this->impl_.has_value_ = rhs.has_value();
             }
 
         private:
-            detail::expected_destructible<Value, Error> storage_;
+            expected_destructible<Value, Error> impl_;
         };
 
-        /**
-        @todo Проверить, что storage_ не может находиться в состоянии not_initialized
+        template <class Value, class Error,
+                  bool trivially_copy_constructible = std::is_trivially_copy_constructible<Value>{}
+                                                    && std::is_trivially_copy_constructible<Error>{}>
+        class expected_copy_ctor
+         : public expected_storage<Value, Error>
+        {
+            using Base = expected_storage<Value, Error>;
+
+            static_assert(std::is_trivially_copy_constructible<Value>{}, "");
+            static_assert(std::is_trivially_copy_constructible<Error>{}, "");
+
+        public:
+            using Base::Base;
+
+            expected_copy_ctor(expected_copy_ctor const &) = default;
+        };
+
+        template <class Value, class Error>
+        class expected_copy_ctor<Value, Error, false>
+         : public expected_storage<Value, Error>
+        {
+            using Base = expected_storage<Value, Error>;
+        public:
+            using Base::Base;
+
+            expected_copy_ctor(expected_copy_ctor const & rhs)
+             : Base(nullptr, rhs)
+            {}
+        };
+
+        /** @todo Специализация для случая, когда конструктор перемещения является тривиальным
         */
+        template <class Value, class Error,
+                  bool trivially_move_constructible = std::is_trivially_move_constructible<Value>{}
+                                                    && std::is_trivially_move_constructible<Error>{}>
+        class expected_move_ctor
+         : public expected_copy_ctor<Value, Error>
+        {
+            using Base = expected_copy_ctor<Value, Error>;
+
+            static_assert(std::is_trivially_move_constructible<Value>{}, "");
+            static_assert(std::is_trivially_move_constructible<Error>{}, "");
+
+        public:
+            using Base::Base;
+
+            expected_move_ctor(expected_move_ctor const &) = default;
+
+            expected_move_ctor(expected_move_ctor &&)
+                noexcept(std::is_nothrow_move_constructible<Value>{}
+                         && std::is_nothrow_move_constructible<Error>{}) = default;
+        };
+
+        template <class Value, class Error>
+        class expected_move_ctor<Value, Error, false>
+         : public expected_copy_ctor<Value, Error>
+        {
+            using Base = expected_copy_ctor<Value, Error>;
+        public:
+            using Base::Base;
+
+            expected_move_ctor(expected_move_ctor const &) = default;
+
+            expected_move_ctor(expected_move_ctor && rhs)
+                noexcept(std::is_nothrow_move_constructible<Value>{}
+                         && std::is_nothrow_move_constructible<Error>{})
+             : Base(nullptr, std::move(rhs))
+            {}
+        };
+
         template <class Value, class Error>
         class expected_holder
-         : private expected_constructors<Value, Error>
+         : private expected_move_ctor<Value, Error>
         {
-            using Base = expected_constructors<Value, Error>;
+            using Base = expected_move_ctor<Value, Error>;
 
         public:
             // Конструкторы и деструктор
             using Base::Base;
 
-            expected_holder()
+            constexpr expected_holder()
              : Base(in_place_t{})
             {}
 
-            expected_holder(expected_holder const & rhs)
-             : Base()
-            {
-                if(rhs.has_value())
-                {
-                    Base::init_value(*rhs);
-                }
-                else
-                {
-                    Base::init_error(rhs.error());
-                }
-            }
+            expected_holder(expected_holder const & ) = default;
 
-            expected_holder(expected_holder && rhs)
-                noexcept(std::is_nothrow_move_constructible<Value>{} && std::is_nothrow_move_constructible<Error>{})
-             : Base()
-            {
-                if(rhs.has_value())
-                {
-                    Base::init_value(std::move(*rhs));
-                }
-                else
-                {
-                    Base::init_error(std::move(rhs.error()));
-                }
-            }
+            expected_holder(expected_holder && rhs) = default;
 
             ~expected_holder() = default;
 
             // Немодифицирующие операции
-            bool has_value() const
-            {
-                assert(Base::state() != expected_storage_state::not_initialized);
+            using Base::has_value;
 
-                return Base::state() == expected_storage_state::value;
-            }
-
-            Value const & operator*() const &
+            constexpr Value const & operator*() const &
             {
                 assert(this->has_value());
 
                 return Base::operator*();
             }
 
-            Value & operator*() &
+            constexpr Value & operator*() &
             {
                 assert(this->has_value());
 
                 return Base::operator*();
             }
 
-            Value && operator*() &&
+            constexpr Value && operator*() &&
             {
                 assert(this->has_value());
 
                 return std::move(Base::operator*());
             }
 
-            Value const && operator*() const &&
+            constexpr Value const && operator*() const &&
             {
                 assert(this->has_value());
 
                 return std::move(Base::operator*());
             }
 
-            Error const & error() const &
+            constexpr Error const & error() const &
             {
                 assert(!this->has_value());
 
                 return Base::error();
             }
 
-            Error & error() &
+            constexpr Error & error() &
             {
                 assert(!this->has_value());
 
                 return Base::error();
             }
 
-            Error && error() &&
+            constexpr Error && error() &&
             {
                 assert(!this->has_value());
 
                 return std::move(Base::error());
             }
 
-            Error const && error() const &&
+            constexpr Error const && error() const &&
             {
                 assert(!this->has_value());
 
@@ -301,246 +391,20 @@ namespace saga
             template <class... Args>
             Value & emplace(Args &&... args)
             {
-                assert(this->state() != expected_storage_state::not_initialized);
-
-                if(this->has_value())
-                {
-                    **this = Value(std::forward<Args>(args)...);
-                }
-                else
-                {
-                    // @todo Оптимизация для случаев, когда исключение не возбуждается
-                    // @todo Стандарт требует unexpected(this->error()). Правильно ли мы делаем?
-                    auto tmp = this->error();
-
-                    this->destroy_error();
-
-                    try
-                    {
-                        this->init_value(std::forward<Args>(args)...);
-                    }
-                    catch(...)
-                    {
-                        this->init_error(std::move(tmp));
-                        throw;
-                    }
-                }
-
-                return **this;
+                return Base::emplace(std::forward<Args>(args)...);
             }
-        };
-
-        // @todo Уменьшить дублирование с expected_holder и возможно вообще устранить этот класс
-        template <class Value, class Error>
-        class expected_holder_trivial
-        {
-            static_assert(std::is_trivially_destructible<Value>{}, "");
-            static_assert(std::is_trivially_destructible<Error>{}, "");
-
-            using unexpected_type = saga::unexpected<Error>;
-
-        public:
-            // Ограничения
-            static_assert(std::is_trivially_destructible<Value>{}, "");
-            static_assert(std::is_trivially_destructible<Error>{}, "");
-
-            // Конструкторы и деструктор
-            template <class... Args>
-            constexpr explicit expected_holder_trivial(in_place_t, Args &&... args)
-             : has_value_(true)
-             , value_(std::forward<Args>(args)...)
-            {}
-
-            template <class U, class... Args>
-            constexpr explicit expected_holder_trivial(in_place_t, std::initializer_list<U> inits,
-                                                       Args &&... args)
-             : has_value_(true)
-             , value_(inits, std::forward<Args>(args)...)
-            {}
-
-            constexpr expected_holder_trivial()
-             : expected_holder_trivial(in_place_t{})
-            {}
-
-            /* @todo Придумать тест, когда деструктор тривиальный, а конструктор копий - нет
-            */
-            expected_holder_trivial(expected_holder_trivial const & rhs) = default;
-
-            /* @todo Придумать тест, когда деструктор тривиальный, а конструктор перемещения - нет
-            */
-            expected_holder_trivial(expected_holder_trivial && rhs) = default;
-
-            template <class... Args>
-            constexpr explicit expected_holder_trivial(unexpect_t, Args &&... args)
-             : has_value_(false)
-             , error_(saga::in_place_t{}, std::forward<Args>(args)...)
-            {}
-
-            template <class U, class... Args>
-            constexpr explicit expected_holder_trivial(unexpect_t, std::initializer_list<U> inits,
-                                                       Args &&... args)
-             : has_value_(false)
-             , error_(saga::in_place_t{}, inits, std::forward<Args>(args)...)
-            {}
-
-            ~expected_holder_trivial() = default;
-
-            // emplace
-            template <class... Args>
-            Value & emplace(Args &&... args)
-            {
-                if(this->has_value())
-                {
-                    this->value_ = Value(std::forward<Args>(args)...);
-                }
-                else
-                {
-                    // @todo Оптимизации для std::is_nothrow_constructible<Value, Args...>
-                    // и std::is_nothrow_move_constructible<Value>
-
-                    // @todo Доказать, что это безопасно при наличии исключений
-                    static_assert(std::is_nothrow_move_constructible<Error>{}, "");
-
-                    unexpected_type tmp(unexpected_type(this->error()));
-
-                    // @todo Не вызывать тривиальный деструктор?
-                    this->error_.~unexpected<Error>();
-
-                    try
-                    {
-                        new(std::addressof(this->value_)) Value(std::forward<Args>(args)...);
-                        this->has_value_ = true;
-                    }
-                    catch(...)
-                    {
-                        new(std::addressof(this->error_)) unexpected_type(std::move(tmp));
-                        throw;
-                    }
-                }
-
-                return this->value_;
-            }
-
-            template <class U, class... Args>
-            Value & emplace(std::initializer_list<U> inits, Args &&... args)
-            {
-                if(this->has_value())
-                {
-                    this->value_ = Value(inits, std::forward<Args>(args)...);
-                }
-                else
-                {
-                    // @todo Оптимизации для std::is_nothrow_constructible<Value, Args...>
-                    // и std::is_nothrow_move_constructible<Value>
-
-                    // @todo Доказать, что это безопасно при наличии исключений
-                    static_assert(std::is_nothrow_move_constructible<Error>{}, "");
-
-                    unexpected_type tmp(unexpected_type(this->error()));
-
-                    // @todo Не вызывать тривиальный деструктор?
-                    this->error_.~unexpected<Error>();
-
-                    try
-                    {
-                        new(std::addressof(this->value_)) Value(inits, std::forward<Args>(args)...);
-                        this->has_value_ = true;
-                    }
-                    catch(...)
-                    {
-                        new(std::addressof(this->error_)) unexpected_type(std::move(tmp));
-                        throw;
-                    }
-                }
-
-                return this->value_;
-            }
-
-            // Немодифицирующие операции
-            constexpr bool has_value() const
-            {
-                return this->has_value_;
-            }
-
-            constexpr Value const & operator*() const &
-            {
-                assert(this->has_value());
-
-                return this->value_;
-            }
-
-            constexpr Value & operator*() &
-            {
-                assert(this->has_value());
-
-                return this->value_;
-            }
-
-            constexpr Value && operator*() &&
-            {
-                assert(this->has_value());
-
-                return std::move(this->value_);
-            }
-
-            constexpr Value const && operator*() const &&
-            {
-                assert(this->has_value());
-
-                return std::move(this->value_);
-            }
-
-            constexpr Error const & error() const &
-            {
-                assert(!this->has_value());
-
-                return this->error_.value();
-            }
-
-            constexpr Error & error() &
-            {
-                assert(!this->has_value());
-
-                return this->error_.value();
-            }
-
-            constexpr Error && error() &&
-            {
-                assert(!this->has_value());
-
-                return std::move(this->error_).value();
-            }
-
-            constexpr Error const && error() const &&
-            {
-                assert(!this->has_value());
-
-                return std::move(this->error_).value();
-            }
-
-        private:
-            bool has_value_ = true;
-            union
-            {
-                char no_init_;
-                Value value_;
-                unexpected<Error> error_;
-            };
         };
 
         // @todo Покрыть тестом инициализацию Enabler во всех конструкторах
+        /** @brief Отвечает за учёт различий интерфейсов в общем случае и когда
+        <tt> std::is_void<Value>::value == true </tt>
+        */
         template <class Value, class Error>
         class expected_base
-         : std::conditional_t<std::is_trivially_destructible<Value>{}
-                              && std::is_trivially_destructible<Error>{},
-                              expected_holder_trivial<Value, Error>,
-                              expected_holder<Value, Error>>
+         : expected_holder<Value, Error>
          , detail::default_ctor_enabler<std::is_default_constructible<Value>{}>
         {
-            using Base = std::conditional_t<std::is_trivially_destructible<Value>{}
-                                            && std::is_trivially_destructible<Error>{},
-                                            expected_holder_trivial<Value, Error>,
-                                            expected_holder<Value, Error>>;
+            using Base = expected_holder<Value, Error>;
 
             using Enabler = detail::default_ctor_enabler<std::is_default_constructible<Value>{}>;
 
@@ -666,13 +530,9 @@ namespace saga
 
         template <class Error>
         class expected_base<void, Error>
-         : std::conditional_t<std::is_trivially_destructible<Error>{},
-                              expected_holder_trivial<void_wrapper, Error>,
-                              expected_holder<void_wrapper, Error>>
+         : expected_holder<void_wrapper, Error>
         {
-            using Base = std::conditional_t<std::is_trivially_destructible<Error>{},
-                                            expected_holder_trivial<void_wrapper, Error>,
-                                            expected_holder<void_wrapper, Error>>;
+            using Base = expected_holder<void_wrapper, Error>;
 
         public:
             // Конструкторы
