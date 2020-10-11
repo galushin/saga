@@ -15,27 +15,70 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_UTILITY_IN_PLACE_HPP_INCLUDED
-#define Z_SAGA_UTILITY_IN_PLACE_HPP_INCLUDED
+#ifndef Z_SAGA_EXPECTED_BAD_EXPECTED_ACCESS_HPP_INCLUDED
+#define Z_SAGA_EXPECTED_BAD_EXPECTED_ACCESS_HPP_INCLUDED
 
-/** @file saga/utility/in_place.hpp
- @brief Тип-тэг и константа для обозначения того, что конструктор должен создать хранимый объект
- на месте из представленных аргументов
+/** @file saga/expected/bad_expected_access.hpp
+ @brief Тип исключения для сообщения о попытке доступа к ожидаемому значению, когда оно не доступно
 */
 
-#include <saga/detail/static_empty_const.hpp>
+#include <stdexcept>
+#include <utility>
 
 namespace saga
 {
-    struct in_place_t
+    template <class Error>
+    class bad_expected_access;
+
+    template <>
+    class bad_expected_access<void>
+     : public std::exception
     {
-        // @todo Почему конструкторе без аргументов должен быть явным?
-        explicit in_place_t() = default;
+    public:
+        bad_expected_access() = default;
     };
 
-    constexpr auto const in_place = detail::static_empty_const<in_place_t>::value;
+    template <class Error>
+    class bad_expected_access
+     : public bad_expected_access<void>
+    {
+    public:
+        explicit bad_expected_access(Error error)
+         : bad_expected_access<void>{}
+         , error_(std::move(error))
+        {}
+
+        Error & error() &
+        {
+            return this->error_;
+        }
+
+        Error const & error() const &
+        {
+            return this->error_;
+        }
+
+        Error && error() &&
+        {
+            return std::move(this->error_);
+        }
+
+        Error const && error() const &&
+        {
+            return std::move(this->error_);
+        }
+
+        char const * what() const noexcept override
+        {
+            return "saga::bad_expected_access";
+        }
+
+    private:
+        Error error_;
+    };
 }
 // namespace saga
 
+
 #endif
-// Z_SAGA_UTILITY_IN_PLACE_HPP_INCLUDED
+// Z_SAGA_EXPECTED_BAD_EXPECTED_ACCESS_HPP_INCLUDED
