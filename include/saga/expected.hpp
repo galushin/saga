@@ -156,7 +156,6 @@ namespace saga
 
         // Присваивания
         /** @todo Значение по умолчанию для шаблонного параметра
-        @todo Покрыть тестами, что используется forward-ссылка
         @todo Добавить ограничения типа std::is_void<Value>{} == false;
         @todo Добавить ограничение типов: is_same_v<expected<T,E>, remove_cvref_t<U>> is false
         @todo Добавить ограничение типов: conjunction_v<is_scalar<T>, is_same<T, decay_t<U>>> is false

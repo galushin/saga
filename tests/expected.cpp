@@ -1507,6 +1507,41 @@ TEST_CASE("expected: copy assign value")
     };
 }
 
+TEST_CASE("expected: move assign value")
+{
+    using Value = std::vector<int>;
+    using Error = long;
+    using Arg = Value;
+
+    saga_test::property_checker
+    << [](Value const & init_value, Arg const & old_arg)
+    {
+        using Expected = saga::expected<Value, Error>;
+        Expected obj(saga::in_place, init_value);
+
+        auto arg = old_arg;
+        obj = std::move(arg);
+
+        REQUIRE(obj.has_value());
+        REQUIRE(*obj == old_arg);
+
+        REQUIRE(arg.empty());
+    }
+    << [](Error const & error, Arg const & old_arg)
+    {
+        using Expected = saga::expected<Value, Error>;
+        Expected obj(saga::unexpect, error);
+
+        auto arg = old_arg;
+        obj = std::move(arg);
+
+        REQUIRE(obj.has_value());
+        REQUIRE(*obj == old_arg);
+
+        REQUIRE(arg.empty());
+    };
+}
+
 static_assert(!std::is_assignable<saga::expected<void, std::string> &, int const &>{}, "");
 static_assert(!std::is_assignable<saga::expected<void const, std::string> &, int const &>{}, "");
 static_assert(!std::is_assignable<saga::expected<void volatile, std::string> &, int const &>{}, "");
