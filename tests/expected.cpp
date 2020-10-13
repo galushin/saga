@@ -1467,6 +1467,107 @@ TEST_CASE("expected: unexpect constructor with initializer list and more args")
     };
 }
 
+// operator=(U &&)
+namespace
+{
+    template <class Value, class Error, class Arg>
+    void check_expected_copy_assign_value(saga::expected<Value, Error> & obj, Arg const & arg)
+    {
+        auto const & result = (obj = arg);
+
+        REQUIRE(obj.has_value());
+        REQUIRE(obj.value() == arg);
+
+        static_assert(std::is_same<decltype(result), saga::expected<Value, Error> const &>{}, "");
+        REQUIRE(std::addressof(result) == std::addressof(obj));
+    }
+}
+
+TEST_CASE("expected: copy assign value")
+{
+    using Value = long;
+    using Error = std::string;
+    using Arg = int;
+
+    saga_test::property_checker
+    << [](Value const & init_value, Arg const & new_value)
+    {
+        using Expected = saga::expected<Value, Error>;
+        Expected obj(saga::in_place, init_value);
+
+        ::check_expected_copy_assign_value(obj, new_value);
+    }
+    << [](Error const & error, Arg const & new_value)
+    {
+        using Expected = saga::expected<Value, Error>;
+        Expected obj(saga::unexpect, error);
+
+        ::check_expected_copy_assign_value(obj, new_value);
+    };
+}
+
+TEST_CASE("expected: move assign value")
+{
+    using Value = std::vector<int>;
+    using Error = long;
+    using Arg = Value;
+
+    saga_test::property_checker
+    << [](Value const & init_value, Arg const & old_arg)
+    {
+        using Expected = saga::expected<Value, Error>;
+        Expected obj(saga::in_place, init_value);
+
+        auto arg = old_arg;
+        obj = std::move(arg);
+
+        REQUIRE(obj.has_value());
+        REQUIRE(*obj == old_arg);
+
+        REQUIRE(arg.empty());
+    }
+    << [](Error const & error, Arg const & old_arg)
+    {
+        using Expected = saga::expected<Value, Error>;
+        Expected obj(saga::unexpect, error);
+
+        auto arg = old_arg;
+        obj = std::move(arg);
+
+        REQUIRE(obj.has_value());
+        REQUIRE(*obj == old_arg);
+
+        REQUIRE(arg.empty());
+    };
+}
+
+static_assert(!std::is_assignable<saga::expected<void, std::string> &, int const &>{}, "");
+static_assert(!std::is_assignable<saga::expected<void const, std::string> &, int const &>{}, "");
+static_assert(!std::is_assignable<saga::expected<void volatile, std::string> &, int const &>{}, "");
+static_assert(!std::is_assignable<saga::expected<void const volatile, std::string> &, int const &>{}, "");
+
+static_assert(!std::is_constructible<int, std::string>{}, "");
+static_assert(!std::is_assignable<saga::expected<int, long*> &, std::string>{}, "");
+
+namespace
+{
+    struct ctor_but_no_assign
+    {
+        ctor_but_no_assign(int arg)
+         : value(arg)
+        {}
+
+        ctor_but_no_assign & operator=(int) = delete;
+
+        int value;
+    };
+}
+
+static_assert(std::is_constructible<ctor_but_no_assign, int>{}, "");
+static_assert(!std::is_assignable<ctor_but_no_assign &, int>{}, "");
+// @todo Добавить проверку static_assert(!std::is_assignable<saga::expected<ctor_but_no_assign, long*> &, int>{}, "");
+// В настоящий момент она порождает ошибку в is_default_constructible<expected<void, E>>
+
 // emplace
 namespace
 {

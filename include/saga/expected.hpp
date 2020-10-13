@@ -154,6 +154,28 @@ namespace saga
          : Base(unexpect_t{}, inits, std::forward<Args>(args)...)
         {}
 
+        // Присваивание
+        /** @todo Значение по умолчанию для шаблонного параметра
+        @todo Добавить ограничения типа std::is_void<Value>{} == false;
+        @todo Добавить ограничение типов: is_same_v<expected<T,E>, remove_cvref_t<U>> is false
+        @todo Добавить ограничение типов: conjunction_v<is_scalar<T>, is_same<T, decay_t<U>>> is false
+        @todo Добавить ограничение типов: is_assignable_v<T&, U> is true
+        @todo Добавить ограничение типов: is_nothrow_move_constructible_v<E> is true.
+        @todo If any exception is thrown, bool(*this) remains unchanged.
+        @todo If an exception is thrown during the call to T's constructor, no effect.
+        @todo If an exception is thrown during the call to T's copy assignment, the state of its contained value is as defined by the exception safety guarantee of T's copy assignment.
+        */
+        template <class Arg,
+                  class = std::enable_if_t<std::is_constructible<Value, Arg>{}>>
+        expected & operator=(Arg && arg)
+        {
+            // @todo Спецификация operator= отличается от emplace. Изменить?
+            this->emplace(std::forward<Arg>(arg));
+
+            return *this;
+        }
+
+        // emplace
         using Base::emplace;
 
         // Свойства
