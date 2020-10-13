@@ -157,6 +157,7 @@ namespace saga
         // Присваивания
         /** @todo Значение по умолчанию для шаблонного параметра
         @todo Покрыть тестами, что используется forward-ссылка
+        @todo Добавить ограничения типа std::is_void<Value>{} == false;
         @todo Добавить ограничение типов: is_same_v<expected<T,E>, remove_cvref_t<U>> is false
         @todo Добавить ограничение типов: conjunction_v<is_scalar<T>, is_same<T, decay_t<U>>> is false
         @todo Добавить ограничение типов: is_assignable_v<T&, U> is true
@@ -166,7 +167,6 @@ namespace saga
         @todo If an exception is thrown during the call to T's copy assignment, the state of its contained value is as defined by the exception safety guarantee of T's copy assignment.
         */
         template <class Arg,
-                  class = std::enable_if_t<std::is_void<Value>{} == false>,
                   class = std::enable_if_t<std::is_constructible<Value, Arg>{}>>
         expected & operator=(Arg && arg)
         {
