@@ -154,7 +154,7 @@ namespace saga
          : Base(unexpect_t{}, inits, std::forward<Args>(args)...)
         {}
 
-        // Присваивания
+        // Присваивание
         /** @todo Значение по умолчанию для шаблонного параметра
         @todo Добавить ограничения типа std::is_void<Value>{} == false;
         @todo Добавить ограничение типов: is_same_v<expected<T,E>, remove_cvref_t<U>> is false

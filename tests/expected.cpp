@@ -1467,6 +1467,7 @@ TEST_CASE("expected: unexpect constructor with initializer list and more args")
     };
 }
 
+// operator=(U &&)
 namespace
 {
     template <class Value, class Error, class Arg>
@@ -1482,8 +1483,6 @@ namespace
     }
 }
 
-// @todo operator=(U)
-// @todo Обобщить
 TEST_CASE("expected: copy assign value")
 {
     using Value = long;
