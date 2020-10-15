@@ -155,7 +155,8 @@ namespace saga
         {}
 
         // Присваивание
-        /** @todo Значение по умолчанию для шаблонного параметра
+        /** @brief Присваивание значения
+        @todo Значение по умолчанию для шаблонного параметра
         @todo Добавить ограничения типа std::is_void<Value>{} == false;
         @todo Добавить ограничение типов: is_same_v<expected<T,E>, remove_cvref_t<U>> is false
         @todo Добавить ограничение типов: conjunction_v<is_scalar<T>, is_same<T, decay_t<U>>> is false
@@ -171,6 +172,32 @@ namespace saga
         {
             // @todo Спецификация operator= отличается от emplace. Изменить?
             this->emplace(std::forward<Arg>(arg));
+
+            return *this;
+        }
+
+        /** Присваивание unexpected
+        @todo Значение по умолчанию для шаблонного параметра
+        @todo Ограничения типа: is_nothrow_copy_constructible_v<E> и is_copy_assignable_v<E>
+        @todo Доказать, что если возникает исключение, то bool(*this) не изменяется
+        */
+        template <class Arg>
+        expected & operator=(unexpected<Arg> const & unex)
+        {
+            this->assign_error(unex.value());
+
+            return *this;
+        }
+
+        /** Присваивание временного unexpected
+        @todo Значение по умолчанию для шаблонного параметра
+        @todo Ограничения типа: is_nothrow_move_constructible_v<E> и is_move_assignable_v<E>.
+        @todo Доказать, что если возникает исключение, то bool(*this) не изменяется
+        */
+        template <class Arg>
+        expected & operator=(unexpected<Arg> && unex)
+        {
+            this->assign_error(std::move(unex.value()));
 
             return *this;
         }

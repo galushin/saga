@@ -205,6 +205,25 @@ namespace saga
                 return **this;
             }
 
+            template <class OtherError>
+            void assign_error(OtherError && error)
+            {
+                if(!this->has_value())
+                {
+                    // @todo Оптимизация: не создавать unexpected_type, а передавать исходный?
+                    this->impl_.error_ = unexpected_type(std::forward<OtherError>(error));
+                }
+                else
+                {
+                    // @todo Доказать, что это безопасно при исключениях
+                    this->impl_.value_.~Value();
+
+                    new(std::addressof(this->impl_.error_)) unexpected_type(std::forward<OtherError>(error));
+                    this->impl_.has_value_ = false;
+                }
+                assert(!this->has_value());
+            }
+
         protected:
             expected_storage(std::nullptr_t, expected_storage const & rhs)
              : impl_(expected_uninitialized{})
@@ -393,6 +412,8 @@ namespace saga
             {
                 return Base::emplace(std::forward<Args>(args)...);
             }
+
+            using Base::assign_error;
         };
 
         // @todo Покрыть тестом инициализацию Enabler во всех конструкторах
@@ -508,6 +529,8 @@ namespace saga
             using Base::error;
 
         protected:
+            using Base::assign_error;
+
             template <class OtherValue, class OtherError>
             constexpr bool compare_value_with(expected<OtherValue, OtherError> const & rhs) const
             {
@@ -588,6 +611,8 @@ namespace saga
             using Base::error;
 
         protected:
+            using Base::assign_error;
+
             template <class OtherValue, class OtherError>
             constexpr bool compare_value_with(expected<OtherValue, OtherError> const &) const
             {

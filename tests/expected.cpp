@@ -1568,6 +1568,83 @@ static_assert(!std::is_assignable<ctor_but_no_assign &, int>{}, "");
 // @todo Добавить проверку static_assert(!std::is_assignable<saga::expected<ctor_but_no_assign, long*> &, int>{}, "");
 // В настоящий момент она порождает ошибку в is_default_constructible<expected<void, E>>
 
+// operator=(unexpected<G> const &)
+namespace
+{
+    template <class Value, class Error, class Arg>
+    void check_expected_copy_assign_unexpected(saga::expected<Value, Error> & obj,
+                                               Arg const & arg)
+    {
+        saga::unexpected<Arg> unex(arg);
+        auto const & result = (obj = unex);
+
+        REQUIRE(!obj.has_value());
+        REQUIRE(obj.error() == Error(arg));
+
+        static_assert(std::is_same<decltype(result), saga::expected<Value, Error> const &>{}, "");
+        REQUIRE(std::addressof(result) == std::addressof(obj));
+    }
+}
+
+// @todo Аналогичный тест для Value == void
+TEST_CASE("expected: assign unexpected const &")
+{
+    using Value = std::string;
+    using Error = long;
+    using Arg = int;
+
+    saga_test::property_checker
+    << [](Value const & init_value, Arg const & new_error)
+    {
+        using Expected = saga::expected<Value, Error>;
+        Expected obj(saga::in_place, init_value);
+
+        ::check_expected_copy_assign_unexpected(obj, new_error);
+    }
+    << [](Error const & init_error, Arg const & new_error)
+    {
+        using Expected = saga::expected<Value, Error>;
+        Expected obj(saga::unexpect, init_error);
+
+        ::check_expected_copy_assign_unexpected(obj, new_error);
+    };
+}
+
+// operator=(unexpected<G> &&)
+// @todo Аналогичный тест для Value != void
+namespace
+{
+    template <class T>
+    struct wrapper
+    {
+        T value;
+
+        wrapper(T init_value)
+         : value(init_value)
+        {}
+    };
+}
+
+TEST_CASE("expected: assgin unexpected &&")
+{
+    using Error = std::vector<int>;
+
+    saga_test::property_checker << [](Error const & src_old)
+    {
+        using Expected = saga::expected<void, wrapper<Error>>;
+        Expected obj;
+
+        saga::unexpected<Error> unex(src_old);
+        auto & result = (obj = std::move(unex));
+
+        REQUIRE(!obj.has_value());
+        REQUIRE(obj.error().value == src_old);
+        REQUIRE(unex.value().empty());
+
+        static_assert(std::is_same<decltype(result), Expected &>{}, "");
+    };
+}
+
 // emplace
 namespace
 {
@@ -1866,7 +1943,9 @@ namespace
             REQUIRE(std::addressof(crvalue_value) == std::addressof(obj.value()));
         }
         else
-        {}
+        {
+            // @todo Нормально ли, что эта ветка пуста?
+        }
     }
 
     template <class Value, class Error, class OtherValue>
