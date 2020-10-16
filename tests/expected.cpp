@@ -1586,8 +1586,7 @@ namespace
     }
 }
 
-// @todo Аналогичный тест для Value == void
-TEST_CASE("expected: assign unexpected const &")
+TEST_CASE("expected<Value, Error>: assign unexpected const &")
 {
     using Value = std::string;
     using Error = long;
@@ -1610,8 +1609,30 @@ TEST_CASE("expected: assign unexpected const &")
     };
 }
 
+TEST_CASE("expected<void, Error>: assign unexpected const &")
+{
+    using Value = void;
+    using Error = long;
+    using Arg = int;
+
+    saga_test::property_checker
+    << [](Arg const & new_error)
+    {
+        using Expected = saga::expected<Value, Error>;
+        Expected obj(saga::in_place);
+
+        ::check_expected_copy_assign_unexpected(obj, new_error);
+    }
+    << [](Error const & init_error, Arg const & new_error)
+    {
+        using Expected = saga::expected<Value, Error>;
+        Expected obj(saga::unexpect, init_error);
+
+        ::check_expected_copy_assign_unexpected(obj, new_error);
+    };
+}
+
 // operator=(unexpected<G> &&)
-// @todo Аналогичный тест для Value != void
 namespace
 {
     template <class T>
@@ -1625,14 +1646,65 @@ namespace
     };
 }
 
-TEST_CASE("expected: assgin unexpected &&")
+TEST_CASE("expected<Value, Error>: assgin unexpected &&")
+{
+    using Value = std::string;
+    using Error = std::vector<int>;
+
+    saga_test::property_checker
+    << [](Value const & init_value, Error const & src_old)
+    {
+        using Expected = saga::expected<Value, wrapper<Error>>;
+        Expected obj(saga::in_place, init_value);
+
+        saga::unexpected<Error> unex(src_old);
+        auto & result = (obj = std::move(unex));
+
+        REQUIRE(!obj.has_value());
+        REQUIRE(obj.error().value == src_old);
+        REQUIRE(unex.value().empty());
+
+        static_assert(std::is_same<decltype(result), Expected &>{}, "");
+    }
+    << [](Error const & init_error, Error const & src_old)
+    {
+        using Expected = saga::expected<Value, wrapper<Error>>;
+        Expected obj(saga::unexpect, init_error);
+
+        saga::unexpected<Error> unex(src_old);
+        auto & result = (obj = std::move(unex));
+
+        REQUIRE(!obj.has_value());
+        REQUIRE(obj.error().value == src_old);
+        REQUIRE(unex.value().empty());
+
+        static_assert(std::is_same<decltype(result), Expected &>{}, "");
+    };
+}
+
+TEST_CASE("expected<void, Error>: assgin unexpected &&")
 {
     using Error = std::vector<int>;
 
-    saga_test::property_checker << [](Error const & src_old)
+    saga_test::property_checker
+    << [](Error const & src_old)
     {
         using Expected = saga::expected<void, wrapper<Error>>;
         Expected obj;
+
+        saga::unexpected<Error> unex(src_old);
+        auto & result = (obj = std::move(unex));
+
+        REQUIRE(!obj.has_value());
+        REQUIRE(obj.error().value == src_old);
+        REQUIRE(unex.value().empty());
+
+        static_assert(std::is_same<decltype(result), Expected &>{}, "");
+    }
+    << [](Error const & init_error, Error const & src_old)
+    {
+        using Expected = saga::expected<void, wrapper<Error>>;
+        Expected obj(saga::unexpect, init_error);
 
         saga::unexpected<Error> unex(src_old);
         auto & result = (obj = std::move(unex));
