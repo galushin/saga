@@ -155,6 +155,15 @@ namespace saga
         {}
 
         // Присваивание
+        /** @brief Копирующее присваивание
+        @todo If any exception is thrown, bool(*this) and bool(rhs) remain unchanged.
+        @todo If an exception is thrown during the call to T's or unexpected<E>'s copy constructor, no effect.
+        @todo If an exception is thrown during the call to T's or unexpected<E>'s copy assignment, the state of its contained value is as defined by the exception safety guarantee of T's or unexpected<E>'s copy assignment.
+        @todo This operator shall be defined as deleted unless: T is cv void and is_copy_assignable_v<E> is true and is_copy_constructible_v<E> is true; or
+        T is not cv void and is_copy_assignable_v<T> is true and is_copy_constructible_v<T> is true and is_copy_assignable_v<E> is true and is_copy_constructible_v<E> is true and (is_nothrow_move_constructible_v<E> is true or is_nothrow_move_constructible_v<T> is true).
+        */
+        expected & operator=(expected const & rhs) = default;
+
         /** @brief Присваивание значения
         @todo Значение по умолчанию для шаблонного параметра
         @todo Добавить ограничения типа std::is_void<Value>{} == false;

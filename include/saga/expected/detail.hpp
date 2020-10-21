@@ -347,6 +347,21 @@ namespace saga
 
             ~expected_holder() = default;
 
+            // Присваивание
+            expected_holder & operator=(expected_holder const & rhs)
+            {
+                if(rhs.has_value())
+                {
+                    this->emplace(*rhs);
+                }
+                else
+                {
+                    this->assign_error(rhs.error());
+                }
+
+                return *this;
+            }
+
             // Немодифицирующие операции
             using Base::has_value;
 
@@ -463,6 +478,9 @@ namespace saga
                                              std::initializer_list<U> inits, Args &&... args)
              : Base(unexpect_t{}, inits, std::forward<Args>(args)...)
             {}
+
+            // Присваивание
+            expected_base & operator=(expected_base const &) = default;
 
             // emplace
             // @todo Ограничения типа
@@ -581,6 +599,9 @@ namespace saga
                                              std::initializer_list<U> inits, Args &&... args)
              : Base(saga::unexpect_t{}, inits, std::forward<Args>(args)...)
             {}
+
+            // Присваивание
+            expected_base & operator=(expected_base const &) = default;
 
             // Размещение
             void emplace()

@@ -1467,6 +1467,99 @@ TEST_CASE("expected: unexpect constructor with initializer list and more args")
     };
 }
 
+// Присваивание
+// Копирующее присваивание
+// @todo Обобщить на cv void
+namespace
+{
+    template <class Value, class Error>
+    void check_expected_copy_assign(saga::expected<Value, Error> & dest,
+                                    saga::expected<Value, Error> const & src)
+    {
+        auto & result = (dest = src);
+
+        REQUIRE(dest == src);
+        REQUIRE(std::addressof(result) == std::addressof(dest));
+        static_assert(std::is_same<decltype(result), saga::expected<Value, Error> &>{}, "");
+    }
+}
+
+TEST_CASE("expected<void, Error>: copy assignment")
+{
+    using Value = void;
+    using Error = std::string;
+    using Expected = saga::expected<Value, Error>;
+
+    {
+        Expected dest(saga::in_place);
+        Expected const src(saga::in_place);
+
+        check_expected_copy_assign(dest, src);
+    }
+
+    saga_test::property_checker
+    << [](Error const & dest_error)
+    {
+        Expected dest(saga::unexpect, dest_error);
+        Expected const src(saga::in_place);
+
+        check_expected_copy_assign(dest, src);
+    }
+    << [](Error const & src_error)
+    {
+        Expected dest(saga::in_place);
+        Expected const src(saga::unexpect, src_error);
+
+        check_expected_copy_assign(dest, src);
+    }
+    << [](Error const & dest_error, Error const & src_error)
+    {
+        Expected dest(saga::unexpect, dest_error);
+        Expected const src(saga::unexpect, src_error);
+
+        check_expected_copy_assign(dest, src);
+    };
+}
+
+TEST_CASE("expected<Value, Error>: copy assignment")
+{
+    using Value = std::string;
+    using Error = long;
+    using Expected = saga::expected<Value, Error>;
+
+    saga_test::property_checker
+    << [](Value const & dest_value, Value const & src_value)
+    {
+        Expected dest(saga::in_place, dest_value);
+        Expected const src(saga::in_place, src_value);
+
+        check_expected_copy_assign(dest, src);
+    }
+    << [](Error const & dest_error, Value const & src_value)
+    {
+        Expected dest(saga::unexpect, dest_error);
+        Expected const src(saga::in_place, src_value);
+
+        check_expected_copy_assign(dest, src);
+    }
+    << [](Value const & dest_value, Error const & src_error)
+    {
+        Expected dest(saga::in_place, dest_value);
+        Expected const src(saga::unexpect, src_error);
+
+        check_expected_copy_assign(dest, src);
+    }
+    << [](Error const & dest_error, Error const & src_error)
+    {
+        Expected dest(saga::unexpect, dest_error);
+        Expected const src(saga::unexpect, src_error);
+
+        check_expected_copy_assign(dest, src);
+    };
+}
+
+// @todo Присваивание с перемещением
+
 // operator=(U &&)
 namespace
 {
