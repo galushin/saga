@@ -10,8 +10,8 @@
 [tests/saga_test.hpp:352]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/expected.cpp:947]: (style) Struct 'throwing_implicit_ctor_from_int' has a constructor with 1 argument that is not explicit.
 [tests/expected.cpp:1082]: (style) Struct 'ctor_from_in_place_t' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1556]: (style) Struct 'ctor_but_no_assign' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1643]: (style) Struct 'wrapper' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1649]: (style) Struct 'ctor_but_no_assign' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1736]: (style) Struct 'wrapper' has a constructor with 1 argument that is not explicit.
 [tests/expected.cpp:856]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/expected.cpp:901]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/expected.cpp:908]: (warning) Redundant code: Found a statement that begins with numeric constant.
