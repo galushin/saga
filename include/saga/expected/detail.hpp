@@ -122,7 +122,6 @@ namespace saga
         };
 
         /** @brief Определяет деструктор
-        @todo Уменьшить дублирование между специализациями
         */
         template <class Value, class Error>
         class expected_storage
@@ -185,7 +184,7 @@ namespace saga
                 else
                 {
                     // @todo Оптимизация для случая, когда конструкторы не порождают исключения
-                    auto tmp = unexpected_type(this->error());
+                    auto tmp = unexpected_type(std::move(this->error()));
 
                     this->impl_.error_.~unexpected_type();
 
@@ -208,9 +207,9 @@ namespace saga
             template <class OtherError>
             void assign_error(OtherError && error)
             {
+                // @todo Оптимизация: не создавать unexpected_type, а передавать исходный?
                 if(!this->has_value())
                 {
-                    // @todo Оптимизация: не создавать unexpected_type, а передавать исходный?
                     this->impl_.error_ = unexpected_type(std::forward<OtherError>(error));
                 }
                 else
@@ -287,8 +286,6 @@ namespace saga
             {}
         };
 
-        /** @todo Специализация для случая, когда конструктор перемещения является тривиальным
-        */
         template <class Value, class Error,
                   bool trivially_move_constructible = std::is_trivially_move_constructible<Value>{}
                                                     && std::is_trivially_move_constructible<Error>{}>
@@ -357,6 +354,20 @@ namespace saga
                 else
                 {
                     this->assign_error(rhs.error());
+                }
+
+                return *this;
+            }
+
+            expected_holder & operator=(expected_holder && rhs)
+            {
+                if(rhs.has_value())
+                {
+                    this->emplace(std::move(*rhs));
+                }
+                else
+                {
+                    this->assign_error(std::move(rhs.error()));
                 }
 
                 return *this;
@@ -602,6 +613,7 @@ namespace saga
 
             // Присваивание
             expected_base & operator=(expected_base const &) = default;
+            expected_base & operator=(expected_base &&) = default;
 
             // Размещение
             void emplace()
@@ -654,6 +666,8 @@ namespace saga
             copy_ctor_enabler() = default;
             copy_ctor_enabler(copy_ctor_enabler const &) = delete;
             copy_ctor_enabler(copy_ctor_enabler &&) = default;
+
+            copy_ctor_enabler & operator=(copy_ctor_enabler const & ) = default;
         };
 
         // @todo Перенести в более подходящее место, может быть полезно в других классах
