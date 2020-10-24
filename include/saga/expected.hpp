@@ -166,7 +166,6 @@ namespace saga
 
         /** @brief Присваивание с перемещением
         @todo Спецификация noexcept
-        @todo Обеспечить bool(rhs) == bool(*this)
         @todo If any exception is thrown, bool(*this) and bool(rhs) remain unchanged.
         @todo If an exception is thrown during the call to T's move constructor, no effect.
         @todo If an exception is thrown during the call to T's move assignment, the state of its contained value is as defined by the exception safety guarantee of T's copy assignment.
