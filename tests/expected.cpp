@@ -1610,7 +1610,7 @@ TEST_CASE("expected<Value, Error>: copy assignment")
 // Присваивание с перемещением
 namespace
 {
-    template <class Value, class Error, class = std::enable_if_t<std::is_void<Value>{}>>
+    template <class Value, class Error>
     void check_expected_move_assign(saga::expected<Value, Error> & dest,
                                     saga::expected<Value, Error> const & src_old)
     {
