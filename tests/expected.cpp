@@ -1467,6 +1467,297 @@ TEST_CASE("expected: unexpect constructor with initializer list and more args")
     };
 }
 
+// Присваивание
+// Копирующее присваивание
+namespace
+{
+    template <class Value, class Error>
+    void check_expected_copy_assign(saga::expected<Value, Error> & dest,
+                                    saga::expected<Value, Error> const & src)
+    {
+        auto & result = (dest = src);
+
+        REQUIRE(dest == src);
+        REQUIRE(std::addressof(result) == std::addressof(dest));
+        static_assert(std::is_same<decltype(result), saga::expected<Value, Error> &>{}, "");
+    }
+
+    template <class Value, class Error, class = std::enable_if_t<std::is_void<Value>{}>>
+    void check_expected_copy_assign_void_both_value()
+    {
+        using Expected = saga::expected<Value, Error>;
+
+        Expected dest(saga::in_place);
+        Expected const src(saga::in_place);
+
+        check_expected_copy_assign(dest, src);
+    }
+
+    template <class Error>
+    void check_expected_copy_assign_foreach_cv_void_both_value()
+    {
+        check_expected_copy_assign_void_both_value<void, Error>();
+        check_expected_copy_assign_void_both_value<void const, Error>();
+        check_expected_copy_assign_void_both_value<void volatile, Error>();
+        check_expected_copy_assign_void_both_value<void const volatile, Error>();
+    }
+
+    template <class Value, class Error, class = std::enable_if_t<std::is_void<Value>{}>>
+    void check_expected_copy_assign_void_error_value(Error const & dest_error)
+    {
+        using Expected = saga::expected<Value, Error>;
+
+        Expected dest(saga::unexpect, dest_error);
+        Expected const src(saga::in_place);
+
+        check_expected_copy_assign(dest, src);
+    }
+
+    template <class Value, class Error, class = std::enable_if_t<std::is_void<Value>{}>>
+    void check_expected_copy_assign_void_value_error(Error const & src_error)
+    {
+        using Expected = saga::expected<Value, Error>;
+
+        Expected dest(saga::in_place);
+        Expected const src(saga::unexpect, src_error);
+
+        check_expected_copy_assign(dest, src);
+    }
+
+    template <class Value, class Error, class = std::enable_if_t<std::is_void<Value>{}>>
+    void check_expected_copy_assign_void_both_error(Error const & dest_error, Error const & src_error)
+    {
+        using Expected = saga::expected<Value, Error>;
+
+        Expected dest(saga::unexpect, dest_error);
+        Expected const src(saga::unexpect, src_error);
+
+        check_expected_copy_assign(dest, src);
+    }
+}
+
+TEST_CASE("expected<void, Error>: copy assignment")
+{
+    check_expected_copy_assign_foreach_cv_void_both_value<long>();
+    check_expected_copy_assign_foreach_cv_void_both_value<std::string>();
+
+    saga_test::property_checker
+    << ::check_expected_copy_assign_void_error_value<void, long>
+    << ::check_expected_copy_assign_void_error_value<void, std::string>
+    << ::check_expected_copy_assign_void_error_value<void const, long>
+    << ::check_expected_copy_assign_void_error_value<void const, std::string>
+    << ::check_expected_copy_assign_void_error_value<void volatile, long>
+    << ::check_expected_copy_assign_void_error_value<void volatile, std::string>
+    << ::check_expected_copy_assign_void_error_value<void const volatile, long>
+    << ::check_expected_copy_assign_void_error_value<void const volatile, std::string>
+
+    << ::check_expected_copy_assign_void_value_error<void, long>
+    << ::check_expected_copy_assign_void_value_error<void, std::string>
+    << ::check_expected_copy_assign_void_value_error<void const, long>
+    << ::check_expected_copy_assign_void_value_error<void const, std::string>
+    << ::check_expected_copy_assign_void_value_error<void volatile, long>
+    << ::check_expected_copy_assign_void_value_error<void volatile, std::string>
+    << ::check_expected_copy_assign_void_value_error<void const volatile, long>
+    << ::check_expected_copy_assign_void_value_error<void const volatile, std::string>
+
+    << ::check_expected_copy_assign_void_both_error<void, long>
+    << ::check_expected_copy_assign_void_both_error<void, std::string>
+    << ::check_expected_copy_assign_void_both_error<void const, long>
+    << ::check_expected_copy_assign_void_both_error<void const, std::string>
+    << ::check_expected_copy_assign_void_both_error<void volatile, long>
+    << ::check_expected_copy_assign_void_both_error<void volatile, std::string>
+    << ::check_expected_copy_assign_void_both_error<void const volatile, long>
+    << ::check_expected_copy_assign_void_both_error<void const volatile, std::string>;
+}
+
+TEST_CASE("expected<Value, Error>: copy assignment")
+{
+    using Value = std::string;
+    using Error = long;
+    using Expected = saga::expected<Value, Error>;
+
+    saga_test::property_checker
+    << [](Value const & dest_value, Value const & src_value)
+    {
+        Expected dest(saga::in_place, dest_value);
+        Expected const src(saga::in_place, src_value);
+
+        check_expected_copy_assign(dest, src);
+    }
+    << [](Error const & dest_error, Value const & src_value)
+    {
+        Expected dest(saga::unexpect, dest_error);
+        Expected const src(saga::in_place, src_value);
+
+        check_expected_copy_assign(dest, src);
+    }
+    << [](Value const & dest_value, Error const & src_error)
+    {
+        Expected dest(saga::in_place, dest_value);
+        Expected const src(saga::unexpect, src_error);
+
+        check_expected_copy_assign(dest, src);
+    }
+    << [](Error const & dest_error, Error const & src_error)
+    {
+        Expected dest(saga::unexpect, dest_error);
+        Expected const src(saga::unexpect, src_error);
+
+        check_expected_copy_assign(dest, src);
+    };
+}
+
+// Присваивание с перемещением
+namespace
+{
+    template <class Value, class Error>
+    void check_expected_move_assign(saga::expected<Value, Error> & dest,
+                                    saga::expected<Value, Error> const & src_old)
+    {
+        using Expected = saga::expected<Value, Error>;
+        auto src = src_old;
+
+        auto & result = (dest = std::move(src));
+
+        REQUIRE(dest == src_old);
+
+        static_assert(std::is_same<decltype(result), Expected &>{}, "");
+        REQUIRE(std::addressof(result) == std::addressof(dest));
+
+        REQUIRE(src.has_value() == src_old.has_value());
+
+        if(!src_old.has_value())
+        {
+            auto error = src_old.error();
+            auto sink = std::move(error);
+
+            REQUIRE(error == src.error());
+            REQUIRE(sink == src_old.error());
+        }
+    }
+
+    template <class Value, class Error, class = std::enable_if_t<std::is_void<Value>{}>>
+    void check_expected_move_assign_void_both_value()
+    {
+        using Expected = saga::expected<Value, Error>;
+
+        Expected dest(saga::in_place);
+        Expected src(saga::in_place);
+
+        ::check_expected_move_assign(dest, src);
+    }
+
+    template <class Value, class Error, class = std::enable_if_t<std::is_void<Value>{}>>
+    void check_expected_move_assign_void_value_error(Error const & src_error)
+    {
+        using Expected = saga::expected<Value, Error>;
+
+        Expected dest(saga::in_place);
+        Expected const src_old(saga::unexpect, src_error);
+
+        ::check_expected_move_assign(dest, src_old);
+    }
+
+    template <class Value, class Error, class = std::enable_if_t<std::is_void<Value>{}>>
+    void check_expected_move_assign_void_error_value(Error const & dest_error)
+    {
+        using Expected = saga::expected<Value, Error>;
+
+        Expected dest(saga::unexpect, dest_error);
+        Expected const src_old(saga::in_place);
+
+        ::check_expected_move_assign(dest, src_old);
+    }
+
+    template <class Value, class Error, class = std::enable_if_t<std::is_void<Value>{}>>
+    void check_expected_move_assign_void_both_error(Error const & dest_error, Error const & src_error)
+    {
+        using Expected = saga::expected<Value, Error>;
+
+        Expected dest(saga::unexpect, dest_error);
+        Expected const src_old(saga::unexpect, src_error);
+
+        ::check_expected_move_assign(dest, src_old);
+    };
+}
+
+TEST_CASE("expected<void, Error>::move assign")
+{
+    ::check_expected_move_assign_void_both_value<void, long>();
+    ::check_expected_move_assign_void_both_value<void, std::string>();
+    ::check_expected_move_assign_void_both_value<void const, long>();
+    ::check_expected_move_assign_void_both_value<void const, std::string>();
+    ::check_expected_move_assign_void_both_value<void volatile, long>();
+    ::check_expected_move_assign_void_both_value<void volatile, std::string>();
+    ::check_expected_move_assign_void_both_value<void const volatile, long>();
+    ::check_expected_move_assign_void_both_value<void const volatile, std::string>();
+
+    saga_test::property_checker
+    << check_expected_move_assign_void_value_error<void, long>
+    << check_expected_move_assign_void_value_error<void, std::vector<int>>
+    << check_expected_move_assign_void_value_error<void const, long>
+    << check_expected_move_assign_void_value_error<void const, std::vector<int>>
+    << check_expected_move_assign_void_value_error<void volatile, long>
+    << check_expected_move_assign_void_value_error<void volatile, std::vector<int>>
+    << check_expected_move_assign_void_value_error<void const volatile, long>
+    << check_expected_move_assign_void_value_error<void const volatile, std::vector<int>>
+
+    << check_expected_move_assign_void_error_value<void, long>
+    << check_expected_move_assign_void_error_value<void, std::vector<int>>
+    << check_expected_move_assign_void_error_value<void const, long>
+    << check_expected_move_assign_void_error_value<void const, std::vector<int>>
+    << check_expected_move_assign_void_error_value<void volatile, long>
+    << check_expected_move_assign_void_error_value<void volatile, std::vector<int>>
+    << check_expected_move_assign_void_error_value<void const volatile, long>
+    << check_expected_move_assign_void_error_value<void const volatile, std::vector<int>>
+
+    << check_expected_move_assign_void_both_error<void, long>
+    << check_expected_move_assign_void_both_error<void, std::vector<int>>
+    << check_expected_move_assign_void_both_error<void const, long>
+    << check_expected_move_assign_void_both_error<void const, std::vector<int>>
+    << check_expected_move_assign_void_both_error<void volatile, long>
+    << check_expected_move_assign_void_both_error<void volatile, std::vector<int>>
+    << check_expected_move_assign_void_both_error<void const volatile, long>
+    << check_expected_move_assign_void_both_error<void const volatile, std::vector<int>>;
+}
+
+TEST_CASE("expected<Value, Error>: move assignment")
+{
+    using Value = std::string;
+    using Error = long;
+    using Expected = saga::expected<Value, Error>;
+
+    saga_test::property_checker
+    << [](Value const & dest_value, Value const & src_value)
+    {
+        Expected dest(saga::in_place, dest_value);
+        Expected const src(saga::in_place, src_value);
+
+        check_expected_move_assign(dest, src);
+    }
+    << [](Error const & dest_error, Value const & src_value)
+    {
+        Expected dest(saga::unexpect, dest_error);
+        Expected const src(saga::in_place, src_value);
+
+        check_expected_move_assign(dest, src);
+    }
+    << [](Value const & dest_value, Error const & src_error)
+    {
+        Expected dest(saga::in_place, dest_value);
+        Expected const src(saga::unexpect, src_error);
+
+        check_expected_move_assign(dest, src);
+    }
+    << [](Error const & dest_error, Error const & src_error)
+    {
+        Expected dest(saga::unexpect, dest_error);
+        Expected const src(saga::unexpect, src_error);
+
+        check_expected_move_assign(dest, src);
+    };
+}
+
 // operator=(U &&)
 namespace
 {
