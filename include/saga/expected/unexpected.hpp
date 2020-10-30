@@ -201,7 +201,10 @@ namespace saga
         unexpect_t() = default;
     };
 
-    constexpr auto const & unexpect = detail::static_empty_const<unexpect_t>::value;
+    namespace
+    {
+        constexpr auto const & unexpect = detail::static_empty_const<unexpect_t>::value;
+    }
 }
 // namespace saga
 
