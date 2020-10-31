@@ -72,6 +72,7 @@
 		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
 		<Unit filename="cpp20/span.cpp" />
 		<Unit filename="expected.cpp" />
+		<Unit filename="expected/unexpected.cpp" />
 		<Unit filename="iterator.cpp" />
 		<Unit filename="iterator/reverse.cpp" />
 		<Unit filename="main.cpp" />
