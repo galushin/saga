@@ -1728,19 +1728,9 @@ TEST_CASE("expected: copy assign value")
     using Arg = int;
 
     saga_test::property_checker
-    << [](Value const & init_value, Arg const & new_value)
+    << [](::expected_carrier<Value, Error> carrier, Arg const & new_value)
     {
-        using Expected = saga::expected<Value, Error>;
-        Expected obj(saga::in_place, init_value);
-
-        ::check_expected_copy_assign_value(obj, new_value);
-    }
-    << [](Error const & error, Arg const & new_value)
-    {
-        using Expected = saga::expected<Value, Error>;
-        Expected obj(saga::unexpect, error);
-
-        ::check_expected_copy_assign_value(obj, new_value);
+        check_expected_copy_assign_value(carrier.value, new_value);
     };
 }
 
@@ -1751,23 +1741,10 @@ TEST_CASE("expected: move assign value")
     using Arg = Value;
 
     saga_test::property_checker
-    << [](Value const & init_value, Arg const & old_arg)
+    << [](::expected_carrier<Value, Error> obj_carrier, Arg const & old_arg)
     {
         using Expected = saga::expected<Value, Error>;
-        Expected obj(saga::in_place, init_value);
-
-        auto arg = old_arg;
-        obj = std::move(arg);
-
-        REQUIRE(obj.has_value());
-        REQUIRE(*obj == old_arg);
-
-        REQUIRE(arg.empty());
-    }
-    << [](Error const & error, Arg const & old_arg)
-    {
-        using Expected = saga::expected<Value, Error>;
-        Expected obj(saga::unexpect, error);
+        Expected & obj = obj_carrier.value;
 
         auto arg = old_arg;
         obj = std::move(arg);
@@ -1810,9 +1787,11 @@ static_assert(!std::is_assignable<ctor_but_no_assign &, int>{}, "");
 namespace
 {
     template <class Value, class Error, class Arg>
-    void check_expected_copy_assign_unexpected(saga::expected<Value, Error> & obj,
+    void check_expected_copy_assign_unexpected(::expected_carrier<Value, Error> obj_carrier,
                                                Arg const & arg)
     {
+        auto & obj = obj_carrier.value;
+
         saga::unexpected<Arg> unex(arg);
         auto const & result = (obj = unex);
 
@@ -1824,50 +1803,17 @@ namespace
     }
 }
 
-TEST_CASE("expected<Value, Error>: assign unexpected const &")
+TEST_CASE("expected: assign unexpected const &")
 {
-    using Value = std::string;
-    using Error = long;
-    using Arg = int;
-
+    // @todo Тесты для нетривиального типа Error
     saga_test::property_checker
-    << [](Value const & init_value, Arg const & new_error)
-    {
-        using Expected = saga::expected<Value, Error>;
-        Expected obj(saga::in_place, init_value);
+        << ::check_expected_copy_assign_unexpected<std::string, long, int>
+        << ::check_expected_copy_assign_unexpected<int, long, int>
 
-        ::check_expected_copy_assign_unexpected(obj, new_error);
-    }
-    << [](Error const & init_error, Arg const & new_error)
-    {
-        using Expected = saga::expected<Value, Error>;
-        Expected obj(saga::unexpect, init_error);
-
-        ::check_expected_copy_assign_unexpected(obj, new_error);
-    };
-}
-
-TEST_CASE("expected<void, Error>: assign unexpected const &")
-{
-    using Value = void;
-    using Error = long;
-    using Arg = int;
-
-    saga_test::property_checker
-    << [](Arg const & new_error)
-    {
-        using Expected = saga::expected<Value, Error>;
-        Expected obj(saga::in_place);
-
-        ::check_expected_copy_assign_unexpected(obj, new_error);
-    }
-    << [](Error const & init_error, Arg const & new_error)
-    {
-        using Expected = saga::expected<Value, Error>;
-        Expected obj(saga::unexpect, init_error);
-
-        ::check_expected_copy_assign_unexpected(obj, new_error);
-    };
+        << ::check_expected_copy_assign_unexpected<void, long, int>
+        << ::check_expected_copy_assign_unexpected<void const, long, int>
+        << ::check_expected_copy_assign_unexpected<void volatile, long, int>
+        << ::check_expected_copy_assign_unexpected<void const volatile, long, int>;
 }
 
 // operator=(unexpected<G> &&)
