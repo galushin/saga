@@ -1,20 +1,22 @@
 [example/ga/exe_objective.cpp:57]: (style) Consider using std::transform algorithm instead of a raw loop.
 [example/local_search/sample_library.cpp:27]: (performance, inconclusive) Technically the member function '::sample_library_registrar::do_init' can be static (but you may consider moving to unnamed namespace).
-[tests/saga_test.hpp:63]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
-[tests/saga_test.hpp:94]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
-[tests/saga_test.hpp:196]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
-[tests/saga_test.hpp:283]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
-[tests/saga_test.hpp:306]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
-[tests/saga_test.hpp:319]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
-[tests/saga_test.hpp:323]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/saga_test.hpp:352]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/expected.cpp:947]: (style) Struct 'throwing_implicit_ctor_from_int' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1082]: (style) Struct 'ctor_from_in_place_t' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1847]: (style) Struct 'ctor_but_no_assign' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1934]: (style) Struct 'wrapper' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:856]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/expected.cpp:901]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/expected.cpp:908]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/saga_test.hpp:64]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
+[tests/saga_test.hpp:95]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
+[tests/saga_test.hpp:197]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
+[tests/saga_test.hpp:284]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
+[tests/saga_test.hpp:307]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
+[tests/saga_test.hpp:320]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
+[tests/saga_test.hpp:324]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/saga_test.hpp:353]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/expected.cpp:997]: (style) Struct 'throwing_implicit_ctor_from_int' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1132]: (style) Struct 'ctor_from_in_place_t' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1771]: (style) Struct 'ctor_but_no_assign' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1827]: (style) Struct 'wrapper' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:360]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
+[tests/expected.cpp:384]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
+[tests/expected.cpp:906]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/expected.cpp:951]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/expected.cpp:958]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/string_view.cpp:906]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/utility/equality_comparable_box.cpp:147]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/view/indices.cpp:108]: (performance) Prefer prefix ++/-- operators for non-primitive types.

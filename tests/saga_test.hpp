@@ -34,6 +34,7 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga_test
 {
+    // Тестирование, основанное на свойствах
     using generation_t = int;
 
     template <class IntType = std::size_t>
@@ -384,6 +385,51 @@ namespace saga_test
     {
         constexpr auto const & property_checker
             = saga::detail::static_empty_const<detail::property_checker_t>::value;
+    }
+
+    // Классы с типовыми особенностями
+    template <class T>
+    struct explicit_ctor_from
+    {
+        // @todo Правильно ли это реализовано?
+        constexpr explicit explicit_ctor_from(T value) noexcept
+         : value(std::move(value))
+        {}
+
+        saga::remove_cvref_t<T> value;
+    };
+
+    template <class T>
+    struct move_only
+    {
+    public:
+        constexpr explicit move_only(T init_value)
+         : value(std::move(init_value))
+        {}
+
+        move_only(move_only const &) = delete;
+        move_only(move_only &&) = default;
+
+        T value;
+    };
+
+    class Base
+    {
+    public:
+        virtual ~Base() {};
+    };
+
+    class Derived
+     : public Base
+    {};
+
+    // Вспомогательные constexpr-функции, выполняющие определённые операции
+    template <class T>
+    constexpr T use_constexpr_move(T x)
+    {
+        auto y = std::move(x);
+
+        return y;
     }
 }
 // namespace saga_test

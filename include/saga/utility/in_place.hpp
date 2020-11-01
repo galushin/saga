@@ -33,7 +33,10 @@ namespace saga
         explicit in_place_t() = default;
     };
 
-    constexpr auto const in_place = detail::static_empty_const<in_place_t>::value;
+    namespace
+    {
+        constexpr auto const in_place = detail::static_empty_const<in_place_t>::value;
+    }
 }
 // namespace saga
 
