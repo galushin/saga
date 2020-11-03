@@ -492,6 +492,7 @@ namespace saga
 
             // Присваивание
             expected_base & operator=(expected_base const &) = default;
+            expected_base & operator=(expected_base &&) = default;
 
             // emplace
             // @todo Ограничения типа
