@@ -1558,6 +1558,48 @@ TEST_CASE("expected: copy assignment")
 namespace
 {
     template <class Value, class Error>
+    auto check_expected_after_move(saga::expected<Value, Error> const & src,
+                                   saga::expected<Value, Error> const & src_old)
+    -> std::enable_if_t<!std::is_void<Value>{}>
+    {
+        REQUIRE(src.has_value() == src_old.has_value());
+
+        if(src_old.has_value())
+        {
+            auto value = src_old.value();
+            auto value_sink = std::move(value);
+
+            REQUIRE(value == src.value());
+            REQUIRE(value_sink == src_old.value());
+        }
+        else
+        {
+            auto error = src_old.error();
+            auto error_sink = std::move(error);
+
+            REQUIRE(error == src.error());
+            REQUIRE(error_sink == src_old.error());
+        }
+    }
+
+    template <class Value, class Error>
+    auto check_expected_after_move(saga::expected<Value, Error> const & src,
+                                   saga::expected<Value, Error> const & src_old)
+    -> std::enable_if_t<std::is_void<Value>{}>
+    {
+        if(src_old.has_value())
+        {}
+        else
+        {
+            auto error = src_old.error();
+            auto error_sink = std::move(error);
+
+            REQUIRE(error == src.error());
+            REQUIRE(error_sink == src_old.error());
+        }
+    }
+
+    template <class Value, class Error>
     void check_expected_move_assign(saga::expected<Value, Error> & dest,
                                     saga::expected<Value, Error> const & src_old)
     {
@@ -1571,16 +1613,7 @@ namespace
         static_assert(std::is_same<decltype(result), Expected &>{}, "");
         REQUIRE(std::addressof(result) == std::addressof(dest));
 
-        REQUIRE(src.has_value() == src_old.has_value());
-
-        if(!src_old.has_value())
-        {
-            auto error = src_old.error();
-            auto sink = std::move(error);
-
-            REQUIRE(error == src.error());
-            REQUIRE(sink == src_old.error());
-        }
+        ::check_expected_after_move(src, src_old);
     }
 
     template <class Value, class Error, class = std::enable_if_t<std::is_void<Value>{}>>
@@ -1670,7 +1703,7 @@ TEST_CASE("expected<void, Error>::move assign")
 
 TEST_CASE("expected<Value, Error>: move assignment")
 {
-    using Value = std::string;
+    using Value = std::vector<int>;
     using Error = long;
     using Expected = saga::expected<Value, Error>;
 
