@@ -10,8 +10,8 @@
 [tests/saga_test.hpp:353]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/expected.cpp:997]: (style) Struct 'throwing_implicit_ctor_from_int' has a constructor with 1 argument that is not explicit.
 [tests/expected.cpp:1132]: (style) Struct 'ctor_from_in_place_t' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1771]: (style) Struct 'ctor_but_no_assign' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1827]: (style) Struct 'wrapper' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1804]: (style) Struct 'ctor_but_no_assign' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1860]: (style) Struct 'wrapper' has a constructor with 1 argument that is not explicit.
 [tests/expected.cpp:360]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/expected.cpp:384]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/expected.cpp:906]: (warning) Redundant code: Found a statement that begins with numeric constant.
