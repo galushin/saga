@@ -18,6 +18,8 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_TEST_RANDOM_ENGINE_HPP_INCLUDED
 #define Z_SAGA_TEST_RANDOM_ENGINE_HPP_INCLUDED
 
+#include <saga/utility/as_const.hpp>
+
 #include <iterator>
 #include <random>
 
@@ -70,7 +72,7 @@ namespace saga_test
     typename Container::const_iterator
     random_const_iterator_of(Container & container)
     {
-        return ::saga_test::random_iterator_of(static_cast<Container const &>(container));
+        return ::saga_test::random_iterator_of(saga::as_const(container));
     }
 
     template <class Container>

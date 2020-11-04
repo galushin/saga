@@ -64,6 +64,7 @@
 		<Unit filename="../include/saga/random/iid_distribution.hpp" />
 		<Unit filename="../include/saga/string_view.hpp" />
 		<Unit filename="../include/saga/type_traits.hpp" />
+		<Unit filename="../include/saga/utility/as_const.hpp" />
 		<Unit filename="../include/saga/utility/equality_comparable_box.hpp" />
 		<Unit filename="../include/saga/utility/in_place.hpp" />
 		<Unit filename="../include/saga/utility/operators.hpp" />
@@ -87,6 +88,7 @@
 		<Unit filename="saga_test.hpp" />
 		<Unit filename="string_view.cpp" />
 		<Unit filename="type_traits.cpp" />
+		<Unit filename="utility/as_const.cpp" />
 		<Unit filename="utility/equality_comparable_box.cpp" />
 		<Unit filename="view/indices.cpp" />
 		<Extensions>
