@@ -42,7 +42,7 @@ TEST_CASE("as_const")
 
         auto && c_obj = saga::as_const(obj);
 
-        static_assert(noexcept(saga::as_const(obj)));
+        static_assert(noexcept(saga::as_const(obj)), "");
         static_assert(std::is_same<decltype(c_obj), Type const &>{}, "");
 
         REQUIRE(std::addressof(c_obj) == std::addressof(obj));
