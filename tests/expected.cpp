@@ -2273,6 +2273,45 @@ namespace
     }
 }
 
+namespace
+{
+    template <class T, class SFINAE = void>
+    struct has_dereference_op
+     : std::false_type
+    {};
+
+    template <class T>
+    struct has_dereference_op<T, saga::void_t<decltype(*std::declval<T>())>>
+     : std::true_type
+    {};
+}
+
+static_assert(::has_dereference_op<int*>{}, "");
+static_assert(!::has_dereference_op<int>{}, "");
+
+static_assert(::has_dereference_op<saga::expected<int, long>>{}, "");
+static_assert(::has_dereference_op<saga::expected<std::string, long>>{}, "");
+
+static_assert(!::has_dereference_op<saga::expected<void, long> &>{}, "");
+static_assert(!::has_dereference_op<saga::expected<void const, long> &>{}, "");
+static_assert(!::has_dereference_op<saga::expected<void volatile, long> &>{}, "");
+static_assert(!::has_dereference_op<saga::expected<void const volatile, long> &>{}, "");
+
+static_assert(!::has_dereference_op<saga::expected<void, long> const &>{}, "");
+static_assert(!::has_dereference_op<saga::expected<void const, long> const &>{}, "");
+static_assert(!::has_dereference_op<saga::expected<void volatile, long> const &>{}, "");
+static_assert(!::has_dereference_op<saga::expected<void const volatile, long> const &>{}, "");
+
+static_assert(!::has_dereference_op<saga::expected<void, long> &&>{}, "");
+static_assert(!::has_dereference_op<saga::expected<void const, long> &&>{}, "");
+static_assert(!::has_dereference_op<saga::expected<void volatile, long> &&>{}, "");
+static_assert(!::has_dereference_op<saga::expected<void const volatile, long> &&>{}, "");
+
+static_assert(!::has_dereference_op<saga::expected<void, long> const &&>{}, "");
+static_assert(!::has_dereference_op<saga::expected<void const, long> const &&>{}, "");
+static_assert(!::has_dereference_op<saga::expected<void volatile, long> const &&>{}, "");
+static_assert(!::has_dereference_op<saga::expected<void const volatile, long> const &&>{}, "");
+
 TEST_CASE("expected: observers")
 {
     using Value = std::vector<int>;

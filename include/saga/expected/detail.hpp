@@ -623,7 +623,10 @@ namespace saga
             }
 
             // Немодифицирующие операции
-            using Base::operator*;
+            void operator*() & = delete;
+            void operator*() const & = delete;
+            void operator*() && = delete;
+            void operator*() const && = delete;
 
             constexpr bool has_value() const
             {
