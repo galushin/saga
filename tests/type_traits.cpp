@@ -291,9 +291,36 @@ static_assert(!std::is_move_assignable<saga::nonesuch>{}, "");
 
 // @todo Проверить, что saga::nonesuch - не является аггрегатом
 
-// @todo detected_or
-// @todo detected_t
-// @todo is_detected
+// detected_or
+namespace
+{
+    template <class T>
+    using get_size_type = typename T::size_type;
+}
+
+#include <memory>
+#include <vector>
+
+static_assert(std::is_same<std::false_type, saga::detected_or<void, ::get_size_type, long>::value_t>{}, "");
+static_assert(std::is_same<void, saga::detected_or<void, ::get_size_type, long>::type>{}, "");
+
+static_assert(std::is_same<std::false_type, saga::detected_or<std::size_t, ::get_size_type, std::unique_ptr<bool>>::value_t>{}, "");
+static_assert(std::is_same<std::size_t, saga::detected_or<std::size_t, ::get_size_type, long>::type>{}, "");
+
+static_assert(std::is_same<std::true_type, saga::detected_or<double, ::get_size_type, std::vector<int>>::value_t>{}, "");
+static_assert(std::is_same<typename std::vector<int>::size_type,
+                           saga::detected_or<double, ::get_size_type, std::vector<int>>::type>{}, "");
+
+// is_detected
+static_assert(!saga::is_detected<::get_size_type, long>{}, "");
+static_assert(!saga::is_detected<::get_size_type, std::unique_ptr<bool>>{}, "");
+static_assert(saga::is_detected<::get_size_type, std::vector<int>>{}, "");
+
+// detected_t
+static_assert(std::is_same<saga::nonesuch, saga::detected_t<::get_size_type, double>>{}, "");
+static_assert(std::is_same<saga::nonesuch, saga::detected_t<::get_size_type, std::unique_ptr<bool>>>{}, "");
+static_assert(std::is_same<typename std::vector<int>::size_type,
+                           saga::detected_t<::get_size_type, std::vector<int>>>{}, "");
 
 // @todo is_detected_v
 // @todo detected_or_t

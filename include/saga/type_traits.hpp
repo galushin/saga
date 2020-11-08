@@ -187,6 +187,35 @@ namespace saga
         nonesuch(nonesuch const &) = delete;
         void operator=(nonesuch const &) = delete;
     };
+
+    namespace detail
+    {
+        template <class SFINAE, class Default, template <class...> class Op, class... Args>
+        struct detector
+        {
+            using value_t = std::false_type;
+
+            using type = Default;
+        };
+
+        template <class Default, template <class...> class Op, class... Args>
+        struct detector<saga::void_t<Op<Args...>>, Default, Op, Args...>
+        {
+            using value_t = std::true_type;
+
+            using type = Op<Args...>;
+        };
+    }
+    // namespace detail
+
+    template <class Default, template <class...> class Op, class... Args>
+    using detected_or = saga::detail::detector<void, Default, Op, Args...>;
+
+    template <template <class...> class Op, class... Args>
+    using is_detected = typename detected_or<nonesuch, Op, Args...>::value_t;
+
+    template <template <class...> class Op, class... Args>
+    using detected_t = typename detected_or<nonesuch, Op, Args...>::type;
 }
 // namespace saga
 
