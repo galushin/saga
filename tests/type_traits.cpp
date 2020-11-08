@@ -280,3 +280,24 @@ static_assert(!saga::is_nothrow_swappable<ambiguous_swap_ns::ambiguous_swap>{}, 
 static_assert(saga::is_equality_comparable<int>{}, "Must be true");
 static_assert(saga::is_equality_comparable<std::string>{}, "Must be true");
 static_assert(!saga::is_equality_comparable<std::greater<int>>{}, "Must be false");
+
+// nonesuch
+static_assert(!std::is_destructible<saga::nonesuch>{}, "");
+static_assert(!std::is_default_constructible<saga::nonesuch>{}, "");
+static_assert(!std::is_copy_constructible<saga::nonesuch>{}, "");
+static_assert(!std::is_move_constructible<saga::nonesuch>{}, "");
+static_assert(!std::is_copy_assignable<saga::nonesuch>{}, "");
+static_assert(!std::is_move_assignable<saga::nonesuch>{}, "");
+
+// @todo Проверить, что saga::nonesuch - не является аггрегатом
+
+// @todo detected_or
+// @todo detected_t
+// @todo is_detected
+
+// @todo is_detected_v
+// @todo detected_or_t
+// @todo is_detected_exact
+// @todo is_detected_exact_v
+// @todo is_detected_convertible
+// @todo is_detected_convertible_v

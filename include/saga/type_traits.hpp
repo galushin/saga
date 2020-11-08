@@ -179,6 +179,14 @@ namespace saga
     struct is_equality_comparable
      : detail::is_equality_comparable<T>
     {};
+
+    // Идиома детектирования
+    struct nonesuch
+    {
+        ~nonesuch() = delete;
+        nonesuch(nonesuch const &) = delete;
+        void operator=(nonesuch const &) = delete;
+    };
 }
 // namespace saga
 
