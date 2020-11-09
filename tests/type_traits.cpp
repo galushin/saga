@@ -304,7 +304,8 @@ namespace
 static_assert(std::is_same<std::false_type, saga::detected_or<void, ::get_size_type, long>::value_t>{}, "");
 static_assert(std::is_same<void, saga::detected_or<void, ::get_size_type, long>::type>{}, "");
 
-static_assert(std::is_same<std::false_type, saga::detected_or<std::size_t, ::get_size_type, std::unique_ptr<bool>>::value_t>{}, "");
+static_assert(std::is_same<std::false_type,
+              saga::detected_or<std::size_t, ::get_size_type, std::unique_ptr<bool>>::value_t>{}, "");
 static_assert(std::is_same<std::size_t, saga::detected_or<std::size_t, ::get_size_type, long>::type>{}, "");
 
 static_assert(std::is_same<std::true_type, saga::detected_or<double, ::get_size_type, std::vector<int>>::value_t>{}, "");
@@ -316,15 +317,75 @@ static_assert(!saga::is_detected<::get_size_type, long>{}, "");
 static_assert(!saga::is_detected<::get_size_type, std::unique_ptr<bool>>{}, "");
 static_assert(saga::is_detected<::get_size_type, std::vector<int>>{}, "");
 
+// is_detected_v
+static_assert(!saga::is_detected_v<::get_size_type, long>, "");
+static_assert(!saga::is_detected_v<::get_size_type, std::unique_ptr<bool>>, "");
+static_assert(saga::is_detected_v<::get_size_type, std::vector<int>>, "");
+
 // detected_t
 static_assert(std::is_same<saga::nonesuch, saga::detected_t<::get_size_type, double>>{}, "");
 static_assert(std::is_same<saga::nonesuch, saga::detected_t<::get_size_type, std::unique_ptr<bool>>>{}, "");
 static_assert(std::is_same<typename std::vector<int>::size_type,
                            saga::detected_t<::get_size_type, std::vector<int>>>{}, "");
 
-// @todo is_detected_v
-// @todo detected_or_t
-// @todo is_detected_exact
-// @todo is_detected_exact_v
-// @todo is_detected_convertible
-// @todo is_detected_convertible_v
+// detected_or_t
+static_assert(std::is_same<void, saga::detected_or_t<void, ::get_size_type, long>>{}, "");
+static_assert(std::is_same<std::size_t, saga::detected_or_t<std::size_t, ::get_size_type, long>>{}, "");
+static_assert(std::is_same<typename std::vector<int>::size_type,
+                           saga::detected_or_t<double, ::get_size_type, std::vector<int>>>{}, "");
+
+namespace
+{
+    template <class T>
+    using diff_t = typename T::difference_type;
+
+    struct no_diff
+    {};
+
+    struct int_diff
+    {
+        using difference_type = int;
+    };
+
+    struct long_diff
+    {
+        using difference_type = long;
+    };
+
+    struct void_diff
+    {
+        using difference_type = void;
+    };
+}
+
+// is_detected_exact
+static_assert(!saga::is_detected_exact<int, diff_t, long>{}, "");
+static_assert(!saga::is_detected_exact<int, diff_t, no_diff>{}, "");
+static_assert(!saga::is_detected_exact<int, diff_t, long_diff>{}, "");
+static_assert(saga::is_detected_exact<int, diff_t, int_diff>{}, "");
+
+// is_detected_exact_v
+#if __cpp_variable_templates >= 201304
+static_assert(!saga::is_detected_exact_v<int, diff_t, long>, "");
+static_assert(!saga::is_detected_exact_v<int, diff_t, no_diff>, "");
+static_assert(!saga::is_detected_exact_v<int, diff_t, long_diff>, "");
+static_assert(saga::is_detected_exact_v<int, diff_t, int_diff>, "");
+#endif
+//__cpp_variable_templates
+
+// is_detected_convertible
+static_assert(!saga::is_detected_convertible<int, diff_t, long>{}, "");
+static_assert(!saga::is_detected_convertible<int, diff_t, no_diff>{}, "");
+static_assert(saga::is_detected_convertible<long, diff_t, long_diff>{}, "");
+static_assert(saga::is_detected_convertible<int, diff_t, int_diff>{}, "");
+static_assert(!saga::is_detected_convertible<int, diff_t, void_diff>{}, "");
+
+// is_detected_convertible_v
+#if __cpp_variable_templates >= 201304
+static_assert(!saga::is_detected_convertible_v<int, diff_t, long>, "");
+static_assert(!saga::is_detected_convertible_v<int, diff_t, no_diff>, "");
+static_assert(saga::is_detected_convertible_v<long, diff_t, long_diff>, "");
+static_assert(saga::is_detected_convertible_v<int, diff_t, int_diff>, "");
+static_assert(!saga::is_detected_convertible_v<int, diff_t, void_diff>, "");
+#endif
+//__cpp_variable_templates
