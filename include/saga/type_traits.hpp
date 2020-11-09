@@ -40,9 +40,78 @@ namespace saga
     struct priority_tag<0>
     {};
 
+    // void_t
+    template <typename... Types>
+    struct declare_void
+    {
+        using type = void;
+    };
+
+    template <typename... Types>
+    using void_t = typename declare_void<Types...>::type;
+
+    // Идиома детектирования
+    struct nonesuch
+    {
+        ~nonesuch() = delete;
+        nonesuch(nonesuch const &) = delete;
+        void operator=(nonesuch const &) = delete;
+    };
+
+    namespace detail
+    {
+        template <class SFINAE, class Default, template <class...> class Op, class... Args>
+        struct detector
+        {
+            using value_t = std::false_type;
+
+            using type = Default;
+        };
+
+        template <class Default, template <class...> class Op, class... Args>
+        struct detector<saga::void_t<Op<Args...>>, Default, Op, Args...>
+        {
+            using value_t = std::true_type;
+
+            using type = Op<Args...>;
+        };
+    }
+    // namespace detail
+
+    template <class Default, template <class...> class Op, class... Args>
+    using detected_or = saga::detail::detector<void, Default, Op, Args...>;
+
+    template <template <class...> class Op, class... Args>
+    using is_detected = typename detected_or<nonesuch, Op, Args...>::value_t;
+
+    template <template <class...> class Op, class... Args>
+    using detected_t = typename detected_or<nonesuch, Op, Args...>::type;
+
+    template <class Default, template <class...> class Op, class... Args>
+    using detected_or_t = typename saga::detected_or<Default, Op, Args...>::type;
+
+    template <class Expected, template <class...> class Op, class... Args>
+    using is_detected_exact = std::is_same<Expected, detected_t<Op, Args...>>;
+
+    template <class Expected, template <class...> class Op, class... Args>
+    using is_detected_convertible = std::is_convertible<saga::detected_t<Op, Args...>, Expected>;
+
+#if __cpp_variable_templates >= 201304
+    template <template <class...> class Op, class... Args>
+    constexpr bool is_detected_v = is_detected<Op, Args...>::value;
+
+    template <class Expected, template <class...> class Op, class... Args>
+    constexpr bool is_detected_exact_v = is_detected_exact<Expected, Op, Args...>::value;
+
+    template <class Expected, template <class...> class Op, class... Args>
+    constexpr bool is_detected_convertible_v = is_detected_convertible<Expected, Op, Args...>::value;
+#endif
+// __cpp_variable_templates
+
     // bool_constant
     template <bool B>
     using bool_constant = std::integral_constant<bool, B>;
+
     /** @brief Определение типа для предсставления размера, используемого данным типом, например,
     контейнером
 
@@ -65,16 +134,6 @@ namespace saga
     public:
         using type = decltype(size_type::impl<T>(priority_tag<1>{}));
     };
-
-    // void_t
-    template <typename... Types>
-    struct declare_void
-    {
-        using type = void;
-    };
-
-    template <typename... Types>
-    using void_t = typename declare_void<Types...>::type;
 
     // remove_cvref
     template <class T>
@@ -163,21 +222,14 @@ namespace saga
     // is_equality_comparable
     namespace detail
     {
-        template <class T, class SFINAE = void>
-        struct is_equality_comparable
-         : std::false_type
-        {};
-
         template <class T>
-        struct is_equality_comparable<T, void_t<decltype(std::declval<T const>() == std::declval<T const>())>>
-         : std::is_same<bool, decltype(std::declval<T const>() == std::declval<T const>())>
-        {};
+        using equality_op_result = decltype(std::declval<T const>() == std::declval<T const>());
     }
     // namespace detail
 
     template <class T>
     struct is_equality_comparable
-     : detail::is_equality_comparable<T>
+     : is_detected_exact<bool, detail::equality_op_result, T>
     {};
 }
 // namespace saga
