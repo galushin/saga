@@ -331,9 +331,38 @@ TEST_CASE("expected: implicit constructor from unexpected const & ")
 // Порождение произвольного expected
 namespace
 {
+    template <class Ostream, class Value, class Error>
+    auto print_value(Ostream &, saga::expected<Value, Error> const &)
+    -> std::enable_if_t<std::is_void<Value>{}>
+    {}
+
+    template <class Ostream, class Value, class Error>
+    auto print_value(Ostream & out, saga::expected<Value, Error> const & rhs)
+    -> std::enable_if_t<!std::is_void<Value>{}>;
+
     template <class Value, class Error>
     struct expected_carrier
     {
+        friend bool operator==(expected_carrier const & lhs, expected_carrier const & rhs)
+        {
+            return lhs.value == rhs.value;
+        }
+
+        friend std::ostream & operator<<(std::ostream & out, expected_carrier const & rhs)
+        {
+            if(rhs.value.has_value())
+            {
+                out << "Value: ";
+                ::print_value(out, rhs.value);
+            }
+            else
+            {
+                out << "Unexpected: " << rhs.value.error();
+            }
+
+            return out;
+        }
+
         template <class... Args>
         explicit expected_carrier(saga::in_place_t, Args &&... args)
          : value(saga::in_place_t{}, std::forward<Args>(args)...)
@@ -345,33 +374,37 @@ namespace
 
         ::saga::expected<Value, Error> value;
     };
+
+    // @todo Вывод в поток
 }
 
 namespace saga_test
 {
+    template <class Value, class Error, class SFINAE = void>
+    struct arbitrary_expected_with_value
+    {
+        using value_type = expected_carrier<Value, Error>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            auto value = saga_test::arbitrary<Value>::generate(generation, urbg);
+
+            return value_type(saga::in_place, std::move(value));
+        }
+    };
+
     template <class Value, class Error>
-    struct arbitrary_expected_carrier_void
+    struct arbitrary_expected_with_value<Value, Error, std::enable_if_t<std::is_void<Value>{}>>
     {
         static_assert(std::is_void<Value>{}, "");
 
         using value_type = expected_carrier<Value, Error>;
 
         template <class UniformRandomBitGenerator>
-        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        static value_type generate(generation_t, UniformRandomBitGenerator &)
         {
-            auto const has_value = generation % 2;
-            generation /= 2;
-
-            if(has_value)
-            {
-                return value_type(saga::in_place);
-            }
-            else
-            {
-                auto error = saga_test::arbitrary<Error>::generate(generation, urbg);
-
-                return value_type(saga::unexpect, std::move(error));
-            }
+            return value_type(saga::in_place);
         }
     };
 
@@ -383,14 +416,12 @@ namespace saga_test
         template <class UniformRandomBitGenerator>
         static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
         {
-            auto const has_value = generation % 2;
+            auto const has_value = saga_test::arbitrary<bool>::generate(generation, urbg);
             generation /= 2;
 
             if(has_value)
             {
-                auto value = saga_test::arbitrary<Value>::generate(generation, urbg);
-
-                return value_type(saga::in_place, std::move(value));
+                return ::arbitrary_expected_with_value<Value, Error>::generate(generation, urbg);
             }
             else
             {
@@ -400,26 +431,6 @@ namespace saga_test
             }
         }
     };
-
-    template <class Error>
-    struct arbitrary<expected_carrier<void, Error>>
-     : arbitrary_expected_carrier_void<void, Error>
-    {};
-
-    template <class Error>
-    struct arbitrary<expected_carrier<void const, Error>>
-     : arbitrary_expected_carrier_void<void const, Error>
-    {};
-
-    template <class Error>
-    struct arbitrary<expected_carrier<void volatile, Error>>
-     : arbitrary_expected_carrier_void<void volatile, Error>
-    {};
-
-    template <class Error>
-    struct arbitrary<expected_carrier<void const volatile, Error>>
-     : arbitrary_expected_carrier_void<void const volatile, Error>
-    {};
 }
 
 // 4.6 Сравнение expected
@@ -2122,6 +2133,40 @@ TEST_CASE("expected<Value, Error>::emplace with initializer_list")
             static_assert(std::is_same<decltype(result), Container &>{}, "");
         }
     };
+}
+
+// 4.4 Обмен
+namespace
+{
+    template <class Value, class Error>
+    void check_expected_swap_member(::expected_carrier<Value, Error> const & lhs_old,
+                                    ::expected_carrier<Value, Error> const & rhs_old)
+    {
+        auto lhs = lhs_old;
+        auto rhs = rhs_old;
+
+        lhs.value.swap(rhs.value);
+
+        static_assert(std::is_same<void, decltype(lhs.value.swap(rhs.value))>{}, "");
+
+        REQUIRE(lhs == rhs_old);
+        REQUIRE(rhs == lhs_old);
+    }
+}
+
+TEST_CASE("expected::swap")
+{
+    saga_test::property_checker
+        << ::check_expected_swap_member<void, int>
+        << ::check_expected_swap_member<void, std::string>
+        << ::check_expected_swap_member<void const, int>
+        << ::check_expected_swap_member<void const, std::string>
+        << ::check_expected_swap_member<void volatile, int>
+        << ::check_expected_swap_member<void volatile, std::string>
+        << ::check_expected_swap_member<void const volatile, int>
+        << ::check_expected_swap_member<void const volatile, std::string>;
+        ;
+    // @todo для Value, который не cv void
 }
 
 // 4.5 Свойства

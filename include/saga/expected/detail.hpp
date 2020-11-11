@@ -509,6 +509,8 @@ namespace saga
                 return Base::emplace(inits, std::forward<Args>(args)...);
             }
 
+            // @todo Обмен
+
             // Немодифицирующие операции
             // @todo constexpr - требуется constexpr для std::addressof
             const Value * operator->() const
@@ -620,6 +622,37 @@ namespace saga
             void emplace()
             {
                 static_cast<void>(Base::emplace());
+            }
+
+            // Обмен
+            void swap(expected_base & rhs)
+            {
+                // @todo Уменьшить дублирование со случаем не void
+                if(rhs.has_value())
+                {
+                    if(this->has_value())
+                    {
+                        // Ничего делать не нужно
+                    }
+                    else
+                    {
+                        rhs.swap(*this);
+                    }
+                }
+                else
+                {
+                    if(this->has_value())
+                    {
+                        // @todo Знает ли компилятор, что внутри этой функции this->has_value() == true?
+                        this->assign_error(std::move(rhs.error()));
+                        rhs.emplace();
+                    }
+                    else
+                    {
+                        using std::swap;
+                        swap(this->error(), rhs.error());
+                    }
+                }
             }
 
             // Немодифицирующие операции
