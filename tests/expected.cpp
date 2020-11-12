@@ -331,14 +331,22 @@ TEST_CASE("expected: implicit constructor from unexpected const & ")
 // Порождение произвольного expected
 namespace
 {
-    template <class Ostream, class Value, class Error>
-    auto print_value(Ostream &, saga::expected<Value, Error> const &)
-    -> std::enable_if_t<std::is_void<Value>{}>
-    {}
+    template <class Value, class Error>
+    auto value_to_string(saga::expected<Value, Error> const & obj)
+    -> std::enable_if_t<std::is_void<Value>{}, std::string>
+    {
+        assert(obj.has_value());
+        return {};
+    }
 
-    template <class Ostream, class Value, class Error>
-    auto print_value(Ostream & out, saga::expected<Value, Error> const & rhs)
-    -> std::enable_if_t<!std::is_void<Value>{}>;
+    template <class Value, class Error>
+    auto value_to_string(saga::expected<Value, Error> const & obj)
+    -> std::enable_if_t<!std::is_void<Value>{}, std::string>
+    {
+        assert(obj.has_value());
+
+        return Catch::StringMaker<Value>::convert(*obj);
+    }
 
     template <class Value, class Error>
     struct expected_carrier
@@ -346,21 +354,6 @@ namespace
         friend bool operator==(expected_carrier const & lhs, expected_carrier const & rhs)
         {
             return lhs.value == rhs.value;
-        }
-
-        friend std::ostream & operator<<(std::ostream & out, expected_carrier const & rhs)
-        {
-            if(rhs.value.has_value())
-            {
-                out << "Value: ";
-                ::print_value(out, rhs.value);
-            }
-            else
-            {
-                out << "Unexpected: " << rhs.value.error();
-            }
-
-            return out;
         }
 
         template <class... Args>
@@ -374,9 +367,27 @@ namespace
 
         ::saga::expected<Value, Error> value;
     };
-
-    // @todo Вывод в поток
 }
+
+namespace Catch
+{
+    template <class Value, class Error>
+    struct StringMaker<::expected_carrier<Value, Error>>
+    {
+        static std::string convert(::expected_carrier<Value, Error> const & rhs)
+        {
+            if(rhs.value.has_value())
+            {
+                return "Value: " + ::value_to_string(rhs.value);
+            }
+            else
+            {
+                return "Unexpected: " + Catch::StringMaker<Error>::convert(rhs.value.error());
+            }
+        }
+    };
+}
+// namespace Catch
 
 namespace saga_test
 {
@@ -2149,6 +2160,12 @@ namespace
 
         static_assert(std::is_same<void, decltype(lhs.value.swap(rhs.value))>{}, "");
 
+        static_assert(noexcept(lhs.value.swap(rhs.value))
+                      == (std::is_void<Value>{} || (std::is_nothrow_move_constructible<Value>{}
+                         && std::is_nothrow_swappable<Value>{}))
+                         && std::is_nothrow_move_constructible<Error>{}
+                         && std::is_nothrow_swappable<Error>{}, "");
+
         REQUIRE(lhs == rhs_old);
         REQUIRE(rhs == lhs_old);
     }
@@ -2156,6 +2173,10 @@ namespace
 
 TEST_CASE("expected::swap")
 {
+    static_assert(std::is_nothrow_move_constructible<int>{}, "");
+    static_assert(std::is_nothrow_move_constructible<std::string>{}, "");
+    // @todo Найти тип Bad: static_assert(!std::is_nothrow_move_constructible<Bad>{}, "");
+
     saga_test::property_checker
         << ::check_expected_swap_member<void, int>
         << ::check_expected_swap_member<void, std::string>
@@ -2164,7 +2185,12 @@ TEST_CASE("expected::swap")
         << ::check_expected_swap_member<void volatile, int>
         << ::check_expected_swap_member<void volatile, std::string>
         << ::check_expected_swap_member<void const volatile, int>
-        << ::check_expected_swap_member<void const volatile, std::string>;
+        << ::check_expected_swap_member<void const volatile, std::string>
+
+        << ::check_expected_swap_member<long, int>
+        << ::check_expected_swap_member<std::vector<int>, int>
+        // @todo Больше разных типов, в том числе, возбуждающих исключения при перемещении и обмене
+        << ::check_expected_swap_member<long, std::string>
         ;
     // @todo для Value, который не cv void
 }

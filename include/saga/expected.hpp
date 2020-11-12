@@ -227,14 +227,13 @@ namespace saga
 
         // Обмен
         /**
-        @todo Спецификация noexcept
         @todo Ограничение типа: Lvalues of type T are Swappable; and
         Lvalues of type E are Swappable; and
         is_void_v<T> is true or is_void_v<T> is false and either:
         is_move_constructible_v<T> is true; or
         is_move_constructible_v<E> is true.
         */
-        void swap(expected & rhs)
+        void swap(expected & rhs) noexcept(detail::is_expected_nothrow_swappable<Value, Error>())
         {
             Base::swap(rhs);
         }
