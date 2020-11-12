@@ -2162,9 +2162,9 @@ namespace
 
         static_assert(noexcept(lhs.value.swap(rhs.value))
                       == (std::is_void<Value>{} || (std::is_nothrow_move_constructible<Value>{}
-                         && std::is_nothrow_swappable<Value>{}))
+                         && saga::is_nothrow_swappable<Value>{}))
                          && std::is_nothrow_move_constructible<Error>{}
-                         && std::is_nothrow_swappable<Error>{}, "");
+                         && saga::is_nothrow_swappable<Error>{}, "");
 
         REQUIRE(lhs == rhs_old);
         REQUIRE(rhs == lhs_old);
