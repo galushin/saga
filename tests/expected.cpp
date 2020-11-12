@@ -1680,7 +1680,7 @@ namespace
         Expected const src_old(saga::unexpect, src_error);
 
         ::check_expected_move_assign(dest, src_old);
-    };
+    }
 }
 
 TEST_CASE("expected<void, Error>::move assign")
@@ -2161,10 +2161,10 @@ namespace
         static_assert(std::is_same<void, decltype(lhs.value.swap(rhs.value))>{}, "");
 
         static_assert(noexcept(lhs.value.swap(rhs.value))
-                      == (std::is_void<Value>{} || (std::is_nothrow_move_constructible<Value>{}
+                      == ((std::is_void<Value>{} || (std::is_nothrow_move_constructible<Value>{}
                          && saga::is_nothrow_swappable<Value>{}))
                          && std::is_nothrow_move_constructible<Error>{}
-                         && saga::is_nothrow_swappable<Error>{}, "");
+                         && saga::is_nothrow_swappable<Error>{}), "");
 
         REQUIRE(lhs == rhs_old);
         REQUIRE(rhs == lhs_old);
