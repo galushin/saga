@@ -804,9 +804,9 @@ namespace saga
         {
             return (std::is_void<Value>{}
                     || (std::is_nothrow_move_constructible<Value>{}
-                        && std::is_nothrow_swappable<Value>{})                    )
+                        && saga::is_nothrow_swappable<Value>{})                    )
                     && std::is_nothrow_move_constructible<Error>{}
-                    && std::is_nothrow_swappable<Error>{};
+                    && saga::is_nothrow_swappable<Error>{};
         }
     }
     // namespace detail
