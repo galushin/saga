@@ -808,6 +808,14 @@ namespace saga
                     && std::is_nothrow_move_constructible<Error>{}
                     && saga::is_nothrow_swappable<Error>{};
         }
+
+        template <class Value, class Error>
+        constexpr bool expected_is_swappable()
+        {
+            // @todo Правильные ограничения типа
+            return (std::is_void<Value>{} || saga::is_swappable<Value>{})
+                   && saga::is_swappable<Error>{};
+        }
     }
     // namespace detail
 }

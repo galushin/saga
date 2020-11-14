@@ -2169,28 +2169,67 @@ namespace
         REQUIRE(lhs == rhs_old);
         REQUIRE(rhs == lhs_old);
     }
+
+    template <class Value, class Error>
+    void check_expected_swap_free(::expected_carrier<Value, Error> const & lhs_old,
+                                  ::expected_carrier<Value, Error> const & rhs_old)
+    {
+        auto lhs = lhs_old;
+        auto rhs = rhs_old;
+
+        swap(lhs.value, rhs.value);
+
+        static_assert(std::is_same<void, decltype(swap(lhs.value, rhs.value))>{}, "");
+
+        static_assert(noexcept(swap(lhs.value, rhs.value)) == noexcept(lhs.value.swap(rhs.value)), "");
+
+        REQUIRE(lhs == rhs_old);
+        REQUIRE(rhs == lhs_old);
+    }
+
+    template <class Value, class Error>
+    void check_expected_swap(::expected_carrier<Value, Error> const & lhs,
+                             ::expected_carrier<Value, Error> const & rhs)
+    {
+        check_expected_swap_member(lhs, rhs);
+        check_expected_swap_free(lhs, rhs);
+    }
 }
 
 TEST_CASE("expected::swap")
 {
     static_assert(std::is_nothrow_move_constructible<int>{}, "");
     static_assert(std::is_nothrow_move_constructible<std::string>{}, "");
-    // @todo Найти тип Bad: static_assert(!std::is_nothrow_move_constructible<Bad>{}, "");
+    // @todo Найти тип Bad: static_assert(!std::is_nothrow_move_constructible<Bad>{}, ""); - проверить, что такие типы запрещают swap
+
+    static_assert(saga::is_swappable<int>{}, "");
+    static_assert(saga::is_swappable<std::string>{}, "");
+    static_assert(saga::is_swappable<std::vector<int>>{}, "");
+    static_assert(!saga::is_swappable<saga_test::not_swapable>{}, "");
+
+    static_assert(!saga::is_swappable<saga::expected<void, saga_test::not_swapable>>{}, "");
+    static_assert(!saga::is_swappable<saga::expected<void const, saga_test::not_swapable>>{}, "");
+    static_assert(!saga::is_swappable<saga::expected<void volatile, saga_test::not_swapable>>{}, "");
+    static_assert(!saga::is_swappable<saga::expected<void const volatile, saga_test::not_swapable>>{}, "");
+
+    static_assert(!saga::is_swappable<saga::expected<int, saga_test::not_swapable>>{}, "");
+    static_assert(!saga::is_swappable<saga::expected<saga_test::not_swapable, int>>{}, "");
 
     saga_test::property_checker
-        << ::check_expected_swap_member<void, int>
-        << ::check_expected_swap_member<void, std::string>
-        << ::check_expected_swap_member<void const, int>
-        << ::check_expected_swap_member<void const, std::string>
-        << ::check_expected_swap_member<void volatile, int>
-        << ::check_expected_swap_member<void volatile, std::string>
-        << ::check_expected_swap_member<void const volatile, int>
-        << ::check_expected_swap_member<void const volatile, std::string>
+        << ::check_expected_swap<void, int>
+        << ::check_expected_swap<void, std::string>
+        << ::check_expected_swap<void const, int>
+        << ::check_expected_swap<void const, std::string>
+        << ::check_expected_swap<void volatile, int>
+        << ::check_expected_swap<void volatile, std::string>
+        << ::check_expected_swap<void const volatile, int>
+        << ::check_expected_swap<void const volatile, std::string>
 
-        << ::check_expected_swap_member<long, int>
-        << ::check_expected_swap_member<std::vector<int>, int>
+        << ::check_expected_swap<long, int>
+        << ::check_expected_swap<std::vector<int>, int>
         // @todo Больше разных типов, в том числе, возбуждающих исключения при перемещении и обмене
-        << ::check_expected_swap_member<long, std::string>
+        << ::check_expected_swap<long, std::string>
+        << ::check_expected_swap<std::vector<int>, std::string>
         ;
     // @todo для Value, который не cv void
 }
