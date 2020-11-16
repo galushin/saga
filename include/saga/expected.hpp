@@ -227,12 +227,9 @@ namespace saga
 
         // Обмен
         /**
-        @todo Ограничение типа: Lvalues of type T are Swappable; and
-        Lvalues of type E are Swappable; and
-        is_void_v<T> is true or is_void_v<T> is false and either:
-        is_move_constructible_v<T> is true; or
-        is_move_constructible_v<E> is true.
+        @todo Нормально ли так задать ограничения?
         */
+        template <class = std::enable_if_t<detail::expected_is_swappable<Value, Error>()>>
         void swap(expected & rhs) noexcept(detail::is_expected_nothrow_swappable<Value, Error>())
         {
             Base::swap(rhs);
@@ -366,8 +363,6 @@ namespace saga
     template <class Value, class Error>
     std::enable_if_t<!detail::expected_is_swappable<Value, Error>()>
     swap(expected<Value, Error> & lhs, expected<Value, Error> & rhs) = delete;
-
-
 }
 // namespace saga
 

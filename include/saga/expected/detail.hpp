@@ -99,6 +99,7 @@ namespace saga
             using unexpected_type = saga::unexpected<Error>;
             union
             {
+                expected_uninitialized no_init_;
                 Value value_;
                 unexpected_type error_;
             };
@@ -106,6 +107,11 @@ namespace saga
             bool has_value_ = false;
 
             // Конструкторы и деструктор
+            explicit expected_destructible(expected_uninitialized)
+             : no_init_{}
+             , has_value_(false)
+            {}
+
             template <class... Args>
             constexpr explicit expected_destructible(in_place_t, Args &&... args)
              : value_(std::forward<Args>(args)...)
@@ -244,25 +250,7 @@ namespace saga
                 {
                     if(this->has_value())
                     {
-                        // @todo Снять это ограничение
-                        static_assert(std::is_nothrow_move_constructible<Error>{}, "");
-
-                        // @todo Доказать, что это безопасно при исключениях
-                        auto tmp_unex = std::move(rhs.error());
-                        rhs.impl_.error_.~unexpected_type();
-
-                        try
-                        {
-                            new(std::addressof(rhs.impl_.value_)) Value(std::move(**this));
-                            rhs.impl_.has_value_ = true;
-
-                            this->assign_error(std::move(tmp_unex));
-                        }
-                        catch(...)
-                        {
-                            new(std::addressof(rhs.impl_.error_)) unexpected_type(std::move(tmp_unex));
-                            throw;
-                        }
+                        this->swap_value_error(rhs, std::is_nothrow_move_constructible<Error>{});
                     }
                     else
                     {
@@ -302,6 +290,56 @@ namespace saga
             }
 
         private:
+            void swap_value_error(expected_storage & rhs, std::true_type)
+            {
+                static_assert(std::is_nothrow_move_constructible<Error>{}, "");
+
+                assert(this->has_value());
+                assert(!rhs.has_value());
+
+                // @todo Доказать, что это безопасно при исключениях
+                auto tmp_unex = std::move(rhs.error());
+                rhs.impl_.error_.~unexpected_type();
+
+                try
+                {
+                    new(std::addressof(rhs.impl_.value_)) Value(std::move(**this));
+                    rhs.impl_.has_value_ = true;
+
+                    this->assign_error(std::move(tmp_unex));
+                }
+                catch(...)
+                {
+                    new(std::addressof(rhs.impl_.error_)) unexpected_type(std::move(tmp_unex));
+                    throw;
+                }
+            }
+
+            void swap_value_error(expected_storage & rhs, std::false_type)
+            {
+                static_assert(std::is_nothrow_move_constructible<Value>{}, "");
+
+                assert(this->has_value());
+                assert(!rhs.has_value());
+
+                // @todo Доказать, что это безопасно при исключениях
+                auto tmp_value = std::move(**this);
+                this->impl_.value_.~Value();
+
+                try
+                {
+                    new(std::addressof(this->impl_.error_)) unexpected_type(std::move(rhs.error()));
+                    this->impl_.has_value_ = false;
+
+                    rhs.emplace(std::move(tmp_value));
+                }
+                catch(...)
+                {
+                    new(std::addressof(this->impl_.value_)) Value(std::move(tmp_value));
+                    throw;
+                }
+            }
+
             expected_destructible<Value, Error> impl_;
         };
 
@@ -812,9 +850,16 @@ namespace saga
         template <class Value, class Error>
         constexpr bool expected_is_swappable()
         {
-            // @todo Правильные ограничения типа
+            /* Error должен быть Swappable всегда, Value - если не является void
+            Если is_void<Value>, то достаточно, чтобы у Error был конструктор перемещения,
+            если же Value - не void, то либо Value, либо Error должен быть is_nothrow_move_constructible.
+            Иначе невозможно определить безопасный при исключениях обмен
+            */
             return (std::is_void<Value>{} || saga::is_swappable<Value>{})
-                   && saga::is_swappable<Error>{};
+                   && saga::is_swappable<Error>{}
+                   && ((std::is_void<Value>{} && std::is_move_constructible<Error>{})
+                       || std::is_nothrow_move_constructible<Value>{}
+                       || std::is_nothrow_move_constructible<Error>{});
         }
     }
     // namespace detail

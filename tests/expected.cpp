@@ -840,6 +840,10 @@ namespace
     struct throwing_move_ctor
     {
         throwing_move_ctor(throwing_move_ctor const &) noexcept(false) {}
+        throwing_move_ctor(throwing_move_ctor &&) noexcept(false) {}
+
+        throwing_move_ctor & operator=(throwing_move_ctor const &) noexcept(false);
+        throwing_move_ctor & operator=(throwing_move_ctor &&) noexcept(false);
     };
 }
 
@@ -2194,19 +2198,90 @@ namespace
         check_expected_swap_member(lhs, rhs);
         check_expected_swap_free(lhs, rhs);
     }
+
+    template <class T>
+    using swap_return = decltype(std::declval<T&>().swap(std::declval<T&>()));
+
+    struct throwing_move_int
+    {
+        int value = 0;
+
+        throwing_move_int(int init_value)
+         : value(init_value)
+        {}
+
+        throwing_move_int(throwing_move_int const & rhs) noexcept(false)
+         : value(rhs.value)
+        {}
+
+        throwing_move_int & operator=(throwing_move_int const & rhs) noexcept(false)
+        {
+            this->value = rhs.value;
+            return *this;
+        }
+
+        ~throwing_move_int() = default;
+
+        friend bool operator==(throwing_move_int const & lhs, throwing_move_int const & rhs)\
+        {
+            return lhs.value == rhs.value;
+        }
+    };
+}
+
+namespace saga_test
+{
+    template <>
+    struct arbitrary<throwing_move_int>
+    {
+        using value_type = throwing_move_int;
+
+        template <class UniformRandomBitGeneration>
+        static value_type generate(generation_t gen, UniformRandomBitGeneration & urbg)
+        {
+            return value_type(saga_test::arbitrary<int>::generate(gen, urbg));
+        }
+    };
 }
 
 TEST_CASE("expected::swap")
 {
     static_assert(std::is_nothrow_move_constructible<int>{}, "");
     static_assert(std::is_nothrow_move_constructible<std::string>{}, "");
-    // @todo Найти тип Bad: static_assert(!std::is_nothrow_move_constructible<Bad>{}, ""); - проверить, что такие типы запрещают swap
+    static_assert(!std::is_nothrow_move_constructible<::throwing_move_int>{}, "");
 
     static_assert(saga::is_swappable<int>{}, "");
     static_assert(saga::is_swappable<std::string>{}, "");
     static_assert(saga::is_swappable<std::vector<int>>{}, "");
+    static_assert(saga::is_swappable<::throwing_move_ctor>{}, "");
+
     static_assert(!saga::is_swappable<saga_test::not_swapable>{}, "");
 
+    // Наличие функции-члена swap
+    static_assert(saga::is_detected<::swap_return, saga::expected<void, long>>{}, "");
+    static_assert(saga::is_detected<::swap_return, saga::expected<void const, long>>{}, "");
+    static_assert(saga::is_detected<::swap_return, saga::expected<void volatile, long>>{}, "");
+    static_assert(saga::is_detected<::swap_return, saga::expected<void const volatile, long>>{}, "");
+
+    static_assert(!saga::is_detected<::swap_return, saga::expected<void, saga_test::not_swapable>>{}, "");
+    static_assert(!saga::is_detected<::swap_return, saga::expected<void const, saga_test::not_swapable>>{}, "");
+    static_assert(!saga::is_detected<::swap_return, saga::expected<void volatile, saga_test::not_swapable>>{}, "");
+    static_assert(!saga::is_detected<::swap_return, saga::expected<void const volatile, saga_test::not_swapable>>{}, "");
+    static_assert(!saga::is_detected<::swap_return, saga::expected<void, ::not_move_constructible>>{}, "");
+
+    static_assert(saga::is_detected<::swap_return, saga::expected<int, long>>{}, "");
+    static_assert(!saga::is_detected<::swap_return, saga::expected<saga_test::not_swapable, long>>{}, "");
+    static_assert(!saga::is_detected<::swap_return, saga::expected<int, saga_test::not_swapable>>{}, "");
+
+    static_assert(saga::is_detected<::swap_return, saga::expected<void, ::throwing_move_ctor>>{}, "");
+    static_assert(saga::is_detected<::swap_return, saga::expected<void const, ::throwing_move_ctor>>{}, "");
+    static_assert(saga::is_detected<::swap_return, saga::expected<void volatile, ::throwing_move_ctor>>{}, "");
+    static_assert(saga::is_detected<::swap_return, saga::expected<void const volatile, ::throwing_move_ctor>>{}, "");
+    static_assert(saga::is_detected<::swap_return, saga::expected<int, ::throwing_move_ctor>>{}, "");
+    static_assert(saga::is_detected<::swap_return, saga::expected<::throwing_move_ctor, int>>{}, "");
+    static_assert(!saga::is_detected<::swap_return, saga::expected<::throwing_move_ctor, ::throwing_move_ctor>>{}, "");
+
+    // Swappable
     static_assert(!saga::is_swappable<saga::expected<void, saga_test::not_swapable>>{}, "");
     static_assert(!saga::is_swappable<saga::expected<void const, saga_test::not_swapable>>{}, "");
     static_assert(!saga::is_swappable<saga::expected<void volatile, saga_test::not_swapable>>{}, "");
@@ -2214,7 +2289,9 @@ TEST_CASE("expected::swap")
 
     static_assert(!saga::is_swappable<saga::expected<int, saga_test::not_swapable>>{}, "");
     static_assert(!saga::is_swappable<saga::expected<saga_test::not_swapable, int>>{}, "");
+    static_assert(!saga::is_swappable<saga::expected<::throwing_move_ctor, ::throwing_move_ctor>>{}, "");
 
+    // Проверка свойств swap
     saga_test::property_checker
         << ::check_expected_swap<void, int>
         << ::check_expected_swap<void, std::string>
@@ -2227,11 +2304,11 @@ TEST_CASE("expected::swap")
 
         << ::check_expected_swap<long, int>
         << ::check_expected_swap<std::vector<int>, int>
-        // @todo Больше разных типов, в том числе, возбуждающих исключения при перемещении и обмене
         << ::check_expected_swap<long, std::string>
         << ::check_expected_swap<std::vector<int>, std::string>
+        << ::check_expected_swap<int, ::throwing_move_int>
+        // @todo Больше разных типов, в том числе, возбуждающих исключения при перемещении и обмене
         ;
-    // @todo для Value, который не cv void
 }
 
 // 4.5 Свойства
