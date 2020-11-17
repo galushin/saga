@@ -431,6 +431,11 @@ namespace saga_test
 
         return y;
     }
+
+    struct not_swapable
+    {
+        friend void swap(not_swapable &, not_swapable &) = delete;
+    };
 }
 // namespace saga_test
 

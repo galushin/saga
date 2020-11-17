@@ -332,8 +332,30 @@ TEST_CASE("expected: implicit constructor from unexpected const & ")
 namespace
 {
     template <class Value, class Error>
+    auto value_to_string(saga::expected<Value, Error> const & obj)
+    -> std::enable_if_t<std::is_void<Value>{}, std::string>
+    {
+        assert(obj.has_value());
+        return {};
+    }
+
+    template <class Value, class Error>
+    auto value_to_string(saga::expected<Value, Error> const & obj)
+    -> std::enable_if_t<!std::is_void<Value>{}, std::string>
+    {
+        assert(obj.has_value());
+
+        return Catch::StringMaker<Value>::convert(*obj);
+    }
+
+    template <class Value, class Error>
     struct expected_carrier
     {
+        friend bool operator==(expected_carrier const & lhs, expected_carrier const & rhs)
+        {
+            return lhs.value == rhs.value;
+        }
+
         template <class... Args>
         explicit expected_carrier(saga::in_place_t, Args &&... args)
          : value(saga::in_place_t{}, std::forward<Args>(args)...)
@@ -347,31 +369,53 @@ namespace
     };
 }
 
-namespace saga_test
+namespace Catch
 {
     template <class Value, class Error>
-    struct arbitrary_expected_carrier_void
+    struct StringMaker<::expected_carrier<Value, Error>>
+    {
+        static std::string convert(::expected_carrier<Value, Error> const & rhs)
+        {
+            if(rhs.value.has_value())
+            {
+                return "Value: " + ::value_to_string(rhs.value);
+            }
+            else
+            {
+                return "Unexpected: " + Catch::StringMaker<Error>::convert(rhs.value.error());
+            }
+        }
+    };
+}
+// namespace Catch
+
+namespace saga_test
+{
+    template <class Value, class Error, class SFINAE = void>
+    struct arbitrary_expected_with_value
+    {
+        using value_type = expected_carrier<Value, Error>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            auto value = saga_test::arbitrary<Value>::generate(generation, urbg);
+
+            return value_type(saga::in_place, std::move(value));
+        }
+    };
+
+    template <class Value, class Error>
+    struct arbitrary_expected_with_value<Value, Error, std::enable_if_t<std::is_void<Value>{}>>
     {
         static_assert(std::is_void<Value>{}, "");
 
         using value_type = expected_carrier<Value, Error>;
 
         template <class UniformRandomBitGenerator>
-        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        static value_type generate(generation_t, UniformRandomBitGenerator &)
         {
-            auto const has_value = generation % 2;
-            generation /= 2;
-
-            if(has_value)
-            {
-                return value_type(saga::in_place);
-            }
-            else
-            {
-                auto error = saga_test::arbitrary<Error>::generate(generation, urbg);
-
-                return value_type(saga::unexpect, std::move(error));
-            }
+            return value_type(saga::in_place);
         }
     };
 
@@ -383,14 +427,12 @@ namespace saga_test
         template <class UniformRandomBitGenerator>
         static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
         {
-            auto const has_value = generation % 2;
+            auto const has_value = saga_test::arbitrary<bool>::generate(generation, urbg);
             generation /= 2;
 
             if(has_value)
             {
-                auto value = saga_test::arbitrary<Value>::generate(generation, urbg);
-
-                return value_type(saga::in_place, std::move(value));
+                return ::arbitrary_expected_with_value<Value, Error>::generate(generation, urbg);
             }
             else
             {
@@ -400,26 +442,6 @@ namespace saga_test
             }
         }
     };
-
-    template <class Error>
-    struct arbitrary<expected_carrier<void, Error>>
-     : arbitrary_expected_carrier_void<void, Error>
-    {};
-
-    template <class Error>
-    struct arbitrary<expected_carrier<void const, Error>>
-     : arbitrary_expected_carrier_void<void const, Error>
-    {};
-
-    template <class Error>
-    struct arbitrary<expected_carrier<void volatile, Error>>
-     : arbitrary_expected_carrier_void<void volatile, Error>
-    {};
-
-    template <class Error>
-    struct arbitrary<expected_carrier<void const volatile, Error>>
-     : arbitrary_expected_carrier_void<void const volatile, Error>
-    {};
 }
 
 // 4.6 Сравнение expected
@@ -818,6 +840,10 @@ namespace
     struct throwing_move_ctor
     {
         throwing_move_ctor(throwing_move_ctor const &) noexcept(false) {}
+        throwing_move_ctor(throwing_move_ctor &&) noexcept(false) {}
+
+        throwing_move_ctor & operator=(throwing_move_ctor const &) noexcept(false);
+        throwing_move_ctor & operator=(throwing_move_ctor &&) noexcept(false);
     };
 }
 
@@ -1658,7 +1684,7 @@ namespace
         Expected const src_old(saga::unexpect, src_error);
 
         ::check_expected_move_assign(dest, src_old);
-    };
+    }
 }
 
 TEST_CASE("expected<void, Error>::move assign")
@@ -2122,6 +2148,144 @@ TEST_CASE("expected<Value, Error>::emplace with initializer_list")
             static_assert(std::is_same<decltype(result), Container &>{}, "");
         }
     };
+}
+
+// 4.4 Обмен
+namespace
+{
+    template <class Value, class Error>
+    void check_expected_swap_member(::expected_carrier<Value, Error> const & lhs_old,
+                                    ::expected_carrier<Value, Error> const & rhs_old)
+    {
+        auto lhs = lhs_old;
+        auto rhs = rhs_old;
+
+        lhs.value.swap(rhs.value);
+
+        static_assert(std::is_same<void, decltype(lhs.value.swap(rhs.value))>{}, "");
+
+        static_assert(noexcept(lhs.value.swap(rhs.value))
+                      == ((std::is_void<Value>{} || (std::is_nothrow_move_constructible<Value>{}
+                         && saga::is_nothrow_swappable<Value>{}))
+                         && std::is_nothrow_move_constructible<Error>{}
+                         && saga::is_nothrow_swappable<Error>{}), "");
+
+        REQUIRE(lhs == rhs_old);
+        REQUIRE(rhs == lhs_old);
+    }
+
+    template <class Value, class Error>
+    void check_expected_swap_free(::expected_carrier<Value, Error> const & lhs_old,
+                                  ::expected_carrier<Value, Error> const & rhs_old)
+    {
+        auto lhs = lhs_old;
+        auto rhs = rhs_old;
+
+        swap(lhs.value, rhs.value);
+
+        static_assert(std::is_same<void, decltype(swap(lhs.value, rhs.value))>{}, "");
+
+        static_assert(noexcept(swap(lhs.value, rhs.value)) == noexcept(lhs.value.swap(rhs.value)), "");
+
+        REQUIRE(lhs == rhs_old);
+        REQUIRE(rhs == lhs_old);
+    }
+
+    template <class Value, class Error>
+    void check_expected_swap(::expected_carrier<Value, Error> const & lhs,
+                             ::expected_carrier<Value, Error> const & rhs)
+    {
+        check_expected_swap_member(lhs, rhs);
+        check_expected_swap_free(lhs, rhs);
+    }
+
+    template <class T>
+    using swap_return = decltype(std::declval<T&>().swap(std::declval<T&>()));
+
+    struct throwing_move_int
+    {
+        int value = 0;
+
+        throwing_move_int(int init_value)
+         : value(init_value)
+        {}
+
+        throwing_move_int(throwing_move_int const & rhs) noexcept(false)
+         : value(rhs.value)
+        {}
+
+        throwing_move_int & operator=(throwing_move_int const & rhs) noexcept(false)
+        {
+            this->value = rhs.value;
+            return *this;
+        }
+
+        ~throwing_move_int() = default;
+
+        friend bool operator==(throwing_move_int const & lhs, throwing_move_int const & rhs)\
+        {
+            return lhs.value == rhs.value;
+        }
+    };
+}
+
+namespace saga_test
+{
+    template <>
+    struct arbitrary<throwing_move_int>
+    {
+        using value_type = throwing_move_int;
+
+        template <class UniformRandomBitGeneration>
+        static value_type generate(generation_t gen, UniformRandomBitGeneration & urbg)
+        {
+            return value_type(saga_test::arbitrary<int>::generate(gen, urbg));
+        }
+    };
+}
+
+TEST_CASE("expected::swap")
+{
+    static_assert(std::is_nothrow_move_constructible<int>{}, "");
+    static_assert(std::is_nothrow_move_constructible<std::string>{}, "");
+    static_assert(!std::is_nothrow_move_constructible<::throwing_move_int>{}, "");
+
+    static_assert(saga::is_swappable<int>{}, "");
+    static_assert(saga::is_swappable<std::string>{}, "");
+    static_assert(saga::is_swappable<std::vector<int>>{}, "");
+    static_assert(saga::is_swappable<::throwing_move_ctor>{}, "");
+
+    static_assert(!saga::is_swappable<saga_test::not_swapable>{}, "");
+
+
+    // Swappable
+    static_assert(!saga::is_swappable<saga::expected<void, saga_test::not_swapable>>{}, "");
+    static_assert(!saga::is_swappable<saga::expected<void const, saga_test::not_swapable>>{}, "");
+    static_assert(!saga::is_swappable<saga::expected<void volatile, saga_test::not_swapable>>{}, "");
+    static_assert(!saga::is_swappable<saga::expected<void const volatile, saga_test::not_swapable>>{}, "");
+
+    static_assert(!saga::is_swappable<saga::expected<int, saga_test::not_swapable>>{}, "");
+    static_assert(!saga::is_swappable<saga::expected<saga_test::not_swapable, int>>{}, "");
+    static_assert(!saga::is_swappable<saga::expected<::throwing_move_ctor, ::throwing_move_ctor>>{}, "");
+
+    // Проверка свойств swap
+    saga_test::property_checker
+        << ::check_expected_swap<void, int>
+        << ::check_expected_swap<void, std::string>
+        << ::check_expected_swap<void const, int>
+        << ::check_expected_swap<void const, std::string>
+        << ::check_expected_swap<void volatile, int>
+        << ::check_expected_swap<void volatile, std::string>
+        << ::check_expected_swap<void const volatile, int>
+        << ::check_expected_swap<void const volatile, std::string>
+
+        << ::check_expected_swap<long, int>
+        << ::check_expected_swap<std::vector<int>, int>
+        << ::check_expected_swap<long, std::string>
+        << ::check_expected_swap<std::vector<int>, std::string>
+        << ::check_expected_swap<int, ::throwing_move_int>
+        // @todo Больше разных типов, в том числе, возбуждающих исключения при перемещении и обмене
+        ;
 }
 
 // 4.5 Свойства

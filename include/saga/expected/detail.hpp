@@ -99,6 +99,7 @@ namespace saga
             using unexpected_type = saga::unexpected<Error>;
             union
             {
+                expected_uninitialized no_init_;
                 Value value_;
                 unexpected_type error_;
             };
@@ -106,6 +107,11 @@ namespace saga
             bool has_value_ = false;
 
             // Конструкторы и деструктор
+            explicit expected_destructible(expected_uninitialized)
+             : no_init_{}
+             , has_value_(false)
+            {}
+
             template <class... Args>
             constexpr explicit expected_destructible(in_place_t, Args &&... args)
              : value_(std::forward<Args>(args)...)
@@ -121,7 +127,9 @@ namespace saga
             ~expected_destructible() = default;
         };
 
-        /** @brief Определяет деструктор
+        /**
+        @todo Уменьшить дублирование между функциями, в частности - инкапсулировать вызовы new и
+        декструкторов
         */
         template <class Value, class Error>
         class expected_storage
@@ -223,6 +231,35 @@ namespace saga
                 assert(!this->has_value());
             }
 
+            // Обмен
+            void swap(expected_storage & rhs)
+            {
+                if(rhs.has_value())
+                {
+                    if(this->has_value())
+                    {
+                        using std::swap;
+                        swap(**this, *rhs);
+                    }
+                    else
+                    {
+                        rhs.swap(*this);
+                    }
+                }
+                else
+                {
+                    if(this->has_value())
+                    {
+                        this->swap_value_error(rhs, std::is_nothrow_move_constructible<Error>{});
+                    }
+                    else
+                    {
+                        using std::swap;
+                        swap(this->error(), rhs.error());
+                    }
+                }
+            }
+
         protected:
             expected_storage(std::nullptr_t, expected_storage const & rhs)
              : impl_(expected_uninitialized{})
@@ -253,6 +290,56 @@ namespace saga
             }
 
         private:
+            void swap_value_error(expected_storage & rhs, std::true_type)
+            {
+                static_assert(std::is_nothrow_move_constructible<Error>{}, "");
+
+                assert(this->has_value());
+                assert(!rhs.has_value());
+
+                // @todo Доказать, что это безопасно при исключениях
+                auto tmp_unex = std::move(rhs.error());
+                rhs.impl_.error_.~unexpected_type();
+
+                try
+                {
+                    new(std::addressof(rhs.impl_.value_)) Value(std::move(**this));
+                    rhs.impl_.has_value_ = true;
+
+                    this->assign_error(std::move(tmp_unex));
+                }
+                catch(...)
+                {
+                    new(std::addressof(rhs.impl_.error_)) unexpected_type(std::move(tmp_unex));
+                    throw;
+                }
+            }
+
+            void swap_value_error(expected_storage & rhs, std::false_type)
+            {
+                static_assert(std::is_nothrow_move_constructible<Value>{}, "");
+
+                assert(this->has_value());
+                assert(!rhs.has_value());
+
+                // @todo Доказать, что это безопасно при исключениях
+                auto tmp_value = std::move(**this);
+                this->impl_.value_.~Value();
+
+                try
+                {
+                    new(std::addressof(this->impl_.error_)) unexpected_type(std::move(rhs.error()));
+                    this->impl_.has_value_ = false;
+
+                    rhs.emplace(std::move(tmp_value));
+                }
+                catch(...)
+                {
+                    new(std::addressof(this->impl_.value_)) Value(std::move(tmp_value));
+                    throw;
+                }
+            }
+
             expected_destructible<Value, Error> impl_;
         };
 
@@ -371,6 +458,12 @@ namespace saga
                 }
 
                 return *this;
+            }
+
+            // Обмен
+            void swap(expected_holder & rhs)
+            {
+                return Base::swap(rhs);
             }
 
             // Немодифицирующие операции
@@ -509,6 +602,12 @@ namespace saga
                 return Base::emplace(inits, std::forward<Args>(args)...);
             }
 
+            // Обмен
+            void swap(expected_base & rhs)
+            {
+                return Base::swap(rhs);
+            }
+
             // Немодифицирующие операции
             // @todo constexpr - требуется constexpr для std::addressof
             const Value * operator->() const
@@ -622,6 +721,37 @@ namespace saga
                 static_cast<void>(Base::emplace());
             }
 
+            // Обмен
+            void swap(expected_base & rhs)
+            {
+                // @todo Уменьшить дублирование со случаем не void
+                if(rhs.has_value())
+                {
+                    if(this->has_value())
+                    {
+                        // Ничего делать не нужно
+                    }
+                    else
+                    {
+                        rhs.swap(*this);
+                    }
+                }
+                else
+                {
+                    if(this->has_value())
+                    {
+                        // @todo Знает ли компилятор, что внутри этой функции this->has_value() == true?
+                        this->assign_error(std::move(rhs.error()));
+                        rhs.emplace();
+                    }
+                    else
+                    {
+                        using std::swap;
+                        swap(this->error(), rhs.error());
+                    }
+                }
+            }
+
             // Немодифицирующие операции
             void operator*() & = delete;
             void operator*() const & = delete;
@@ -705,6 +835,31 @@ namespace saga
                     && !std::is_same<saga::remove_cvref_t<Arg>, in_place_t>{}
                     && !std::is_same<saga::remove_cvref_t<Arg>, saga::expected<Value, Error>>{}
                     && !std::is_same<saga::remove_cvref_t<Arg>, saga::unexpected<Error>>{};
+        }
+
+        template <class Value, class Error>
+        constexpr bool is_expected_nothrow_swappable()
+        {
+            return (std::is_void<Value>{}
+                    || (std::is_nothrow_move_constructible<Value>{}
+                        && saga::is_nothrow_swappable<Value>{})                    )
+                    && std::is_nothrow_move_constructible<Error>{}
+                    && saga::is_nothrow_swappable<Error>{};
+        }
+
+        template <class Value, class Error>
+        constexpr bool expected_is_swappable()
+        {
+            /* Error должен быть Swappable всегда, Value - если не является void
+            Если is_void<Value>, то достаточно, чтобы у Error был конструктор перемещения,
+            если же Value - не void, то либо Value, либо Error должен быть is_nothrow_move_constructible.
+            Иначе невозможно определить безопасный при исключениях обмен
+            */
+            return (std::is_void<Value>{} || saga::is_swappable<Value>{})
+                   && saga::is_swappable<Error>{}
+                   && ((std::is_void<Value>{} && std::is_move_constructible<Error>{})
+                       || std::is_nothrow_move_constructible<Value>{}
+                       || std::is_nothrow_move_constructible<Error>{});
         }
     }
     // namespace detail

@@ -225,6 +225,15 @@ namespace saga
         // emplace
         using Base::emplace;
 
+        // Обмен
+        /**
+        @todo Нормально ли так задать ограничения?
+        */
+        void swap(expected & rhs) noexcept(detail::is_expected_nothrow_swappable<Value, Error>())
+        {
+            Base::swap(rhs);
+        }
+
         // Свойства
         using Base::operator*;
 
@@ -338,6 +347,21 @@ namespace saga
             return !(unex == obj);
         }
     };
+
+    /**
+    @todo Можно ли сделать скрытым другом?
+    */
+    template <class Value, class Error>
+    std::enable_if_t<detail::expected_is_swappable<Value, Error>()>
+    swap(expected<Value, Error> & lhs, expected<Value, Error> & rhs)
+        noexcept(noexcept(lhs.swap(rhs)))
+    {
+        return lhs.swap(rhs);
+    }
+
+    template <class Value, class Error>
+    std::enable_if_t<!detail::expected_is_swappable<Value, Error>()>
+    swap(expected<Value, Error> & lhs, expected<Value, Error> & rhs) = delete;
 }
 // namespace saga
 
