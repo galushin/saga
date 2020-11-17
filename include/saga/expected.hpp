@@ -229,7 +229,6 @@ namespace saga
         /**
         @todo Нормально ли так задать ограничения?
         */
-        template <class = std::enable_if_t<detail::expected_is_swappable<Value, Error>()>>
         void swap(expected & rhs) noexcept(detail::is_expected_nothrow_swappable<Value, Error>())
         {
             Base::swap(rhs);

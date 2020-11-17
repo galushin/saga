@@ -2257,29 +2257,6 @@ TEST_CASE("expected::swap")
 
     static_assert(!saga::is_swappable<saga_test::not_swapable>{}, "");
 
-    // Наличие функции-члена swap
-    static_assert(saga::is_detected<::swap_return, saga::expected<void, long>>{}, "");
-    static_assert(saga::is_detected<::swap_return, saga::expected<void const, long>>{}, "");
-    static_assert(saga::is_detected<::swap_return, saga::expected<void volatile, long>>{}, "");
-    static_assert(saga::is_detected<::swap_return, saga::expected<void const volatile, long>>{}, "");
-
-    static_assert(!saga::is_detected<::swap_return, saga::expected<void, saga_test::not_swapable>>{}, "");
-    static_assert(!saga::is_detected<::swap_return, saga::expected<void const, saga_test::not_swapable>>{}, "");
-    static_assert(!saga::is_detected<::swap_return, saga::expected<void volatile, saga_test::not_swapable>>{}, "");
-    static_assert(!saga::is_detected<::swap_return, saga::expected<void const volatile, saga_test::not_swapable>>{}, "");
-    static_assert(!saga::is_detected<::swap_return, saga::expected<void, ::not_move_constructible>>{}, "");
-
-    static_assert(saga::is_detected<::swap_return, saga::expected<int, long>>{}, "");
-    static_assert(!saga::is_detected<::swap_return, saga::expected<saga_test::not_swapable, long>>{}, "");
-    static_assert(!saga::is_detected<::swap_return, saga::expected<int, saga_test::not_swapable>>{}, "");
-
-    static_assert(saga::is_detected<::swap_return, saga::expected<void, ::throwing_move_ctor>>{}, "");
-    static_assert(saga::is_detected<::swap_return, saga::expected<void const, ::throwing_move_ctor>>{}, "");
-    static_assert(saga::is_detected<::swap_return, saga::expected<void volatile, ::throwing_move_ctor>>{}, "");
-    static_assert(saga::is_detected<::swap_return, saga::expected<void const volatile, ::throwing_move_ctor>>{}, "");
-    static_assert(saga::is_detected<::swap_return, saga::expected<int, ::throwing_move_ctor>>{}, "");
-    static_assert(saga::is_detected<::swap_return, saga::expected<::throwing_move_ctor, int>>{}, "");
-    static_assert(!saga::is_detected<::swap_return, saga::expected<::throwing_move_ctor, ::throwing_move_ctor>>{}, "");
 
     // Swappable
     static_assert(!saga::is_swappable<saga::expected<void, saga_test::not_swapable>>{}, "");
