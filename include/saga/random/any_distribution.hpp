@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/utility/operators.hpp>
+#include <saga/utility/copy_and_swap.hpp>
 
 #include <memory>
 
@@ -56,10 +57,7 @@ namespace saga
 
         any_distribution & operator=(any_distribution const & rhs)
         {
-            // @todo Более идеоматичный код: Copy-and-Swap
-            any_distribution temp(rhs);
-            this->swap(temp);
-            return *this;
+            return saga::copy_and_swap(*this, rhs);
         }
 
         any_distribution & operator=(any_distribution &&) = default;
