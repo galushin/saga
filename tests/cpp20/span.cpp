@@ -254,18 +254,7 @@ TEST_CASE("span : initialization from const contiguous container (vector)")
     };
 }
 
-TEST_CASE("span : ctor from string")
-{
-    saga_test::property_checker
-    << [](std::string src)
-    {
-        saga::span<char> const s(src);
-
-        REQUIRE(s.size() == src.size());
-        REQUIRE(s.data() == src.data());
-    };
-}
-
+// @todo Аналогичный тест для неконстантной строки (требует C++17 или обход константности data)
 TEST_CASE("span : ctor from const string")
 {
     saga_test::property_checker
