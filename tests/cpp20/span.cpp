@@ -48,6 +48,7 @@ TEST_CASE("span: types and static constants, static extent")
     };
 
     static_assert(sizeof(Span) <= sizeof(span_structure), "");
+    static_assert(sizeof(saga::span<int, 42>) == sizeof(int *), "");
 
     using Iter = Span::iterator;
     using CIter = Span::const_iterator;
@@ -173,6 +174,28 @@ TEST_CASE("span : initialization from C array")
 
     REQUIRE(s.size() == N);
     REQUIRE(s.data() == src);
+
+    static_assert(!std::is_constructible<saga::span<int>, double(&)[10]>{}, "");
+}
+
+TEST_CASE("span (fixed extent) : initialization from C array")
+{
+    using Element = int;
+
+    Element src[] = {1, 2, 3, 5, 8, 13};
+    constexpr auto const N = sizeof(src) / sizeof(src[0]);
+
+    saga::span<Element, N> const s(src);
+    static_assert(noexcept(saga::span<Element>(src)), "");
+
+    REQUIRE(s.size() == N);
+    REQUIRE(s.data() == src);
+
+    constexpr auto const M = N+1;
+    static_assert(M != N, "");
+
+    static_assert(!std::is_constructible<saga::span<Element, M>, Element(&)[N]>{}, "");
+    static_assert(!std::is_constructible<saga::span<int, N>, double(&)[N]>{}, "");
 }
 
 TEST_CASE("span : initialization from std::array")
@@ -231,7 +254,33 @@ TEST_CASE("span : initialization from const contiguous container (vector)")
     };
 }
 
-// @todo Конструирование на основе valarray
+TEST_CASE("span : ctor from string")
+{
+    saga_test::property_checker
+    << [](std::string src)
+    {
+        saga::span<char> const s(src);
+
+        REQUIRE(s.size() == src.size());
+        REQUIRE(s.data() == src.data());
+    };
+}
+
+TEST_CASE("span : ctor from const string")
+{
+    saga_test::property_checker
+    << [](std::string const src)
+    {
+        saga::span<char const> const s(src);
+
+        REQUIRE(s.size() == src.size());
+        REQUIRE(s.data() == src.data());
+    };
+}
+
+static_assert(!std::is_constructible<saga::span<int>, std::vector<double> &>{}, "");
+static_assert(!std::is_constructible<saga::span<int>, std::vector<int> const &>{}, "");
+static_assert(!std::is_constructible<saga::span<int const>, std::vector<double> const &>{}, "");
 
 TEST_CASE("span : copy ctor")
 {

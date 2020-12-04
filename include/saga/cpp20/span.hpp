@@ -42,11 +42,46 @@ namespace saga
     // @todo Должно быть inline
     constexpr std::ptrdiff_t dynamic_extent = -1;
 
+    namespace detail
+    {
+        template <class Pointer, std::ptrdiff_t extent>
+        struct span_base
+        {
+            span_base() = default;
+
+            constexpr span_base(Pointer data, std::ptrdiff_t size)
+             : ptr(data)
+            {
+                assert(size == extent);
+            }
+
+            Pointer ptr = nullptr;
+            static constexpr std::ptrdiff_t size = extent;
+        };
+
+        template <class Pointer>
+        struct span_base<Pointer, dynamic_extent>
+        {
+            span_base() = default;
+
+            constexpr span_base(Pointer data, std::ptrdiff_t size)
+             : ptr(data)
+             , size(size)
+            {}
+
+            Pointer ptr = nullptr;
+            std::ptrdiff_t size = 0;
+        };
+    }
+    // namespace detail
+
     template <class ElementType, std::ptrdiff_t Extent = dynamic_extent>
     class span
-     : detail::default_ctor_enabler<(Extent <= 0)>
-     , saga::rel_ops::enable_adl<span<ElementType, Extent>>
+     : saga::rel_ops::enable_adl<span<ElementType, Extent>>
+     , detail::default_ctor_enabler<(Extent <= 0)>
     {
+        using default_ctor_enabler = detail::default_ctor_enabler<(Extent <= 0)>;
+
     public:
         // Константы и типы
         using element_type = ElementType;
@@ -66,25 +101,34 @@ namespace saga
 
         // @todo Покрыть тестами, что этот конструктор должен быть constexpr
         span(pointer ptr, index_type count)
-         : data_(ptr)
-         , size_(count)
+         : default_ctor_enabler(0)
+         , base_(ptr, count)
         {}
 
         span(pointer first, pointer last)
-         : data_(first)
-         , size_(last - first)
+         : span(first, last - first)
         {}
 
-        template <std::size_t N>
+        /**
+        @todo Реализовать ограничения типа
+        */
+        template <std::size_t N,
+                  std::enable_if_t<extent == dynamic_extent || N == extent, bool> = true>
         span(element_type (&arr)[N]) noexcept
          : span(arr, N)
         {}
 
+        /**
+        @todo Реализовать ограничения типа
+        */
         template <std::size_t N>
         span(std::array<value_type, N> & arr) noexcept
          : span(arr.data(), N)
         {}
 
+        /**
+        @todo Реализовать ограничения типа
+        */
         template <std::size_t N>
         span(std::array<value_type, N> const & arr) noexcept
          : span(arr.data(), N)
@@ -93,7 +137,10 @@ namespace saga
         /**
         @todo Реализовать ограничения типа
         */
-        template <class Container>
+        template <class Container,
+                  std::enable_if_t<!std::is_const<Container>{}, bool> = true,
+                  std::enable_if_t<!std::is_array<Container>{}, bool> = true,
+                  std::enable_if_t<std::is_convertible<typename Container::value_type(*)[], element_type(*)[]>::value, bool> = true>
         span(Container & cont)
          : span(cont.data(), cont.size())
         {}
@@ -102,6 +149,7 @@ namespace saga
         @todo Реализовать ограничения типа
         */
         template <class Container,
+                  std::enable_if_t<!std::is_array<Container>{}, bool> = true,
                   std::enable_if_t<std::is_convertible<typename Container::value_type const(*)[], element_type(*)[]>::value, bool> = true>
         span(Container const & cont)
          : span(cont.data(), cont.size())
@@ -109,6 +157,9 @@ namespace saga
 
         span(span const & other) noexcept = default;
 
+        /**
+        @todo Реализовать ограничения типа
+        */
         template <class OtherElementType,
                   std::enable_if_t<std::is_convertible<OtherElementType(*)[], element_type(*)[]>::value, bool> = true>
         span(span<OtherElementType> const & other) noexcept
@@ -146,7 +197,7 @@ namespace saga
         // Свойства
         constexpr index_type size() const noexcept
         {
-            return this->size_;
+            return this->base_.size;
         }
 
         constexpr index_type size_bytes() const noexcept
@@ -169,7 +220,7 @@ namespace saga
 
         constexpr pointer data() const noexcept
         {
-            return this->data_;
+            return this->base_.ptr;
         }
 
         // Итераторы
@@ -214,9 +265,7 @@ namespace saga
         }
 
     private:
-        pointer data_ = nullptr;
-        // @todo Может быть не хранить это, когда Extent >= 0
-        index_type size_ = 0;
+        detail::span_base<pointer, Extent> base_{};
     };
 
     template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
