@@ -254,7 +254,6 @@ TEST_CASE("span : initialization from const contiguous container (vector)")
     };
 }
 
-// @todo Аналогичный тест для неконстантной строки (требует C++17 или обход константности data)
 TEST_CASE("span : ctor from const string")
 {
     saga_test::property_checker
@@ -266,6 +265,20 @@ TEST_CASE("span : ctor from const string")
         REQUIRE(s.data() == src.data());
     };
 }
+
+#if __cplusplus >= 201703L
+TEST_CASE("span : ctor from const string - C++17")
+{
+    saga_test::property_checker
+    << [](std::string src)
+    {
+        saga::span<char> const s(src);
+
+        REQUIRE(s.size() == src.size());
+        REQUIRE(s.data() == src.data());
+    };
+}
+#endif
 
 static_assert(!std::is_constructible<saga::span<int>, std::vector<double> &>{}, "");
 static_assert(!std::is_constructible<saga::span<int>, std::vector<int> const &>{}, "");
