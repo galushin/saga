@@ -20,7 +20,6 @@ SAGA -- это свободной программное обеспечение:
 
 /** @file saga/type_traits.hpp
  @brief Характеристики-типов
- @todo Проверить все характеристики: можно ли использовать идиому детектирования
 */
 
 #include <utility>
@@ -150,20 +149,15 @@ namespace saga
     {
         namespace swap_adl_ns
         {
-            template <class T, class U, class SFINAE = void>
-            struct is_swappable_with
-             : std::false_type
-            {};
-
             using std::swap;
 
             template <class T, class U>
-            using swap_enabler = void_t<decltype(swap(std::declval<T>(), std::declval<U>())),
+            using swap_void_t = void_t<decltype(swap(std::declval<T>(), std::declval<U>())),
                                         decltype(swap(std::declval<U>(), std::declval<T>()))>;
 
             template <class T, class U>
-            struct is_swappable_with<T, U, swap_enabler<T, U>>
-             : std::true_type
+            struct is_swappable_with
+             : saga::is_detected<swap_void_t, T, U>
             {};
 
             template <class T, class U, class SFINAE = void>
@@ -199,6 +193,7 @@ namespace saga
         {};
 
     }
+    // namespace detail
 
     template <class T, class U>
     struct is_swappable_with
