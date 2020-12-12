@@ -36,6 +36,7 @@
 		</Compiler>
 		<Unit filename="../include/saga/algorithm.hpp" />
 		<Unit filename="../include/saga/cpp20/span.hpp" />
+		<Unit filename="../include/saga/cursor/cursor_traits.hpp" />
 		<Unit filename="../include/saga/cursor/cycle.hpp" />
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
 		<Unit filename="../include/saga/detail/default_ctor_enabler.hpp" />
