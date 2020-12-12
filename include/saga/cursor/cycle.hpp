@@ -22,6 +22,8 @@ SAGA -- это свободной программное обеспечение:
  @brief Адаптор курсора, циклически проходящий базовый курсор
 */
 
+#include <saga/cursor/cursor_traits.hpp>
+
 #include <cassert>
 
 #include <utility>
@@ -33,8 +35,7 @@ namespace saga
     {
     public:
         // Типы
-        // @todo Через характеристику типов?
-        using reference = typename ForwardCursor::reference;
+        using reference = saga::cursor_reference<ForwardCursor>;
 
         // Создание, копирование, уничтожение
         explicit cycled_cursor(ForwardCursor cur)
