@@ -197,6 +197,7 @@ namespace detail
 
     template <class Container, class BackEnd>
     class generic_container_output_iterator
+     : private BackEnd
     {
         using Value = typename Container::value_type;
     public:
@@ -213,7 +214,7 @@ namespace detail
 
         template <class... Args>
         explicit generic_container_output_iterator(Container & container, Args &&... args)
-         : back_end_(std::forward<Args>(args)...)
+         : BackEnd(std::forward<Args>(args)...)
          , container_(std::addressof(container))
         {}
 
@@ -222,7 +223,7 @@ namespace detail
         generic_container_output_iterator & operator=(Arg && arg)
         {
             assert(this->container() != nullptr);
-            this->back_end_(*this->container(), std::forward<Arg>(arg));
+            this->back_end()(*this->container(), std::forward<Arg>(arg));
             return *this;
         }
 
@@ -244,8 +245,11 @@ namespace detail
         }
 
     private:
-        // @todo оптмизация пустого объекта
-        BackEnd back_end_ {};
+        BackEnd & back_end()
+        {
+            return *this;
+        }
+
         Container * container_ = nullptr;
     };
 
