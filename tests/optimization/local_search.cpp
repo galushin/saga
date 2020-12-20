@@ -105,6 +105,23 @@ TEST_CASE("local search (pseudoboolean, first improvement): number of unequal ad
     };
 }
 
+#include <list>
+
+TEST_CASE("local search (pseudoboolean, first improvement): number of unequal adjacent bits, on list")
+{
+    saga_test::property_checker << [](std::list<bool> const & x_init)
+    {
+        auto const objective = saga::count_adjacent_unequal;
+
+        auto const result = saga::local_search_boolean(objective, x_init, std::greater<>{});
+
+        CAPTURE(result.solution);
+        CAPTURE(result.objective_value);
+
+        REQUIRE(is_local_maximum(objective, result.solution));
+    };
+}
+
 TEST_CASE("local search (pseudoboolean, first improvement): number of unequal adjacent bits, mask")
 {
     using Argument = std::vector<bool>;
