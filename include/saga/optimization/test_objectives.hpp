@@ -57,16 +57,31 @@ namespace saga
 
     struct count_adjacent_unequal_fn
     {
-        // @todo Ослабить требования к аргументу
-        template <class Vector>
-        auto operator()(Vector const & arg) const
-        -> decltype(arg.size())
+        template <class Container>
+        auto operator()(Container const & arg) const
+        -> typename Container::size_type
         {
-            auto result = arg.size()*0;
+            using Size = typename Container::size_type;
+            auto result = Size(0);
 
-            for(auto i = 0*arg.size(); i+1 < arg.size(); ++ i)
+            using std::begin;
+            using std::end;
+            auto first = begin(arg);
+            auto const last = end(arg);
+
+            if(first == last)
             {
-                result += (arg[i] != arg[i+1]);
+                return result;
+            }
+
+            auto second = std::next(first);
+
+            for(; second != last;)
+            {
+                result += (*first != *second);
+
+                ++ first;
+                ++ second;
             }
 
             return result;
