@@ -68,8 +68,6 @@ namespace saga
         expected() = default;
         expected(expected const &) = default;
 
-        // @todo Не покрыт тестами
-        // @todo noexcept
         expected(expected &&) = default;
 
         template <class Arg,

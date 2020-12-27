@@ -27,8 +27,6 @@ SAGA -- это свободной программное обеспечение:
 /// @cond false
 namespace saga
 {
-    // @todo Покрыть тестами функции, не имеющие определения
-
     template <class Value, class Error>
     class expected;
 
