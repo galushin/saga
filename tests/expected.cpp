@@ -1232,23 +1232,14 @@ TEST_CASE("expected: placement constructor with initializer list")
     };
 }
 
+namespace
+{
+    using initializer_list_consumer = saga_test::init_by_reduce_initializer_list;
+}
+
 TEST_CASE("expected: placement constructor with initializer list and more args")
 {
     {
-        struct initializer_list_consumer
-        {
-            constexpr initializer_list_consumer(std::initializer_list<int> inits, int arg)
-             : value(arg)
-            {
-                for(auto const & each : inits)
-                {
-                    value += each;
-                }
-            }
-
-            int value = 0;
-        };
-
         constexpr saga::expected<initializer_list_consumer, long>
             obj(saga::in_place_t{}, {1, 2, 3, 4}, 5);
 
@@ -1463,20 +1454,6 @@ TEST_CASE("expected: unexpect_t constructor with initializer list")
 TEST_CASE("expected: unexpect constructor with initializer list and more args")
 {
     {
-        struct initializer_list_consumer
-        {
-            constexpr initializer_list_consumer(std::initializer_list<int> inits, int arg)
-             : value(arg)
-            {
-                for(auto const & each : inits)
-                {
-                    value += each;
-                }
-            }
-
-            int value = 0;
-        };
-
         constexpr saga::expected<long, initializer_list_consumer>
             obj(saga::unexpect, {1, 2, 3, 4}, 5);
 
@@ -1484,20 +1461,6 @@ TEST_CASE("expected: unexpect constructor with initializer list and more args")
         static_assert(obj.error().value == 15, "");
     }
     {
-        struct initializer_list_consumer
-        {
-            constexpr initializer_list_consumer(std::initializer_list<int> inits, int arg)
-             : value(arg)
-            {
-                for(auto const & each : inits)
-                {
-                    value += each;
-                }
-            }
-
-            int value = 0;
-        };
-
         constexpr saga::expected<void, initializer_list_consumer>
             obj(saga::unexpect, {1, 2, 3, 4}, 5);
 
@@ -2069,26 +2032,6 @@ TEST_CASE("expected<Value, Error>::emplace in error")
 TEST_CASE("expected<Value, Error>::emplace with initializer_list")
 {
     {
-        // @todo Устранить дублирование с другими случаями использования этого класса
-        struct initializer_list_consumer
-        {
-            constexpr initializer_list_consumer(std::initializer_list<int> inits, int arg)
-             : value(arg)
-            {
-                for(auto const & each : inits)
-                {
-                    value += each;
-                }
-            }
-
-            int value = 0;
-
-            bool operator==(initializer_list_consumer const & other) const
-            {
-                return this->value == other.value;
-            }
-        };
-
         using Value = initializer_list_consumer;
         using Error = long;
 

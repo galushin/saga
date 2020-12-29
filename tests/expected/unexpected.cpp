@@ -91,21 +91,7 @@ TEST_CASE("unexpected: placement constructor with initializer list")
 TEST_CASE("unexpected: placement constructor with initializer list and more args")
 {
     {
-        struct initializer_list_consumer
-        {
-            constexpr initializer_list_consumer(std::initializer_list<int> inits, int arg)
-             : value(arg)
-            {
-                for(auto const & each : inits)
-                {
-                    value += each;
-                }
-            }
-
-            int value = 0;
-        };
-
-        constexpr saga::unexpected<initializer_list_consumer>
+        constexpr saga::unexpected<saga_test::init_by_reduce_initializer_list>
             unex(saga::in_place_t{}, {1, 2, 3, 4}, 5);
 
         static_assert(unex.value().value == 15, "");

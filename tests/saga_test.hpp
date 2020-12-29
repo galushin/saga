@@ -436,6 +436,25 @@ namespace saga_test
     {
         friend void swap(not_swapable &, not_swapable &) = delete;
     };
+
+    struct init_by_reduce_initializer_list
+    {
+        constexpr init_by_reduce_initializer_list(std::initializer_list<int> inits, int arg)
+         : value(arg)
+        {
+            for(auto const & each : inits)
+            {
+                value += each;
+            }
+        }
+
+        int value = 0;
+
+        constexpr bool operator==(init_by_reduce_initializer_list const & other) const
+        {
+            return this->value == other.value;
+        }
+    };
 }
 // namespace saga_test
 
