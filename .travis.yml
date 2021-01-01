@@ -1,6 +1,7 @@
 sudo: required
 dist: trusty
 language: cpp
+if: commit_message != "cppcheck report added/updated"
 
 matrix:
     include:
@@ -59,7 +60,7 @@ matrix:
               sources:
                 - sourceline: "ppa:ubuntu-toolchain-r/test"
                 
-        # gcc 9 - gnu++17
+       # gcc 9 - gnu++14
         - env: GCC_VERSION=9 CPP_STD=gnu++17
           os: linux
           compiler: gcc-9
@@ -69,40 +70,7 @@ matrix:
                 - g++-9
               sources:
                 - sourceline: "ppa:ubuntu-toolchain-r/test"
-		
-		# gcc 10
-        - env: GCC_VERSION=10
-          os: linux
-          compiler: gcc-10
-          addons: &gcc10
-            apt:
-              packages:
-                - g++-10
-              sources:
-                - sourceline: "ppa:ubuntu-toolchain-r/test"
 
-		# gcc 10 - gnu++17
-        - env: GCC_VERSION=10 CPP_STD=gnu++17
-          os: linux
-          compiler: gcc-10
-          addons: &gcc10
-            apt:
-              packages:
-                - g++-10
-              sources:
-                - sourceline: "ppa:ubuntu-toolchain-r/test"
-
-		# gcc 10 - gnu++20
-        - env: GCC_VERSION=10 CPP_STD=gnu++20
-          os: linux
-          compiler: gcc-10
-          addons: &gcc10
-            apt:
-              packages:
-                - g++-10
-              sources:
-                - sourceline: "ppa:ubuntu-toolchain-r/test"
-	
 install:
     - if [ -n "$GCC_VERSION" ]; then export CXX="g++-${GCC_VERSION}" CC="gcc-${GCC_VERSION}"; fi
     - if [ "$GCC_VERSION" == 5 ]; then export CFLAGS="${CFLAGS} -std=gnu++14 -Wall"; fi
