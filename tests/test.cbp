@@ -82,7 +82,7 @@
 		<Unit filename="main.cpp" />
 		<Unit filename="makefile.gcc" />
 		<Unit filename="math/probability.cpp" />
-		<Unit filename="numeric/polynom.cpp" />
+		<Unit filename="numeric/polynomial.cpp" />
 		<Unit filename="optimization/ga.cpp" />
 		<Unit filename="optimization/local_search.cpp" />
 		<Unit filename="random/any_distribution.cpp" />

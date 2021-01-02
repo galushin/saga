@@ -33,9 +33,9 @@ OBJDIR_RELEASE = ./obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = ./bin/Release/test
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/expected.o $(OBJDIR_DEBUG)/expected/unexpected.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/numeric/polynom.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/string_view.o $(OBJDIR_DEBUG)/type_traits.o $(OBJDIR_DEBUG)/utility/as_const.o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o $(OBJDIR_DEBUG)/view/indices.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/expected.o $(OBJDIR_DEBUG)/expected/unexpected.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/numeric/polynomial.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/string_view.o $(OBJDIR_DEBUG)/type_traits.o $(OBJDIR_DEBUG)/utility/as_const.o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o $(OBJDIR_DEBUG)/view/indices.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/expected.o $(OBJDIR_RELEASE)/expected/unexpected.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/numeric/polynom.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/string_view.o $(OBJDIR_RELEASE)/type_traits.o $(OBJDIR_RELEASE)/utility/as_const.o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o $(OBJDIR_RELEASE)/view/indices.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/expected.o $(OBJDIR_RELEASE)/expected/unexpected.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/numeric/polynomial.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/string_view.o $(OBJDIR_RELEASE)/type_traits.o $(OBJDIR_RELEASE)/utility/as_const.o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o $(OBJDIR_RELEASE)/view/indices.o
 
 all: debug release
 
@@ -85,8 +85,8 @@ $(OBJDIR_DEBUG)/main.o: main.cpp
 $(OBJDIR_DEBUG)/math/probability.o: math/probability.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c math/probability.cpp -o $(OBJDIR_DEBUG)/math/probability.o
 
-$(OBJDIR_DEBUG)/numeric/polynom.o: numeric/polynom.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c numeric/polynom.cpp -o $(OBJDIR_DEBUG)/numeric/polynom.o
+$(OBJDIR_DEBUG)/numeric/polynomial.o: numeric/polynomial.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c numeric/polynomial.cpp -o $(OBJDIR_DEBUG)/numeric/polynomial.o
 
 $(OBJDIR_DEBUG)/optimization/ga.o: optimization/ga.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c optimization/ga.cpp -o $(OBJDIR_DEBUG)/optimization/ga.o
@@ -176,8 +176,8 @@ $(OBJDIR_RELEASE)/main.o: main.cpp
 $(OBJDIR_RELEASE)/math/probability.o: math/probability.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c math/probability.cpp -o $(OBJDIR_RELEASE)/math/probability.o
 
-$(OBJDIR_RELEASE)/numeric/polynom.o: numeric/polynom.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c numeric/polynom.cpp -o $(OBJDIR_RELEASE)/numeric/polynom.o
+$(OBJDIR_RELEASE)/numeric/polynomial.o: numeric/polynomial.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c numeric/polynomial.cpp -o $(OBJDIR_RELEASE)/numeric/polynomial.o
 
 $(OBJDIR_RELEASE)/optimization/ga.o: optimization/ga.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c optimization/ga.cpp -o $(OBJDIR_RELEASE)/optimization/ga.o
