@@ -26,9 +26,9 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
-    /** @todo Возможность настройки операции
+    /** @todo Возможность задания операций: умножения и сложения
     @todo Более точные ограничения типов
-    @todo Возможность не указывать тип Result
+    @todo Возможность не указывать тип Result - выводить из типа значения InputCursor
     */
     template <class Result, class InputCursor, class T>
     Result
