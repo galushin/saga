@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/math/probability.hpp>
+#include <saga/numeric/polynomial.hpp>
 #include <saga/optimization/ga/crossover/ga_boolean_crossover_one_point.hpp>
 #include <saga/optimization/ga/crossover/ga_boolean_crossover_two_point.hpp>
 #include <saga/optimization/ga/crossover/ga_boolean_crossover_uniform.hpp>
@@ -217,6 +218,12 @@ namespace saga
         }
 
         return population;
+    }
+
+    template <class Result, class InputCursor>
+    Result binary_sequence_to_integer(InputCursor cur)
+    {
+        return saga::polynomial_horner(std::move(cur), Result(2), Result(0));
     }
 }
 // namespace saga

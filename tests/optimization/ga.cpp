@@ -204,3 +204,27 @@ TEST_CASE("tournament_selection_distribution : equal to copy")
         REQUIRE(distr2 == distr1);
     };
 }
+
+TEST_CASE("binary code")
+{
+    using NotNegativeInteger = unsigned;
+
+    saga_test::property_checker << [](NotNegativeInteger value)
+    {
+        auto const base = 2;
+
+        std::vector<bool> bits;
+
+        for(auto num = value; num > 0; num /= base)
+        {
+            bits.push_back(num % base);
+        }
+
+        std::reverse(bits.begin(), bits.end());
+
+        auto const result
+            = saga::binary_sequence_to_integer<NotNegativeInteger>(saga::cursor::all(bits));
+
+        REQUIRE(result == value);
+    };
+}
