@@ -22,26 +22,33 @@ SAGA -- это свободной программное обеспечение:
  @brief Многочлены и алгоритмы для них
 */
 
+#include <saga/detail/static_empty_const.hpp>
+
 #include <iterator>
 
 namespace saga
 {
-    /** @todo Возможность задания операций: умножения и сложения
-    @todo Более точные ограничения типов
-    @todo Возможность не указывать тип Result - выводить из типа значения InputCursor
-    */
-    template <class Result, class InputCursor, class T>
-    Result
-    polynomial_horner(InputCursor cur, T const & arg)
+    struct polynomial_horner_fn
     {
-        auto result = Result(0);
-
-        for(; !!cur; ++ cur)
+    public:
+        template <class InputCursor, class T, class Result>
+        Result operator()(InputCursor cur, T const & arg, Result const & zero) const
         {
-            result = result * arg + *cur;
-        }
+            auto result = zero;
 
-        return result;
+            for(; !!cur; ++ cur)
+            {
+                result = std::move(result) * arg + *cur;
+            }
+
+            return result;
+        }
+    };
+
+    namespace
+    {
+        constexpr auto const & polynomial_horner
+            = saga::detail::static_empty_const<polynomial_horner_fn>::value;
     }
 }
 // namespace saga

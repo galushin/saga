@@ -44,7 +44,7 @@ TEST_CASE("polynomial_horner for binary code")
         std::reverse(bits.begin(), bits.end());
 
         auto const result
-            = saga::polynomial_horner<NotNegativeInteger>(saga::cursor::all(bits), base);
+            = saga::polynomial_horner(saga::cursor::all(bits), base, NotNegativeInteger(0));
 
         REQUIRE(result == value);
     };
