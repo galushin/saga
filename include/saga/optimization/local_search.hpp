@@ -27,7 +27,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/optimization/evaluated_solution.hpp>
 
 #include <functional>
-
+#include <vector>
 
 namespace saga
 {
@@ -64,6 +64,115 @@ namespace saga
             {
                 -- fails;
                 *pos = !*pos;
+            }
+        }
+
+        return {std::move(x_init), std::move(y_current)};
+    }
+
+    template <class Integer>
+    class search_space_integer
+    {
+        struct integer_variable_limits
+        {
+            integer_variable_limits(Integer min, Integer max)
+             : min(std::move(min))
+             , max(std::move(max))
+            {
+                assert(min <= max);
+            }
+
+            Integer min;
+            Integer max;
+        };
+
+        using Container = std::vector<integer_variable_limits>;
+
+    public:
+        using const_iterator = typename Container::const_iterator;
+        using index_type = typename Container::difference_type;
+
+        void add(Integer min, Integer max)
+        {
+            assert(min <= max);
+
+            this->variables_.emplace_back(min, max);
+        }
+
+        const_iterator begin() const
+        {
+            return this->variables_.begin();
+        }
+
+        const_iterator end() const
+        {
+            return this->variables_.end();
+        }
+
+        index_type dim() const
+        {
+            return this->variables_.size();
+        }
+
+        integer_variable_limits const & operator[](index_type index) const
+        {
+            return this->variables_[index];
+        }
+
+    private:
+        Container variables_;
+    };
+
+    /** @todo Унифицировать с булевым
+    @todo Использовать циклический индекс?
+    @todo Функция должна помещаться на экран
+    */
+    template <class SearchSpace, class Objective, class Argument>
+    auto local_search_integer(SearchSpace const & space, Objective objective, Argument x_init)
+    -> evaluated_solution<Argument, decltype(objective(x_init))>
+    {
+        auto const dim = space.dim();
+
+        auto y_current = objective(x_init);
+
+        auto pos = 0*dim;
+
+        for(auto fails_left = dim; fails_left > 0; pos = (pos + 1) % dim)
+        {
+            -- fails_left;
+
+            if(x_init[pos] < space[pos].max)
+            {
+                x_init[pos] += 1;
+
+                auto y_new = objective(x_init);
+
+                if(y_new < y_current)
+                {
+                    y_current = y_new;
+                    fails_left = dim;
+                }
+                else
+                {
+                    x_init[pos] -= 1;
+                }
+            }
+
+            if(fails_left != dim && x_init[pos] > space[pos].min)
+            {
+                x_init[pos] -= 1;
+
+                auto y_new = objective(x_init);
+
+                if(y_new < y_current)
+                {
+                    y_current = y_new;
+                    fails_left = dim;
+                }
+                else
+                {
+                    x_init[pos] += 1;
+                }
             }
         }
 
