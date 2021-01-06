@@ -143,7 +143,7 @@ namespace saga
 
             if(x_init[pos] < space[pos].max)
             {
-                x_init[pos] += 1;
+                ++x_init[pos];
 
                 auto y_new = objective(x_init);
 
@@ -154,13 +154,13 @@ namespace saga
                 }
                 else
                 {
-                    x_init[pos] -= 1;
+                    --x_init[pos];
                 }
             }
 
             if(fails_left != dim && x_init[pos] > space[pos].min)
             {
-                x_init[pos] -= 1;
+                --x_init[pos];
 
                 auto y_new = objective(x_init);
 
@@ -171,7 +171,7 @@ namespace saga
                 }
                 else
                 {
-                    x_init[pos] += 1;
+                    ++x_init[pos];
                 }
             }
         }

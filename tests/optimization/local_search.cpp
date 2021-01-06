@@ -188,8 +188,9 @@ TEST_CASE("local search (integer) : L1 norm")
 
         for(auto num = dim.value; num > 0; --num)
         {
-            // @todo Настраивать границы случайным образом, потребует переопределения оптимума
-            space.add(-20, 20);
+            auto const limits = std::minmax(saga_test::random_uniform(-20, 20),
+                                            saga_test::random_uniform(-20, 20));
+            space.add(limits.first, limits.second);
         }
 
         Argument const x_opt = [&]()
@@ -198,8 +199,19 @@ TEST_CASE("local search (integer) : L1 norm")
             Argument result;
             for(auto const & var : space)
             {
-                using std::abs;
-                result.push_back(0);
+                // @todo Рефакторинг
+                if(var.min > 0)
+                {
+                    result.push_back(var.min);
+                }
+                else if(var.max < 0)
+                {
+                    result.push_back(var.max);
+                }
+                else
+                {
+                    result.emplace_back(0);
+                }
             }
             return result;
         }();
