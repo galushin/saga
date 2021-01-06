@@ -127,10 +127,13 @@ namespace saga
     @todo Использовать циклический индекс?
     @todo Функция должна помещаться на экран
     */
-    template <class SearchSpace, class Objective, class Argument>
-    auto local_search_integer(SearchSpace const & space, Objective objective, Argument x_init)
+    template <class SearchSpace, class Objective, class Argument, class Compare = std::less<>>
+    auto local_search_integer(SearchSpace const & space, Objective objective, Argument x_init,
+                              Compare cmp = Compare())
     -> evaluated_solution<Argument, decltype(objective(x_init))>
     {
+        assert(static_cast<std::size_t>(space.dim()) == x_init.size());
+
         auto const dim = space.dim();
 
         auto y_current = objective(x_init);
@@ -141,13 +144,13 @@ namespace saga
         {
             -- fails_left;
 
-            if(x_init[pos] < space[pos].max)
+            if(x_init[pos] != space[pos].max)
             {
                 ++x_init[pos];
 
                 auto y_new = objective(x_init);
 
-                if(y_new < y_current)
+                if(cmp(y_new, y_current))
                 {
                     y_current = y_new;
                     fails_left = dim;
@@ -158,13 +161,13 @@ namespace saga
                 }
             }
 
-            if(fails_left != dim && x_init[pos] > space[pos].min)
+            if(fails_left != dim && x_init[pos] != space[pos].min)
             {
                 --x_init[pos];
 
                 auto y_new = objective(x_init);
 
-                if(y_new < y_current)
+                if(cmp(y_new, y_current))
                 {
                     y_current = y_new;
                     fails_left = dim;
