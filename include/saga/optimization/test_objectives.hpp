@@ -64,10 +64,8 @@ namespace saga
             using Size = typename Container::size_type;
             auto result = Size(0);
 
-            using std::begin;
-            using std::end;
-            auto first = begin(arg);
-            auto const last = end(arg);
+            auto first = saga::begin(arg);
+            auto const last = saga::end(arg);
 
             if(first == last)
             {
@@ -88,6 +86,29 @@ namespace saga
         }
     };
 
+    struct manhattan_norm_fn
+    {
+    public:
+        /** @todo Возможность заменить abs на другую операцию? Возможно, за счёт этого можно будет
+        выразить и булеву версию тоже!
+        */
+        template <class Argument>
+        auto operator()(Argument const & arg) const
+        {
+            // @todo Функциональный объект для abs
+            using std::abs;
+            auto result = abs(typename Argument::value_type(0));
+
+            // @todo Заменить цикл на алгоритм (подумать, в каком имеено варианте)
+            for(auto const & each : arg)
+            {
+                result += abs(each);
+            }
+
+            return result;
+        };
+    };
+
     namespace
     {
         constexpr auto const & boolean_manhattan_norm
@@ -98,6 +119,9 @@ namespace saga
 
         constexpr auto const & count_adjacent_unequal
             = detail::static_empty_const<count_adjacent_unequal_fn>::value;
+
+        constexpr auto const & manhattan_norm
+            = detail::static_empty_const<manhattan_norm_fn>::value;
     }
 }
 // namespace saga

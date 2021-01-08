@@ -26,27 +26,30 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/optimization/test_objectives.hpp>
 #include <saga/random/iid_distribution.hpp>
 
-template <class Objective, class Argument>
-bool is_local_maximum(Objective const & objective, Argument const & arg)
+namespace
 {
-    auto const y_arg = objective(arg);
-    auto x = arg;
-
-    for(auto i = x.begin(); i != x.end(); ++ i)
+    template <class Objective, class Argument>
+    bool is_local_maximum_binary(Objective const & objective, Argument const & arg)
     {
-        *i = !*i;
+        auto const y_arg = objective(arg);
+        auto x = arg;
 
-        auto const y = objective(x);
-
-        if(y > y_arg)
+        for(auto i = x.begin(); i != x.end(); ++ i)
         {
-            return false;
+            *i = !*i;
+
+            auto const y = objective(x);
+
+            if(y > y_arg)
+            {
+                return false;
+            }
+
+            *i = !*i;
         }
 
-        *i = !*i;
+        return true;
     }
-
-    return true;
 }
 
 TEST_CASE("local search (pseudoboolen, first improvement) : L1 norm")
@@ -101,7 +104,7 @@ TEST_CASE("local search (pseudoboolean, first improvement): number of unequal ad
         CAPTURE(result.solution);
         CAPTURE(result.objective_value);
 
-        REQUIRE(is_local_maximum(objective, result.solution));
+        REQUIRE(is_local_maximum_binary(objective, result.solution));
     };
 }
 
@@ -118,7 +121,7 @@ TEST_CASE("local search (pseudoboolean, first improvement): number of unequal ad
         CAPTURE(result.solution);
         CAPTURE(result.objective_value);
 
-        REQUIRE(is_local_maximum(objective, result.solution));
+        REQUIRE(is_local_maximum_binary(objective, result.solution));
     };
 }
 
@@ -150,6 +153,146 @@ TEST_CASE("local search (pseudoboolean, first improvement): number of unequal ad
         CAPTURE(result.solution);
         CAPTURE(result.objective_value);
 
-        REQUIRE(is_local_maximum(objective, result.solution));
+        REQUIRE(is_local_maximum_binary(objective, result.solution));
+    };
+}
+
+// @todo Тест должен влезать на один экран
+TEST_CASE("local search (integer) : L1 norm minimization")
+{
+    using Integer = int;
+    using Argument = std::vector<Integer>;
+
+    saga_test::property_checker << [](saga_test::container_size<Argument::size_type> const dim)
+    {
+        auto const objective = saga::manhattan_norm;
+
+        // @todo Сократить запись создания пространства поиска и случайного вектора из него
+        // Cлучайным образом выбираем область поиска
+        saga::search_space_integer<Integer> space;
+
+        for(auto num = dim.value; num > 0; --num)
+        {
+            auto const limits = std::minmax(saga_test::random_uniform(-20, 20),
+                                            saga_test::random_uniform(-20, 20));
+            space.add(limits.first, limits.second);
+        }
+
+        // Определяем точку оптимума
+        Argument const x_opt = [&]()
+        {
+            // @todo Заменить на алгоритм
+            Argument result;
+            for(auto const & var : space)
+            {
+                // @todo Рефакторинг
+                if(var.min > 0)
+                {
+                    result.push_back(var.min);
+                }
+                else if(var.max < 0)
+                {
+                    result.push_back(var.max);
+                }
+                else
+                {
+                    result.emplace_back(0);
+                }
+            }
+            return result;
+        }();
+
+        auto const y_opt = objective(x_opt);
+
+        // Случайным образом выбираем стартовый вектор
+        Argument const x_init = [&]()
+        {
+            // @todo Заменить на алгоритм
+            Argument result;
+            for(auto const & var : space)
+            {
+                result.push_back(saga_test::random_uniform(var.min, var.max));
+            }
+            return result;
+        }();
+
+        // Выполняем локальный спуск
+        auto const result = saga::local_search_integer(space, objective, x_init);
+
+        // Проверяем результаты
+        CAPTURE(x_init);
+
+        REQUIRE(result.solution == x_opt);
+        REQUIRE(result.objective_value == y_opt);
+        REQUIRE(result.objective_value == objective(result.solution));
+    };
+}
+
+// @todo Тест должен влезать на один экран
+TEST_CASE("local search (integer) : L1 norm maximization")
+{
+    using Integer = int;
+    using Argument = std::vector<Integer>;
+
+    saga_test::property_checker << [](saga_test::container_size<Argument::size_type> const dim)
+    {
+        auto const objective = saga::manhattan_norm;
+
+        // @todo Сократить запись создания пространства поиска и случайного вектора из него
+        // Cлучайным образом выбираем область поиска
+        saga::search_space_integer<Integer> space;
+
+        for(auto num = dim.value; num > 0; --num)
+        {
+            // Чтобы задача была одноэкстремальной, границы не должны быть одного знака!
+            auto lim1 = saga_test::random_uniform(0, 10);
+            auto lim2 = lim1 + saga_test::random_uniform(0, 10);
+
+            if(std::bernoulli_distribution(0.5)(saga_test::random_engine()))
+            {
+                space.add(lim1, lim2);
+            }
+            else
+            {
+                space.add(-lim2, -lim1);
+            }
+        }
+
+        // Определяем точку оптимума
+        Argument const x_opt = [&]()
+        {
+            // @todo Заменить на алгоритм
+            Argument result;
+            for(auto const & var : space)
+            {
+                using std::abs;
+                result.emplace_back(abs(var.max) < abs(var.min) ? var.min : var.max);
+            }
+            return result;
+        }();
+
+        auto const y_opt = objective(x_opt);
+
+        // Случайным образом выбираем стартовый вектор
+        Argument const x_init = [&]()
+        {
+            // @todo Заменить на алгоритм
+            Argument result;
+            for(auto const & var : space)
+            {
+                result.push_back(saga_test::random_uniform(var.min, var.max));
+            }
+            return result;
+        }();
+
+        // Выполняем локальный спуск
+        auto const result = saga::local_search_integer(space, objective, x_init, std::greater<>{});
+
+        // Проверяем результаты
+        CAPTURE(x_init);
+
+        REQUIRE(result.solution == x_opt);
+        REQUIRE(result.objective_value == y_opt);
+        REQUIRE(result.objective_value == objective(result.solution));
     };
 }
