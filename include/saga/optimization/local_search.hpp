@@ -123,10 +123,54 @@ namespace saga
         Container variables_;
     };
 
-    /** @todo Унифицировать с булевым
-    @todo Использовать циклический индекс?
-    @todo Функция должна помещаться на экран
-    */
+    namespace detail
+    {
+        // @todo В библиотеку
+        struct increment_action
+        {
+        public:
+            template <class Arg>
+            Arg & operator()(Arg & arg) const
+            {
+                ++ arg;
+                return arg;
+            }
+        };
+
+        // @todo В библиотеку
+        struct decrement_action
+        {
+        public:
+            template <class Arg>
+            Arg & operator()(Arg & arg) const
+            {
+                -- arg;
+                return arg;
+            }
+        };
+
+        template <class Objective, class Compare, class Argument, class Index, class ObjectiveValue,
+                  class FailsCounter, class Action, class UndoAction>
+        void LS_probe(Objective objective, Compare cmp, Argument & x_cur, Index pos,
+                      ObjectiveValue & y_current, FailsCounter & fails_left,
+                      Action action, UndoAction undo_action)
+        {
+            action(x_cur[pos]);
+
+            auto y_new = objective(x_cur);
+
+            if(cmp(y_new, y_current))
+            {
+                y_current = y_new;
+                fails_left = x_cur.size();
+            }
+            else
+            {
+                undo_action(x_cur[pos]);
+            }
+        }
+    }
+
     template <class SearchSpace, class Objective, class Argument, class Compare = std::less<>>
     auto local_search_integer(SearchSpace const & space, Objective objective, Argument x_init,
                               Compare cmp = Compare())
@@ -140,42 +184,22 @@ namespace saga
 
         auto pos = 0*dim;
 
+        // @todo Использовать pos = saga::cursor::make_cycled(saga::cursor::indicies_of(x_init))
+        // @todo Выделить класс счётчика: инициализация, достиг конца, сброс?
         for(auto fails_left = dim; fails_left > 0; pos = (pos + 1) % dim)
         {
             -- fails_left;
 
             if(x_init[pos] != space[pos].max)
             {
-                ++x_init[pos];
-
-                auto y_new = objective(x_init);
-
-                if(cmp(y_new, y_current))
-                {
-                    y_current = y_new;
-                    fails_left = dim;
-                }
-                else
-                {
-                    --x_init[pos];
-                }
+                detail::LS_probe(objective, cmp, x_init, pos, y_current, fails_left,
+                                 detail::increment_action{}, detail::decrement_action{});
             }
 
             if(fails_left != dim && x_init[pos] != space[pos].min)
             {
-                --x_init[pos];
-
-                auto y_new = objective(x_init);
-
-                if(cmp(y_new, y_current))
-                {
-                    y_current = y_new;
-                    fails_left = dim;
-                }
-                else
-                {
-                    ++x_init[pos];
-                }
+                detail::LS_probe(objective, cmp, x_init, pos, y_current, fails_left,
+                                 detail::decrement_action{}, detail::increment_action{});
             }
         }
 
