@@ -86,23 +86,33 @@ namespace saga
         }
     };
 
+    namespace detail
+    {
+        // @todo В библиотеку
+        struct absolute_value
+        {
+            template <class Arg>
+            auto operator()(Arg const & arg) const
+            {
+                using std::abs;
+                return abs(arg);
+            }
+        };
+    }
+
     struct manhattan_norm_fn
     {
     public:
-        /** @todo Возможность заменить abs на другую операцию? Возможно, за счёт этого можно будет
-        выразить и булеву версию тоже!
-        */
-        template <class Argument>
-        auto operator()(Argument const & arg) const
+        template <class Argument, class Abs = detail::absolute_value>
+        auto operator()(Argument const & arg, Abs abs_fun = Abs()) const
         {
-            // @todo Функциональный объект для abs
             using std::abs;
-            auto result = abs(typename Argument::value_type(0));
+            auto result = abs_fun(typename Argument::value_type(0));
 
             // @todo Заменить цикл на алгоритм (подумать, в каком имеено варианте)
             for(auto const & each : arg)
             {
-                result += abs(each);
+                result += abs_fun(each);
             }
 
             return result;

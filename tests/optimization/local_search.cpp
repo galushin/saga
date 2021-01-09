@@ -157,6 +157,22 @@ TEST_CASE("local search (pseudoboolean, first improvement): number of unequal ad
     };
 }
 
+namespace
+{
+    template <class Argument, class SearchSpace>
+    Argument random_point_of(SearchSpace const & space)
+    {
+        Argument result;
+        std::transform(space.begin(), space.end(), std::back_inserter(result),
+                       [](typename SearchSpace::value_type const & var)
+                       {
+                            return saga_test::random_uniform(var.min, var.max);
+                       });
+
+        return result;
+    };
+}
+
 // @todo Тест должен влезать на один экран
 TEST_CASE("local search (integer) : L1 norm minimization")
 {
@@ -167,7 +183,6 @@ TEST_CASE("local search (integer) : L1 norm minimization")
     {
         auto const objective = saga::manhattan_norm;
 
-        // @todo Сократить запись создания пространства поиска и случайного вектора из него
         // Cлучайным образом выбираем область поиска
         saga::search_space_integer<Integer> space;
 
@@ -205,16 +220,7 @@ TEST_CASE("local search (integer) : L1 norm minimization")
         auto const y_opt = objective(x_opt);
 
         // Случайным образом выбираем стартовый вектор
-        Argument const x_init = [&]()
-        {
-            // @todo Заменить на алгоритм
-            Argument result;
-            for(auto const & var : space)
-            {
-                result.push_back(saga_test::random_uniform(var.min, var.max));
-            }
-            return result;
-        }();
+        auto const x_init = ::random_point_of<Argument>(space);
 
         // Выполняем локальный спуск
         auto const result = saga::local_search_integer(space, objective, x_init);
@@ -238,9 +244,9 @@ TEST_CASE("local search (integer) : L1 norm maximization")
     {
         auto const objective = saga::manhattan_norm;
 
-        // @todo Сократить запись создания пространства поиска и случайного вектора из него
         // Cлучайным образом выбираем область поиска
-        saga::search_space_integer<Integer> space;
+        using SearchSpace = saga::search_space_integer<Integer>;
+        SearchSpace space;
 
         for(auto num = dim.value; num > 0; --num)
         {
@@ -274,16 +280,7 @@ TEST_CASE("local search (integer) : L1 norm maximization")
         auto const y_opt = objective(x_opt);
 
         // Случайным образом выбираем стартовый вектор
-        Argument const x_init = [&]()
-        {
-            // @todo Заменить на алгоритм
-            Argument result;
-            for(auto const & var : space)
-            {
-                result.push_back(saga_test::random_uniform(var.min, var.max));
-            }
-            return result;
-        }();
+        auto const x_init = ::random_point_of<Argument>(space);
 
         // Выполняем локальный спуск
         auto const result = saga::local_search_integer(space, objective, x_init, std::greater<>{});
