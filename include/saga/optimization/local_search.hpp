@@ -89,6 +89,7 @@ namespace saga
         using Container = std::vector<integer_variable_limits>;
 
     public:
+        using value_type = typename Container::value_type;
         using const_iterator = typename Container::const_iterator;
         using index_type = typename Container::difference_type;
 
