@@ -1,0 +1,25 @@
+name: test
+
+on:
+  push:
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: build-and-test
+        env:
+          CXX: "g++"
+          CC: "gcc"
+          CFLAGS: "-Wall -std=gnu++14"
+        run: |
+           cd ./tests
+           make -f makefile.gcc debug && ./bin/Debug/test
+           make -f makefile.gcc release && ./bin/Release/test
