@@ -1,9 +1,7 @@
 # SAGA
 Самонастраивающиеся генетические алгоритмы
 
-Статус основной ветки (master):
-
-* GNU/linux+gcc: [![Build Status](https://travis-ci.com/galushin/saga.svg?branch=master)](https://travis-ci.com/galushin/saga)
+Статус основной ветки: ![Статус основной ветки](https://github.com/galushin/saga/workflows/test/badge.svg?branch=master)
 
 Отказ от ответственности
 ----
