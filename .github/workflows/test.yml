@@ -19,7 +19,10 @@ jobs:
           CXX: "g++"
           CC: "gcc"
           CFLAGS: "-Wall -std=gnu++14"
+        
         run: |
-           cd ./tests
-           make -f makefile.gcc debug && ./bin/Debug/test
-           make -f makefile.gcc release && ./bin/Release/test
+          g++ -v
+          
+          cd ./tests
+          make -f makefile.gcc debug && ./bin/Debug/test
+          make -f makefile.gcc release && ./bin/Release/test
