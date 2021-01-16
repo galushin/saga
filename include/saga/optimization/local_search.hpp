@@ -24,6 +24,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/cursor/cycle.hpp>
 #include <saga/cursor/subrange.hpp>
+#include <saga/functional.hpp>
 #include <saga/optimization/evaluated_solution.hpp>
 
 #include <functional>
@@ -126,30 +127,6 @@ namespace saga
 
     namespace detail
     {
-        // @todo В библиотеку
-        struct increment_action
-        {
-        public:
-            template <class Arg>
-            Arg & operator()(Arg & arg) const
-            {
-                ++ arg;
-                return arg;
-            }
-        };
-
-        // @todo В библиотеку
-        struct decrement_action
-        {
-        public:
-            template <class Arg>
-            Arg & operator()(Arg & arg) const
-            {
-                -- arg;
-                return arg;
-            }
-        };
-
         template <class Objective, class Compare, class Argument, class Index, class ObjectiveValue,
                   class FailsCounter, class Action, class UndoAction>
         void LS_probe(Objective objective, Compare cmp, Argument & x_cur, Index pos,
@@ -194,13 +171,13 @@ namespace saga
             if(x_init[pos] != space[pos].max)
             {
                 detail::LS_probe(objective, cmp, x_init, pos, y_current, fails_left,
-                                 detail::increment_action{}, detail::decrement_action{});
+                                 saga::increment<>{}, saga::decrement<>{});
             }
 
             if(fails_left != dim && x_init[pos] != space[pos].min)
             {
                 detail::LS_probe(objective, cmp, x_init, pos, y_current, fails_left,
-                                 detail::decrement_action{}, detail::increment_action{});
+                                 saga::decrement<>{}, saga::increment<>{});
             }
         }
 
