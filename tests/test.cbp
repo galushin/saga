@@ -45,6 +45,7 @@
 		<Unit filename="../include/saga/expected/bad_expected_access.hpp" />
 		<Unit filename="../include/saga/expected/detail.hpp" />
 		<Unit filename="../include/saga/expected/unexpected.hpp" />
+		<Unit filename="../include/saga/functional.hpp" />
 		<Unit filename="../include/saga/iterator.hpp" />
 		<Unit filename="../include/saga/iterator/reverse.hpp" />
 		<Unit filename="../include/saga/math/probability.hpp" />
@@ -77,6 +78,7 @@
 		<Unit filename="cpp20/span.cpp" />
 		<Unit filename="expected.cpp" />
 		<Unit filename="expected/unexpected.cpp" />
+		<Unit filename="functional.cpp" />
 		<Unit filename="iterator.cpp" />
 		<Unit filename="iterator/reverse.cpp" />
 		<Unit filename="main.cpp" />
