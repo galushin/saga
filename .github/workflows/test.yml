@@ -14,10 +14,31 @@ jobs:
     strategy:
       matrix:
         config:
+          # GCC
           - {
               name: "Linux GCC default",
               CC: "gcc", 
               CXX: "g++",
+            }
+          - {
+              name: "Linux GCC 7",
+              CC: "gcc-7", 
+              CXX: "g++-7",
+            }
+          - {
+              name: "Linux GCC 8",
+              CC: "gcc-8", 
+              CXX: "g++-8",
+            }
+          - {
+              name: "Linux GCC 9",
+              CC: "gcc-9", 
+              CXX: "g++-9",
+            }
+          - {
+              name: "Linux GCC 10",
+              CC: "gcc-10", 
+              CXX: "g++-10",
             }
 
     steps:
