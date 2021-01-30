@@ -1,4 +1,4 @@
-/* (c) 2019 СибЮИ МВД России.
+/* (c) 2019-2021 СибЮИ МВД России.
 Данный файл -- часть программы "Локальный поиск псевдо-булевой оптимзиации"
 Никакие гарантии не предоставляются, в том числе гарантия пригодности для любой конкретной цели.
 Автор: Галушин Павел Викторович, galushin@gmail.com
@@ -23,31 +23,60 @@ argv[3] Целое положительное: размерность векто
 argv[4] Строка (необязательный): цель оптимзиации (должно быть min или max)
 */
 
+// @todo Проверка дублирования имён функций. Могут ли быть функции с разными сигнатурами, но одним именем?
 class my_function_manager
  : public saga::function_manager
 {
 public:
-    using Signature = saga::pseudo_boolean_objective_signature;
+    using BooleanSignature = saga::pseudo_boolean_objective_signature;
+    using IntegerSignature = saga::integer_objective_signature;
+
     using Name = std::string;
 
-    std::function<Signature> at(Name const & name) const
+    std::function<BooleanSignature> get_boolean(Name const & name) const
     {
-        return {this->functions_.at(name)};
+        auto ptr = this->boolean_functions_.find(name);
+
+        if(ptr != boolean_functions_.end())
+        {
+            return {ptr->second};
+        }
+        else
+        {
+            return {};
+        }
     }
 
 protected:
-    void do_add(Signature * fun, Name const & name) override
+    void do_add(BooleanSignature * fun, Name const & name) override
     {
-        functions_[name] = fun;
+        boolean_functions_[name] = fun;
+    }
+
+    void do_add(IntegerSignature * fun, Name const & name) override
+    {
+        integer_functions_[name] = fun;
     }
 
 private:
-    std::map<Name, Signature*> functions_;
+    std::map<Name, BooleanSignature *> boolean_functions_;
+    std::map<Name, IntegerSignature *> integer_functions_;
 };
+
+template <class OStream, class InputRange, class RealType>
+void print_optimization_state(OStream & out, InputRange const & solution, RealType objective_value)
+{
+    using Value = typename std::iterator_traits<decltype(std::begin(solution))>::value_type;
+    using OutType = std::conditional_t<std::is_same<Value, bool>{}, int, Value>;
+
+    std::copy(std::begin(solution), std::end(solution), std::ostream_iterator<OutType>(out));
+    out << "\t" << objective_value << "\n";
+}
 
 int main(int argc, char * argv[])
 {
     // Чтение аргументов
+    // @todo Для целочисленной задачи оптимизации нужно задавать границы изменения переменных
     if(argc < 4)
     {
         std::cout << "This program needs at least 3 parameters:\n"
@@ -91,29 +120,35 @@ int main(int argc, char * argv[])
 
     plugin->init(manager);
 
-    saga::iid_distribution<std::bernoulli_distribution, std::valarray<bool>> init_distr(dim);
-
-    auto objective_impl = manager.at(objective_name);
-    auto objective = [&](std::valarray<bool> const & arg)
+    if(auto objective_impl = manager.get_boolean(objective_name))
+    // @todo Вынести в отдельную функцию
     {
-        saga::boolean_const_span s(arg.size() == 0 ? nullptr : std::addressof(arg[0]), arg.size());
-        return objective_impl(s);
-    };
+        auto objective = [&](std::valarray<bool> const & arg)
+        {
+            saga::boolean_const_span s(arg.size() == 0 ? nullptr : std::addressof(arg[0]), arg.size());
 
-    std::seed_seq seed{std::time(nullptr)};
-    std::mt19937 random_engine(seed);
+            return objective_impl(s);
+        };
 
-    auto const x_init = init_distr(random_engine);
-    std::copy(std::begin(x_init), std::end(x_init), std::ostream_iterator<int>(std::cout));
-    std::cout << "\t" << objective(x_init) << "\n";
+        std::seed_seq seed{std::time(nullptr)};
+        std::mt19937 random_engine(seed);
 
-    auto const result =
-        (goal == "min") ? saga::local_search_boolean(objective, x_init)
-                        : saga::local_search_boolean(objective, x_init, std::greater<>{});
+        saga::iid_distribution<std::bernoulli_distribution, std::valarray<bool>> init_distr(dim);
+        auto const x_init = init_distr(random_engine);
 
-    std::copy(std::begin(result.solution), std::end(result.solution),
-              std::ostream_iterator<int>(std::cout));
-    std::cout << "\t" << result.objective_value << "\n";
+        print_optimization_state(std::cout, x_init, objective(x_init));
+
+        auto const result =
+            (goal == "min") ? saga::local_search_boolean(objective, x_init)
+                            : saga::local_search_boolean(objective, x_init, std::greater<>{});
+
+        print_optimization_state(std::cout, result.solution, result.objective_value);
+    }
+    // @todo Обрабатывать функции с целочисленными переменными
+    else
+    {
+        std::cout << "Unknown objective name:" << objective_name << "\n";
+    }
 
     return 0;
 }
