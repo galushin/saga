@@ -9,19 +9,14 @@
 #include <saga/random/iid_distribution.hpp>
 
 #include <boost/dll/import.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 
 #include <iostream>
 #include <map>
 #include <random>
 #include <string>
 #include <valarray>
-
-/*
-argv[1] Строка: имя динамической библиотеки, которую нужно загрузить
-argv[2] Строка: имя целевой функции из библиотеки argv[1]
-argv[3] Целое положительное: размерность вектора аргумента,
-argv[4] Строка (необязательный): цель оптимзиации (должно быть min или max)
-*/
 
 // @todo Проверка дублирования имён функций. Могут ли быть функции с разными сигнатурами, но одним именем?
 class my_function_manager
@@ -73,41 +68,39 @@ void print_optimization_state(OStream & out, InputRange const & solution, RealTy
     out << "\t" << objective_value << "\n";
 }
 
+namespace pt = boost::property_tree;
+
 int main(int argc, char * argv[])
 {
     // Чтение аргументов
     // @todo Для целочисленной задачи оптимизации нужно задавать границы изменения переменных
-    if(argc < 4)
+    if(argc < 2)
     {
-        std::cout << "This program needs at least 3 parameters:\n"
-            << "1. path to dynamic lybrary, implementing SAGA function plugin\n"
-            << "2. objective function name\n"
-            << "3. dimension (positive integer)\n";
+        std::cout << "This program needs parameter:\n"
+            << "path to file with problem description\n";
         return 0;
     }
 
-    boost::dll::fs::path const lib_path(argv[1]);
+    // @todo Проверить, что файл существует
+    pt::ptree problem_tree;
+    pt::read_xml(argv[1], problem_tree);
 
-    std::string const objective_name(argv[2]);
+    boost::dll::fs::path const lib_path(problem_tree.get<std::string>("problem.plugin"));
 
-    auto const dim = std::atoi(argv[3]);
+    auto const objective_name(problem_tree.get<std::string>("problem.objective"));
 
-    if(dim < 0)
+    auto const bool_dim = problem_tree.get("problem.boolean_dimension", 0);
+
+    if(bool_dim < 0)
     {
-        std::cout << "Dimension must be positive integer, but it's equal to " << dim << "\n";
-        return 1;
+        std::cout << "Dimension must be non negative, but it was: " << bool_dim << "\n";
     }
 
-    std::string goal("min");
-
-    if(argc >= 5)
-    {
-        goal = argv[4];
-    }
+    auto const goal = problem_tree.get("problem.goal", std::string("min"));
 
     if(goal != "min" && goal != "max")
     {
-        std::cout << "4th argument must be optimization goal: 'min' or 'max'\n"
+        std::cout << "Optimization goal must be 'min' or 'max'\n"
                   << "but it was: '" << goal << "'\n";
         return 1;
     }
@@ -120,9 +113,17 @@ int main(int argc, char * argv[])
 
     plugin->init(manager);
 
-    if(auto objective_impl = manager.get_boolean(objective_name))
-    // @todo Вынести в отдельную функцию
+    if(bool_dim > 0)
     {
+    // @todo Вынести в отдельную функцию
+        auto objective_impl = manager.get_boolean(objective_name);
+
+        if(!objective_impl)
+        {
+            std::cout << "Unknown objective name: " << objective_name << "\n";
+            return 1;
+        }
+
         auto objective = [&](std::valarray<bool> const & arg)
         {
             saga::boolean_const_span s(arg.size() == 0 ? nullptr : std::addressof(arg[0]), arg.size());
@@ -133,7 +134,7 @@ int main(int argc, char * argv[])
         std::seed_seq seed{std::time(nullptr)};
         std::mt19937 random_engine(seed);
 
-        saga::iid_distribution<std::bernoulli_distribution, std::valarray<bool>> init_distr(dim);
+        saga::iid_distribution<std::bernoulli_distribution, std::valarray<bool>> init_distr(bool_dim);
         auto const x_init = init_distr(random_engine);
 
         print_optimization_state(std::cout, x_init, objective(x_init));
@@ -147,7 +148,8 @@ int main(int argc, char * argv[])
     // @todo Обрабатывать функции с целочисленными переменными
     else
     {
-        std::cout << "Unknown objective name:" << objective_name << "\n";
+        std::cout << "Unknown problem type\n";
+        return 1;
     }
 
     return 0;

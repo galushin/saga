@@ -11,7 +11,7 @@
 				<Option object_output="./obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="sampleDLL.dll manhattan_norm 20" />
+				<Option parameters="problem_boolean.txt" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
@@ -21,7 +21,7 @@
 				<Option object_output="./obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="sampleDLL.dll manhattan_norm 20 max" />
+				<Option parameters="problem_int.txt" />
 				<Compiler>
 					<Add option="-O2" />
 				</Compiler>
@@ -40,6 +40,7 @@
 			<Add option="-fexceptions" />
 			<Add directory="../../contrib/boost_1_72_0" />
 			<Add directory="../../include" />
+			<Add directory="C:/DevTools/boost_1_72_0" />
 		</Compiler>
 		<Unit filename="../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp">
 			<Option target="Debug" />
