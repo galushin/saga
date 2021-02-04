@@ -1,4 +1,4 @@
-/* (c) 2019 СибЮИ МВД России.
+/* (c) 2019-2021 СибЮИ МВД России.
 Данный файл -- часть программы "Локальный поиск псевдо-булевой оптимзиации"
 Никакие гарантии не предоставляются, в том числе гарантия пригодности для любой конкретной цели.
 Автор: Галушин Павел Викторович, galushin@gmail.com
@@ -16,13 +16,21 @@ namespace saga
 {
     using objective_value_type = double;
     using boolean_const_span = saga::span<bool const>;
+    using integer_const_span = saga::span<const int>;
 
     using pseudo_boolean_objective_signature = objective_value_type(boolean_const_span);
+    using integer_objective_signature = objective_value_type(integer_const_span);
 
     class function_manager
     {
     public:
+
         void add(pseudo_boolean_objective_signature * fun, std::string const & name)
+        {
+            this->do_add(fun, name);
+        }
+
+        void add(integer_objective_signature * fun, std::string const & name)
         {
             this->do_add(fun, name);
         }
@@ -31,6 +39,7 @@ namespace saga
         virtual ~function_manager() {};
 
         virtual void do_add(pseudo_boolean_objective_signature *, std::string const &) = 0;
+        virtual void do_add(integer_objective_signature *, std::string const &) = 0;
     };
 
     class function_regitrar

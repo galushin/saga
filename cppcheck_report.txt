@@ -1,5 +1,5 @@
 [example/ga/exe_objective.cpp:57]: (style) Consider using std::transform algorithm instead of a raw loop.
-[example/local_search/sample_library.cpp:27]: (performance, inconclusive) Technically the member function '::sample_library_registrar::do_init' can be static (but you may consider moving to unnamed namespace).
+[example/local_search/sample_library.cpp:33]: (performance, inconclusive) Technically the member function '::sample_library_registrar::do_init' can be static (but you may consider moving to unnamed namespace).
 [tests/saga_test.hpp:64]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/saga_test.hpp:95]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/saga_test.hpp:197]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
