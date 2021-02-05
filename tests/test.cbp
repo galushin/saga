@@ -50,6 +50,7 @@
 		<Unit filename="../include/saga/iterator/reverse.hpp" />
 		<Unit filename="../include/saga/math/probability.hpp" />
 		<Unit filename="../include/saga/numeric.hpp" />
+		<Unit filename="../include/saga/numeric/digits_of.hpp" />
 		<Unit filename="../include/saga/numeric/polynomial.hpp" />
 		<Unit filename="../include/saga/optimization/evaluated_solution.hpp" />
 		<Unit filename="../include/saga/optimization/ga.hpp" />
@@ -84,6 +85,7 @@
 		<Unit filename="main.cpp" />
 		<Unit filename="makefile.gcc" />
 		<Unit filename="math/probability.cpp" />
+		<Unit filename="numeric/digits_of.cpp" />
 		<Unit filename="numeric/polynomial.cpp" />
 		<Unit filename="optimization/ga.cpp" />
 		<Unit filename="optimization/local_search.cpp" />
