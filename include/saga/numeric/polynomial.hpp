@@ -18,7 +18,7 @@ SAGA -- это свободной программное обеспечение:
 #ifndef POLYNOMIAL_HPP_INCLUDED
 #define POLYNOMIAL_HPP_INCLUDED
 
-/** @file saga/numeric/polynomail.hpp
+/** @file saga/numeric/polynomial.hpp
  @brief Многочлены и алгоритмы для них
 */
 
