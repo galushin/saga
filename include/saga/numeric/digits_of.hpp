@@ -31,10 +31,11 @@ namespace saga
         using reference = IntType const &;
 
         // Создание, копирование, уничтожение
+        // @todo Что функция должна делать, если ей передать отрицательное число?
         /**
         @pre <tt>base >= 2</tt>
         */
-        digits_cursor(IntType num, IntType base)
+        digits_cursor(IntType num, IntType base = IntType(10))
          : num_(std::move(num))
          , base_(std::move(base))
          , cur_(this->num_ % this->base_)
@@ -74,6 +75,12 @@ namespace saga
         auto digits_of(IntType num, IntType base) -> saga::digits_cursor<IntType>
         {
             return digits_cursor<IntType>(num, base);
+        }
+
+        template <class IntType>
+        auto digits_of(IntType num) -> saga::digits_cursor<IntType>
+        {
+            return digits_of(num, IntType(10));
         }
     }
     // namespace cursor

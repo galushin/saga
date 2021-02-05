@@ -27,15 +27,12 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/subrange.hpp>
 
 // Тесты
-// @todo Что функция должна делать, если ей передать отрицательное число?
-// @todo Что функция должна делать, base < 2?
-// @todo Тест значения по умолчанию для digits_of и digits_cursor
 TEST_CASE("digits_of")
 {
     using Integer = int;
     saga_test::property_checker << [](Integer num)
     {
-        // @todo Механизм игнорирования или задания того, что Integer должен быть положительным
+        // @todo Механизм задания того, что Integer должен быть положительным
         if(num < 0)
         {
             return;
@@ -43,6 +40,7 @@ TEST_CASE("digits_of")
 
         auto const base = saga_test::random_uniform<Integer>(2, 100);
 
+        // @todo Заменить на алгоритм copy или механизм преобразования курсора в контейнер
         std::vector<int> digits;
 
         for(auto cur = saga::cursor::digits_of(num, base); !!cur; ++ cur)
@@ -50,7 +48,6 @@ TEST_CASE("digits_of")
             digits.push_back(*cur);
         }
 
-        // @todo ural::reverse(digits)
         std::reverse(digits.begin(), digits.end());
 
         // Цифры в заданном диапазоне
@@ -67,4 +64,54 @@ TEST_CASE("digits_of")
     };
 }
 
-// @todo digits_of - основание по умолчанию - 10;
+TEST_CASE("digits_of: default value")
+{
+    using Integer = int;
+    saga_test::property_checker << [](Integer num)
+    {
+        // @todo Механизм задания того, что Integer должен быть положительным
+        if(num < 0)
+        {
+            return;
+        }
+
+        auto cur = saga::cursor::digits_of(num);
+        auto cur_10 = saga::cursor::digits_of(num, 10);
+
+        // Проверка
+        // @todo Заменить на алгоритм
+        for(; !!cur && !!cur_10; ++ cur, ++ cur_10)
+        {
+            REQUIRE(*cur == *cur_10);
+        }
+
+        REQUIRE(!cur);
+        REQUIRE(!cur_10);
+    };
+}
+
+TEST_CASE("digits_cursor: default value")
+{
+    using Integer = int;
+    saga_test::property_checker << [](Integer num)
+    {
+        // @todo Механизм задания того, что Integer должен быть положительным
+        if(num < 0)
+        {
+            return;
+        }
+
+        auto cur = saga::digits_cursor<Integer>(num);
+        auto cur_10 = saga::cursor::digits_of(num, 10);
+
+        // Проверка
+        // @todo Заменить на алгоритм
+        for(; !!cur && !!cur_10; ++ cur, ++ cur_10)
+        {
+            REQUIRE(*cur == *cur_10);
+        }
+
+        REQUIRE(!cur);
+        REQUIRE(!cur_10);
+    };
+}
