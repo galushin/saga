@@ -18,7 +18,7 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_OPTIMIZATION_TEST_OBJECTIVES_HPP_INCLUDED
 #define Z_SAGA_OPTIMIZATION_TEST_OBJECTIVES_HPP_INCLUDED
 
-/** @file optimization/test_objetives.hpp
+/** @file saga/optimization/test_objetives.hpp
  @brief Тестовые функции оптимизации
 */
 

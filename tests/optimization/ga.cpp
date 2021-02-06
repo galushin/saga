@@ -24,6 +24,7 @@ SAGA -- это свободной программное обеспечение:
 
 // Используемое при тестах
 #include <saga/cpp20/span.hpp>
+#include <saga/numeric/digits_of.hpp>
 #include <saga/optimization/test_objectives.hpp>
 
 #include <valarray>
@@ -227,4 +228,76 @@ TEST_CASE("binary code")
 
         REQUIRE(result == value);
     };
+}
+
+TEST_CASE("Gray code - empty sequence")
+{
+    std::vector<bool> code;
+
+    auto const value = saga::gray_code_to_integer<int>(saga::cursor::all(code));
+
+    REQUIRE(value == 0);
+}
+
+TEST_CASE("Gray code - generates all")
+{
+    using Integer = int;
+    auto const dim = 20;
+    auto const n_max = 1 << 10;
+
+    assert(n_max > 0);
+
+    using Digit_container = std::vector<bool>;
+
+    std::vector<Digit_container> codes(n_max);
+    std::vector<Integer> values;
+
+    // @todo Реализовать и использовать view::iota, или заменить на алгоритм
+    for(auto num = 0*n_max; num < n_max; ++ num)
+    {
+        // Преобразуем целое в двоичный код
+        // @todo Алгоритм copy или механизм преобразования в контейнер (to<std::vector>)
+        Digit_container code;
+        for(auto cur = saga::cursor::digits_of(num, 2); !!cur; ++ cur)
+        {
+            code.push_back(*cur);
+        }
+
+        std::reverse(code.begin(), code.end());
+
+        // Переводим Код грея в целое число
+        auto const value = saga::gray_code_to_integer<Integer>(saga::cursor::all(code));
+
+        values.push_back(value);
+
+        // Проверка вхождения значения в интервал
+        REQUIRE(0 <= value);
+        REQUIRE(value < n_max);
+
+        codes.at(value) = code;
+    }
+
+    // Все коды должны быть разные
+    std::sort(values.begin(), values.end());
+    values.erase(std::unique(values.begin(), values.end()), values.end());
+
+    REQUIRE(values.size() == n_max);
+    REQUIRE(values.front() == 0);
+    REQUIRE(values.back() == n_max-1);
+
+    // Дополняем ведущими нулями слишком короткие коды
+    for(auto & code : codes)
+    {
+        REQUIRE(code.size() <= dim);
+
+        code.resize(dim, 0);
+    }
+
+    // Соседним значениям должны соответствовать соседние коды, отличающиеся одним битом
+    for(auto i = 0 * codes.size(); i+1 != codes.size(); ++ i)
+    {
+        auto const d = saga::boolean_manhattan_distance(codes[i], codes[i+1]);
+
+        REQUIRE(d == 1);
+    }
 }

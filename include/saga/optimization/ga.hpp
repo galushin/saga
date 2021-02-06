@@ -225,6 +225,23 @@ namespace saga
     {
         return saga::polynomial_horner(std::move(cur), Result(2), Result(0));
     }
+
+    template <class Result, class InputCursor>
+    Result gray_code_to_integer(InputCursor cur)
+    {
+        auto result = Result(0);
+        bool parity = 0;
+
+        for(; !!cur; ++ cur)
+        {
+            bool value = (*cur != false);
+
+            result = 2 * result + (value != parity);
+            parity = (parity != value);
+        }
+
+        return result;
+    }
 }
 // namespace saga
 
