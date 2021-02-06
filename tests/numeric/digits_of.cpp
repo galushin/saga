@@ -23,27 +23,52 @@ SAGA -- это свободной программное обеспечение:
 #include "../saga_test.hpp"
 
 // Используемое при тестах
+#include <saga/algorithm.hpp>
 #include <saga/numeric/polynomial.hpp>
 #include <saga/cursor/subrange.hpp>
 
 // Тесты
 TEST_CASE("digits_of")
 {
-    using Integer = int;
-    saga_test::property_checker << [](Integer num)
+    using NotNegativeInteger = unsigned;
+
+    saga_test::property_checker << [](NotNegativeInteger const & value)
     {
-        // @todo Механизм задания того, что Integer должен быть положительным
-        if(num < 0)
+        auto const base = saga_test::random_uniform<NotNegativeInteger>(2, 100);
+
+        // Явные вычисления
+        std::vector<NotNegativeInteger> digits_manual;
+
+        for(auto num = value; num > 0; num /= base)
         {
-            return;
+            digits_manual.push_back(num % base);
         }
 
-        auto const base = saga_test::random_uniform<Integer>(2, 100);
+        // Курсов digits_of
+        std::vector<NotNegativeInteger> digits_cursor;
+
+        for(auto cur = saga::cursor::digits_of(value, base); !!cur; ++ cur)
+        {
+            digits_cursor.push_back(*cur);
+        }
+
+        // Сравнение
+        REQUIRE(digits_manual == digits_cursor);
+    };
+}
+
+TEST_CASE("digits_of - reverse of poynomial_horner")
+{
+    using NotNegativeInteger = unsigned;
+
+    saga_test::property_checker << [](NotNegativeInteger const & value)
+    {
+        auto const base = saga_test::random_uniform<NotNegativeInteger>(2, 100);
 
         // @todo Заменить на алгоритм copy или механизм преобразования курсора в контейнер
         std::vector<int> digits;
 
-        for(auto cur = saga::cursor::digits_of(num, base); !!cur; ++ cur)
+        for(auto cur = saga::cursor::digits_of(value, base); !!cur; ++ cur)
         {
             digits.push_back(*cur);
         }
@@ -58,60 +83,35 @@ TEST_CASE("digits_of")
         }
 
         // Обратное преобразование приводит к исходному числу
-        auto const ans = saga::polynomial_horner(saga::cursor::all(digits), base, Integer(0));
-        REQUIRE(ans == num);
+        auto const ans
+            = saga::polynomial_horner(saga::cursor::all(digits), base, NotNegativeInteger(0));
+
+        REQUIRE(ans == value);
 
     };
 }
 
 TEST_CASE("digits_of: default value")
 {
-    using Integer = int;
-    saga_test::property_checker << [](Integer num)
+    using NotNegativeInteger = unsigned;
+
+    saga_test::property_checker << [](NotNegativeInteger const & value)
     {
-        // @todo Механизм задания того, что Integer должен быть положительным
-        if(num < 0)
-        {
-            return;
-        }
+        auto cur = saga::cursor::digits_of(value);
+        auto cur_10 = saga::cursor::digits_of(value, 10u);
 
-        auto cur = saga::cursor::digits_of(num);
-        auto cur_10 = saga::cursor::digits_of(num, 10);
-
-        // Проверка
-        // @todo Заменить на алгоритм
-        for(; !!cur && !!cur_10; ++ cur, ++ cur_10)
-        {
-            REQUIRE(*cur == *cur_10);
-        }
-
-        REQUIRE(!cur);
-        REQUIRE(!cur_10);
+        REQUIRE(saga::equal(cur, cur_10));
     };
 }
 
 TEST_CASE("digits_cursor: default value")
 {
-    using Integer = int;
-    saga_test::property_checker << [](Integer num)
+    using NotNegativeInteger = unsigned;
+    saga_test::property_checker << [](NotNegativeInteger const & value)
     {
-        // @todo Механизм задания того, что Integer должен быть положительным
-        if(num < 0)
-        {
-            return;
-        }
+        auto cur = saga::digits_cursor<NotNegativeInteger>(value);
+        auto cur_10 = saga::cursor::digits_of(value, 10u);
 
-        auto cur = saga::digits_cursor<Integer>(num);
-        auto cur_10 = saga::cursor::digits_of(num, 10);
-
-        // Проверка
-        // @todo Заменить на алгоритм
-        for(; !!cur && !!cur_10; ++ cur, ++ cur_10)
-        {
-            REQUIRE(*cur == *cur_10);
-        }
-
-        REQUIRE(!cur);
-        REQUIRE(!cur_10);
+        REQUIRE(saga::equal(cur, cur_10));
     };
 }
