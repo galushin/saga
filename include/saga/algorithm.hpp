@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/iterator.hpp>
+#include <saga/cursor/cursor_traits.hpp>
 
 #include <saga/detail/static_empty_const.hpp>
 
@@ -53,6 +54,30 @@ namespace saga
             for(; !!cur; ++ cur)
             {
                 *cur = gen();
+            }
+        }
+    };
+
+    struct reverse_fn
+    {
+    public:
+        template <class BidirectionalCursor>
+        void operator()(BidirectionalCursor cur) const
+        {
+            for(;!!cur; cur.drop(saga::front))
+            {
+                auto cur_next = cur;
+                cur_next.drop(saga::back);
+
+                if(!cur_next)
+                {
+                    break;
+                }
+
+                using std::swap;
+                swap(cur[saga::front], cur[saga::back]);
+
+                cur = std::move(cur_next);
             }
         }
     };
@@ -128,6 +153,7 @@ namespace saga
         constexpr auto const & count = detail::static_empty_const<count_fn>::value;
 
         constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
+        constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
 

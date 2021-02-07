@@ -18,10 +18,24 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_CURSOR_CURSOR_TRAITS_HPP_INCLUDED
 #define Z_SAGA_CURSOR_CURSOR_TRAITS_HPP_INCLUDED
 
+#include <saga/detail/static_empty_const.hpp>
+
 namespace saga
 {
     template <class Cursor>
     using cursor_reference = typename Cursor::reference;
+
+    struct front_fn
+    {};
+
+    struct back_fn
+    {};
+
+    namespace
+    {
+        constexpr auto const & front = detail::static_empty_const<front_fn>::value;
+        constexpr auto const & back = detail::static_empty_const<back_fn>::value;
+    }
 }
 // namespace saga
 

@@ -70,7 +70,6 @@ namespace saga
 
     namespace cursor
     {
-        // @todo Значение по умолчанию
         template <class IntType>
         auto digits_of(IntType num, IntType base) -> saga::digits_cursor<IntType>
         {
