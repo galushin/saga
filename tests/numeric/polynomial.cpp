@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
+#include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/numeric/digits_of.hpp>
 
