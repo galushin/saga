@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/iterator.hpp>
+#include <saga/cursor/cursor_traits.hpp>
 
 #include <cassert>
 #include <iterator>
@@ -41,7 +42,13 @@ namespace saga
         subrange_cursor(ForwardIterator first, Sentinel last)
          : cur_(std::move(first))
          , last_(std::move(last))
-        {}
+         , back_(this->last_)
+        {
+            if(this->back_ != this->cur_)
+            {
+                -- back_;
+            }
+        }
 
         // Курсор ввода
         bool operator!() const
@@ -49,25 +56,56 @@ namespace saga
             return this->cur_ == this->last_;
         }
 
-        subrange_cursor & operator++()
+        void drop(saga::front_fn)
         {
             assert(!!*this);
 
             ++ this->cur_;
+        }
+
+        subrange_cursor & operator++()
+        {
+            this->drop(saga::front_fn{});
 
             return *this;
         }
 
-        reference operator*() const
+        reference operator[](saga::front_fn) const
         {
             assert(!!*this);
 
             return *this->cur_;
         }
 
+        reference operator*() const
+        {
+            return (*this)[saga::front_fn{}];
+        }
+
+        // Двунаправленный курсор
+        void drop(saga::back_fn)
+        {
+            assert(!!*this);
+
+            this->last_ = this->back_;
+
+            if(!!*this)
+            {
+                --this->back_;
+            }
+        }
+
+        reference operator[](saga::back_fn)
+        {
+            assert(!!*this);
+
+            return *this->back_;
+        }
+
     private:
         ForwardIterator cur_;
         Sentinel last_;
+        Sentinel back_;
     };
 
     template <class ForwardIterator>

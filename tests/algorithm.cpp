@@ -23,9 +23,29 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
+#include <saga/cursor/subrange.hpp>
+
+#include <list>
 #include <string>
 
 // Тесты
+TEST_CASE("reverse")
+{
+    using Container = std::list<int>;
+
+    // @todo Выбрать заданный подинтервал, а не весь контейнер
+    saga_test::property_checker << [](Container const & src)
+    {
+        auto src_std = src;
+        std::reverse(src_std.begin(), src_std.end());
+
+        auto src_saga = src;
+        saga::reverse(saga::cursor::all(src_saga));
+
+        REQUIRE(src_std == src_saga);
+    };
+}
+
 TEST_CASE("starts_with : prefix")
 {
     saga_test::property_checker << [](std::string const & str)
