@@ -73,7 +73,7 @@ TEST_CASE("digits_of - reverse of poynomial_horner")
             digits.push_back(*cur);
         }
 
-        std::reverse(digits.begin(), digits.end());
+        saga::reverse(saga::cursor::all(digits));
 
         // Цифры в заданном диапазоне
         for(auto const & digit : digits)

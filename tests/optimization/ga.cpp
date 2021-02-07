@@ -221,7 +221,7 @@ TEST_CASE("binary code")
             bits.push_back(num % base);
         }
 
-        std::reverse(bits.begin(), bits.end());
+        saga::reverse(saga::cursor::all(bits));
 
         auto const result
             = saga::binary_sequence_to_integer<NotNegativeInteger>(saga::cursor::all(bits));
@@ -263,7 +263,7 @@ TEST_CASE("Gray code - generates all")
             code.push_back(*cur);
         }
 
-        std::reverse(code.begin(), code.end());
+        saga::reverse(saga::cursor::all(code));
 
         // Переводим Код грея в целое число
         auto const value = saga::gray_code_to_integer<Integer>(saga::cursor::all(code));
