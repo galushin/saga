@@ -44,10 +44,7 @@ namespace saga
          , last_(std::move(last))
          , back_(this->last_)
         {
-            if(this->back_ != this->cur_)
-            {
-                -- back_;
-            }
+            this->tweak_back(typename std::iterator_traits<Sentinel>::iterator_category{});
         }
 
         // Курсор ввода
@@ -100,6 +97,18 @@ namespace saga
             assert(!!*this);
 
             return *this->back_;
+        }
+
+    private:
+        void tweak_back(std::input_iterator_tag)
+        {}
+
+        void tweak_back(std::bidirectional_iterator_tag)
+        {
+            if(this->back_ != this->cur_)
+            {
+                -- back_;
+            }
         }
 
     private:
