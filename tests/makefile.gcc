@@ -33,9 +33,9 @@ OBJDIR_RELEASE = ./obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = ./bin/Release/test
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/expected.o $(OBJDIR_DEBUG)/expected/unexpected.o $(OBJDIR_DEBUG)/functional.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/numeric/digits_of.o $(OBJDIR_DEBUG)/numeric/polynomial.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/string_view.o $(OBJDIR_DEBUG)/type_traits.o $(OBJDIR_DEBUG)/utility/as_const.o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o $(OBJDIR_DEBUG)/view/indices.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/cursor/subrange.o $(OBJDIR_DEBUG)/expected.o $(OBJDIR_DEBUG)/expected/unexpected.o $(OBJDIR_DEBUG)/functional.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/numeric/digits_of.o $(OBJDIR_DEBUG)/numeric/polynomial.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/string_view.o $(OBJDIR_DEBUG)/type_traits.o $(OBJDIR_DEBUG)/utility/as_const.o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o $(OBJDIR_DEBUG)/view/indices.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/expected.o $(OBJDIR_RELEASE)/expected/unexpected.o $(OBJDIR_RELEASE)/functional.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/numeric/digits_of.o $(OBJDIR_RELEASE)/numeric/polynomial.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/string_view.o $(OBJDIR_RELEASE)/type_traits.o $(OBJDIR_RELEASE)/utility/as_const.o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o $(OBJDIR_RELEASE)/view/indices.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/cursor/subrange.o $(OBJDIR_RELEASE)/expected.o $(OBJDIR_RELEASE)/expected/unexpected.o $(OBJDIR_RELEASE)/functional.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/numeric/digits_of.o $(OBJDIR_RELEASE)/numeric/polynomial.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/string_view.o $(OBJDIR_RELEASE)/type_traits.o $(OBJDIR_RELEASE)/utility/as_const.o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o $(OBJDIR_RELEASE)/view/indices.o
 
 all: debug release
 
@@ -45,6 +45,7 @@ before_debug:
 	test -d ./bin/Debug || mkdir -p ./bin/Debug
 	test -d $(OBJDIR_DEBUG) || mkdir -p $(OBJDIR_DEBUG)
 	test -d $(OBJDIR_DEBUG)/cpp20 || mkdir -p $(OBJDIR_DEBUG)/cpp20
+	test -d $(OBJDIR_DEBUG)/cursor || mkdir -p $(OBJDIR_DEBUG)/cursor
 	test -d $(OBJDIR_DEBUG)/expected || mkdir -p $(OBJDIR_DEBUG)/expected
 	test -d $(OBJDIR_DEBUG)/iterator || mkdir -p $(OBJDIR_DEBUG)/iterator
 	test -d $(OBJDIR_DEBUG)/math || mkdir -p $(OBJDIR_DEBUG)/math
@@ -66,6 +67,9 @@ $(OBJDIR_DEBUG)/algorithm.o: algorithm.cpp
 
 $(OBJDIR_DEBUG)/cpp20/span.o: cpp20/span.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c cpp20/span.cpp -o $(OBJDIR_DEBUG)/cpp20/span.o
+
+$(OBJDIR_DEBUG)/cursor/subrange.o: cursor/subrange.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c cursor/subrange.cpp -o $(OBJDIR_DEBUG)/cursor/subrange.o
 
 $(OBJDIR_DEBUG)/expected.o: expected.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c expected.cpp -o $(OBJDIR_DEBUG)/expected.o
@@ -129,6 +133,7 @@ clean_debug:
 	rm -rf ./bin/Debug
 	rm -rf $(OBJDIR_DEBUG)
 	rm -rf $(OBJDIR_DEBUG)/cpp20
+	rm -rf $(OBJDIR_DEBUG)/cursor
 	rm -rf $(OBJDIR_DEBUG)/expected
 	rm -rf $(OBJDIR_DEBUG)/iterator
 	rm -rf $(OBJDIR_DEBUG)/math
@@ -142,6 +147,7 @@ before_release:
 	test -d ./bin/Release || mkdir -p ./bin/Release
 	test -d $(OBJDIR_RELEASE) || mkdir -p $(OBJDIR_RELEASE)
 	test -d $(OBJDIR_RELEASE)/cpp20 || mkdir -p $(OBJDIR_RELEASE)/cpp20
+	test -d $(OBJDIR_RELEASE)/cursor || mkdir -p $(OBJDIR_RELEASE)/cursor
 	test -d $(OBJDIR_RELEASE)/expected || mkdir -p $(OBJDIR_RELEASE)/expected
 	test -d $(OBJDIR_RELEASE)/iterator || mkdir -p $(OBJDIR_RELEASE)/iterator
 	test -d $(OBJDIR_RELEASE)/math || mkdir -p $(OBJDIR_RELEASE)/math
@@ -163,6 +169,9 @@ $(OBJDIR_RELEASE)/algorithm.o: algorithm.cpp
 
 $(OBJDIR_RELEASE)/cpp20/span.o: cpp20/span.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c cpp20/span.cpp -o $(OBJDIR_RELEASE)/cpp20/span.o
+
+$(OBJDIR_RELEASE)/cursor/subrange.o: cursor/subrange.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c cursor/subrange.cpp -o $(OBJDIR_RELEASE)/cursor/subrange.o
 
 $(OBJDIR_RELEASE)/expected.o: expected.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c expected.cpp -o $(OBJDIR_RELEASE)/expected.o
@@ -226,6 +235,7 @@ clean_release:
 	rm -rf ./bin/Release
 	rm -rf $(OBJDIR_RELEASE)
 	rm -rf $(OBJDIR_RELEASE)/cpp20
+	rm -rf $(OBJDIR_RELEASE)/cursor
 	rm -rf $(OBJDIR_RELEASE)/expected
 	rm -rf $(OBJDIR_RELEASE)/iterator
 	rm -rf $(OBJDIR_RELEASE)/math
