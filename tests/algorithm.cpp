@@ -29,6 +29,49 @@ SAGA -- это свободной программное обеспечение:
 #include <string>
 
 // Тесты
+TEST_CASE("copy")
+{
+    using Value = int;
+    saga_test::property_checker << [](std::vector<Value> const & src,
+                                      std::vector<Value> const & dest_old)
+    {
+        auto dest = dest_old;
+
+        auto const src_subrange = saga_test::random_subrange_of(src);
+        auto const dest_subrange = saga_test::random_subrange_of(dest);
+
+        auto const src_cur = saga::make_subrange_cursor(src_subrange.first, src_subrange.second);
+        auto const dest_cur = saga::make_subrange_cursor(dest_subrange.first, dest_subrange.second);
+
+        auto const result = saga::copy(src_cur, dest_cur);
+
+        // Проверка содержимого dest
+        auto const n = std::min(src_cur.size(), dest_cur.size());
+
+        REQUIRE(std::equal(dest.begin(), dest_cur.begin(),
+                           dest_old.begin(), dest_old.begin() + (dest_cur.begin() - dest.begin())));
+
+        REQUIRE(std::equal(dest_cur.begin(), dest_cur.begin() + n,
+                           src_cur.begin(), src_cur.begin() + n));
+
+        REQUIRE(std::equal(dest_cur.begin() + n, dest.end(),
+                           dest_old.begin() + (dest_cur.begin() - dest.begin()) + n, dest_old.end()));
+
+        // Проверяем возвращаемое значение
+        REQUIRE((!result.in || !result.out));
+        REQUIRE(!result.in == (src_cur.size() <= dest_cur.size()));
+
+        REQUIRE(result.in.begin() == src_cur.begin() + n);
+        REQUIRE(result.in.end() == src_cur.end());
+
+        REQUIRE(result.out.begin() == dest_cur.begin() + n);
+        REQUIRE(result.out.end() == dest_cur.end());
+
+        // @todo Проверить begin_orig и end_orig (имена предварительные)
+    };
+}
+// @todo Тест copy c минималистичными типами
+
 TEST_CASE("reverse")
 {
     using Container = std::list<int>;

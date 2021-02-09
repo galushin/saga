@@ -20,6 +20,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/utility/as_const.hpp>
 
+#include <algorithm>
 #include <iterator>
 #include <random>
 
@@ -84,6 +85,21 @@ namespace saga_test
 
     template <class Container>
     void random_const_iterator_of(Container && container) = delete;
+
+    template <class Container, class = std::enable_if_t<std::is_reference<Container>{}>>
+    auto random_subrange_of(Container && container)
+    -> std::pair<decltype(std::forward<Container>(container).begin()),
+                 decltype(std::forward<Container>(container).begin())>
+    {
+        auto const n = container.size();
+
+        auto ps = std::minmax(saga_test::random_uniform(0*n, n), saga_test::random_uniform(0*n, n));
+
+        auto first = std::forward<Container>(container).begin() + ps.first;
+        auto last = first + (ps.second - ps.first);
+
+        return {std::move(first), std::move(last)};
+    }
 }
 // namespace saga_test
 

@@ -29,6 +29,15 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    // Типы результатов алгоритмов
+    template <class Input, class Output>
+    struct in_out_result
+    {
+        Input in;
+        Output out;
+    };
+
+    // Немодифицирующие операции
     struct count_fn
     {
         template <class InputCursor, class T>
@@ -43,6 +52,22 @@ namespace saga
             }
 
             return result;
+        }
+    };
+
+    // Модифицирующие операции
+    struct copy_fn
+    {
+        template <class InputCursor, class OutputCursor>
+        in_out_result<InputCursor, OutputCursor>
+        operator()(InputCursor in, OutputCursor out) const
+        {
+            for(; !!in && !!out; ++in, void(++out))
+            {
+                *out = *in;
+            }
+
+            return {std::move(in), std::move(out)};
         }
     };
 
@@ -147,10 +172,12 @@ namespace saga
         }
     };
 
-
+    // Функциональные объекты
     namespace
     {
         constexpr auto const & count = detail::static_empty_const<count_fn>::value;
+
+        constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;
 
         constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
