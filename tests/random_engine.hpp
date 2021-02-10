@@ -91,9 +91,8 @@ namespace saga_test
     -> std::pair<decltype(std::forward<Container>(container).begin()),
                  decltype(std::forward<Container>(container).begin())>
     {
-        auto const n = container.size();
-
-        auto ps = std::minmax(saga_test::random_uniform(0*n, n), saga_test::random_uniform(0*n, n));
+        auto ps = std::minmax(saga_test::random_position_of(container),
+                              saga_test::random_position_of(container));
 
         auto first = std::forward<Container>(container).begin() + ps.first;
         auto last = first + (ps.second - ps.first);
