@@ -37,6 +37,7 @@ namespace saga
         // Типы
         using reference = typename std::iterator_traits<ForwardIterator>::reference;
         using difference_type = typename std::iterator_traits<ForwardIterator>::difference_type;
+        using iterator = ForwardIterator;
 
         // Создание, копирование, уничтожение
         subrange_cursor(ForwardIterator first, Sentinel last)
@@ -45,6 +46,17 @@ namespace saga
          , back_(this->last_)
         {
             this->tweak_back(typename std::iterator_traits<Sentinel>::iterator_category{});
+        }
+
+        // Итераторы
+        iterator begin() const
+        {
+            return this->cur_;
+        }
+
+        Sentinel end() const
+        {
+            return this->last_;
         }
 
         // Курсор ввода
@@ -97,6 +109,12 @@ namespace saga
             assert(!!*this);
 
             return *this->back_;
+        }
+
+        // Курсор произвольного доступа
+        difference_type size() const
+        {
+            return this->end() - this->begin();
         }
 
     private:

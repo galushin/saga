@@ -29,6 +29,85 @@ SAGA -- это свободной программное обеспечение:
 #include <string>
 
 // Тесты
+// @todo Аналогичные тесты для forward_list
+TEST_CASE("random_position_of: vector")
+{
+    saga_test::property_checker << [](std::vector<int> const & src)
+    {
+        auto const pos = saga_test::random_position_of(src);
+
+        REQUIRE(0 <= pos);
+        REQUIRE(pos <= src.size());
+    };
+}
+
+TEST_CASE("random_subrange_of: vector")
+{
+    saga_test::property_checker << [](std::vector<int> const & src)
+    {
+        auto const result = saga_test::random_subrange_of(src);
+
+        auto const pos1 = result.first - src.begin();
+        auto const pos2 = result.second - src.begin();
+
+        REQUIRE(0 <= pos1);
+        REQUIRE(pos1 <= src.size());
+
+        REQUIRE(0 <= pos2);
+        REQUIRE(pos2 <= src.size());
+
+        REQUIRE(pos1 <= pos2);
+    };
+}
+
+TEST_CASE("copy")
+{
+    using Value = int;
+    saga_test::property_checker << [](std::vector<Value> const & src,
+                                      std::vector<Value> const & dest_old)
+    {
+        auto dest = dest_old;
+
+        // Взять подинтервалы контейнеров, а не целиком
+        auto const src_subrange = saga_test::random_subrange_of(src);
+        auto const dest_subrange = saga_test::random_subrange_of(dest);
+
+        auto const src_cur = saga::make_subrange_cursor(src_subrange.first, src_subrange.second);
+        auto const dest_cur = saga::make_subrange_cursor(dest_subrange.first, dest_subrange.second);
+
+        auto const dest_prefix_size = (dest_cur.begin() - dest.begin());
+
+        assert(0 <= dest_prefix_size && static_cast<size_t>(dest_prefix_size) <= dest.size());
+
+        auto const result = saga::copy(src_cur, dest_cur);
+
+        // Проверка содержимого dest
+        auto const n = std::min(src_cur.size(), dest_cur.size());
+
+        REQUIRE(std::equal(dest.begin(), dest.begin() + dest_prefix_size,
+                           dest_old.begin(), dest_old.begin() + dest_prefix_size));
+
+        REQUIRE(std::equal(dest.begin() + dest_prefix_size, dest.begin() + dest_prefix_size + n,
+                           src_cur.begin(), src_cur.begin() + n));
+
+        REQUIRE(std::equal(dest.begin() + dest_prefix_size + n, dest.end(),
+                           dest_old.begin() + dest_prefix_size + n, dest_old.end()));
+
+        // Проверяем возвращаемое значение
+        REQUIRE((!result.in || !result.out));
+        REQUIRE(!result.in == (src_cur.size() <= dest_cur.size()));
+
+        REQUIRE(result.in.begin() == src_cur.begin() + n);
+        REQUIRE(result.in.end() == src_cur.end());
+
+        REQUIRE(result.out.begin() == dest_cur.begin() + n);
+        REQUIRE(result.out.end() == dest_cur.end());
+
+        // @todo Проверить begin_orig и end_orig (имена предварительные)
+    };
+}
+// @todo Тест copy c минималистичными типами
+
 TEST_CASE("reverse")
 {
     using Container = std::list<int>;
