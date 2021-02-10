@@ -94,8 +94,8 @@ namespace saga_test
         auto ps = std::minmax(saga_test::random_position_of(container),
                               saga_test::random_position_of(container));
 
-        auto first = std::forward<Container>(container).begin() + ps.first;
-        auto last = first + (ps.second - ps.first);
+        auto first = container.begin() + ps.first;
+        auto last = container.begin() + ps.second;
 
         return {std::move(first), std::move(last)};
     }
