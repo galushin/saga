@@ -29,7 +29,18 @@ SAGA -- это свободной программное обеспечение:
 #include <string>
 
 // Тесты
-// @todo Аналогичный тест для forward_list
+// @todo Аналогичные тесты для forward_list
+TEST_CASE("random_position_of: vector")
+{
+    saga_test::property_checker << [](std::vector<int> const & src)
+    {
+        auto const pos = saga_test::random_position_of(src);
+
+        REQUIRE(0 <= pos);
+        REQUIRE(pos <= src.size());
+    };
+}
+
 TEST_CASE("random_subrange_of: vector")
 {
     saga_test::property_checker << [](std::vector<int> const & src)
