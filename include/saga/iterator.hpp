@@ -157,11 +157,24 @@ namespace detail
 }
 // namespace detail
 
+    struct back_insert_fn
+    {
+    public:
+        template <class Container>
+        void operator()(Container & container, typename Container::value_type const & value) const
+        {
+            container.push_back(value);
+        }
+
+        template <class Container>
+        void operator()(Container & container, typename Container::value_type && value) const;
+    };
+
     struct front_emplace_fn
     {
     public:
         template <class Container, class Arg>
-        void operator()(Container & container, Arg && arg)
+        void operator()(Container & container, Arg && arg) const
         {
             container.emplace_front(std::forward<Arg>(arg));
         }
@@ -171,7 +184,7 @@ namespace detail
     {
     public:
         template <class Container, class Arg>
-        void operator()(Container & container, Arg && arg)
+        void operator()(Container & container, Arg && arg) const
         {
             container.emplace_back(std::forward<Arg>(arg));
         }
@@ -227,7 +240,12 @@ namespace detail
             return *this;
         }
 
-        // Итератор
+        // Итератор и курсор ввода
+        constexpr bool operator!() const
+        {
+            return false;
+        }
+
         generic_container_output_iterator & operator++()
         {
             return *this;
@@ -252,6 +270,9 @@ namespace detail
 
         Container * container_ = nullptr;
     };
+
+    template <class Container>
+    using back_insert_iterator = generic_container_output_iterator<Container, back_insert_fn>;
 
     template <class Container>
     using back_emplace_iterator = generic_container_output_iterator<Container, back_emplace_fn>;
@@ -279,6 +300,12 @@ namespace detail
     auto emplacer(Container & container, typename Container::iterator pos)
     {
         return emplace_iterator<Container>(container, std::move(pos));
+    }
+
+    template <class Container>
+    auto back_inserter(Container & container)
+    {
+        return back_insert_iterator<Container>(container);
     }
 
     namespace
