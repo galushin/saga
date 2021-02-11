@@ -68,7 +68,7 @@ TEST_CASE("copy")
     {
         auto dest = dest_old;
 
-        // Взять подинтервалы контейнеров, а не целиком
+        // Взять подинтервалы контейнеров
         auto const src_subrange = saga_test::random_subrange_of(src);
         auto const dest_subrange = saga_test::random_subrange_of(dest);
 
@@ -106,7 +106,26 @@ TEST_CASE("copy")
         // @todo Проверить begin_orig и end_orig (имена предварительные)
     };
 }
-// @todo Тест copy c минималистичными типами
+
+TEST_CASE("copy: container to back_inserter")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        std::vector<Value> dest;
+
+        auto const result = saga::copy(saga::cursor::all(src), saga::back_inserter(dest));
+
+        REQUIRE(!result.in);
+        REQUIRE(!!result.out);
+
+        REQUIRE(dest == src);
+    };
+}
+
+// @todo Тест copy c минималистичными типами: из istream_cursor в back_inserter или ostream_joiner
+
 
 TEST_CASE("reverse")
 {
