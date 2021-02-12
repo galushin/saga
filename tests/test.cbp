@@ -38,6 +38,7 @@
 		<Unit filename="../include/saga/cpp20/span.hpp" />
 		<Unit filename="../include/saga/cursor/cursor_traits.hpp" />
 		<Unit filename="../include/saga/cursor/cycle.hpp" />
+		<Unit filename="../include/saga/cursor/istream_cursor.hpp" />
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
 		<Unit filename="../include/saga/detail/default_ctor_enabler.hpp" />
 		<Unit filename="../include/saga/detail/static_empty_const.hpp" />
@@ -77,6 +78,7 @@
 		<Unit filename="algorithm.cpp" />
 		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
 		<Unit filename="cpp20/span.cpp" />
+		<Unit filename="cursor/istream_cursor.cpp" />
 		<Unit filename="cursor/subrange.cpp" />
 		<Unit filename="expected.cpp" />
 		<Unit filename="expected/unexpected.cpp" />
