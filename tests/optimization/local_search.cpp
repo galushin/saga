@@ -188,8 +188,11 @@ TEST_CASE("local search (integer) : L1 norm minimization")
 
         for(auto num = dim.value; num > 0; --num)
         {
-            auto const limits = std::minmax(saga_test::random_uniform(-20, 20),
-                                            saga_test::random_uniform(-20, 20));
+            auto const limit1 = saga_test::random_uniform(-20, 20);
+            auto const limit2 = saga_test::random_uniform(-20, 20);
+
+            auto const limits = std::minmax(limit1, limit2);
+
             space.add(limits.first, limits.second);
         }
 
