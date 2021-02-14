@@ -167,7 +167,10 @@ namespace detail
         }
 
         template <class Container>
-        void operator()(Container & container, typename Container::value_type && value) const;
+        void operator()(Container & container, typename Container::value_type && value) const
+        {
+            container.push_back(std::move(value));
+        }
     };
 
     struct front_emplace_fn

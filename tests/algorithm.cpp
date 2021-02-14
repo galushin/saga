@@ -126,7 +126,6 @@ TEST_CASE("copy: container to back_inserter")
 
 // @todo Тест copy c минималистичными типами: из istream_cursor в back_inserter или ostream_joiner
 
-
 TEST_CASE("reverse")
 {
     using Container = std::list<int>;

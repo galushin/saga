@@ -170,7 +170,7 @@ namespace
                        });
 
         return result;
-    };
+    }
 }
 
 // @todo Тест должен влезать на один экран

@@ -116,7 +116,7 @@ namespace saga
             }
 
             return result;
-        };
+        }
     };
 
     namespace
