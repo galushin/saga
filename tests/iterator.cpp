@@ -202,3 +202,25 @@ TEST_CASE("emplacer")
         REQUIRE(result == obj);
     };
 }
+
+TEST_CASE("back_insterter: rvalue")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](Value value)
+    {
+          auto ptr = std::make_unique<Value>(value);
+          auto * const addr = ptr.get();
+
+          std::vector<std::unique_ptr<Value>> dest;
+          auto out = saga::back_inserter(dest);
+
+          *out = std::move(ptr);
+          ++ out;
+
+          REQUIRE(dest.size() == 1);
+          REQUIRE(static_cast<bool>(dest.front()));
+          REQUIRE(*dest.front() == value);
+          REQUIRE(dest.front().get() == addr);
+    };
+}

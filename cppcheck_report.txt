@@ -18,6 +18,9 @@
 [tests/expected.cpp:932]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/expected.cpp:977]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/expected.cpp:984]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/iterator.cpp:222]: (error) Out of bounds access in dest because dest is empty.
+[tests/iterator.cpp:223]: (error) Out of bounds access in dest because dest is empty.
+[tests/iterator.cpp:224]: (error) Out of bounds access in dest because dest is empty.
 [tests/string_view.cpp:906]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/utility/equality_comparable_box.cpp:147]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/view/indices.cpp:108]: (performance) Prefer prefix ++/-- operators for non-primitive types.
