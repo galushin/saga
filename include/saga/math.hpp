@@ -1,4 +1,4 @@
-/* (c) 2020-2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2021 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -15,54 +15,47 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#include <saga/math.hpp>
-#include <saga/math/probability.hpp>
+#ifndef Z_SAGA_MATH_HPP_INCLUDED
+#define Z_SAGA_MATH_HPP_INCLUDED
 
-#include <catch/catch.hpp>
-#include "../saga_test.hpp"
+#include <saga/detail/static_empty_const.hpp>
 
-TEST_CASE("probabilty : default initialization")
+/** @file saga/math.hpp
+ @brief Функциональность, связанная с математикой, общего назначения
+*/
+
+#include <cmath>
+
+namespace saga
 {
-    saga::probability<double> p;
-
-    static_assert(std::is_same<decltype(p.value()), double const &>::value, "Must be same!");
-
-    REQUIRE_THAT(p.value(), Catch::WithinULP(0.0, 1));
-}
-
-TEST_CASE("probabilty : initialization with correct value")
-{
-    auto property = [](double p_value)
+    namespace detail
     {
-        using Probability = saga::probability<double, saga::probability_policy_throw>;
+        namespace abs_adl_ns
+        {
+            void abs() = delete;
 
-        p_value = saga::abs(std::sin(p_value));
+            struct absolute_value
+            {
+                template <class Arg>
+                auto operator()(Arg const & arg) const
+                {
+                    using std::abs;
+                    return abs(arg);
+                }
+            };
+        }
+        // namespace abs_adl_ns
+    }
+    // namespace detail
 
-        Probability p(p_value);
+    using detail::abs_adl_ns::absolute_value;
 
-        REQUIRE_THAT(p.value(), Catch::WithinULP(p_value, 1));
-    };
-
-    saga_test::check_property(property);
-}
-
-TEST_CASE("probabilty : throw on incorrect value")
-{
-    auto property = [](double p_value)
+    namespace
     {
-        using Probability = saga::probability<double, saga::probability_policy_throw>;
-
-        if(0.0 <= p_value && p_value <= 1.0)
-        {
-            Probability p(p_value);
-
-            REQUIRE_THAT(p.value(), Catch::WithinULP(p_value, 1));
-        }
-        else
-        {
-            CHECK_THROWS_AS(Probability(p_value), std::logic_error);
-        }
-    };
-
-    saga_test::property_checker << property;
+        constexpr auto const & abs = detail::static_empty_const<saga::absolute_value>::value;
+    }
 }
+//namespace saga
+
+#endif
+// Z_SAGA_MATH_HPP_INCLUDED

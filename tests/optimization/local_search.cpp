@@ -271,8 +271,7 @@ TEST_CASE("local search (integer) : L1 norm maximization")
             Argument result;
             for(auto const & var : space)
             {
-                using std::abs;
-                result.emplace_back(abs(var.max) < abs(var.min) ? var.min : var.max);
+                result.emplace_back(saga::abs(var.max) < saga::abs(var.min) ? var.min : var.max);
             }
             return result;
         }();

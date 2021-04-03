@@ -24,6 +24,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
+#include <saga/math.hpp>
 #include <saga/numeric.hpp>
 
 #include <algorithm>
@@ -86,27 +87,12 @@ namespace saga
         }
     };
 
-    namespace detail
-    {
-        // @todo В библиотеку
-        struct absolute_value
-        {
-            template <class Arg>
-            auto operator()(Arg const & arg) const
-            {
-                using std::abs;
-                return abs(arg);
-            }
-        };
-    }
-
     struct manhattan_norm_fn
     {
     public:
-        template <class Argument, class Abs = detail::absolute_value>
+        template <class Argument, class Abs = saga::absolute_value>
         auto operator()(Argument const & arg, Abs abs_fun = Abs()) const
         {
-            using std::abs;
             auto result = abs_fun(typename Argument::value_type(0));
 
             // @todo Заменить цикл на алгоритм (подумать, в каком имеено варианте)
