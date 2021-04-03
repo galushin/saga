@@ -70,6 +70,14 @@ namespace saga
 
         expected(expected &&) = default;
 
+        template <class OtherValue, class OtherError>
+        // @todo Условный explicit
+        // @todo Ограничения типа
+        // @todo constexpr
+        explicit expected(expected<OtherValue, OtherError> const & rhs)
+         : Base(rhs)
+        {}
+
         template <class Arg,
                   std::enable_if_t<detail::expected_has_ctor_from_arg<Value, Error, Arg>()> * = nullptr,
                   std::enable_if_t<std::is_convertible<Arg&&, Value>{}> * = nullptr>

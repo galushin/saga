@@ -990,6 +990,17 @@ TEST_CASE("expected<Value, Error>: move constructor")
     }
 }
 
+// @todo Обобщённый конструктор копирования
+TEST_CASE("expected<void, Error>::generic copy ctor")
+{
+    // @todo constexpr
+    saga::expected<void, int> const src{};
+    REQUIRE(src.has_value());
+
+    saga::expected<void const, long> const dest(src);
+    REQUIRE(dest.has_value());
+}
+
 // Конструктор на основе временного unexpected
 static_assert(std::is_constructible<std::unique_ptr<Base>, std::unique_ptr<Derived> &&>{}, "");
 static_assert(std::is_constructible<saga::expected<void, std::unique_ptr<Base>>,
