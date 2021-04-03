@@ -1,7 +1,7 @@
 # SAGA
 Самонастраивающиеся генетические алгоритмы
 
-Статус основной ветки: ![Статус основной ветки](https://github.com/galushin/saga/workflows/test/badge.svg?branch=master)
+Статус основной ветки: [![Статус основной ветки](https://github.com/galushin/saga/workflows/test/badge.svg?branch=master)](https://github.com/galushin/saga/actions/workflows/test.yml)
 
 Отказ от ответственности
 ----
