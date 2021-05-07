@@ -573,6 +573,11 @@ namespace saga
              , Enabler(0)
             {}
 
+            template <class OtherValue, class OtherError>
+            explicit expected_base(expected_base<OtherValue, OtherError> const & rhs)
+             : Base(detail::two_phase_ctor_tag{}, rhs)
+            {}
+
             template <class... Args>
             constexpr explicit expected_base(unexpect_t, Args &&... args)
              : Base(unexpect_t{}, std::forward<Args>(args)...)
@@ -868,6 +873,13 @@ namespace saga
                        || std::is_nothrow_move_constructible<Value>{}
                        || std::is_nothrow_move_constructible<Error>{});
         }
+
+        template <class T, class E, class U, class G>
+        struct expected_explicit_from_other
+        // @todo случай void для T и U
+         : saga::bool_constant<!std::is_convertible<std::add_lvalue_reference_t<const U>, T>{}
+                               || !std::is_convertible<G const &, E>{}>
+        {};
     }
     // namespace detail
 }

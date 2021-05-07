@@ -49,6 +49,7 @@
 		<Unit filename="../include/saga/functional.hpp" />
 		<Unit filename="../include/saga/iterator.hpp" />
 		<Unit filename="../include/saga/iterator/reverse.hpp" />
+		<Unit filename="../include/saga/math.hpp" />
 		<Unit filename="../include/saga/math/probability.hpp" />
 		<Unit filename="../include/saga/numeric.hpp" />
 		<Unit filename="../include/saga/numeric/digits_of.hpp" />

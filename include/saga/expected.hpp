@@ -70,11 +70,19 @@ namespace saga
 
         expected(expected &&) = default;
 
-        template <class OtherValue, class OtherError>
-        // @todo Условный explicit
+        template <class OtherValue, class OtherError
+                  , std::enable_if_t<detail::expected_explicit_from_other<Value, Error, OtherValue, OtherError>{}> * = nullptr>
         // @todo Ограничения типа
         // @todo constexpr
         explicit expected(expected<OtherValue, OtherError> const & rhs)
+         : Base(rhs)
+        {}
+
+        template <class OtherValue, class OtherError
+                  , std::enable_if_t<!detail::expected_explicit_from_other<Value, Error, OtherValue, OtherError>{}> * = nullptr>
+        // @todo Ограничения типа
+        // @todo constexpr
+        expected(expected<OtherValue, OtherError> const & rhs)
          : Base(rhs)
         {}
 
