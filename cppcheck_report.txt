@@ -8,11 +8,11 @@
 [tests/saga_test.hpp:320]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/saga_test.hpp:324]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/saga_test.hpp:353]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/expected.cpp:1034]: (style) Struct 'throwing_implicit_ctor_from_int' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1169]: (style) Struct 'ctor_from_in_place_t' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1804]: (style) Struct 'ctor_but_no_assign' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1860]: (style) Struct 'wrapper' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:2163]: (style) Struct 'throwing_move_int' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1087]: (style) Struct 'throwing_implicit_ctor_from_int' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1222]: (style) Struct 'ctor_from_in_place_t' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1857]: (style) Struct 'ctor_but_no_assign' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1913]: (style) Struct 'wrapper' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:2216]: (style) Struct 'throwing_move_int' has a constructor with 1 argument that is not explicit.
 [tests/expected.cpp:400]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/expected.cpp:428]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/expected.cpp:932]: (warning) Redundant code: Found a statement that begins with numeric constant.
