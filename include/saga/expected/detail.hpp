@@ -874,12 +874,35 @@ namespace saga
                        || std::is_nothrow_move_constructible<Error>{});
         }
 
-        template <class T, class E, class U, class G>
-        struct expected_explicit_from_other
-        // @todo случай void для T и U
-         : saga::bool_constant<!std::is_convertible<std::add_lvalue_reference_t<const U>, T>{}
-                               || !std::is_convertible<G const &, E>{}>
-        {};
+        template <class Value, class Error>
+        constexpr bool expected_is_copyable()
+        {
+            return (std::is_void<Value>{} || std::is_copy_constructible<Value>{})
+                   && std::is_copy_constructible<Error>{};
+        }
+
+        template <class Value, class Error>
+        constexpr bool expected_is_moveable()
+        {
+            return (std::is_void<Value>{} || std::is_move_constructible<Value>{})
+                    && std::is_move_constructible<Error>{};
+        }
+
+        template <class Value, class Error, class OtherValue, class OtherError>
+        constexpr bool expected_has_ctor_from_other()
+        {
+            return ((std::is_void<Value>{} && std::is_void<OtherValue>{})
+                    || std::is_constructible<Value, std::add_lvalue_reference_t<OtherValue const>>{})
+                   && std::is_constructible<Error, OtherError const &>{};
+        }
+
+        template <class Value, class Error, class OtherValue, class OtherError>
+        constexpr bool expected_explicit_from_other()
+        {
+            // @todo случай void для T и U
+            return !std::is_convertible<std::add_lvalue_reference_t<const OtherValue>, Value>{}
+                   || !std::is_convertible<OtherError const &, Error>{};
+        }
     }
     // namespace detail
 }

@@ -50,10 +50,11 @@ namespace saga
     template <class Value, class Error>
     class expected
      : public detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>
-     , detail::copy_ctor_enabler<(std::is_void<Value>{} || std::is_copy_constructible<Value>{}) && std::is_copy_constructible<Error>{}>
-     , detail::move_ctor_enabler<(std::is_void<Value>{} || std::is_move_constructible<Value>{}) && std::is_move_constructible<Error>{}>
+     , detail::copy_ctor_enabler<detail::expected_is_copyable<Value, Error>()>
+     , detail::move_ctor_enabler<detail::expected_is_moveable<Value, Error>()>
     {
-        using Base = detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>;
+        using Base
+            = detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>;
 
     public:
         // Типы
@@ -67,11 +68,11 @@ namespace saga
         // Конструкторы
         expected() = default;
         expected(expected const &) = default;
-
         expected(expected &&) = default;
 
         template <class OtherValue, class OtherError
-                  , std::enable_if_t<detail::expected_explicit_from_other<Value, Error, OtherValue, OtherError>{}> * = nullptr>
+                  , std::enable_if_t<detail::expected_has_ctor_from_other<Value, Error, OtherValue, OtherError>()> * = nullptr
+                  , std::enable_if_t<detail::expected_explicit_from_other<Value, Error, OtherValue, OtherError>()> * = nullptr>
         // @todo Ограничения типа
         // @todo constexpr
         explicit expected(expected<OtherValue, OtherError> const & rhs)
@@ -79,7 +80,8 @@ namespace saga
         {}
 
         template <class OtherValue, class OtherError
-                  , std::enable_if_t<!detail::expected_explicit_from_other<Value, Error, OtherValue, OtherError>{}> * = nullptr>
+                  , std::enable_if_t<detail::expected_has_ctor_from_other<Value, Error, OtherValue, OtherError>()> * = nullptr
+                  , std::enable_if_t<!detail::expected_explicit_from_other<Value, Error, OtherValue, OtherError>()> * = nullptr>
         // @todo Ограничения типа
         // @todo constexpr
         expected(expected<OtherValue, OtherError> const & rhs)
