@@ -38,6 +38,8 @@ namespace saga
         struct expected_uninitialized
         {};
 
+        struct two_phase_ctor_tag{};
+
         template <class Value, class Error,
                   bool Value_trivially_destructible = std::is_trivially_destructible<Value>::value,
                   bool Error_trivially_destructible = std::is_trivially_destructible<Error>::value>
@@ -259,7 +261,9 @@ namespace saga
             }
 
         protected:
-            expected_storage(std::nullptr_t, expected_storage const & rhs)
+            template <class OtherValue, class OtherError>
+            expected_storage(two_phase_ctor_tag,
+                             expected_storage<OtherValue, OtherError> const & rhs)
              : impl_(expected_uninitialized{})
             {
                 if(rhs.has_value())
@@ -273,7 +277,7 @@ namespace saga
                 this->impl_.has_value_ = rhs.has_value();
             }
 
-            expected_storage(std::nullptr_t, expected_storage && rhs)
+            expected_storage(two_phase_ctor_tag, expected_storage && rhs)
              : impl_(expected_uninitialized{})
             {
                 if(rhs.has_value())
@@ -367,7 +371,7 @@ namespace saga
             using Base::Base;
 
             expected_copy_ctor(expected_copy_ctor const & rhs)
-             : Base(nullptr, rhs)
+             : Base(detail::two_phase_ctor_tag{}, rhs)
             {}
         };
 
@@ -405,13 +409,13 @@ namespace saga
             expected_move_ctor(expected_move_ctor && rhs)
                 noexcept(std::is_nothrow_move_constructible<Value>{}
                          && std::is_nothrow_move_constructible<Error>{})
-             : Base(nullptr, std::move(rhs))
+             : Base(detail::two_phase_ctor_tag{}, std::move(rhs))
             {}
         };
 
         template <class Value, class Error>
         class expected_holder
-         : private expected_move_ctor<Value, Error>
+         : public expected_move_ctor<Value, Error>
         {
             using Base = expected_move_ctor<Value, Error>;
 
@@ -539,7 +543,7 @@ namespace saga
         */
         template <class Value, class Error>
         class expected_base
-         : expected_holder<Value, Error>
+         : public expected_holder<Value, Error>
          , detail::default_ctor_enabler<std::is_default_constructible<Value>{}>
         {
             using Base = expected_holder<Value, Error>;
@@ -567,6 +571,11 @@ namespace saga
                                              std::initializer_list<U> inits, Args &&... args)
              : Base(in_place_t{}, inits, std::forward<Args>(args)...)
              , Enabler(0)
+            {}
+
+            template <class OtherValue, class OtherError>
+            explicit expected_base(expected_base<OtherValue, OtherError> const & rhs)
+             : Base(detail::two_phase_ctor_tag{}, rhs)
             {}
 
             template <class... Args>
@@ -680,7 +689,7 @@ namespace saga
 
         template <class Error>
         class expected_base<void, Error>
-         : expected_holder<void_wrapper, Error>
+         : public expected_holder<void_wrapper, Error>
         {
             using Base = expected_holder<void_wrapper, Error>;
 
@@ -693,6 +702,11 @@ namespace saga
             expected_base(expected_base const &) = default;
 
             expected_base(expected_base &&) = default;
+
+            template <class OtherError>
+            explicit expected_base(expected_base<void, OtherError> const & rhs)
+             : Base(detail::two_phase_ctor_tag{}, rhs)
+            {}
 
             constexpr explicit expected_base(in_place_t)
              : Base(in_place_t{})
@@ -858,6 +872,36 @@ namespace saga
                    && ((std::is_void<Value>{} && std::is_move_constructible<Error>{})
                        || std::is_nothrow_move_constructible<Value>{}
                        || std::is_nothrow_move_constructible<Error>{});
+        }
+
+        template <class Value, class Error>
+        constexpr bool expected_is_copyable()
+        {
+            return (std::is_void<Value>{} || std::is_copy_constructible<Value>{})
+                   && std::is_copy_constructible<Error>{};
+        }
+
+        template <class Value, class Error>
+        constexpr bool expected_is_moveable()
+        {
+            return (std::is_void<Value>{} || std::is_move_constructible<Value>{})
+                    && std::is_move_constructible<Error>{};
+        }
+
+        template <class Value, class Error, class OtherValue, class OtherError>
+        constexpr bool expected_has_ctor_from_other()
+        {
+            return ((std::is_void<Value>{} && std::is_void<OtherValue>{})
+                    || std::is_constructible<Value, std::add_lvalue_reference_t<OtherValue const>>{})
+                   && std::is_constructible<Error, OtherError const &>{};
+        }
+
+        template <class Value, class Error, class OtherValue, class OtherError>
+        constexpr bool expected_explicit_from_other()
+        {
+            // @todo случай void для T и U
+            return !std::is_convertible<std::add_lvalue_reference_t<const OtherValue>, Value>{}
+                   || !std::is_convertible<OtherError const &, Error>{};
         }
     }
     // namespace detail
