@@ -25,6 +25,10 @@ SAGA -- это свободной программное обеспечение:
 #include <string>
 
 // Тесты
+// conditional_t
+static_assert(std::is_same<saga::conditional_t<true, int, double>, int>{}, "");
+static_assert(std::is_same<saga::conditional_t<false, int, double>, double>{}, "");
+
 // remove_cvref
 namespace
 {

@@ -49,12 +49,12 @@ namespace saga
     */
     template <class Value, class Error>
     class expected
-     : public detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>
+     : public detail::expected_base<saga::conditional_t<std::is_void<Value>{}, void, Value>, Error>
      , detail::copy_ctor_enabler<detail::expected_is_copyable<Value, Error>()>
      , detail::move_ctor_enabler<detail::expected_is_moveable<Value, Error>()>
     {
         using Base
-            = detail::expected_base<std::conditional_t<std::is_void<Value>{}, void, Value>, Error>;
+            = detail::expected_base<saga::conditional_t<std::is_void<Value>{}, void, Value>, Error>;
 
     public:
         // Типы

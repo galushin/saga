@@ -26,6 +26,28 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    // conditional_t
+    namespace detail
+    {
+        template <bool B>
+        struct conditional
+        {
+            template <class T, class F>
+            using type = T;
+        };
+
+        template <>
+        struct conditional<false>
+        {
+            template <class T, class F>
+            using type = F;
+        };
+    }
+    // namespace detail
+
+    template <bool B, class T, class F>
+    using conditional_t = typename detail::conditional<B>::template type<T, F>;
+
     // priority_tag
     /** @brief Тип-тэг для задания приоритета перегрузок
     @tparam P уровень приоритета: чем больше это значение, тем выше приоритет
