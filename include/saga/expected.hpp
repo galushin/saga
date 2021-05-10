@@ -24,7 +24,7 @@ SAGA -- это свободной программное обеспечение:
  @todo Ограничения на типы аргументов шаблона
  @todo Проверить размер объектов, довести до минимума
 
- Реализация основана на http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0323r9.html
+ Реализация основана на http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p0323r10.html
 */
 
 #include <saga/expected/bad_expected_access.hpp>
@@ -52,6 +52,7 @@ namespace saga
      : public detail::expected_base<saga::conditional_t<std::is_void<Value>{}, void, Value>, Error>
      , detail::copy_ctor_enabler<detail::expected_is_copyable<Value, Error>()>
      , detail::move_ctor_enabler<detail::expected_is_moveable<Value, Error>()>
+     , detail::swap_adl_enabler<expected<Value, Error>, detail::expected_is_swappable<Value, Error>()>
     {
         using Base
             = detail::expected_base<saga::conditional_t<std::is_void<Value>{}, void, Value>, Error>;
@@ -363,21 +364,6 @@ namespace saga
             return !(unex == obj);
         }
     };
-
-    /**
-    @todo Можно ли сделать скрытым другом?
-    */
-    template <class Value, class Error>
-    std::enable_if_t<detail::expected_is_swappable<Value, Error>()>
-    swap(expected<Value, Error> & lhs, expected<Value, Error> & rhs)
-        noexcept(noexcept(lhs.swap(rhs)))
-    {
-        return lhs.swap(rhs);
-    }
-
-    template <class Value, class Error>
-    std::enable_if_t<!detail::expected_is_swappable<Value, Error>()>
-    swap(expected<Value, Error> & lhs, expected<Value, Error> & rhs) = delete;
 }
 // namespace saga
 
