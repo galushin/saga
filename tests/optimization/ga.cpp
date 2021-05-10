@@ -26,6 +26,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cpp20/span.hpp>
 #include <saga/numeric/digits_of.hpp>
 #include <saga/optimization/test_objectives.hpp>
+#include <saga/view/indices.hpp>
 
 #include <valarray>
 
@@ -252,17 +253,13 @@ TEST_CASE("Gray code - generates all")
     std::vector<Digit_container> codes(n_max);
     std::vector<Integer> values;
 
-    // @todo Реализовать и использовать view::iota, или заменить на алгоритм
-    for(auto num = 0*n_max; num < n_max; ++ num)
+    // @todo заменить на алгоритм
+    for(auto num : saga::view::indices(0*n_max, n_max))
     {
         // Преобразуем целое в двоичный код
         // @todo Алгоритм copy или механизм преобразования в контейнер (to<std::vector>)
         Digit_container code;
-        for(auto cur = saga::cursor::digits_of(num, 2); !!cur; ++ cur)
-        {
-            code.push_back(*cur);
-        }
-
+        saga::copy(saga::cursor::digits_of(num, 2), saga::back_inserter(code));
         saga::reverse(saga::cursor::all(code));
 
         // Переводим Код грея в целое число
