@@ -39,15 +39,7 @@ TEST_CASE("istream_cursor")
     saga_test::property_checker << [](std::vector<Value> const & values)
     {
         // Создание потока ввода с заданным содержимым
-        // @todo Упрощение создания потока ввода
-        std::ostringstream os;
-
-        for(auto const & value : values)
-        {
-            os << value << " ";
-        }
-
-        std::istringstream input_stream(os.str());
+        auto input_stream = saga_test::make_istringstream_from_range(values);
 
         // Чтение всей последовательности через курсор
         std::vector<Value> result;

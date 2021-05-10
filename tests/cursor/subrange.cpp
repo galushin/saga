@@ -34,13 +34,8 @@ TEST_CASE("equal: input sequence")
     saga_test::property_checker << [](std::vector<int> const & xs_src,
                                       std::vector<int> const & ys_src)
     {
-        std::ostringstream xs_os;
-        std::copy(xs_src.begin(), xs_src.end(), std::ostream_iterator<int>(xs_os, " "));
-        std::istringstream xs_is(xs_os.str());
-
-        std::ostringstream ys_os;
-        std::copy(ys_src.begin(), ys_src.end(), std::ostream_iterator<int>(ys_os, " "));
-        std::istringstream ys_is(ys_os.str());
+        auto xs_is = saga_test::make_istringstream_from_range(xs_src);
+        auto ys_is = saga_test::make_istringstream_from_range(ys_src);
 
         auto xs_cur = saga::make_subrange_cursor(std::istream_iterator<int>(xs_is),
                                                  std::istream_iterator<int>());

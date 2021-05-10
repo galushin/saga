@@ -29,6 +29,7 @@ SAGA -- это свободной программное обеспечение:
 #include <array>
 #include <algorithm>
 #include <iterator>
+#include <sstream>
 #include <tuple>
 #include <type_traits>
 
@@ -455,6 +456,20 @@ namespace saga_test
             return this->value == other.value;
         }
     };
+
+    template <class InputRange>
+    std::istringstream
+    make_istringstream_from_range(InputRange const & values)
+    {
+        std::ostringstream oss;
+
+        for(auto const & value : values)
+        {
+            oss << value << " ";
+        }
+
+        return std::istringstream(oss.str());
+    }
 }
 // namespace saga_test
 
