@@ -23,8 +23,11 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
+#include <saga/view/indices.hpp>
+
 #include <iomanip>
 #include <sstream>
+
 
 // Тесты
 using StringView = saga::basic_string_view<char, std::char_traits<char>>;
@@ -180,10 +183,9 @@ TEST_CASE("string_veiw : iterators are сontiguous")
     {
         saga::string_view const sv(str);
 
-        auto const n = sv.size();
         auto const first = sv.begin();
 
-        for(auto index = 0*n; index < n; ++ index)
+        for(auto index : saga::view::indices_of(sv))
         {
             REQUIRE(std::addressof(first[index]) == std::addressof(*first) + index);
         }
@@ -251,7 +253,7 @@ TEST_CASE("string_view : operator[], front, back")
 
         saga::string_view const sv(str.c_str(), num);
 
-        for(auto index = 0*sv.size(); index < sv.size(); ++ index)
+        for(auto index : saga::view::indices_of(sv))
         {
             REQUIRE(sv[index] == str.at(index));
             REQUIRE(std::addressof(sv[index]) == sv.data() + index);
