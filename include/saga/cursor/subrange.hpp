@@ -40,7 +40,7 @@ namespace saga
         using iterator = ForwardIterator;
 
         // Создание, копирование, уничтожение
-        subrange_cursor(ForwardIterator first, Sentinel last)
+        constexpr subrange_cursor(ForwardIterator first, Sentinel last)
          : cur_(std::move(first))
          , last_(std::move(last))
          , back_(this->last_)
@@ -60,33 +60,33 @@ namespace saga
         }
 
         // Курсор ввода
-        bool operator!() const
+        constexpr bool operator!() const
         {
             return this->cur_ == this->last_;
         }
 
-        void drop(saga::front_fn)
+        constexpr void drop(saga::front_fn)
         {
             assert(!!*this);
 
             ++ this->cur_;
         }
 
-        subrange_cursor & operator++()
+        constexpr subrange_cursor & operator++()
         {
             this->drop(saga::front_fn{});
 
             return *this;
         }
 
-        reference operator[](saga::front_fn) const
+        constexpr reference operator[](saga::front_fn) const
         {
             assert(!!*this);
 
             return *this->cur_;
         }
 
-        reference operator*() const
+        constexpr reference operator*() const
         {
             return (*this)[saga::front_fn{}];
         }
@@ -121,7 +121,7 @@ namespace saga
         void tweak_back(std::input_iterator_tag)
         {}
 
-        void tweak_back(std::bidirectional_iterator_tag)
+        constexpr void tweak_back(std::bidirectional_iterator_tag)
         {
             if(this->back_ != this->cur_)
             {
@@ -136,7 +136,7 @@ namespace saga
     };
 
     template <class ForwardIterator>
-    auto make_subrange_cursor(ForwardIterator first, ForwardIterator last)
+    constexpr auto make_subrange_cursor(ForwardIterator first, ForwardIterator last)
     -> subrange_cursor<ForwardIterator>
     {
         return subrange_cursor<ForwardIterator>(std::move(first), std::move(last));
@@ -144,8 +144,9 @@ namespace saga
 
     namespace cursor
     {
-        template <class ForwardRange, std::enable_if_t<std::is_reference<ForwardRange>::value, bool> = true>
-        auto all(ForwardRange && range)
+        template <class ForwardRange
+                 ,std::enable_if_t<std::is_reference<ForwardRange>::value> * = nullptr>
+        constexpr auto all(ForwardRange && range)
         {
             return ::saga::make_subrange_cursor(saga::begin(range), saga::end(range));
         }

@@ -18,8 +18,31 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_NUMERIC_HPP_INCLUDED
 #define Z_SAGA_NUMERIC_HPP_INCLUDED
 
+#include <saga/detail/static_empty_const.hpp>
+
+#include <functional>
+#include <utility>
+
 namespace saga
 {
+    class accumulate_fn
+    {
+    public:
+        template <class InputCursor, class Value, class BinaryOperation = std::plus<>>
+        constexpr
+        Value operator()(InputCursor cur,
+                         Value init,
+                         BinaryOperation bin_op = BinaryOperation()) const
+        {
+            for(; !!cur; ++ cur)
+            {
+                init = bin_op(std::move(init), *cur);
+            }
+
+            return init;
+        }
+    };
+
     class inner_product_fn
     {
     public:
@@ -39,8 +62,11 @@ namespace saga
 
 namespace
 {
-    constexpr auto const inner_product
-        = saga::detail::static_empty_const<saga::inner_product_fn>::value;
+    constexpr auto const & accumulate
+        = detail::static_empty_const<saga::accumulate_fn>::value;
+
+    constexpr auto const & inner_product
+        = detail::static_empty_const<saga::inner_product_fn>::value;
 }
 
 }
