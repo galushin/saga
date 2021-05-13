@@ -411,6 +411,9 @@ namespace saga_test
         move_only(move_only const &) = delete;
         move_only(move_only &&) = default;
 
+        move_only & operator=(move_only const &) = delete;
+        move_only & operator=(move_only &&) = default;
+
         T value;
     };
 

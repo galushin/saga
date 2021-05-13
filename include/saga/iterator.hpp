@@ -102,7 +102,7 @@ namespace detail
     struct begin_fn
     {
         template <class Range>
-        auto operator()(Range && rng) const
+        constexpr auto operator()(Range && rng) const
         {
             using std::begin;
             return begin(std::forward<Range>(rng));
@@ -112,7 +112,7 @@ namespace detail
     struct end_fn
     {
         template <class Range>
-        auto operator()(Range && rng) const
+        constexpr auto operator()(Range && rng) const
         {
             using std::end;
             return end(std::forward<Range>(rng));
