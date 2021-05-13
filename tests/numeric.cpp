@@ -87,7 +87,7 @@ TEST_CASE("accumulate - generic operation")
 
 TEST_CASE("accumulate - constexpr")
 {
-    constexpr std::array<int, 5> values = {1, 2, 3, 4, 5};
+    constexpr int values[] = {1, 2, 3, 4, 5};
 
     constexpr auto const sum = saga::accumulate(saga::cursor::all(values), 1, std::multiplies<>{});
 
