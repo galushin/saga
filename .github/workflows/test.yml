@@ -67,7 +67,7 @@ jobs:
           CC: ${{ matrix.config.cc }}
           
         run: |
-          g++ -v
+          $(CXX) -v
           
           cd ./tests
           make -f makefile.gcc debug && ./bin/Debug/test
