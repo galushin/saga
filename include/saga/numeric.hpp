@@ -48,8 +48,8 @@ namespace saga
     public:
         template <class InputCursor1, class InputCursor2, class T,
                   class BinaryOperator1, class BinaryOperator2>
-        T operator()(InputCursor1 in1, InputCursor2 in2, T init_value,
-                     BinaryOperator1 op1, BinaryOperator2 op2) const
+        constexpr T operator()(InputCursor1 in1, InputCursor2 in2, T init_value,
+                               BinaryOperator1 op1, BinaryOperator2 op2) const
         {
             for(; !!in1 && !!in2; ++ in1, (void)++in2)
             {
@@ -57,6 +57,13 @@ namespace saga
             }
 
             return init_value;
+        }
+
+        template <class InputCursor1, class InputCursor2, class T>
+        constexpr T operator()(InputCursor1 in1, InputCursor2 in2, T init_value) const
+        {
+            return (*this)(std::move(in1), std::move(in2), std::move(init_value),
+                           std::plus<>{}, std::multiplies<>{});
         }
     };
 
