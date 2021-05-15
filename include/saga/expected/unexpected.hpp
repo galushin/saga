@@ -22,8 +22,9 @@ SAGA -- это свободной программное обеспечение:
  @brief Шаблон класса для описания неожиданного объекта
 */
 
-#include <saga/utility/in_place.hpp>
+#include <saga/detail/swap_adl_enabler.hpp>
 #include <saga/type_traits.hpp>
+#include <saga/utility/in_place.hpp>
 
 namespace saga
 {
@@ -45,6 +46,7 @@ namespace saga
 
     template <class Error>
     class unexpected
+     : detail::swap_adl_enabler<unexpected<Error>, saga::is_swappable<Error>{}>
     {
     public:
         // Конструкторы
@@ -170,18 +172,6 @@ namespace saga
     private:
         Error value_;
     };
-
-    // @todo Можно ли превратить в скрытых друзей?
-    template <class Error>
-    std::enable_if_t<saga::is_swappable<Error>{}, void>
-    swap(unexpected<Error> & lhs, unexpected<Error> & rhs) noexcept(noexcept(lhs.swap(rhs)))
-    {
-        lhs.swap(rhs);
-    }
-
-    template <class Error>
-    std::enable_if_t<!saga::is_swappable<Error>{}, void>
-    swap(unexpected<Error> & lhs, unexpected<Error> & rhs) = delete;
 
 #if __cpp_deduction_guides >= 201703
     template <class Error>

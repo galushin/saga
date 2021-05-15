@@ -42,6 +42,7 @@
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
 		<Unit filename="../include/saga/detail/default_ctor_enabler.hpp" />
 		<Unit filename="../include/saga/detail/static_empty_const.hpp" />
+		<Unit filename="../include/saga/detail/swap_adl_enabler.hpp" />
 		<Unit filename="../include/saga/expected.hpp" />
 		<Unit filename="../include/saga/expected/bad_expected_access.hpp" />
 		<Unit filename="../include/saga/expected/detail.hpp" />
