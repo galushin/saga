@@ -903,21 +903,6 @@ namespace saga
             return !std::is_convertible<std::add_lvalue_reference_t<const OtherValue>, Value>{}
                    || !std::is_convertible<OtherError const &, Error>{};
         }
-
-        template <class T, bool Enable>
-        struct swap_adl_enabler
-        {
-            friend void swap(T & lhs, T & rhs) noexcept(noexcept(lhs.swap(rhs)))
-            {
-                return lhs.swap(rhs);
-            }
-        };
-
-        template <class T>
-        struct swap_adl_enabler<T, false>
-        {
-            friend void swap(T & lhs, T & rhs) = delete;
-        };
     }
     // namespace detail
 }
