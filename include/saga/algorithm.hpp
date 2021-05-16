@@ -107,6 +107,28 @@ namespace saga
         }
     };
 
+    template <class BidirectionalCursor, class OutputCursor>
+    using reverse_copy_result = saga::in_out_result<BidirectionalCursor, OutputCursor>;
+
+    struct reverse_copy_fn
+    {
+        template <class BidirectionalCursor, class OutputCursor>
+        constexpr
+        reverse_copy_result<BidirectionalCursor, OutputCursor>
+        operator()(BidirectionalCursor input, OutputCursor output) const
+        {
+            for(;!!input && !!output;)
+            {
+                *output = input[saga::back];
+                ++output;
+
+                input.drop(saga::back);
+            }
+
+            return {std::move(input), std::move(output)};
+        }
+    };
+
     struct equal_fn
     {
         template <class InputCursor1, class InputCursor2>
@@ -181,6 +203,7 @@ namespace saga
 
         constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
+        constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
 

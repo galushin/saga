@@ -24,6 +24,7 @@ SAGA -- это свободной программное обеспечение:
 
 // Вспомогательные файлы
 #include <saga/cursor/subrange.hpp>
+#include <saga/cursor/istream_cursor.hpp>
 
 #include <list>
 #include <string>
@@ -140,6 +141,67 @@ TEST_CASE("reverse")
         saga::reverse(saga::cursor::all(src_saga));
 
         REQUIRE(src_std == src_saga);
+    };
+}
+
+TEST_CASE("reverse_copy : to back_inserter")
+{
+    using Element = int;
+    using Container = std::list<Element>;
+
+    saga_test::property_checker << [](Container const & src)
+    {
+        auto const src_sub = saga_test::random_subrange_of(src);
+
+        // std
+        Container out_std;
+        std::reverse_copy(src_sub.first, src_sub.second, std::back_inserter(out_std));
+
+        // saga
+        Container out_saga;
+        saga::reverse_copy(saga::make_subrange_cursor(src_sub.first, src_sub.second),
+                           saga::back_inserter(out_saga));
+
+        // Сравнение результатов
+        REQUIRE(out_std == out_saga);
+    };
+}
+
+TEST_CASE("reverse_copy : subcontainer to subcontainer")
+{
+    saga_test::property_checker << [](std::vector<int> const & src_container,
+                                      std::vector<long> dest_container)
+    {
+        static_assert(!std::is_same<decltype(src_container), decltype(dest_container)>{}, "");
+
+        auto const src_range = saga_test::random_subrange_of(src_container);
+        auto const dest_range = saga_test::random_subrange_of(dest_container);
+
+        auto const src = saga::make_subrange_cursor(src_range.first, src_range.second);
+        auto const dest = saga::make_subrange_cursor(dest_range.first, dest_range.second);
+
+        auto dest_container_std = dest_container;
+
+        auto const result = saga::reverse_copy(src, dest);
+
+        static_assert(std::is_same<decltype(saga::reverse_copy(src, dest))
+                                  ,saga::in_out_result<std::remove_cv_t<decltype(src)>
+                                                      ,std::remove_cv_t<decltype(dest)>>>{},"");
+
+        auto const n_common = std::min(src.size(), dest.size());
+
+        std::reverse_copy(src.end() - n_common, src.end(),
+                          dest_container_std.begin() + (dest.begin() - dest_container.begin()));
+
+        CAPTURE(src_container);
+
+        REQUIRE(dest_container == dest_container_std);
+
+        REQUIRE(result.in.begin() == src.begin());
+        REQUIRE(result.in.end() == src.end() - n_common);
+
+        REQUIRE(result.out.begin() == dest.begin() + n_common);
+        REQUIRE(result.out.end() == dest.end());
     };
 }
 
