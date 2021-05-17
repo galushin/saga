@@ -94,8 +94,8 @@ namespace saga_test
 
         auto ps = std::minmax(pos1, pos2);
 
-        auto first = container.begin() + ps.first;
-        auto last = container.begin() + ps.second;
+        auto first = std::next(container.begin(), ps.first);
+        auto last = std::next(container.begin(), ps.second);
 
         return std::make_pair(std::move(first), std::move(last));
     }
