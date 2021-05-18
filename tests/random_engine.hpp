@@ -86,6 +86,36 @@ namespace saga_test
     template <class Container>
     void random_const_iterator_of(Container && container) = delete;
 
+    template <class Iterator>
+    class subrange
+    {
+    public:
+        subrange(Iterator first, Iterator last)
+         : first_(std::move(first))
+         , last_(std::move(last))
+        {}
+
+        Iterator begin() const
+        {
+            return this->first_;
+        }
+
+        Iterator end() const
+        {
+            return this->last_;
+        }
+
+    private:
+        Iterator first_;
+        Iterator last_;
+    };
+
+    template <class Iterator>
+    auto make_subrange(Iterator first, Iterator last)
+    {
+        return saga_test::subrange<Iterator>(std::move(first), std::move(last));
+    }
+
     template <class Container, class = std::enable_if_t<std::is_reference<Container>{}>>
     auto random_subrange_of(Container && container)
     {
@@ -94,10 +124,8 @@ namespace saga_test
 
         auto ps = std::minmax(pos1, pos2);
 
-        auto first = std::next(container.begin(), ps.first);
-        auto last = std::next(container.begin(), ps.second);
-
-        return std::make_pair(std::move(first), std::move(last));
+        return saga_test::make_subrange(std::next(container.begin(), ps.first)
+                                       ,std::next(container.begin(), ps.second));
     }
 }
 // namespace saga_test

@@ -48,8 +48,8 @@ TEST_CASE("random_subrange_of: vector")
     {
         auto const result = saga_test::random_subrange_of(src);
 
-        auto const pos1 = result.first - src.begin();
-        auto const pos2 = result.second - src.begin();
+        auto const pos1 = result.begin() - src.begin();
+        auto const pos2 = result.end() - src.begin();
 
         REQUIRE(0 <= pos1);
         REQUIRE(pos1 <= src.size());
@@ -73,8 +73,8 @@ TEST_CASE("copy")
         auto const src_subrange = saga_test::random_subrange_of(src);
         auto const dest_subrange = saga_test::random_subrange_of(dest);
 
-        auto const src_cur = saga::make_subrange_cursor(src_subrange.first, src_subrange.second);
-        auto const dest_cur = saga::make_subrange_cursor(dest_subrange.first, dest_subrange.second);
+        auto const src_cur = saga::cursor::all(src_subrange);
+        auto const dest_cur = saga::cursor::all(dest_subrange);
 
         auto const dest_prefix_size = (dest_cur.begin() - dest.begin());
 
@@ -155,12 +155,11 @@ TEST_CASE("reverse_copy : to back_inserter")
 
         // std
         Container out_std;
-        std::reverse_copy(src_sub.first, src_sub.second, std::back_inserter(out_std));
+        std::reverse_copy(src_sub.begin(), src_sub.end(), std::back_inserter(out_std));
 
         // saga
         Container out_saga;
-        saga::reverse_copy(saga::make_subrange_cursor(src_sub.first, src_sub.second),
-                           saga::back_inserter(out_saga));
+        saga::reverse_copy(saga::cursor::all(src_sub), saga::back_inserter(out_saga));
 
         // Сравнение результатов
         REQUIRE(out_std == out_saga);
@@ -177,8 +176,8 @@ TEST_CASE("reverse_copy : subcontainer to subcontainer")
         auto const src_range = saga_test::random_subrange_of(src_container);
         auto const dest_range = saga_test::random_subrange_of(dest_container);
 
-        auto const src = saga::make_subrange_cursor(src_range.first, src_range.second);
-        auto const dest = saga::make_subrange_cursor(dest_range.first, dest_range.second);
+        auto const src = saga::cursor::all(src_range);
+        auto const dest = saga::cursor::all(dest_range);
 
         auto dest_container_std = dest_container;
 
