@@ -47,10 +47,9 @@ TEST_CASE("accumulate - default operation")
 
         auto const values = saga_test::random_subrange_of(container);
 
-        auto const expected = std::accumulate(values.first, values.second, init_value);
+        auto const expected = std::accumulate(values.begin(), values.end(), init_value);
 
-        auto cur = saga::make_subrange_cursor(values.first, values.second);
-        auto const actual  = saga::accumulate(std::move(cur), init_value);
+        auto const actual  = saga::accumulate(saga::cursor::all(values), init_value);
 
         REQUIRE(actual == expected);
 
@@ -75,10 +74,9 @@ TEST_CASE("accumulate - generic operation")
             return std::min(lhs, rhs);
         };
 
-        auto const expected = std::accumulate(values.first, values.second, init_value, min_op);
+        auto const expected = std::accumulate(values.begin(), values.end(), init_value, min_op);
 
-        auto input_range = saga::make_subrange_cursor(values.first, values.second);
-        auto input = saga_test::make_istringstream_from_range(input_range);
+        auto input = saga_test::make_istringstream_from_range(saga::cursor::all(values));
 
         auto const actual
             = saga::accumulate(saga::make_istream_cursor<Element>(input), init_value, min_op);
