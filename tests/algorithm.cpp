@@ -204,6 +204,27 @@ TEST_CASE("reverse_copy : subcontainer to subcontainer")
     };
 }
 
+namespace
+{
+    template <class T, std::size_t N>
+    constexpr bool check_reverse_copy_constexpr(T(&arr)[N])
+    {
+        std::remove_cv_t<T> result[N] = {};
+        saga::reverse_copy(saga::cursor::all(arr), saga::cursor::all(result));
+
+        return saga::equal(saga::cursor::all(result)
+                          , saga::make_subrange_cursor(std::rbegin(arr), std::rend(arr)
+                                                      , saga::unsafe_tag_t{}));
+    }
+}
+
+TEST_CASE("reverse_copy : constexpr")
+{
+    constexpr int values[] = {1, 2, 3, 4, 5};
+
+    static_assert(::check_reverse_copy_constexpr(values), "");
+}
+
 TEST_CASE("starts_with : prefix")
 {
     saga_test::property_checker << [](std::string const & str)

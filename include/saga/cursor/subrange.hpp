@@ -93,7 +93,7 @@ namespace saga
         }
 
         // Двунаправленный курсор
-        void drop(saga::back_fn)
+        constexpr void drop(saga::back_fn)
         {
             assert(!!*this);
 
@@ -105,7 +105,7 @@ namespace saga
             }
         }
 
-        reference operator[](saga::back_fn)
+        constexpr reference operator[](saga::back_fn)
         {
             assert(!!*this);
 

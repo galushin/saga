@@ -132,7 +132,7 @@ namespace saga
     struct equal_fn
     {
         template <class InputCursor1, class InputCursor2>
-        bool operator()(InputCursor1 cur1, InputCursor2 cur2) const
+        constexpr bool operator()(InputCursor1 cur1, InputCursor2 cur2) const
         {
             for(; !!cur1 && !!cur2; ++cur1, (void)++cur2)
             {
