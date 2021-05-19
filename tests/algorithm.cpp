@@ -25,6 +25,7 @@ SAGA -- это свободной программное обеспечение:
 // Вспомогательные файлы
 #include <saga/cursor/subrange.hpp>
 #include <saga/cursor/istream_cursor.hpp>
+#include <saga/iterator/reverse.hpp>
 
 #include <list>
 #include <string>
@@ -213,7 +214,8 @@ namespace
         saga::reverse_copy(saga::cursor::all(arr), saga::cursor::all(result));
 
         return saga::equal(saga::cursor::all(result)
-                          , saga::make_subrange_cursor(std::rbegin(arr), std::rend(arr)
+                          , saga::make_subrange_cursor(saga::make_reverse_iterator(std::end(arr))
+                                                      , saga::make_reverse_iterator(std::begin(arr))
                                                       , saga::unsafe_tag_t{}));
     }
 }
