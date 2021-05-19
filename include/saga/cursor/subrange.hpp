@@ -1,4 +1,4 @@
-/* (c) 2020-2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2021 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -22,8 +22,9 @@ SAGA -- это свободной программное обеспечение:
  @brief Курсор, проходящий интервал, заданный итератором и часовым
 */
 
-#include <saga/iterator.hpp>
 #include <saga/cursor/cursor_traits.hpp>
+#include <saga/iterator.hpp>
+#include <saga/defs.hpp>
 
 #include <cassert>
 #include <iterator>
@@ -40,7 +41,7 @@ namespace saga
         using iterator = ForwardIterator;
 
         // Создание, копирование, уничтожение
-        constexpr subrange_cursor(ForwardIterator first, Sentinel last)
+        constexpr subrange_cursor(ForwardIterator first, Sentinel last, unsafe_tag_t)
          : cur_(std::move(first))
          , last_(std::move(last))
          , back_(this->last_)
@@ -136,10 +137,10 @@ namespace saga
     };
 
     template <class ForwardIterator>
-    constexpr auto make_subrange_cursor(ForwardIterator first, ForwardIterator last)
+    constexpr auto make_subrange_cursor(ForwardIterator first, ForwardIterator last, unsafe_tag_t)
     -> subrange_cursor<ForwardIterator>
     {
-        return subrange_cursor<ForwardIterator>(std::move(first), std::move(last));
+        return subrange_cursor<ForwardIterator>(std::move(first), std::move(last), unsafe_tag_t{});
     }
 
     namespace cursor
@@ -148,7 +149,8 @@ namespace saga
                  ,std::enable_if_t<std::is_reference<ForwardRange>::value> * = nullptr>
         constexpr auto all(ForwardRange && range)
         {
-            return ::saga::make_subrange_cursor(saga::begin(range), saga::end(range));
+            return ::saga::make_subrange_cursor(saga::begin(range), saga::end(range)
+                                               ,unsafe_tag_t{});
         }
     }
     // namespace cursor

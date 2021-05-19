@@ -15,42 +15,20 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-// Тестируемый файл
-#include <saga/cursor/subrange.hpp>
+#ifndef Z_SAGA_DEFS_HPP_INCLUDED
+#define Z_SAGA_DEFS_HPP_INCLUDED
 
-// Тестовая инфраструктура
-#include "./../saga_test.hpp"
-#include <catch/catch.hpp>
+/** @file saga/defs.hpp
+ @brief Определения типов, которые используются во многих местах библиотеки
+*/
 
-// Используются при тестировании
-#include <saga/algorithm.hpp>
-#include <saga/cursor/istream_cursor.hpp>
-
-#include <forward_list>
-#include <sstream>
-
-// Тесты
-TEST_CASE("equal: input sequence")
+namespace saga
 {
-    saga_test::property_checker << [](std::vector<int> const & xs_src,
-                                      std::vector<int> const & ys_src)
-    {
-        auto xs_is = saga_test::make_istringstream_from_range(xs_src);
-        auto ys_is = saga_test::make_istringstream_from_range(ys_src);
-
-        auto xs_cur = saga::make_istream_cursor<int>(xs_is);
-        auto ys_cur = saga::make_istream_cursor<int>(ys_is);
-
-        REQUIRE(saga::equal(std::move(xs_cur), std::move(ys_cur)) == (xs_src == ys_src));
-    };
+    /// @brief Параметр такого типа может быть добавлен к функциям, имеющим непроверяемые предусловия
+    struct unsafe_tag_t
+    {};
 }
+// namespace saga
 
-TEST_CASE("equal: forward sequence")
-{
-    saga_test::property_checker << [](std::forward_list<int> const & xs,
-                                      std::forward_list<int> const & ys)
-    {
-        REQUIRE(saga::equal(saga::cursor::all(xs), saga::cursor::all(xs)));
-        REQUIRE(saga::equal(saga::cursor::all(xs), saga::cursor::all(ys)) == (xs == ys));
-    };
-}
+#endif
+// Z_SAGA_DEFS_HPP_INCLUDED
