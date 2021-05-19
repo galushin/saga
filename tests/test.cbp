@@ -40,6 +40,7 @@
 		<Unit filename="../include/saga/cursor/cycle.hpp" />
 		<Unit filename="../include/saga/cursor/istream_cursor.hpp" />
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
+		<Unit filename="../include/saga/defs.hpp" />
 		<Unit filename="../include/saga/detail/default_ctor_enabler.hpp" />
 		<Unit filename="../include/saga/detail/static_empty_const.hpp" />
 		<Unit filename="../include/saga/detail/swap_adl_enabler.hpp" />
