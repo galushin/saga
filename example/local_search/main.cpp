@@ -143,7 +143,7 @@ int main(int argc, char * argv[])
     plugin->init(manager);
 
     std::seed_seq seed{std::time(nullptr)};
-    std::mt19937 random_engine(seed);
+    std::minstd_rand random_engine(seed);
 
     if(bool_dim > 0 && int_space.dim() == 0)
     {

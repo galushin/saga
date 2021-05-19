@@ -26,7 +26,7 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga_test
 {
-    using random_engine_type = std::mt19937;
+    using random_engine_type = std::minstd_rand;
 
     random_engine_type & random_engine();
 
