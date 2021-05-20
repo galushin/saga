@@ -257,7 +257,6 @@ TEST_CASE("Gray code - generates all")
     for(auto num : saga::view::indices(0*n_max, n_max))
     {
         // Преобразуем целое в двоичный код
-        // @todo Алгоритм copy или механизм преобразования в контейнер (to<std::vector>)
         Digit_container code;
         saga::copy(saga::cursor::digits_of(num, 2), saga::back_inserter(code));
         saga::reverse(saga::cursor::all(code));
