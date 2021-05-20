@@ -128,7 +128,23 @@ TEST_CASE("copy: container to back_inserter")
 
 // @todo Тест copy c минималистичными типами: из istream_cursor в back_inserter или ostream_joiner
 
-TEST_CASE("reverse")
+TEST_CASE("reverse : whole container")
+{
+    using Container = std::list<int>;
+
+    saga_test::property_checker << [](Container const & src)
+    {
+        auto src_std = src;
+        std::reverse(src_std.begin(), src_std.end());
+
+        auto src_saga = src;
+        saga::reverse(saga::cursor::all(src_saga));
+
+        REQUIRE(src_std == src_saga);
+    };
+}
+
+TEST_CASE("reverse : subrange")
 {
     using Container = std::list<int>;
 
@@ -139,11 +155,6 @@ TEST_CASE("reverse")
         auto const src = saga_test::random_subrange_of(values);
 
         std::reverse(src.begin(), src.end());
-
-        if(std::distance(src.begin(), src.end()) > 1)
-        {
-            REQUIRE(values != values_old);
-        }
 
         saga::reverse(saga::cursor::all(src));
 
