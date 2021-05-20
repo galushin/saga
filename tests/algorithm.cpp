@@ -132,16 +132,22 @@ TEST_CASE("reverse")
 {
     using Container = std::list<int>;
 
-    // @todo Выбрать заданный подинтервал, а не весь контейнер
-    saga_test::property_checker << [](Container const & src)
+    saga_test::property_checker << [](Container const & values_old)
     {
-        auto src_std = src;
-        std::reverse(src_std.begin(), src_std.end());
+        auto values = values_old;
 
-        auto src_saga = src;
-        saga::reverse(saga::cursor::all(src_saga));
+        auto const src = saga_test::random_subrange_of(values);
 
-        REQUIRE(src_std == src_saga);
+        std::reverse(src.begin(), src.end());
+
+        if(std::distance(src.begin(), src.end()) > 1)
+        {
+            REQUIRE(values != values_old);
+        }
+
+        saga::reverse(saga::cursor::all(src));
+
+        REQUIRE(values == values_old);
     };
 }
 
