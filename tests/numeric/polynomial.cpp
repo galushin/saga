@@ -38,11 +38,7 @@ TEST_CASE("polynomial_horner for binary code")
 
         std::vector<bool> bits;
 
-        for(auto cur = saga::cursor::digits_of(value, base); !!cur; ++ cur)
-        {
-            bits.push_back(*cur);
-        }
-
+        saga::copy(saga::cursor::digits_of(value, base), saga::back_inserter(bits));
         saga::reverse(saga::cursor::all(bits));
 
         auto const result

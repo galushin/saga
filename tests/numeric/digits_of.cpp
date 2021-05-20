@@ -47,10 +47,7 @@ TEST_CASE("digits_of")
         // Курсов digits_of
         std::vector<NotNegativeInteger> digits_cursor;
 
-        for(auto cur = saga::cursor::digits_of(value, base); !!cur; ++ cur)
-        {
-            digits_cursor.push_back(*cur);
-        }
+        saga::copy(saga::cursor::digits_of(value, base), saga::back_inserter(digits_cursor));
 
         // Сравнение
         REQUIRE(digits_manual == digits_cursor);
@@ -65,17 +62,13 @@ TEST_CASE("digits_of - reverse of poynomial_horner")
     {
         auto const base = saga_test::random_uniform<NotNegativeInteger>(2, 100);
 
-        // @todo Заменить на алгоритм copy или механизм преобразования курсора в контейнер
         std::vector<int> digits;
 
-        for(auto cur = saga::cursor::digits_of(value, base); !!cur; ++ cur)
-        {
-            digits.push_back(*cur);
-        }
-
+        saga::copy(saga::cursor::digits_of(value, base), saga::back_inserter(digits));
         saga::reverse(saga::cursor::all(digits));
 
         // Цифры в заданном диапазоне
+        // @todo Заменить на алгоритм
         for(auto const & digit : digits)
         {
             REQUIRE(0 <= digit);

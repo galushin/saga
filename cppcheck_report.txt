@@ -23,6 +23,6 @@
 [tests/iterator.cpp:224]: (error) Out of bounds access in dest because dest is empty.
 [tests/string_view.cpp:908]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/utility/equality_comparable_box.cpp:147]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/view/indices.cpp:108]: (performance) Prefer prefix ++/-- operators for non-primitive types.
-[tests/view/indices.cpp:118]: (performance) Prefer prefix ++/-- operators for non-primitive types.
+[tests/view/indices.cpp:110]: (performance) Prefer prefix ++/-- operators for non-primitive types.
+[tests/view/indices.cpp:120]: (performance) Prefer prefix ++/-- operators for non-primitive types.
 (information) Cppcheck cannot find all the include files (use --check-config for details)
