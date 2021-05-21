@@ -117,7 +117,7 @@ namespace saga
 
             assert(this->is_correct_index(best));
 
-            for(auto num = this->tournament_ - 1; num > 0; -- num)
+            saga::for_n(this->tournament_ - 1,[&]
             {
                 auto cur = distr(rnd);
 
@@ -127,7 +127,7 @@ namespace saga
                 {
                    best = std::move(cur);
                 }
-            }
+            });
 
             return best;
         }

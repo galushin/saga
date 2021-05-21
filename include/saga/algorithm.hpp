@@ -194,6 +194,25 @@ namespace saga
         }
     };
 
+    struct for_n_fn
+    {
+    public:
+        template <class Size, class NullaryFunction>
+        constexpr
+        NullaryFunction
+        operator()(Size num, NullaryFunction fun) const
+        {
+            assert(num >= 0);
+
+            for(; num > 0; -- num)
+            {
+                fun();
+            }
+
+            return fun;
+        }
+    };
+
     // Функциональные объекты
     namespace
     {
@@ -212,6 +231,8 @@ namespace saga
 
         constexpr auto const & starts_with = detail::static_empty_const<starts_with_fn>::value;
         constexpr auto const & ends_with = detail::static_empty_const<ends_with_fn>::value;
+
+        constexpr auto const & for_n = detail::static_empty_const<for_n_fn>::value;
     }
 }
 // namespace saga

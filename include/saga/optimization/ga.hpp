@@ -212,10 +212,10 @@ namespace saga
         saga::ga_boolen_initialize_population(population, settings.population_size,
                                               problem.dimension, problem.objective, rnd);
 
-        for(auto n = settings.max_iterations; n > 0; -- n)
+        saga::for_n(settings.max_iterations, [&]
         {
             ::saga::genetic_algorithm_boolean_cycle(population, problem, settings, rnd);
-        }
+        });
 
         return population;
     }

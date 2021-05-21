@@ -115,7 +115,7 @@ namespace
 
 TEST_CASE("GA boolean : manhattan distance, tournament selection")
 {
-    for(auto tournament = 2; tournament < 5; ++ tournament)
+    for(auto tournament : saga::view::indices(2, 5))
     {
         {
             saga::selection_tournament selection(tournament);

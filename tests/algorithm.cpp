@@ -288,3 +288,42 @@ TEST_CASE("ends_with : common")
         REQUIRE(::saga::ends_with(str, test) == expected);
     };
 }
+
+namespace
+{
+    struct counter
+    {
+        int value = 0;
+
+        constexpr void operator()()
+        {
+            ++ value;
+        }
+    };
+
+    constexpr int add_via_counter(int initial, int num)
+    {
+        return saga::for_n(num, counter{initial}).value;
+    }
+}
+
+TEST_CASE("for_n")
+{
+    saga_test::property_checker << [](saga_test::container_size<int> const & initial
+                                     ,saga_test::container_size<int> const & num)
+    {
+        auto result = saga::for_n(num.value, ::counter{initial.value});
+
+        REQUIRE(result.value == initial.value + num.value);
+
+        static_assert(std::is_same<decltype(result), counter>{}, "");
+    };
+}
+
+TEST_CASE("for_n: constexpr")
+{
+    constexpr auto const initial = 21;
+    constexpr auto const num = 5;
+
+    static_assert(::add_via_counter(initial, num) == initial + num, "");
+}

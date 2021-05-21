@@ -186,7 +186,7 @@ TEST_CASE("local search (integer) : L1 norm minimization")
         // Cлучайным образом выбираем область поиска
         saga::search_space_integer<Integer> space;
 
-        for(auto num = dim.value; num > 0; --num)
+        saga::for_n(dim.value, [&]
         {
             auto const limit1 = saga_test::random_uniform(-20, 20);
             auto const limit2 = saga_test::random_uniform(-20, 20);
@@ -194,7 +194,7 @@ TEST_CASE("local search (integer) : L1 norm minimization")
             auto const limits = std::minmax(limit1, limit2);
 
             space.add(limits.first, limits.second);
-        }
+        });
 
         // Определяем точку оптимума
         Argument const x_opt = [&]()
@@ -251,7 +251,7 @@ TEST_CASE("local search (integer) : L1 norm maximization")
         using SearchSpace = saga::search_space_integer<Integer>;
         SearchSpace space;
 
-        for(auto num = dim.value; num > 0; --num)
+        saga::for_n(dim.value, [&]
         {
             // Чтобы задача была одноэкстремальной, границы не должны быть одного знака!
             auto lim1 = saga_test::random_uniform(0, 10);
@@ -265,7 +265,7 @@ TEST_CASE("local search (integer) : L1 norm maximization")
             {
                 space.add(-lim2, -lim1);
             }
-        }
+        });
 
         // Определяем точку оптимума
         Argument const x_opt = [&]()
