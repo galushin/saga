@@ -20,8 +20,10 @@ SAGA -- это свободной программное обеспечение:
 
 // Тестовая инфраструктура
 #include "../saga_test.hpp"
-
 #include <catch/catch.hpp>
+
+// Используются в тестах
+#include <saga/algorithm.hpp>
 
 // Тесты
 TEST_CASE("any_distribution : types")
@@ -58,10 +60,7 @@ TEST_CASE("any_distribution : constructor")
     Random_engine rnd1(seed);
     Random_engine rnd2(seed);
 
-    for(auto n = 100; n > 0; -- n)
-    {
-        REQUIRE(a_distr(rnd1) == distr(rnd2));
-    }
+    saga::for_n(100, [&] { REQUIRE(a_distr(rnd1) == distr(rnd2)); });
 }
 
 TEST_CASE("any_distribution : equality")
