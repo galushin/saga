@@ -43,9 +43,9 @@ jobs:
             }
           # Clang
           - {
-              name: "Linux Clang 9",
-              CC: "clang-9", 
-              CXX: "clang++-9",
+              name: "Linux Clang default",
+              CC: "clang", 
+              CXX: "clang++",
             }
 
     steps:
