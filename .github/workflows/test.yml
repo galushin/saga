@@ -41,6 +41,22 @@ jobs:
               CC: "gcc-10", 
               CXX: "g++-10",
             }
+          # Clang
+          - {
+              name: "Linux Clang default",
+              CC: "clang", 
+              CXX: "clang++",
+            }
+          - {
+              name: "Linux Clang 10",
+              CC: "clang-10", 
+              CXX: "clang++-10",
+            }
+          - {
+              name: "Linux Clang 11",
+              CC: "clang-11", 
+              CXX: "clang++-11",
+            }
 
     steps:
       - uses: actions/checkout@v2

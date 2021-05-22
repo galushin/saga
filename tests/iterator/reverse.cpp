@@ -451,16 +451,27 @@ TEST_CASE("reverse_iterator : compatible reverse_iterator assign")
         << ::check_compatible_assign_for_container<std::vector<int>>;
 }
 
+namespace
+{
+    template <class T, std::size_t N>
+    constexpr bool check_reverse_iterator_dereference_constexpr(T(&arr)[N])
+    {
+        auto iter = saga::begin(arr) + N / 2;
+
+        auto const r_iter = saga::make_reverse_iterator(iter);
+
+        return (*r_iter == *iter - 1);
+
+        // Нужен constexpr для std::addressof: static_assert(r_iter.operator->() == &(*r_iter), "");
+    }
+}
+
 TEST_CASE("reverse_iterator : dereference")
 {
     {
-        constexpr saga::iota_iterator<int> iter(42);
+        constexpr int arr[] = {1, 2, 3, 4, 5};
 
-        constexpr auto const r_iter = saga::make_reverse_iterator(iter);
-
-        static_assert(*r_iter == *iter - 1, "");
-
-        // Нужен constexpr для std::addressof: static_assert(r_iter.operator->() == &(*r_iter), "");
+        static_assert(::check_reverse_iterator_dereference_constexpr(arr), "");
     }
 
     saga_test::property_checker
