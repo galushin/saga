@@ -68,6 +68,8 @@ namespace saga
             using value_type = T;
 
             // Создание, копирование, уничтожение
+            constexpr empty_base_wrapper() = default;
+         
             // @todo Условный explicit?
             // @todo Ограничить?
             template <class... Args>
@@ -99,6 +101,8 @@ namespace saga
             using value_type = T;
 
             // Создание, копирование, уничтожение
+            constexpr empty_base_wrapper() = default;
+            
             // @todo Условный explicit?
             // @todo Ограничить?
             template <class... Args>
