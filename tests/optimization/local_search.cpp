@@ -140,10 +140,7 @@ TEST_CASE("local search (pseudoboolean, first improvement): number of unequal ad
             assert(arg.size() == mask.size());
             auto x = arg;
 
-            for(auto i = 0*arg.size(); i+1 < arg.size(); ++ i)
-            {
-                x[i] = x[i] ^ mask[i];
-            }
+            std::transform(x.begin(), x.end(), mask.begin(), x.begin(), std::bit_xor<>{});
 
             return saga::count_adjacent_unequal(x);
         };

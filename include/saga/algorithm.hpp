@@ -213,6 +213,25 @@ namespace saga
         }
     };
 
+    template <class InputCursor, class OutputCursor>
+    using unary_transform_result = saga::in_out_result<InputCursor, OutputCursor>;
+
+    struct transform_fn
+    {
+        template <class InputCursor, class OutputCursor, class UnaryFunction>
+        // @todo constexpr
+        saga::unary_transform_result<InputCursor, OutputCursor>
+        operator()(InputCursor input, OutputCursor output, UnaryFunction fun) const
+        {
+            for(; !!input && !!output; ++input, (void)++output)
+            {
+                *output = fun(*input);
+            }
+
+            return {std::move(input), std::move(output)};
+        }
+    };
+
     // Функциональные объекты
     namespace
     {
@@ -220,6 +239,7 @@ namespace saga
 
         constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;
 
+        constexpr auto const & transform = detail::static_empty_const<transform_fn>::value;
         constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;

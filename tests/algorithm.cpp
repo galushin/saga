@@ -109,6 +109,56 @@ TEST_CASE("copy")
     };
 }
 
+TEST_CASE("transform: minimal")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, int mask)
+    {
+        auto fun = [&](Value const & arg) { return arg ^ mask; };
+
+        // std
+        std::vector<Value> result_std;
+        std::transform(src.begin(), src.end(), saga::back_inserter(result_std), fun);
+
+        // saga
+        auto src_istream = saga_test::make_istringstream_from_range(saga::cursor::all(src));
+
+        std::vector<Value> result_saga;
+        saga::transform(saga::make_istream_cursor<Value>(src_istream)
+                        , saga::back_inserter(result_saga), fun);
+
+        REQUIRE(result_saga == result_std);
+    };
+}
+
+TEST_CASE("transform")
+{
+    saga_test::property_checker << [](std::vector<char> const & src, std::string const & dest)
+    {
+        auto fun = [](char arg) { return std::toupper(arg); };
+
+        auto const n_common = std::min(src.size(), dest.size());
+        // std
+        auto dest_std = dest;
+        std::transform(src.begin(), src.begin() + n_common, dest_std.begin(), fun);
+
+        // saga
+        auto dest_saga = dest;
+        auto r_saga
+            = saga::transform(saga::cursor::all(src), saga::cursor::all(dest_saga), fun);
+
+        REQUIRE(dest_saga == dest_std);
+
+        REQUIRE(r_saga.in.begin() == src.begin() + n_common);
+        REQUIRE(r_saga.in.end() == src.end());
+        REQUIRE(r_saga.out.begin() == dest_saga.begin() + n_common);
+        REQUIRE(r_saga.out.end() == dest_saga.end());
+    };
+}
+
+// @todo Общий тест: подинтервалы, возвращаемое значение
+
 TEST_CASE("copy: container to back_inserter")
 {
     using Value = int;
@@ -125,8 +175,8 @@ TEST_CASE("copy: container to back_inserter")
         REQUIRE(dest == src);
     };
 }
-
 // @todo Тест copy c минималистичными типами: из istream_cursor в back_inserter или ostream_joiner
+
 
 TEST_CASE("reverse : whole container")
 {
