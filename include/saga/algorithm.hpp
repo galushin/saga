@@ -37,6 +37,14 @@ namespace saga
         Output out;
     };
 
+    template <class Input1, class Input2, class Output>
+    struct in_in_out_result
+    {
+        Input1 in1;
+        Input2 in2;
+        Output out;
+    };
+
     // Немодифицирующие операции
     struct count_fn
     {
@@ -213,6 +221,43 @@ namespace saga
         }
     };
 
+    template <class InputCursor, class OutputCursor>
+    using unary_transform_result = in_out_result<InputCursor, OutputCursor>;
+
+    template <class InputCursor1, class InputCursor2, class OutputCursor>
+    using binary_transform_result = in_in_out_result<InputCursor1, InputCursor2, OutputCursor>;
+
+    struct transform_fn
+    {
+    public:
+        template <class InputCursor, class OutputCursor, class UnaryFunction>
+        constexpr
+        unary_transform_result<InputCursor, OutputCursor>
+        operator()(InputCursor input, OutputCursor output, UnaryFunction fun) const
+        {
+            for(; !!input && !!output; ++input, (void)++output)
+            {
+                *output = fun(*input);
+            }
+
+            return {std::move(input), std::move(output)};
+        }
+
+        template <class InputCursor1, class InputCursor2, class OutputCursor, class BinaryFunction>
+        constexpr
+        binary_transform_result<InputCursor1, InputCursor2, OutputCursor>
+        operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
+                   , BinaryFunction bin_fun) const
+        {
+            for(; !!in1 && !!in2 && !!out; (void)++in1, (void)++in2, (void)++out)
+            {
+                *out = bin_fun(*in1, *in2);
+            }
+
+            return {std::move(in1), std::move(in2), std::move(out)};
+        }
+    };
+
     // Функциональные объекты
     namespace
     {
@@ -220,6 +265,7 @@ namespace saga
 
         constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;
 
+        constexpr auto const & transform = detail::static_empty_const<transform_fn>::value;
         constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
