@@ -57,6 +57,11 @@ jobs:
               CC: "clang-11", 
               CXX: "clang++-11",
             }
+          - {
+              name: "Linux Clang 12",
+              CC: "clang-12", 
+              CXX: "clang++-12",
+            }
 
     steps:
       - uses: actions/checkout@v2
@@ -76,7 +81,7 @@ jobs:
         working-directory: ${{ env.HOME }}
         run: |
           sudo apt-get install -y gcc-8 g++-8
-
+          
       - name: build-and-test
         env:
           CXX: ${{ matrix.config.cxx }}
