@@ -48,31 +48,6 @@ jobs:
               CXX: "clang++",
             }
           - {
-              name: "Linux Clang 5",
-              CC: "clang-5.0", 
-              CXX: "clang++-5.0",
-            }
-          - {
-              name: "Linux Clang 6",
-              CC: "clang-6.0", 
-              CXX: "clang++-6.0",
-            }
-          - {
-              name: "Linux Clang 7",
-              CC: "clang-7", 
-              CXX: "clang++-7",
-            }
-          - {
-              name: "Linux Clang 8",
-              CC: "clang-8", 
-              CXX: "clang++-8",
-            }
-          - {
-              name: "Linux Clang 9",
-              CC: "clang-9", 
-              CXX: "clang++-9",
-            }
-          - {
               name: "Linux Clang 10",
               CC: "clang-10", 
               CXX: "clang++-10",
@@ -106,51 +81,6 @@ jobs:
         working-directory: ${{ env.HOME }}
         run: |
           sudo apt-get install -y gcc-8 g++-8
-
-      - name: Install Clang 5
-        if: ( matrix.config.CXX == 'clang++-5.0' )
-        shell: bash
-        working-directory: ${{ env.HOME }}
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 5
-          
-      - name: Install Clang 6
-        if: ( matrix.config.CXX == 'clang++-6.0' )
-        shell: bash
-        working-directory: ${{ env.HOME }}
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 6
-          
-      - name: Install Clang 7
-        if: ( matrix.config.CXX == 'clang++-7' )
-        shell: bash
-        working-directory: ${{ env.HOME }}
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 7
-          
-      - name: Install Clang 8
-        if: ( matrix.config.CXX == 'clang++-8' )
-        shell: bash
-        working-directory: ${{ env.HOME }}
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 8
-          
-      - name: Install Clang 9
-        if: ( matrix.config.CXX == 'clang++-9' )
-        shell: bash
-        working-directory: ${{ env.HOME }}
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 9
           
       - name: build-and-test
         env:
