@@ -165,22 +165,77 @@ namespace
         {
             return x*x;
         }
-
     };
+
+    struct multiplies
+    {
+        constexpr int operator()(int x, int y) const
+        {
+            return x*y;
+        }
+    };
+
     constexpr bool check_unary_transform_constexpr()
     {
         int arr[] = {1, 2, 3, 4, 5};
         const int expected[] = {1, 4, 9, 16, 25};
 
-        saga::transform(saga::cursor::all(arr), saga::cursor::all(arr), square_fn{});
+        saga::transform(saga::cursor::all(arr), saga::cursor::all(arr), ::square_fn{});
 
         return saga::equal(saga::cursor::all(arr), saga::cursor::all(expected));
+    }
+
+    constexpr bool check_binary_transform_constexpr()
+    {
+        int lhs[] = {1, 2, 3, 4, 5};
+        int rhs[] = {2, 4, 6, 8, 10};
+
+        const int expected[] = {2, 8, 18, 32, 50};
+
+        saga::transform(saga::cursor::all(lhs), saga::cursor::all(rhs),
+                        saga::cursor::all(lhs), ::multiplies{});
+
+        return saga::equal(saga::cursor::all(lhs), saga::cursor::all(expected));
     }
 }
 
 TEST_CASE("transform constexpr")
 {
     static_assert(check_unary_transform_constexpr(), "");
+    static_assert(check_binary_transform_constexpr(), "");
+}
+
+TEST_CASE("transform binary")
+{
+    saga_test::property_checker << [](std::vector<char> const & lhs,
+                                      std::string const & rhs,
+                                      std::string const & dest_old)
+    {
+        auto const n_common = std::min({lhs.size(), rhs.size(), dest_old.size()});
+        auto const fun = [](char x, char y) { return std::min(x, y); };
+
+        // std
+        auto dest_std = dest_old;
+        std::transform(lhs.begin(), lhs.begin() + n_common, rhs.begin(), dest_std.begin(), fun);
+
+        // saga
+        auto dest_saga = dest_old;
+
+        auto const result_saga = saga::transform(saga::cursor::all(lhs), saga::cursor::all(rhs)
+                                                 , saga::cursor::all(dest_saga), fun);
+
+        // Проверка результатов
+        REQUIRE(dest_saga == dest_std);
+
+        REQUIRE(result_saga.in1.begin() == lhs.begin() + n_common);
+        REQUIRE(result_saga.in1.end() == lhs.end());
+
+        REQUIRE(result_saga.in2.begin() == rhs.begin() + n_common);
+        REQUIRE(result_saga.in2.end() == rhs.end());
+
+        REQUIRE(result_saga.out.begin() == dest_saga.begin() + n_common);
+        REQUIRE(result_saga.out.end() == dest_saga.end());
+    };
 }
 
 TEST_CASE("copy: container to back_inserter")
