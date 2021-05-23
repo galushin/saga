@@ -157,7 +157,31 @@ TEST_CASE("transform")
     };
 }
 
-// @todo Общий тест: подинтервалы, возвращаемое значение
+namespace
+{
+    struct square_fn
+    {
+        constexpr int operator()(int x) const
+        {
+            return x*x;
+        }
+
+    };
+    constexpr bool check_unary_transform_constexpr()
+    {
+        int arr[] = {1, 2, 3, 4, 5};
+        const int expected[] = {1, 4, 9, 16, 25};
+
+        saga::transform(saga::cursor::all(arr), saga::cursor::all(arr), square_fn{});
+
+        return saga::equal(saga::cursor::all(arr), saga::cursor::all(expected));
+    }
+}
+
+TEST_CASE("transform constexpr")
+{
+    static_assert(check_unary_transform_constexpr(), "");
+}
 
 TEST_CASE("copy: container to back_inserter")
 {

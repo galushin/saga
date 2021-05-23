@@ -219,7 +219,7 @@ namespace saga
     struct transform_fn
     {
         template <class InputCursor, class OutputCursor, class UnaryFunction>
-        // @todo constexpr
+        constexpr
         saga::unary_transform_result<InputCursor, OutputCursor>
         operator()(InputCursor input, OutputCursor output, UnaryFunction fun) const
         {
