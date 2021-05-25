@@ -2273,6 +2273,15 @@ namespace saga_test
     };
 }
 
+namespace
+{
+    template <class T>
+    using swap_member_type = decltype(std::declval<T>().swap(std::declval<T&>()));
+
+    template <class T>
+    using has_swap_member = saga::is_detected_exact<void, swap_member_type, T>;
+}
+
 TEST_CASE("expected::swap")
 {
     static_assert(std::is_nothrow_move_constructible<int>{}, "");
@@ -2296,6 +2305,16 @@ TEST_CASE("expected::swap")
     static_assert(!saga::is_swappable<saga::expected<int, saga_test::not_swapable>>{}, "");
     static_assert(!saga::is_swappable<saga::expected<saga_test::not_swapable, int>>{}, "");
     static_assert(!saga::is_swappable<saga::expected<::throwing_move_ctor, ::throwing_move_ctor>>{}, "");
+
+    static_assert(::has_swap_member<saga::expected<int, std::string>>{}, "");
+
+    static_assert(!::has_swap_member<saga::expected<void, saga_test::not_swapable>>{}, "");
+    static_assert(!::has_swap_member<saga::expected<void const, saga_test::not_swapable>>{}, "");
+    static_assert(!::has_swap_member<saga::expected<void volatile, saga_test::not_swapable>>{}, "");
+    static_assert(!::has_swap_member<saga::expected<void const volatile, saga_test::not_swapable>>{}, "");
+
+    static_assert(!::has_swap_member<saga::expected<int, saga_test::not_swapable>>{}, "");
+    static_assert(!::has_swap_member<saga::expected<saga_test::not_swapable, int>>{}, "");
 
     // Проверка свойств swap
     saga_test::property_checker
