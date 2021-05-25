@@ -70,9 +70,9 @@ namespace saga
         in_out_result<InputCursor, OutputCursor>
         operator()(InputCursor in, OutputCursor out) const
         {
-            for(; !!in && !!out; ++in, void(++out))
+            for(; !!in && !!out; ++in)
             {
-                *out = *in;
+                out << *in;
             }
 
             return {std::move(in), std::move(out)};
@@ -97,10 +97,10 @@ namespace saga
         template <class BidirectionalCursor>
         void operator()(BidirectionalCursor cur) const
         {
-            for(;!!cur; cur.drop(saga::front))
+            for(;!!cur; cur.drop_front())
             {
                 auto cur_next = cur;
-                cur_next.drop(saga::back);
+                cur_next.drop_back();
 
                 if(!cur_next)
                 {
@@ -108,7 +108,7 @@ namespace saga
                 }
 
                 using std::swap;
-                swap(cur[saga::front], cur[saga::back]);
+                swap(cur.front(), cur.back());
 
                 cur = std::move(cur_next);
             }
@@ -127,10 +127,9 @@ namespace saga
         {
             for(;!!input && !!output;)
             {
-                *output = input[saga::back];
-                ++output;
+                output << input.back();
 
-                input.drop(saga::back);
+                input.drop_back();
             }
 
             return {std::move(input), std::move(output)};
@@ -235,9 +234,9 @@ namespace saga
         unary_transform_result<InputCursor, OutputCursor>
         operator()(InputCursor input, OutputCursor output, UnaryFunction fun) const
         {
-            for(; !!input && !!output; ++input, (void)++output)
+            for(; !!input && !!output; ++input)
             {
-                *output = fun(*input);
+                output << fun(*input);
             }
 
             return {std::move(input), std::move(output)};
@@ -249,9 +248,9 @@ namespace saga
         operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
                    , BinaryFunction bin_fun) const
         {
-            for(; !!in1 && !!in2 && !!out; (void)++in1, (void)++in2, (void)++out)
+            for(; !!in1 && !!in2 && !!out; (void)++in1, ++in2)
             {
-                *out = bin_fun(*in1, *in2);
+                out << bin_fun(*in1, *in2);
             }
 
             return {std::move(in1), std::move(in2), std::move(out)};

@@ -243,7 +243,7 @@ namespace detail
             return *this;
         }
 
-        // Итератор и курсор ввода
+        // Итератор и курсор вывода
         constexpr bool operator!() const
         {
             return false;
@@ -256,6 +256,16 @@ namespace detail
 
         generic_container_output_iterator & operator*()
         {
+            return *this;
+        }
+
+        template <class Arg,
+                  std::enable_if_t<std::is_constructible<Value, Arg>{}, std::nullptr_t> = nullptr>
+        generic_container_output_iterator & operator<<(Arg && arg)
+        {
+            *this = std::forward<Arg>(arg);
+            ++*this;
+
             return *this;
         }
 
