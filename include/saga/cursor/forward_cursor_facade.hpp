@@ -1,4 +1,4 @@
-/* (c) 2020-2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2021 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -15,17 +15,41 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_CURSOR_CURSOR_TRAITS_HPP_INCLUDED
-#define Z_SAGA_CURSOR_CURSOR_TRAITS_HPP_INCLUDED
+#ifndef Z_SAGA_CURSOR_FORWARD_CURSOR_FACADE_HPP_INCLUDED
+#define Z_SAGA_CURSOR_FORWARD_CURSOR_FACADE_HPP_INCLUDED
 
-#include <saga/detail/static_empty_const.hpp>
+/** @file saga/cursor/forward_cursor_facade.hpp
+ @brief Определение операторов *, ++ и << для прямых курсоров
+*/
+
+#include <utility>
 
 namespace saga
 {
-    template <class Cursor>
-    using cursor_reference = typename Cursor::reference;
+    template <class Cursor, class Reference>
+    class forward_cursor_facade
+    {
+        friend constexpr Cursor & operator++(Cursor & cur)
+        {
+            cur.drop_front();
+            return cur;
+        }
+
+        friend constexpr Reference operator*(Cursor const & cur)
+        {
+            return cur.front();
+        }
+
+        template <class Arg, class = std::enable_if_t<std::is_assignable<Reference, Arg>{}>>
+        friend constexpr Cursor & operator<<(Cursor & cur, Arg && arg)
+        {
+            *cur = std::forward<Arg>(arg);
+            ++ cur;
+            return cur;
+        }
+    };
 }
 // namespace saga
 
 #endif
-// Z_SAGA_CURSOR_CURSOR_TRAITS_HPP_INCLUDED
+// Z_SAGA_CURSOR_FORWARD_CURSOR_FACADE_HPP_INCLUDED
