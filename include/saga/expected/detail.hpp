@@ -277,7 +277,8 @@ namespace saga
                 this->impl_.has_value_ = rhs.has_value();
             }
 
-            expected_storage(two_phase_ctor_tag, expected_storage && rhs)
+            template <class OtherValue, class OtherError>
+            expected_storage(two_phase_ctor_tag, expected_storage<OtherValue, OtherError> && rhs)
              : impl_(expected_uninitialized{})
             {
                 if(rhs.has_value())
@@ -578,6 +579,11 @@ namespace saga
              : Base(detail::two_phase_ctor_tag{}, rhs)
             {}
 
+            template <class OtherValue, class OtherError>
+            explicit expected_base(expected_base<OtherValue, OtherError> && rhs)
+             : Base(detail::two_phase_ctor_tag{}, std::move(rhs))
+            {}
+
             template <class... Args>
             constexpr explicit expected_base(unexpect_t, Args &&... args)
              : Base(unexpect_t{}, std::forward<Args>(args)...)
@@ -706,6 +712,11 @@ namespace saga
             template <class OtherError>
             explicit expected_base(expected_base<void, OtherError> const & rhs)
              : Base(detail::two_phase_ctor_tag{}, rhs)
+            {}
+
+            template <class OtherError>
+            explicit expected_base(expected_base<void, OtherError> && rhs)
+             : Base(detail::two_phase_ctor_tag{}, std::move(rhs))
             {}
 
             constexpr explicit expected_base(in_place_t)
@@ -902,6 +913,23 @@ namespace saga
             // @todo случай void для T и U
             return !std::is_convertible<std::add_lvalue_reference_t<const OtherValue>, Value>{}
                    || !std::is_convertible<OtherError const &, Error>{};
+        }
+
+        template <class Value, class Error, class OtherValue, class OtherError>
+        constexpr bool expected_has_move_ctor_from_other()
+        {
+            // @todo Полная реализация
+            return ((std::is_void<Value>{} && std::is_void<OtherValue>{})
+                    || std::is_constructible<Value, std::add_rvalue_reference_t<OtherValue>>{})
+                    && std::is_constructible<Error, OtherError &&>{};
+        }
+
+        template <class Value, class Error, class OtherValue, class OtherError>
+        constexpr bool expected_explicit_move_from_other()
+        {
+            // @todo случай void для T и U
+            return !std::is_convertible<std::add_rvalue_reference_t<OtherValue>, Value>{}
+                   || !std::is_convertible<OtherError &&, Error>{};
         }
     }
     // namespace detail

@@ -990,7 +990,7 @@ TEST_CASE("expected<Value, Error>: move constructor")
     }
 }
 
-// @todo Обобщённый конструктор копирования
+// Обобщённый конструктор копирования
 TEST_CASE("expected<void, Error>::generic copy ctor")
 {
     using SrcValue = void;
@@ -1075,6 +1075,97 @@ static_assert(!std::is_constructible<saga::expected<int, std::string>
                                     ,saga::expected<std::vector<int>, std::string>>{}, "");
 static_assert(!std::is_constructible<saga::expected<std::string, int>
                                     ,saga::expected<std::string, std::vector<int>>>{}, "");
+
+// Обобщённый конструктор перемещения
+TEST_CASE("expected<void, Error>: generic move ctor")
+{
+    using SrcValue = void;
+    using SrcError = int;
+
+    using Value = void const;
+    using Error = long;
+
+    // @todo constexpr
+    static_assert(std::is_void<SrcValue>{}, "");
+    static_assert(std::is_void<Value>{}, "");
+    static_assert(!std::is_same<SrcError, Error>{}, "");
+
+    saga_test::property_checker << [](expected_carrier<SrcValue, SrcError> const & src_carrier)
+    {
+        saga::expected<Value, saga_test::move_only<SrcError>> src(src_carrier.value);
+
+        saga::expected<Value, saga_test::move_only<Error>> const dest(std::move(src));
+        static_assert(!std::is_same<decltype(src) const, decltype(dest)>{}, "");
+
+        REQUIRE(dest == src);
+    };
+}
+
+TEST_CASE("expected<Value, Error>::generic move ctor")
+{
+    using SrcValue = char;
+    using SrcError = int;
+
+    using Value = int;
+    using Error = long;
+
+    // @todo constexpr
+    static_assert(!std::is_void<SrcValue>{}, "");
+    static_assert(!std::is_void<Value>{}, "");
+    static_assert(!std::is_same<SrcError, Error>{}, "");
+    static_assert(!std::is_same<SrcValue, Value>{}, "");
+    static_assert(std::is_constructible<Value, SrcValue const &>{}, "");
+    static_assert(std::is_constructible<Error, SrcError const &>{}, "");
+
+    saga_test::property_checker << [](expected_carrier<SrcValue, SrcError> const & src_carrier)
+    {
+        saga::expected<saga_test::move_only<Value>, saga_test::move_only<SrcError>>
+            src(src_carrier.value);
+
+        saga::expected<saga_test::move_only<Value>, saga_test::move_only<Error>> const
+            dest(std::move(src));
+
+        static_assert(!std::is_same<decltype(src) const, decltype(dest)>{}, "");
+
+        REQUIRE(dest.has_value() == src.has_value());
+
+        REQUIRE(dest == src);
+    };
+}
+
+// Обобщённое перемещения - проверка наличия неявного преобразования
+static_assert(std::is_convertible<int, long>{}, "");
+static_assert(std::is_convertible<long, double>{}, "");
+
+static_assert(std::is_convertible<saga::expected<saga_test::move_only<int>, long>
+                                 ,saga::expected<saga_test::move_only<long>, double>>{}, "");
+static_assert(std::is_convertible<saga::expected<int, saga_test::move_only<long>>
+                                 ,saga::expected<long, saga_test::move_only<double>>>{}, "");
+
+static_assert(std::is_convertible<saga::expected<saga_test::move_only<int>
+                                                ,saga_test::move_only<long>>
+                                 ,saga::expected<saga_test::move_only<long>
+                                                ,saga_test::move_only<double>>>{}, "");
+
+static_assert(std::is_constructible<std::vector<int>, std::size_t>{}, "");
+static_assert(!std::is_convertible<std::size_t, std::vector<int>>{}, "");
+
+static_assert(std::is_constructible<saga::expected<saga_test::move_only<std::vector<int>>, long>
+                                   ,saga::expected<saga_test::move_only<std::size_t>, int>>{}, "");
+static_assert(!std::is_convertible<saga::expected<saga_test::move_only<std::size_t>, int>
+                                  ,saga::expected<saga_test::move_only<std::vector<int>>, long>>{}, "");
+
+static_assert(std::is_constructible<saga::expected<long, saga_test::move_only<std::vector<int>>>
+                                   ,saga::expected<int, saga_test::move_only<std::size_t>>>{}, "");
+static_assert(!std::is_convertible<saga::expected<int, saga_test::move_only<std::size_t>>
+                                  ,saga::expected<long, saga_test::move_only<std::vector<int>>>>{}, "");
+
+static_assert(std::is_convertible<saga::expected<void, int>
+                                 ,saga::expected<void const, long>>{}, "");
+static_assert(!std::is_convertible<saga::expected<void const, saga_test::move_only<int>>
+                                  ,saga::expected<void, saga_test::move_only<std::vector<int>>>>{}, "");
+
+// @todo Обобщённое копирование - проверка наличия ограничений
 
 // Конструктор на основе временного unexpected
 static_assert(std::is_constructible<std::unique_ptr<Base>, std::unique_ptr<Derived> &&>{}, "");
