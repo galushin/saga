@@ -33,6 +33,8 @@ SAGA -- это свободной программное обеспечение:
 #include <tuple>
 #include <type_traits>
 
+// @todo Разбить на более мелкие файлы (в духе: один класс -- один файл)
+
 namespace saga_test
 {
     // Тестирование, основанное на свойствах
@@ -403,9 +405,31 @@ namespace saga_test
     template <class T>
     struct move_only
     {
+    template <class U>
+    friend bool operator==(move_only<T> const & lhs, move_only<U> const & rhs)
+    {
+        return lhs.value == rhs.value;
+    }
+
     public:
+        move_only() = default;
+
         constexpr explicit move_only(T init_value)
          : value(std::move(init_value))
+        {}
+
+        template <class U
+                 , std::enable_if_t<std::is_constructible<T, U&&>{}> * = nullptr
+                 , std::enable_if_t<!std::is_convertible<U&&, T>{}> * = nullptr>
+        constexpr explicit move_only(move_only<U> && other)
+         : value(std::move(other).value)
+        {}
+
+        template <class U
+                 , std::enable_if_t<std::is_constructible<T, U&&>{}> * = nullptr
+                 , std::enable_if_t<std::is_convertible<U&&, T>{}> * = nullptr>
+        constexpr move_only(move_only<U> && other)
+         : value(std::move(other).value)
         {}
 
         move_only(move_only const &) = delete;
@@ -415,6 +439,15 @@ namespace saga_test
         move_only & operator=(move_only &&) = default;
 
         T value;
+    };
+
+    template <class T>
+    struct arbitrary<move_only<T>>
+    {
+        using value_type = move_only<T>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg);
     };
 
     class Base

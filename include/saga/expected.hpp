@@ -89,6 +89,25 @@ namespace saga
          : Base(rhs)
         {}
 
+        template <class OtherValue, class OtherError
+                  , std::enable_if_t<detail::expected_has_move_ctor_from_other<Value, Error, OtherValue, OtherError>()> * = nullptr
+                  , std::enable_if_t<detail::expected_explicit_move_from_other<Value, Error, OtherValue, OtherError>()> * = nullptr>
+        // @todo Ограничения типа
+        // @todo constexpr
+        explicit
+        expected(expected<OtherValue, OtherError> && rhs)
+         : Base(std::move(rhs))
+        {}
+
+        template <class OtherValue, class OtherError
+                  , std::enable_if_t<detail::expected_has_move_ctor_from_other<Value, Error, OtherValue, OtherError>()> * = nullptr
+                  , std::enable_if_t<!detail::expected_explicit_move_from_other<Value, Error, OtherValue, OtherError>()> * = nullptr>
+        // @todo Ограничения типа
+        // @todo constexpr
+        expected(expected<OtherValue, OtherError> && rhs)
+         : Base(std::move(rhs))
+        {}
+
         template <class Arg,
                   std::enable_if_t<detail::expected_has_ctor_from_arg<Value, Error, Arg>()> * = nullptr,
                   std::enable_if_t<std::is_convertible<Arg&&, Value>{}> * = nullptr>
