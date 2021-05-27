@@ -20,6 +20,7 @@ jobs:
               name: "Linux GCC default",
               CC: "gcc", 
               CXX: "g++",
+              SANITIZE: none,
             }
           - {
               name: "Linux GCC 7",
@@ -30,37 +31,44 @@ jobs:
               name: "Linux GCC 8",
               CC: "gcc-8", 
               CXX: "g++-8",
+              SANITIZE: none,
             }
           - {
               name: "Linux GCC 9",
               CC: "gcc-9", 
               CXX: "g++-9",
+              SANITIZE: none,
             }
           - {
               name: "Linux GCC 10",
               CC: "gcc-10", 
               CXX: "g++-10",
+              SANITIZE: none,
             }
           # Clang
           - {
               name: "Linux Clang default",
               CC: "clang", 
               CXX: "clang++",
+              SANITIZE: none,
             }
           - {
               name: "Linux Clang 10",
               CC: "clang-10", 
               CXX: "clang++-10",
+              SANITIZE: none,
             }
           - {
               name: "Linux Clang 11",
               CC: "clang-11", 
               CXX: "clang++-11",
+              SANITIZE: none,
             }
           - {
               name: "Linux Clang 12",
               CC: "clang-12", 
               CXX: "clang++-12",
+              SANITIZE: none,
             }
           - {
               name: "Linux Clang 12 ASAN",
@@ -89,6 +97,7 @@ jobs:
           sudo apt-get install -y gcc-8 g++-8
       
       - name: build-and-test
+        if: matrix,config.SANITIZE == 'none'
         env:
           CXX: ${{ matrix.config.cxx }}
           CC: ${{ matrix.config.cc }}
@@ -111,7 +120,7 @@ jobs:
         env:
           CXX: ${{ matrix.config.cxx }}
           CC: ${{ matrix.config.cc }}
-          CFLAGS:  "${cflags} -fsanitize=address -fno-omit-frame-pointer"
+          CFLAGS:  "${cflags} -O1 -fsanitize=address -fno-omit-frame-pointer"
           LDFLAGS: "-fsanitize=address"
           
         run: >
