@@ -107,12 +107,12 @@ jobs:
           && ./bin/Release/local_search
           
       - name: ASAN
-        if: matrix.config.SANITIZE == "address"
+        if: matrix.config.SANITIZE == 'address'
         env:
           CXX: ${{ matrix.config.cxx }}
           CC: ${{ matrix.config.cc }}
           CFLAGS:  "${cflags} -fsanitize=address -fno-omit-frame-pointer"
-          LDFLAGS: "${ldflags} -fsanitize=address"
+          LDFLAGS: "-fsanitize=address"
           
         run: >
           $CXX -v
