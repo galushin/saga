@@ -66,7 +66,7 @@ jobs:
               name: "Linux Clang 12 ASAN",
               CC: "clang-12", 
               CXX: "clang++-12",
-              CXX_ASAN: true,
+              SANITIZE: address,
             }
 
     steps:
@@ -87,20 +87,6 @@ jobs:
         working-directory: ${{ env.HOME }}
         run: |
           sudo apt-get install -y gcc-8 g++-8
-          
-      - name: ASAN
-        if: matrix.config.CXX_ASAN == true
-        env:
-          CXX: ${{ matrix.config.cxx }}
-          CC: ${{ matrix.config.cc }}
-          CFLAGS:  "${cflags} -fsanitize=address -fno-omit-frame-pointer"
-          LDFLAGS: "${ldflags} -fsanitize=address"
-          
-        run: >
-          $CXX -v
-          && cd ./tests
-          && make -f makefile.gcc debug 
-          && ./bin/Debug/test
       
       - name: build-and-test
         env:
@@ -119,3 +105,17 @@ jobs:
           && ./bin/Debug/local_search
           && make -f makefile.gcc release 
           && ./bin/Release/local_search
+          
+      - name: ASAN
+        if: matrix.config.SANITIZE == "address"
+        env:
+          CXX: ${{ matrix.config.cxx }}
+          CC: ${{ matrix.config.cc }}
+          CFLAGS:  "${cflags} -fsanitize=address -fno-omit-frame-pointer"
+          LDFLAGS: "${ldflags} -fsanitize=address"
+          
+        run: >
+          $CXX -v
+          && cd ./tests
+          && make -f makefile.gcc debug 
+          && ./bin/Debug/test
