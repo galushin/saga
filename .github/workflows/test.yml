@@ -20,47 +20,68 @@ jobs:
               name: "Linux GCC default",
               CC: "gcc", 
               CXX: "g++",
+              SANITIZE: none,
+            }
+          - {
+              name: "Linux GCC default ASAN",
+              CC: "gcc", 
+              CXX: "g++",
+              SANITIZE: address,
             }
           - {
               name: "Linux GCC 7",
               CC: "gcc-7", 
               CXX: "g++-7",
+              SANITIZE: none,
             }
           - {
               name: "Linux GCC 8",
               CC: "gcc-8", 
               CXX: "g++-8",
+              SANITIZE: none,
             }
           - {
               name: "Linux GCC 9",
               CC: "gcc-9", 
               CXX: "g++-9",
+              SANITIZE: none,
             }
           - {
               name: "Linux GCC 10",
               CC: "gcc-10", 
               CXX: "g++-10",
+              SANITIZE: none,
             }
           # Clang
           - {
               name: "Linux Clang default",
               CC: "clang", 
               CXX: "clang++",
+              SANITIZE: none,
+            }
+          - {
+              name: "Linux Clang default ASAN",
+              CC: "clang", 
+              CXX: "clang++",
+              SANITIZE: address,
             }
           - {
               name: "Linux Clang 10",
               CC: "clang-10", 
               CXX: "clang++-10",
+              SANITIZE: none,
             }
           - {
               name: "Linux Clang 11",
               CC: "clang-11", 
               CXX: "clang++-11",
+              SANITIZE: none,
             }
           - {
               name: "Linux Clang 12",
               CC: "clang-12", 
               CXX: "clang++-12",
+              SANITIZE: none,
             }
 
     steps:
@@ -81,8 +102,9 @@ jobs:
         working-directory: ${{ env.HOME }}
         run: |
           sudo apt-get install -y gcc-8 g++-8
-          
+      
       - name: build-and-test
+        if: matrix.config.sanitize == 'none'
         env:
           CXX: ${{ matrix.config.cxx }}
           CC: ${{ matrix.config.cc }}
@@ -99,3 +121,17 @@ jobs:
           && ./bin/Debug/local_search
           && make -f makefile.gcc release 
           && ./bin/Release/local_search
+          
+      - name: ASAN
+        if: matrix.config.sanitize == 'address'
+        env:
+          CXX: ${{ matrix.config.cxx }}
+          CC: ${{ matrix.config.cc }}
+          CFLAGS:  "${cflags} -O1 -fsanitize=address -fno-omit-frame-pointer"
+          LDFLAGS: "-fsanitize=address"
+          
+        run: >
+          $CXX -v
+          && cd ./tests
+          && make -f makefile.gcc debug 
+          && ./bin/Debug/test

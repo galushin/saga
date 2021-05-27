@@ -9,7 +9,6 @@ INC =  -I./contrib/catch2/include -I../include
 RESINC = 
 LIBDIR = 
 LIB = 
-LDFLAGS = 
 
 INC_DEBUG =  $(INC)
 CFLAGS_DEBUG =  $(CFLAGS) -g
