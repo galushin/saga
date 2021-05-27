@@ -94,6 +94,7 @@ jobs:
           CXX: ${{ matrix.config.cxx }}
           CC: ${{ matrix.config.cc }}
           CFLAGS:  "${cflags} -fsanitize=address -fno-omit-frame-pointer"
+          LDFLAGS: "${ldflags} -fsanitize=address"
           
         run: >
           $CXX -v
