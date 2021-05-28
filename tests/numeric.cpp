@@ -33,18 +33,14 @@ SAGA -- это свободной программное обеспечение:
 // accumulate
 TEST_CASE("accumulate - default operation")
 {
-    using Element = int;
-    using InitValue = long;
+    using Element = unsigned int;
+    using InitValue = unsigned long;
 
     static_assert(!std::is_same<Element, InitValue>{}, "");
 
     saga_test::property_checker << [](std::vector<Element> container,
                                       InitValue const & init_value)
     {
-        // Так суммирование элементов массива точно не приведёт к неопределённому поведению
-        std::sort(container.begin(), container.end());
-        std::adjacent_difference(container.begin(), container.end(), container.begin());
-
         auto const values = saga_test::random_subrange_of(container);
 
         auto const expected = std::accumulate(values.begin(), values.end(), init_value);
@@ -59,8 +55,8 @@ TEST_CASE("accumulate - default operation")
 
 TEST_CASE("accumulate - generic operation")
 {
-    using Element = int;
-    using InitValue = long;
+    using Element = unsigned int;
+    using InitValue = unsigned long;
 
     static_assert(!std::is_same<Element, InitValue>{}, "");
 
@@ -120,16 +116,12 @@ TEST_CASE("accumulate - move only init value")
 // inner_product
 TEST_CASE("inner_product: default operations")
 {
-    using Value = int;
+    using Value = unsigned int;
 
     saga_test::property_checker << [](std::vector<Value> lhs,
                                       std::list<bool> const & rhs,
                                       Value const & init_value)
     {
-        // Так суммирование произведений точно не приведёт к неопределённому поведению
-        std::sort(lhs.begin(), lhs.end());
-        std::adjacent_difference(lhs.begin(), lhs.end(), lhs.begin());
-
         auto const n_min = std::min(lhs.size(), rhs.size());
 
         auto const result_std
@@ -146,7 +138,7 @@ TEST_CASE("inner_product: default operations")
 
 TEST_CASE("inner_product: generic operations")
 {
-    using Value = int;
+    using Value = unsigned int;
 
     saga_test::property_checker << [](std::vector<Value> const & lhs,
                                       std::list<Value> const & rhs,

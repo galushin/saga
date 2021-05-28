@@ -155,6 +155,7 @@ jobs:
           CC: ${{ matrix.config.cc }}
           CFLAGS:  "${cflags} -fsanitize=undefined -fno-omit-frame-pointer"
           LDFLAGS: "-fsanitize=undefined"
+          UBSAN_OPTIONS: "print_stacktrace=1"
           
         run: >
           $CXX -v
