@@ -29,6 +29,12 @@ jobs:
               SANITIZE: address,
             }
           - {
+              name: "Linux GCC default UBSAN",
+              CC: "gcc", 
+              CXX: "g++",
+              SANITIZE: UB,
+            }
+          - {
               name: "Linux GCC 7",
               CC: "gcc-7", 
               CXX: "g++-7",
@@ -64,6 +70,12 @@ jobs:
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: address,
+            }
+          - {
+              name: "Linux Clang default UBSAN",
+              CC: "clang", 
+              CXX: "clang++",
+              SANITIZE: UB,
             }
           - {
               name: "Linux Clang 10",
@@ -129,6 +141,20 @@ jobs:
           CC: ${{ matrix.config.cc }}
           CFLAGS:  "${cflags} -O1 -fsanitize=address -fno-omit-frame-pointer"
           LDFLAGS: "-fsanitize=address"
+          
+        run: >
+          $CXX -v
+          && cd ./tests
+          && make -f makefile.gcc debug 
+          && ./bin/Debug/test
+          
+      - name: UBSAN
+        if: matrix.config.sanitize == 'UB'
+        env:
+          CXX: ${{ matrix.config.cxx }}
+          CC: ${{ matrix.config.cc }}
+          CFLAGS:  "${cflags} -fsanitize=undefined -fno-omit-frame-pointer"
+          LDFLAGS: "-fsanitize=undefined"
           
         run: >
           $CXX -v

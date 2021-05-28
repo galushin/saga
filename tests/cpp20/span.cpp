@@ -475,10 +475,13 @@ TEST_CASE("span : iterators of not-empty")
         using Span = saga::span<Element>;
         Span const s(src);
 
-        REQUIRE(std::addressof(*s.begin()) == std::addressof(src.front()));
-        REQUIRE(std::addressof(*s.cbegin()) == std::addressof(src.front()));
-        REQUIRE(std::addressof(*s.rbegin()) == std::addressof(src.back()));
-        REQUIRE(std::addressof(*s.crbegin()) == std::addressof(src.back()));
+        if(!src.empty())
+        {
+            REQUIRE(std::addressof(*s.begin()) == std::addressof(src.front()));
+            REQUIRE(std::addressof(*s.cbegin()) == std::addressof(src.front()));
+            REQUIRE(std::addressof(*s.rbegin()) == std::addressof(src.back()));
+            REQUIRE(std::addressof(*s.crbegin()) == std::addressof(src.back()));
+        }
 
         REQUIRE(s.rbegin() == Span::reverse_iterator(s.end()));
         REQUIRE(s.rend() == Span::reverse_iterator(s.begin()));
