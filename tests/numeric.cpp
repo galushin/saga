@@ -100,20 +100,18 @@ TEST_CASE("accumulate - move only init value")
 {
     saga_test::property_checker << [](std::vector<int> values, int const & init_value)
     {
-        // Так суммирование элементов массива точно не приведёт к неопределённому поведению
-        std::sort(values.begin(), values.end());
-        std::adjacent_difference(values.begin(), values.end(), values.begin());
+        auto const fun = std::bit_xor<>{};
 
-        auto const result_std = std::accumulate(values.begin(), values.end(), init_value);
+        auto const result_std = std::accumulate(values.begin(), values.end(), init_value, fun);
 
-        auto const my_plus = [](saga_test::move_only<int> lhs, int rhs)
+        auto const my_op = [=](saga_test::move_only<int> lhs, int rhs)
         {
-            lhs.value += rhs;
+            lhs.value = fun(lhs.value, rhs);
             return lhs;
         };
 
         auto const result_saga = saga::accumulate(saga::cursor::all(values),
-                                                  saga_test::move_only<int>(init_value), my_plus);
+                                                  saga_test::move_only<int>(init_value), my_op);
 
         REQUIRE(result_saga.value == result_std);
     };
@@ -176,7 +174,7 @@ TEST_CASE("inner_product: generic operations")
 
         REQUIRE(result_saga == result_std);
     };
-};
+}
 
 TEST_CASE("inner_product - move only init value")
 {
@@ -184,17 +182,16 @@ TEST_CASE("inner_product - move only init value")
                                       std::list<bool> const & mask,
                                       int const & init_value)
     {
-        // Так суммирование произведений точно не приведёт к неопределённому поведению
-        std::sort(values.begin(), values.end());
-        std::adjacent_difference(values.begin(), values.end(), values.begin());
+        auto const fun = std::bit_xor<>{};
 
         auto const n_min = std::min(values.size(), mask.size());
-        auto const result_std
-            = std::inner_product(values.begin(), values.begin() + n_min, mask.begin(), init_value);
+        auto const result_std = std::inner_product(values.begin(), values.begin() + n_min
+                                                  , mask.begin(), init_value
+                                                  , fun, std::multiplies<>{});
 
-        auto const my_plus = [](saga_test::move_only<int> lhs, int rhs)
+        auto const my_plus = [=](saga_test::move_only<int> lhs, int rhs)
         {
-            lhs.value += rhs;
+            lhs.value = fun(lhs.value, rhs);
             return lhs;
         };
 
