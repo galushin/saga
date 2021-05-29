@@ -23,12 +23,6 @@ jobs:
               SANITIZE: none,
             }
           - {
-              name: "Linux GCC default ASAN",
-              CC: "gcc", 
-              CXX: "g++",
-              SANITIZE: address,
-            }
-          - {
               name: "Linux GCC default UBSAN",
               CC: "gcc", 
               CXX: "g++",
