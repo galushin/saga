@@ -35,6 +35,12 @@ jobs:
               SANITIZE: UB,
             }
           - {
+              name: "Linux GCC default FLOAT-CAST-OVERFLOW",
+              CC: "gcc", 
+              CXX: "g++",
+              SANITIZE: float-cast-overflow,
+            }
+          - {
               name: "Linux GCC 7",
               CC: "gcc-7", 
               CXX: "g++-7",
@@ -76,6 +82,12 @@ jobs:
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: UB,
+            }
+          - {
+              name: "Linux Clang default FLOAT-CAST-OVERFLOW",
+              CC: "clang", 
+              CXX: "clang++",
+              SANITIZE: float-cast-overflow,
             }
           - {
               name: "Linux Clang 10",
@@ -155,6 +167,21 @@ jobs:
           CC: ${{ matrix.config.cc }}
           CFLAGS:  "${cflags} -fsanitize=undefined -fno-omit-frame-pointer"
           LDFLAGS: "-fsanitize=undefined"
+          UBSAN_OPTIONS: "print_stacktrace=1"
+          
+        run: >
+          $CXX -v
+          && cd ./tests
+          && make -f makefile.gcc debug 
+          && ./bin/Debug/test
+          
+      - name: sanitize-float-cast-overflow
+        if: matrix.config.sanitize == 'float-cast-overflow'
+        env:
+          CXX: ${{ matrix.config.cxx }}
+          CC: ${{ matrix.config.cc }}
+          CFLAGS:  "${cflags} -fsanitize=float-cast-overflow -fno-omit-frame-pointer"
+          LDFLAGS: "-fsanitize=float-cast-overflow"
           UBSAN_OPTIONS: "print_stacktrace=1"
           
         run: >
