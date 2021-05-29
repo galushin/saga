@@ -497,12 +497,11 @@ namespace saga_test
     std::istringstream
     make_istringstream_from_range(InputRange const & values)
     {
+        using Value = typename std::iterator_traits<decltype(std::begin(values))>::value_type;
+
         std::ostringstream oss;
 
-        for(auto const & value : values)
-        {
-            oss << value << " ";
-        }
+        std::copy(std::begin(values), std::end(values), std::ostream_iterator<Value>(oss, " "));
 
         return std::istringstream(oss.str());
     }
