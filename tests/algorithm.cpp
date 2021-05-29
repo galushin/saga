@@ -122,7 +122,7 @@ TEST_CASE("transform: minimal")
         std::transform(src.begin(), src.end(), saga::back_inserter(result_std), fun);
 
         // saga
-        auto src_istream = saga_test::make_istringstream_from_range(saga::cursor::all(src));
+        auto src_istream = saga_test::make_istringstream_from_range(src);
 
         std::vector<Value> result_saga;
         saga::transform(saga::make_istream_cursor<Value>(src_istream)

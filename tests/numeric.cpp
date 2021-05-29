@@ -72,7 +72,7 @@ TEST_CASE("accumulate - generic operation")
 
         auto const expected = std::accumulate(values.begin(), values.end(), init_value, min_op);
 
-        auto input = saga_test::make_istringstream_from_range(saga::cursor::all(values));
+        auto input = saga_test::make_istringstream_from_range(values);
 
         auto const actual
             = saga::accumulate(saga::make_istream_cursor<Element>(input), init_value, min_op);

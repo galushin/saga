@@ -23,12 +23,6 @@ jobs:
               SANITIZE: none,
             }
           - {
-              name: "Linux GCC default ASAN",
-              CC: "gcc", 
-              CXX: "g++",
-              SANITIZE: address,
-            }
-          - {
               name: "Linux GCC default UBSAN",
               CC: "gcc", 
               CXX: "g++",
@@ -151,8 +145,9 @@ jobs:
         env:
           CXX: ${{ matrix.config.cxx }}
           CC: ${{ matrix.config.cc }}
-          CFLAGS:  "${cflags} -O1 -fsanitize=address -fno-omit-frame-pointer"
+          CFLAGS:  "${cflags} -O1 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-omit-frame-pointer"
           LDFLAGS: "-fsanitize=address"
+          ASAN_OPTIONS: "detect_invalid_pointer_pairs=2"
           
         run: >
           $CXX -v
