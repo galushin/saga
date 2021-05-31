@@ -87,16 +87,15 @@ namespace saga
         friend bool operator==(selection_tournament_distribution const & lhs,
                                selection_tournament_distribution const & rhs)
         {
-            return lhs.members() == rhs.members();
+            return (lhs.tournament_ == rhs.tournament_)
+                    && (lhs.repeat_ == rhs.repeat_)
+                    && (static_cast<compare_base const &>(lhs)
+                        == static_cast<compare_base const &>(rhs))
+                    && std::equal(lhs.obj_values_.begin(), lhs.obj_values_.end()
+                                  , rhs.obj_values_.begin(), rhs.obj_values_.end());
         }
 
     private:
-        auto members() const
-        {
-            return std::tie(this->tournament_, this->repeat_, this->obj_values_,
-                            static_cast<compare_base const &>(*this));
-        }
-
         Compare const & compare() const
         {
             return compare_base::value();

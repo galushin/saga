@@ -77,8 +77,7 @@ namespace saga
 
     template <class ElementType, std::ptrdiff_t Extent = dynamic_extent>
     class span
-     : saga::rel_ops::enable_adl<span<ElementType, Extent>>
-     , detail::default_ctor_enabler<(Extent <= 0)>
+     : detail::default_ctor_enabler<(Extent <= 0)>
     {
         using default_ctor_enabler = detail::default_ctor_enabler<(Extent <= 0)>;
 
@@ -267,18 +266,6 @@ namespace saga
     private:
         detail::span_base<pointer, Extent> base_{};
     };
-
-    template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
-    bool operator==(span<T, X> lhs, span<U, Y> rhs)
-    {
-        return saga::equal(saga::cursor::all(lhs), saga::cursor::all(rhs));
-    }
-
-    template <class T, std::ptrdiff_t X, class U, std::ptrdiff_t Y>
-    bool operator<(span<T, X> lhs, span<U, Y> rhs)
-    {
-        return saga::lexicographical_compare(saga::cursor::all(lhs), saga::cursor::all(rhs));
-    }
 }
 // namespace saga
 
