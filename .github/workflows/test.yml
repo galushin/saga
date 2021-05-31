@@ -27,12 +27,16 @@ jobs:
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: UB,
+              CFLAGS:  "-fsanitize=undefined",
+              LDFLAGS: "-fsanitize=undefined",
             }
           - {
               name: "Linux GCC default FLOAT-CAST-OVERFLOW",
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: float-cast-overflow,
+              CFLAGS:  "-fsanitize=float-cast-overflow",
+              LDFLAGS: "-fsanitize=float-cast-overflow",
             }
           - {
               name: "Linux GCC 7",
@@ -70,18 +74,25 @@ jobs:
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: address,
+              CFLAGS:  "-fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract",
+              LDFLAGS: "-fsanitize=address",
+              ASAN_OPTIONS: "detect_invalid_pointer_pairs=2",
             }
           - {
               name: "Linux Clang default UBSAN",
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: UB,
+              CFLAGS:  "-fsanitize=undefined",
+              LDFLAGS: "-fsanitize=undefined",
             }
           - {
               name: "Linux Clang default FLOAT-CAST-OVERFLOW",
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: float-cast-overflow,
+              CFLAGS:  "-fsanitize=float-cast-overflow",
+              LDFLAGS: "-fsanitize=float-cast-overflow",
             }
           - {
               name: "Linux Clang 10",
@@ -140,44 +151,13 @@ jobs:
           && make -f makefile.gcc release 
           && ./bin/Release/local_search
           
-      - name: ASAN
-        if: matrix.config.sanitize == 'address'
+      - name: SANITIZE
+        if: matrix.config.sanitize != 'none'
         env:
           CXX: ${{ matrix.config.cxx }}
           CC: ${{ matrix.config.cc }}
-          CFLAGS:  "${cflags} -O1 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-omit-frame-pointer"
-          LDFLAGS: "-fsanitize=address"
-          ASAN_OPTIONS: "detect_invalid_pointer_pairs=2"
-          
-        run: >
-          $CXX -v
-          && cd ./tests
-          && make -f makefile.gcc debug 
-          && ./bin/Debug/test
-          
-      - name: UBSAN
-        if: matrix.config.sanitize == 'UB'
-        env:
-          CXX: ${{ matrix.config.cxx }}
-          CC: ${{ matrix.config.cc }}
-          CFLAGS:  "${cflags} -fsanitize=undefined -fno-omit-frame-pointer"
-          LDFLAGS: "-fsanitize=undefined"
-          UBSAN_OPTIONS: "print_stacktrace=1"
-          
-        run: >
-          $CXX -v
-          && cd ./tests
-          && make -f makefile.gcc debug 
-          && ./bin/Debug/test
-          
-      - name: sanitize-float-cast-overflow
-        if: matrix.config.sanitize == 'float-cast-overflow'
-        env:
-          CXX: ${{ matrix.config.cxx }}
-          CC: ${{ matrix.config.cc }}
-          CFLAGS:  "${cflags} -fsanitize=float-cast-overflow -fno-omit-frame-pointer"
-          LDFLAGS: "-fsanitize=float-cast-overflow"
-          UBSAN_OPTIONS: "print_stacktrace=1"
+          CFLAGS:  "${{ matrux.config.cflags }} -O1 -fno-omit-frame-pointer"
+          UBSAN_OPTIONS: "${{ matrix.configx.ubsan_options }} print_stacktrace=1"
           
         run: >
           $CXX -v
