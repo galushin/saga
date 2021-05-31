@@ -156,7 +156,7 @@ jobs:
         env:
           CXX: ${{ matrix.config.cxx }}
           CC: ${{ matrix.config.cc }}
-          CFLAGS:  "${{ matrux.config.cflags }} -O1 -fno-omit-frame-pointer"
+          CFLAGS:  "${{ matrix.config.cflags }} -O1 -fno-omit-frame-pointer"
           UBSAN_OPTIONS: "${{ matrix.configx.ubsan_options }} print_stacktrace=1"
           
         run: >
