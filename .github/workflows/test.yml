@@ -95,6 +95,14 @@ jobs:
               LDFLAGS: "-fsanitize=float-cast-overflow",
             }
           - {
+              name: "Linux Clang default MEMSAN",
+              CC: "clang", 
+              CXX: "clang++",
+              SANITIZE: float-cast-overflow,
+              CFLAGS:  "-fsanitize=memory",
+              LDFLAGS: "-fsanitize=memory",
+            }
+          - {
               name: "Linux Clang 10",
               CC: "clang-10", 
               CXX: "clang++-10",
@@ -156,7 +164,7 @@ jobs:
         env:
           CXX: ${{ matrix.config.cxx }}
           CC: ${{ matrix.config.cc }}
-          CFLAGS:  "${{ matrix.config.cflags }} -O1 -fno-omit-frame-pointer"
+          CFLAGS:  "${{ matrix.config.cflags }} -O1 -g -fno-omit-frame-pointer"
           LDFLAGS: ${{ matrix.config.ldflags }}
           UBSAN_OPTIONS: "${{ matrix.config.ubsan_options }} print_stacktrace=1"
           ASAN_OPTIONS: "${{ matrix.config.asan_options }} print_stacktrace=1"
