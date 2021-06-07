@@ -1,0 +1,19 @@
+name: clang-tidy
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: clang-tidy check
+        uses: muxee/clang-tidy-action@0.0.1-rc1
