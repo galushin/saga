@@ -32,9 +32,12 @@ jobs:
           cd ./tests
           make -f makefile.gcc debug && ./bin/Debug/test
             
-      - name: Generate report
+      - name: Invoke lcov
         run: |
           cd ./tests
           lcov -o lcov_report.info -c -d .
-          genhtml -o report lcov_report.info
+          
+      - name: Generate HTML report
+        run: |
+          genhtml -o report ./tests/lcov_report.info
           
