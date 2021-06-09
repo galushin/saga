@@ -20,7 +20,7 @@ jobs:
           sudo apt install lcov
           lcov --version
 
-      - name: Build with gcov
+      - name: Build with gcov and run tests
         env:
           CC: "gcc"
           CXX: "g++"
@@ -30,13 +30,11 @@ jobs:
         run: |
           $CXX -v
           cd ./tests
-          make -f makefile.gcc debug
-          
-      - name: Test
-        run: ./bin/Debug/test
-        
+          make -f makefile.gcc debug && ./bin/Debug/test
+            
       - name: Generate report
         run: |
+          cd ./tests
           lcov -o lcov_report.info -c -d .
         
       - name: Report code coverage
@@ -46,5 +44,5 @@ jobs:
           minimum-coverage: 90
           artifact-name: code-coverage-report
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          working-directory: .
+          working-directory: ./tests
         
