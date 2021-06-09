@@ -22,10 +22,10 @@ jobs:
 
       - name: Build with gcov
         env:
-          CC: "gcc",
-          CXX: "g++",
-          CFLAGS: "-g -fprofile-arcs -ftest-coverage",
-          LDFLAGS: "-lgcov",
+          CC: "gcc"
+          CXX: "g++"
+          CFLAGS: "-g -fprofile-arcs -ftest-coverage"
+          LDFLAGS: "-lgcov"
           
         run: |
           $CXX -v
