@@ -36,8 +36,5 @@ jobs:
         run: |
           cd ./tests
           lcov -o lcov_report.info -c -d .
-        
-      - name: Report code coverage
-        run: |
-          cat tests/lcov_report.info
-        
+          genhtml -o report lcov_report.info
+          
