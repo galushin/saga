@@ -37,7 +37,8 @@ jobs:
           cd ./tests
           lcov -o lcov_report.info -c -d .
           
-      - name: Generate HTML report
-        run: |
-          genhtml -o report ./tests/lcov_report.info
+      - name: Generate report
+        uses: romeovs/lcov-reporter-action@v0.2.16
+        with:
+          lcov-file: ./tests/lcov_report.info
           
