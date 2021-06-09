@@ -21,7 +21,7 @@ jobs:
           lcov --version
 
       - name: Build with gcov
-        env: |
+        env:
           CC: "gcc",
           CXX: "g++",
           CFLAGS: "-g -fprofile-arcs -ftest-coverage",
