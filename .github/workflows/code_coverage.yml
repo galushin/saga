@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v2
       
       - name: Install lcov
-        run:
+        run: |
           sudo apt install lcov
           lcov --version
 
