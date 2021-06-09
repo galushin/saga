@@ -15,6 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       
+      - name: Install lcov
+        run: |
+          sudo apt install lcov
+          lcov --version
+      
       - name: Build with gcov and run tests
         env:
           CC: "gcc"
