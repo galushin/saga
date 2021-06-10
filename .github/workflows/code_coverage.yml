@@ -38,8 +38,14 @@ jobs:
           lcov -o lcov_report.info -c -d .
           
       - name: Generate report
-        uses: romeovs/lcov-reporter-action@v0.2.16
+        run: |
+          genhtml -o report ./test/lcov_report.info
+      
+      - name: publish report to repository
+        uses: EndBug/add-and-commit@v7
         with:
-          lcov-file: ./tests/lcov_report.info
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          author_name: Code coverage action
+          author_email: galushin@gmail.com
+          message: 'Updating coverage report'
+          add: '.report/*'
           
