@@ -3,6 +3,8 @@
 
 Статус основной ветки: [![Статус основной ветки](https://github.com/galushin/saga/workflows/test/badge.svg?branch=master)](https://github.com/galushin/saga/actions/workflows/test.yml)
 
+Покрытие кода тестами: [![codecov](https://codecov.io/gh/galushin/saga/branch/master/graph/badge.svg?token=3Z2XR38NJT)](https://codecov.io/gh/galushin/saga)
+
 Отказ от ответственности
 ----
 

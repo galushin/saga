@@ -1,0 +1,44 @@
+name: code_coverage
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+    
+  workflow_dispatch:
+
+jobs:
+  gcov:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install lcov
+        run: |
+          sudo apt install lcov
+          lcov --version
+      
+      - name: Build with gcov and run tests
+        env:
+          CC: "gcc"
+          CXX: "g++"
+          CFLAGS: "-g -fprofile-arcs -ftest-coverage -O0"
+          LDFLAGS: "-lgcov"
+          
+        run: |
+          $CXX -v
+          cd ./tests
+          make -f makefile.gcc debug && ./bin/Debug/test
+            
+      - name: Generate report
+        run: |
+          cd ./tests
+          lcov -o lcov_report.info -c -d .
+          lcov --remove lcov_report.info ./contrib/*
+          
+      - name: Upload
+        uses: codecov/codecov-action@v1
+        with:
+          files: ./tests/lcov_report.info
