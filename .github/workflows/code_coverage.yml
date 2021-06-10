@@ -36,6 +36,7 @@ jobs:
         run: |
           cd ./tests
           lcov -o lcov_report.info -c -d .
+          lcov --remove lcov_report.info ./contrib/*
           
       - name: Upload
         uses: codecov/codecov-action@v1
