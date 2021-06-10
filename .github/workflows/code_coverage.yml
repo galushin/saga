@@ -44,5 +44,5 @@ jobs:
           author_name: Code coverage action
           author_email: galushin@gmail.com
           message: 'Updating coverage report'
-          add: './report/*'
+          add: './tests/report/*'
           
