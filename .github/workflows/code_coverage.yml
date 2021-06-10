@@ -32,20 +32,17 @@ jobs:
           cd ./tests
           make -f makefile.gcc debug && ./bin/Debug/test
             
-      - name: Invoke lcov
+      - name: Generate report
         run: |
           cd ./tests
           lcov -o lcov_report.info -c -d .
+          genhtml -o report lcov_report.info
           
-      - name: Generate report
-        run: |
-          genhtml -o report ./test/lcov_report.info
-      
       - name: publish report to repository
         uses: EndBug/add-and-commit@v7
         with:
           author_name: Code coverage action
           author_email: galushin@gmail.com
           message: 'Updating coverage report'
-          add: '.report/*'
+          add: './report/*'
           
