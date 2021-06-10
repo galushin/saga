@@ -24,7 +24,7 @@ jobs:
         env:
           CC: "gcc"
           CXX: "g++"
-          CFLAGS: "-g -fprofile-arcs -ftest-coverage"
+          CFLAGS: "-g -fprofile-arcs -ftest-coverage -O0"
           LDFLAGS: "-lgcov"
           
         run: |
@@ -36,13 +36,8 @@ jobs:
         run: |
           cd ./tests
           lcov -o lcov_report.info -c -d .
-          genhtml -o report lcov_report.info
           
-      - name: publish report to repository
-        uses: EndBug/add-and-commit@v7
+      - name: Upload
+        uses: codecov/codecov-action@v1
         with:
-          author_name: Code coverage action
-          author_email: galushin@gmail.com
-          message: 'Updating coverage report'
-          add: './tests/report/*'
-          
+          files: ./tests/lcov_report.info
