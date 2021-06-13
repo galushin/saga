@@ -32,7 +32,6 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/expected/unexpected.hpp>
 
 #include <saga/utility/in_place.hpp>
-#include <saga/utility/operators.hpp>
 
 #include <utility>
 
