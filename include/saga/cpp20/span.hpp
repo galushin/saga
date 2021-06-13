@@ -27,7 +27,6 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/algorithm.hpp>
 #include <saga/detail/default_ctor_enabler.hpp>
 #include <saga/cursor/subrange.hpp>
-#include <saga/utility/operators.hpp>
 
 #include <cassert>
 #include <cstddef>

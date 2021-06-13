@@ -32,9 +32,9 @@ OBJDIR_RELEASE = ./obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = ./bin/Release/test
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/cursor/istream_cursor.o $(OBJDIR_DEBUG)/cursor/subrange.o $(OBJDIR_DEBUG)/expected.o $(OBJDIR_DEBUG)/expected/unexpected.o $(OBJDIR_DEBUG)/functional.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/numeric.o $(OBJDIR_DEBUG)/numeric/digits_of.o $(OBJDIR_DEBUG)/numeric/polynomial.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/string_view.o $(OBJDIR_DEBUG)/type_traits.o $(OBJDIR_DEBUG)/utility/as_const.o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o $(OBJDIR_DEBUG)/view/indices.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/cursor/istream_cursor.o $(OBJDIR_DEBUG)/cursor/subrange.o $(OBJDIR_DEBUG)/expected.o $(OBJDIR_DEBUG)/expected/unexpected.o $(OBJDIR_DEBUG)/functional.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/numeric.o $(OBJDIR_DEBUG)/numeric/digits_of.o $(OBJDIR_DEBUG)/numeric/polynomial.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/string_view.o $(OBJDIR_DEBUG)/type_traits.o $(OBJDIR_DEBUG)/utility/as_const.o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o $(OBJDIR_DEBUG)/utility/operators.o $(OBJDIR_DEBUG)/view/indices.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/cursor/istream_cursor.o $(OBJDIR_RELEASE)/cursor/subrange.o $(OBJDIR_RELEASE)/expected.o $(OBJDIR_RELEASE)/expected/unexpected.o $(OBJDIR_RELEASE)/functional.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/numeric.o $(OBJDIR_RELEASE)/numeric/digits_of.o $(OBJDIR_RELEASE)/numeric/polynomial.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/string_view.o $(OBJDIR_RELEASE)/type_traits.o $(OBJDIR_RELEASE)/utility/as_const.o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o $(OBJDIR_RELEASE)/view/indices.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/cursor/istream_cursor.o $(OBJDIR_RELEASE)/cursor/subrange.o $(OBJDIR_RELEASE)/expected.o $(OBJDIR_RELEASE)/expected/unexpected.o $(OBJDIR_RELEASE)/functional.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/numeric.o $(OBJDIR_RELEASE)/numeric/digits_of.o $(OBJDIR_RELEASE)/numeric/polynomial.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/string_view.o $(OBJDIR_RELEASE)/type_traits.o $(OBJDIR_RELEASE)/utility/as_const.o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o $(OBJDIR_RELEASE)/utility/operators.o $(OBJDIR_RELEASE)/view/indices.o
 
 all: debug release
 
@@ -129,6 +129,9 @@ $(OBJDIR_DEBUG)/utility/as_const.o: utility/as_const.cpp
 
 $(OBJDIR_DEBUG)/utility/equality_comparable_box.o: utility/equality_comparable_box.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c utility/equality_comparable_box.cpp -o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o
+
+$(OBJDIR_DEBUG)/utility/operators.o: utility/operators.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c utility/operators.cpp -o $(OBJDIR_DEBUG)/utility/operators.o
 
 $(OBJDIR_DEBUG)/view/indices.o: view/indices.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c view/indices.cpp -o $(OBJDIR_DEBUG)/view/indices.o
@@ -237,6 +240,9 @@ $(OBJDIR_RELEASE)/utility/as_const.o: utility/as_const.cpp
 
 $(OBJDIR_RELEASE)/utility/equality_comparable_box.o: utility/equality_comparable_box.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c utility/equality_comparable_box.cpp -o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o
+
+$(OBJDIR_RELEASE)/utility/operators.o: utility/operators.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c utility/operators.cpp -o $(OBJDIR_RELEASE)/utility/operators.o
 
 $(OBJDIR_RELEASE)/view/indices.o: view/indices.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c view/indices.cpp -o $(OBJDIR_RELEASE)/view/indices.o

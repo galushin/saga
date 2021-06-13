@@ -106,6 +106,7 @@
 		<Unit filename="type_traits.cpp" />
 		<Unit filename="utility/as_const.cpp" />
 		<Unit filename="utility/equality_comparable_box.cpp" />
+		<Unit filename="utility/operators.cpp" />
 		<Unit filename="view/indices.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
