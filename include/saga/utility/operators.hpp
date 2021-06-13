@@ -26,10 +26,24 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    namespace detail
+    {
+        template <class Base, class Tag>
+        struct inherit
+         : public Base
+        {};
+
+        template <class Tag>
+        struct inherit<void, Tag>
+        {};
+    }
+    // namespace detail
+
     namespace operators
     {
-        template <class T>
+        template <class T, class Base = void>
         struct equality_comparable
+         : detail::inherit<Base, equality_comparable<T, Base>>
         {
             friend
             constexpr bool
@@ -39,8 +53,9 @@ namespace saga
             }
         };
 
-        template <class T>
+        template <class T, class Base = void>
         struct less_than_comparable
+         : detail::inherit<Base, less_than_comparable<T, Base>>
         {
             friend
             constexpr bool
@@ -63,8 +78,9 @@ namespace saga
             }
         };
 
-        template <class T>
+        template <class T, class Base = void>
         struct incrementable
+         : detail::inherit<Base, incrementable<T, Base>>
         {
             friend constexpr T operator++(T & obj, int)
             {
@@ -74,8 +90,9 @@ namespace saga
             }
         };
 
-        template <class T>
+        template <class T, class Base = void>
         struct decrementable
+         : detail::inherit<Base, decrementable<T, Base>>
         {
             friend constexpr T operator--(T & obj, int)
             {
@@ -85,8 +102,9 @@ namespace saga
             }
         };
 
-        template <class T, class U>
+        template <class T, class U, class Base = void>
         struct addable_with
+         : detail::inherit<Base, addable_with<T, U, Base>>
         {
             friend constexpr T operator+(T lhs, U const & rhs)
             {
@@ -101,8 +119,9 @@ namespace saga
             }
         };
 
-        template <class T, class U>
+        template <class T, class U, class Base = void>
         struct subtractable_with
+         : detail::inherit<Base, subtractable_with<T, U, Base>>
         {
             friend constexpr T operator-(T lhs, U const & rhs)
             {
@@ -111,35 +130,31 @@ namespace saga
             }
         };
 
-        template <class T>
+        template <class T, class Base = void>
         struct totally_ordered
-         : equality_comparable<T>
-         , less_than_comparable<T>
+         : equality_comparable<T, less_than_comparable<T, Base>>
         {};
 
-        template <class T>
+        template <class T, class Base = void>
         struct unit_steppable
-         : incrementable<T>
-         , decrementable<T>
+         : incrementable<T, decrementable<T, Base>>
         {};
 
-        template <class T, class U>
+        template <class T, class U, class Base = void>
         struct additive_with
-         : addable_with<T, U>
-         , subtractable_with<T, U>
+         : addable_with<T, U, subtractable_with<T, U, Base>>
         {};
     }
     //namespace operators
 
+    /* В отличие от классов пространства имён operators позволяет легко определить шаблоны
+    операторов
+    */
     namespace rel_ops
     {
         template <class Tag, class Base = void>
         struct enable_adl
-         : public Base
-        {};
-
-        template <class Tag>
-        struct enable_adl<Tag, void>
+         : detail::inherit<Base, Tag>
         {};
 
         template <class T, class U>

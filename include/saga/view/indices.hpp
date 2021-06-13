@@ -53,10 +53,10 @@ namespace saga
 
     template <class Incrementable>
     class iota_iterator
-     : saga::rel_ops::enable_adl<iota_iterator<Incrementable>>
-     , saga::operators::additive_with<iota_iterator<Incrementable>,
-                                      saga::incrementable_difference_t<Incrementable>>
-     , saga::operators::unit_steppable<iota_iterator<Incrementable>>
+     : operators::additive_with<iota_iterator<Incrementable>
+                                , incrementable_difference_t<Incrementable>
+     , operators::unit_steppable<iota_iterator<Incrementable>
+     , rel_ops::enable_adl<iota_iterator<Incrementable>>>>
     {
         template <class Incrementable2>
         friend

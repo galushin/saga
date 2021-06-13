@@ -69,7 +69,7 @@ namespace saga
 
             // Создание, копирование, уничтожение
             constexpr empty_base_wrapper() = default;
-         
+
             // @todo Условный explicit?
             // @todo Ограничить?
             template <class... Args>
@@ -102,7 +102,7 @@ namespace saga
 
             // Создание, копирование, уничтожение
             constexpr empty_base_wrapper() = default;
-            
+
             // @todo Условный explicit?
             // @todo Ограничить?
             template <class... Args>
