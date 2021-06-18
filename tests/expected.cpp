@@ -561,6 +561,9 @@ TEST_CASE("expected<Value, Error> : equality")
         REQUIRE(obj_error_1 == obj_error_1);
         REQUIRE(obj_error_2 == obj_error_2);
 
+        REQUIRE(!(obj_value_1 == obj_error_1));
+        REQUIRE(!(obj_error_2 == obj_value_1));
+
         REQUIRE(obj_value_1 != obj_error_1);
         REQUIRE(obj_value_1 != obj_error_2);
 
