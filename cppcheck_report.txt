@@ -8,16 +8,16 @@
 [tests/saga_test.hpp:323]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/saga_test.hpp:327]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/saga_test.hpp:356]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/expected.cpp:1203]: (style) Struct 'throwing_implicit_ctor_from_int' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1338]: (style) Struct 'ctor_from_in_place_t' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1973]: (style) Struct 'ctor_but_no_assign' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:2029]: (style) Struct 'wrapper' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:2332]: (style) Struct 'throwing_move_int' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1207]: (style) Struct 'throwing_implicit_ctor_from_int' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1342]: (style) Struct 'ctor_from_in_place_t' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1977]: (style) Struct 'ctor_but_no_assign' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:2033]: (style) Struct 'wrapper' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:2336]: (style) Struct 'throwing_move_int' has a constructor with 1 argument that is not explicit.
 [tests/expected.cpp:400]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/expected.cpp:428]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
-[tests/expected.cpp:935]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/expected.cpp:980]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/expected.cpp:987]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/expected.cpp:939]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/expected.cpp:984]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/expected.cpp:991]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/iterator.cpp:222]: (error) Out of bounds access in dest because dest is empty.
 [tests/iterator.cpp:223]: (error) Out of bounds access in dest because dest is empty.
 [tests/iterator.cpp:224]: (error) Out of bounds access in dest because dest is empty.
