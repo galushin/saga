@@ -316,7 +316,7 @@ namespace saga
             }
             else
             {
-                return lhs.compare_value_with(rhs);
+                return lhs.value_equal_to(rhs);
             }
         }
 
@@ -324,7 +324,18 @@ namespace saga
         friend constexpr
         bool operator!=(expected const & lhs, expected<OtherValue, OtherError> const & rhs)
         {
-            return !(lhs == rhs);
+            if(lhs.has_value() != rhs.has_value())
+            {
+                return true;
+            }
+            else if(!lhs.has_value())
+            {
+                return lhs.error() != rhs.error();
+            }
+            else
+            {
+                return lhs.value_not_equal_to(rhs);
+            }
         }
 
         // Сравнение со значением
@@ -346,14 +357,14 @@ namespace saga
         friend constexpr auto operator!=(expected const & obj, OtherValue const & value)
         -> std::enable_if_t<!detail::is_expected<OtherValue>{}, bool>
         {
-            return !(obj == value);
+            return obj.has_value() ? *obj != value : true;
         }
 
         template <class OtherValue>
         friend constexpr auto operator!=(OtherValue const & value, expected const & obj)
         -> std::enable_if_t<!detail::is_expected<OtherValue>{}, bool>
         {
-            return !(value == obj);
+            return obj.has_value() ? value != *obj : true;
         }
 
         // Сравнение с unexpected
@@ -366,19 +377,19 @@ namespace saga
         template <class OtherError>
         friend constexpr bool operator==(unexpected<OtherError> const & unex, expected const & obj)
         {
-            return obj.has_value() ? false : obj.error() == unex.value();
+            return obj.has_value() ? false : unex.value() == obj.error();
         }
 
         template <class OtherError>
         friend constexpr bool operator!=(expected const & obj, unexpected<OtherError> const & unex)
         {
-            return !(obj == unex);
+            return obj.has_value() ? true : obj.error() != unex.value();
         }
 
         template <class OtherError>
         friend constexpr bool operator!=(unexpected<OtherError> const & unex, expected const & obj)
         {
-            return !(unex == obj);
+            return obj.has_value() ? true : unex.value() != obj.error();
         }
     };
 }

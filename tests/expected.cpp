@@ -480,13 +480,19 @@ TEST_CASE("expected<void, Error> : equality")
 
         REQUIRE(obj_value_1 == obj_value_1);
         REQUIRE(obj_value_1 == obj_value_2);
+        REQUIRE(!(obj_value_1 != obj_value_2));
+
         REQUIRE(obj_value_1 != obj_error_1);
         REQUIRE(obj_value_1 != obj_error_2);
+        REQUIRE(!(obj_value_1 == obj_error_1));
+        REQUIRE(!(obj_value_1 == obj_error_2));
 
         REQUIRE(obj_value_2 == obj_value_1);
         REQUIRE(obj_value_2 == obj_value_2);
         REQUIRE(obj_value_2 != obj_error_1);
         REQUIRE(obj_value_2 != obj_error_2);
+        REQUIRE(!(obj_error_1 == obj_value_2));
+        REQUIRE(!(obj_error_2 == obj_value_2));
 
         REQUIRE(obj_error_1 != obj_value_1);
         REQUIRE(obj_error_1 != obj_value_2);
@@ -560,6 +566,9 @@ TEST_CASE("expected<Value, Error> : equality")
 
         REQUIRE(obj_error_1 == obj_error_1);
         REQUIRE(obj_error_2 == obj_error_2);
+
+        REQUIRE(!(obj_value_1 == obj_error_1));
+        REQUIRE(!(obj_error_2 == obj_value_1));
 
         REQUIRE(obj_value_1 != obj_error_1);
         REQUIRE(obj_value_1 != obj_error_2);

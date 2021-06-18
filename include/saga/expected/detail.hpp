@@ -674,9 +674,21 @@ namespace saga
             using Base::assign_error;
 
             template <class OtherValue, class OtherError>
-            constexpr bool compare_value_with(expected<OtherValue, OtherError> const & rhs) const
+            constexpr bool value_equal_to(expected<OtherValue, OtherError> const & rhs) const
             {
+                assert(this->has_value());
+                assert(rhs.has_value());
+
                 return **this == *rhs;
+            }
+
+            template <class OtherValue, class OtherError>
+            constexpr bool value_not_equal_to(expected<OtherValue, OtherError> const & rhs) const
+            {
+                assert(this->has_value());
+                assert(rhs.has_value());
+
+                return **this != *rhs;
             }
 
         private:
@@ -804,11 +816,17 @@ namespace saga
             using Base::assign_error;
 
             template <class OtherValue, class OtherError>
-            constexpr bool compare_value_with(expected<OtherValue, OtherError> const &) const
+            constexpr bool value_equal_to(expected<OtherValue, OtherError> const &) const
             {
                 static_assert(std::is_void<OtherValue>{}, "Must be void!");
 
                 return true;
+            }
+
+            template <class OtherValue, class OtherError>
+            constexpr bool value_not_equal_to(expected<OtherValue, OtherError> const & rhs) const
+            {
+                return !this->value_equal_to(rhs);
             }
         };
 
