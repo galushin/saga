@@ -281,9 +281,10 @@ TEST_CASE("string_view : operator[], front, back; constexpr")
 
 TEST_CASE("string_view : at")
 {
-    saga_test::property_checker << [](std::string const & str, std::size_t index)
+    saga_test::property_checker << [](std::string const & str)
     {
         auto const num = saga_test::random_position_of(str);
+        auto const index = saga_test::random_uniform(0*num, 2*num+1);
 
         saga::string_view const sv(str.c_str(), num);
 
