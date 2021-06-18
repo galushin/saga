@@ -166,7 +166,7 @@ namespace saga
         friend
         constexpr bool operator!=(unexpected<Error> const & lhs, unexpected<Error2> const & rhs)
         {
-            return !(lhs == rhs);
+            return lhs.value() != rhs.value();
         }
 
     private:
