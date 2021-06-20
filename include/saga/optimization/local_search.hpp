@@ -26,6 +26,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/subrange.hpp>
 #include <saga/functional.hpp>
 #include <saga/optimization/evaluated_solution.hpp>
+#include <saga/view/indices.hpp>
 
 #include <functional>
 #include <vector>
@@ -160,23 +161,23 @@ namespace saga
 
         auto y_current = objective(x_init);
 
-        auto pos = 0*dim;
+        auto pos = saga::cursor::make_cycled(saga::cursor::all(saga::view::indices_of(x_init)));
 
-        // @todo Использовать pos = saga::cursor::make_cycled(saga::cursor::indicies_of(x_init))
-        // @todo Выделить класс счётчика: инициализация, достиг конца, сброс?
-        for(auto fails_left = dim; fails_left > 0; pos = (pos + 1) % dim)
+        for(auto fails_left = dim; fails_left > 0; ++pos)
         {
+            assert(!!pos);
+
             -- fails_left;
 
-            if(x_init[pos] != space[pos].max)
+            if(x_init[*pos] != space[*pos].max)
             {
-                detail::LS_probe(objective, cmp, x_init, pos, y_current, fails_left,
+                detail::LS_probe(objective, cmp, x_init, *pos, y_current, fails_left,
                                  saga::increment<>{}, saga::decrement<>{});
             }
 
-            if(fails_left != dim && x_init[pos] != space[pos].min)
+            if(fails_left != dim && x_init[*pos] != space[*pos].min)
             {
-                detail::LS_probe(objective, cmp, x_init, pos, y_current, fails_left,
+                detail::LS_probe(objective, cmp, x_init, *pos, y_current, fails_left,
                                  saga::decrement<>{}, saga::increment<>{});
             }
         }
