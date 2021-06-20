@@ -253,7 +253,7 @@ TEST_CASE("Gray code - generates all")
     std::vector<Integer> values;
 
     // @todo заменить на алгоритм
-    for(auto num : saga::view::indices(0*n_max, n_max))
+    for(auto num : saga::view::indices(n_max))
     {
         // Преобразуем целое в двоичный код
         Digit_container code;
