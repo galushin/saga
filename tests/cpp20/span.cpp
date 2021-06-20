@@ -133,7 +133,7 @@ TEST_CASE("span : initialization from pointer and size")
     << [](std::vector<Element> const & src)
     {
         auto const offset = saga_test::random_position_of(src);
-        auto const num = saga_test::random_uniform(0*src.size(), src.size() - offset);
+        auto const num = saga_test::random_uniform(0, src.size() - offset);
 
         auto const ptr = src.data() + offset;
         saga::span<Element const> const s(ptr, num);
@@ -400,7 +400,7 @@ TEST_CASE("span : subspan")
         saga::span<Element const> const s_all(src);
 
         auto const offset = saga_test::random_position_of(s_all);
-        auto const num = saga_test::random_uniform(0*s_all.size(), s_all.size() - offset);
+        auto const num = saga_test::random_uniform(0, s_all.size() - offset);
 
         auto const s_part = s_all.subspan(offset, num);
         static_assert(std::is_same<decltype(s_part), decltype(s_all)>::value, "");

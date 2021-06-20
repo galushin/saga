@@ -20,6 +20,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/detail/static_empty_const.hpp>
 #include <saga/iterator.hpp>
+#include <saga/ranges.hpp>
 #include <saga/utility/operators.hpp>
 
 #include <limits>
@@ -195,6 +196,11 @@ namespace saga
         };
     }
     // namespace detail
+
+    template <class Incrementable>
+    struct enable_borrowed_range_t<detail::iota_view<Incrementable>>
+     : std::true_type
+    {};
 
     namespace view
     {

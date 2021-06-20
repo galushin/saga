@@ -284,7 +284,7 @@ TEST_CASE("string_view : at")
     saga_test::property_checker << [](std::string const & str)
     {
         auto const num = saga_test::random_position_of(str);
-        auto const index = saga_test::random_uniform(0*num, 2*num+1);
+        auto const index = saga_test::random_uniform(0, 2*num+1);
 
         saga::string_view const sv(str.c_str(), num);
 
@@ -380,7 +380,7 @@ TEST_CASE("string_view : copy")
         std::string str_dest = str_dest_old;
 
         auto const num = saga_test::random_position_of(str_dest);
-        auto const pos = saga_test::random_uniform(0*str_src.size(), 2*str_src.size());
+        auto const pos = saga_test::random_uniform(0, 2*str_src.size());
 
         if(pos <= str_src.size())
         {
@@ -425,8 +425,8 @@ TEST_CASE("string_view : substr")
     {
         saga::string_view const sv(str);
 
-        auto const pos = saga_test::random_uniform(0*sv.size(), 2*sv.size());
-        auto const num = saga_test::random_uniform(0*sv.size(), 2*sv.size());
+        auto const pos = saga_test::random_uniform(0, 2*sv.size());
+        auto const num = saga_test::random_uniform(0, 2*sv.size());
 
         if(pos > sv.size())
         {
@@ -453,7 +453,7 @@ TEST_CASE("string_view : default n")
     {
         saga::string_view const sv(str);
 
-        auto const pos = saga_test::random_uniform(0*sv.size(), 2*sv.size());
+        auto const pos = saga_test::random_uniform(0, 2*sv.size());
 
         if(pos > sv.size())
         {
@@ -528,8 +528,8 @@ TEST_CASE("string_view : compare substring with string_view")
         saga::string_view const sv1(str1);
         saga::string_view const sv2(str2);
 
-        auto const pos1 = saga_test::random_uniform(0*sv1.size(), 2*sv1.size());
-        auto const num1 = saga_test::random_uniform(0*sv1.size(), 2*sv1.size());
+        auto const pos1 = saga_test::random_uniform(0, 2*sv1.size());
+        auto const num1 = saga_test::random_uniform(0, 2*sv1.size());
 
         static_assert(std::is_same<decltype(sv1.compare(pos1, num1, sv2)), int>{}, "");
 
@@ -554,11 +554,11 @@ TEST_CASE("string_view : compare substring with string_view substr")
         saga::string_view const sv1(str1);
         saga::string_view const sv2(str2);
 
-        auto const pos1 = saga_test::random_uniform(0*sv1.size(), 2*sv1.size());
-        auto const num1 = saga_test::random_uniform(0*sv1.size(), 2*sv1.size());
+        auto const pos1 = saga_test::random_uniform(0, 2*sv1.size());
+        auto const num1 = saga_test::random_uniform(0, 2*sv1.size());
 
-        auto const pos2 = saga_test::random_uniform(0*sv2.size(), 2*sv2.size());
-        auto const num2 = saga_test::random_uniform(0*sv2.size(), 2*sv2.size());
+        auto const pos2 = saga_test::random_uniform(0, 2*sv2.size());
+        auto const num2 = saga_test::random_uniform(0, 2*sv2.size());
 
         static_assert(std::is_same<decltype(sv1.compare(pos1, num1, sv2, pos2, num2)), int>{}, "");
 
@@ -599,8 +599,8 @@ TEST_CASE("string_view : compare substring with c-string")
         saga::string_view const sv(str1);
         char const * c_str = str2.c_str();
 
-        auto const pos1 = saga_test::random_uniform(0*sv.size(), 2*sv.size());
-        auto const num1 = saga_test::random_uniform(0*sv.size(), 2*sv.size());
+        auto const pos1 = saga_test::random_uniform(0, 2*sv.size());
+        auto const num1 = saga_test::random_uniform(0, 2*sv.size());
 
         static_assert(std::is_same<decltype(sv.compare(pos1, num1, c_str)), int>{}, "");
 
@@ -626,8 +626,8 @@ TEST_CASE("string_view : compare substring with {pointr, size}")
         char const * c_str = str2.c_str();
         auto const num2 = str2.size();
 
-        auto const pos1 = saga_test::random_uniform(0*sv.size(), 2*sv.size());
-        auto const num1 = saga_test::random_uniform(0*sv.size(), 2*sv.size());
+        auto const pos1 = saga_test::random_uniform(0, 2*sv.size());
+        auto const num1 = saga_test::random_uniform(0, 2*sv.size());
 
         static_assert(std::is_same<decltype(sv.compare(pos1, num1, c_str)), int>{}, "");
 

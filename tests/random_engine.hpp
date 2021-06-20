@@ -30,12 +30,15 @@ namespace saga_test
 
     random_engine_type & random_engine();
 
-    template <class IntType,
-              std::enable_if_t<std::is_integral<IntType>{}, std::nullptr_t> = nullptr>
-    IntType random_uniform(IntType lower, IntType upper)
+    template <class IntType1, class IntType2
+             , std::enable_if_t<std::is_integral<IntType1>{}, std::nullptr_t> = nullptr
+             , std::enable_if_t<std::is_integral<IntType2>{}, std::nullptr_t> = nullptr>
+    auto random_uniform(IntType1 lower, IntType2 upper) -> std::common_type_t<IntType1, IntType2>
     {
-         std::uniform_int_distribution<IntType> distr(std::move(lower), std::move(upper));
-         return distr(saga_test::random_engine());
+        using IntType = std::common_type_t<IntType1, IntType2>;
+
+        std::uniform_int_distribution<IntType> distr(std::move(lower), std::move(upper));
+        return distr(saga_test::random_engine());
     }
 
     template <class RealType,
@@ -49,7 +52,7 @@ namespace saga_test
     template <class Container>
     auto random_position_of(Container const & container)
     {
-        return ::saga_test::random_uniform(0*container.size(), container.size());
+        return ::saga_test::random_uniform(0, container.size());
     }
 
     template <class Container>

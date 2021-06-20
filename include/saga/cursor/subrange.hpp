@@ -24,8 +24,9 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/cursor/cursor_traits.hpp>
 #include <saga/cursor/forward_cursor_facade.hpp>
-#include <saga/iterator.hpp>
 #include <saga/defs.hpp>
+#include <saga/iterator.hpp>
+#include <saga/ranges.hpp>
 
 #include <cassert>
 #include <iterator>
@@ -137,7 +138,7 @@ namespace saga
     namespace cursor
     {
         template <class ForwardRange
-                 ,std::enable_if_t<std::is_reference<ForwardRange>::value> * = nullptr>
+                 , std::enable_if_t<saga::is_borrowed_range<ForwardRange>{}> * = nullptr>
         constexpr auto all(ForwardRange && range)
         {
             return ::saga::make_subrange_cursor(saga::begin(range), saga::end(range)
