@@ -195,8 +195,7 @@ TEST_CASE("tournament_selection_distribution : equal to copy")
         bool(*cmp)(double const & x, double const & y)
             = [](double const & x, double const & y) { return x < y; };
 
-        auto const tournament_size
-            = saga_test::random_uniform(0*obj_values.size() + 1, obj_values.size());
+        auto const tournament_size = saga_test::random_uniform(1, obj_values.size());
 
         saga::selection_tournament selection(tournament_size, repeat);
 
@@ -290,7 +289,7 @@ TEST_CASE("Gray code - generates all")
     }
 
     // Соседним значениям должны соответствовать соседние коды, отличающиеся одним битом
-    for(auto i = 0 * codes.size(); i+1 != codes.size(); ++ i)
+    for(auto i = 0* codes.size(); i+1 != codes.size(); ++ i)
     {
         auto const d = saga::boolean_manhattan_distance(codes[i], codes[i+1]);
 

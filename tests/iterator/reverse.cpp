@@ -270,7 +270,7 @@ namespace
         auto const iter = std::next(container.begin(), pos);
         auto const r_iter = saga::make_reverse_iterator(iter);
 
-        auto const n_plus = saga_test::random_uniform(0*pos, pos);
+        auto const n_plus = saga_test::random_uniform(0, pos);
         auto const n_minus = saga_test::random_uniform(pos, container.size()) - pos;
 
         REQUIRE(r_iter + n_plus == saga::make_reverse_iterator(iter - n_plus));
