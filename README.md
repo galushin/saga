@@ -1,4 +1,5 @@
 # SAGA
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/79c9feeea04446c28af0d97bb04a1442)](https://app.codacy.com/gh/galushin/saga?utm_source=github.com&utm_medium=referral&utm_content=galushin/saga&utm_campaign=Badge_Grade_Settings)
 Самонастраивающиеся генетические алгоритмы на [![Standard](https://img.shields.io/badge/c%2B%2B-14/17/20-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
 
 Статус основной ветки: [![Статус основной ветки](https://github.com/galushin/saga/workflows/test/badge.svg?branch=master)](https://github.com/galushin/saga/actions/workflows/test.yml)
