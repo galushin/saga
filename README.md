@@ -5,6 +5,8 @@
 
 Покрытие кода тестами: [![codecov](https://codecov.io/gh/galushin/saga/branch/master/graph/badge.svg?token=3Z2XR38NJT)](https://codecov.io/gh/galushin/saga)
 
+Качество кода: [![Codacy Badge](https://app.codacy.com/project/badge/Grade/4fd6eb3bb85440fc87f62320d09dc704)](https://www.codacy.com/gh/galushin/saga/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=galushin/saga&amp;utm_campaign=Badge_Grade)
+
 Отказ от ответственности
 ----
 
