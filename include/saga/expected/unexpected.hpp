@@ -62,8 +62,7 @@ namespace saga
 
         template <class U, class... Args,
                   class = std::enable_if_t<std::is_constructible<Error, std::initializer_list<U> &, Args...>{}>>
-        // @todo explicit
-        constexpr unexpected(saga::in_place_t, std::initializer_list<U> init, Args &&... args)
+        constexpr explicit unexpected(saga::in_place_t, std::initializer_list<U> init, Args &&... args)
          : value_(init, std::forward<Args>(args)...)
         {}
 
