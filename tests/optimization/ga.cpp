@@ -118,12 +118,7 @@ TEST_CASE("GA_boolean_cycle: empty population")
     auto const dim = 20;
     using Argument = std::valarray<bool>;
 
-    auto const objective = [](Argument const & arg) -> double
-    {
-        return saga::boolean_manhattan_norm(arg);
-    };
-
-    auto const problem = saga::make_optimization_problem_boolean(objective, dim);
+    auto const problem = saga::make_optimization_problem_boolean(saga::boolean_manhattan_norm, dim);
 
     using Genotype = Argument;
     using Crossover = saga::ga_boolean_crossover_uniform_fn;
