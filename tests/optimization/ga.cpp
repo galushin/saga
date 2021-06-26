@@ -113,6 +113,30 @@ namespace
     }
 }
 
+TEST_CASE("GA_boolean_cycle: empty population")
+{
+    auto const dim = 20;
+    using Argument = std::valarray<bool>;
+
+    auto const problem = saga::make_optimization_problem_boolean(saga::boolean_manhattan_norm, dim);
+
+    using Genotype = Argument;
+    using Crossover = saga::ga_boolean_crossover_uniform_fn;
+    using Selection = saga::selection_ranking;
+
+    saga::GA_settings<Genotype, Crossover, Selection> settings;
+    using Individual = saga::evaluated_solution<Genotype, std::size_t>;
+
+    std::vector<Individual> population;
+
+    REQUIRE(population.empty());
+
+    ::saga::genetic_algorithm_boolean_cycle(population, problem, settings
+                                            , saga_test::random_engine());
+
+    REQUIRE(population.empty());
+}
+
 TEST_CASE("GA boolean : manhattan distance, tournament selection")
 {
     for(auto tournament : saga::view::indices(2, 5))
