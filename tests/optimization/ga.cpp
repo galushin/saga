@@ -125,13 +125,14 @@ TEST_CASE("GA_boolean_cycle: empty population")
     using Selection = saga::selection_ranking;
 
     saga::GA_settings<Genotype, Crossover, Selection> settings;
-    using Individual = saga::evaluated_solution<Genotype, double>;
+    using Individual = saga::evaluated_solution<Genotype, std::size_t>;
 
     std::vector<Individual> population;
 
     REQUIRE(population.empty());
 
-    ::saga::genetic_algorithm_boolean_cycle(population, problem, settings, saga_test::random_engine());
+    ::saga::genetic_algorithm_boolean_cycle(population, problem, settings
+                                            , saga_test::random_engine());
 
     REQUIRE(population.empty());
 }
