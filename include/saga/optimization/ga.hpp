@@ -38,19 +38,20 @@ SAGA -- это свободной программное обеспечение:
 namespace saga
 {
     /** @brief Инициализация начальной популяции генетического алгоритма псведо-булевой оптимизации
-    @param population контейнер, используемый для хранения популяции
+    @tparam Container тип контейнера, используемый для хранения популяции
     @param population_size требуемый размер начальной популяции
     @param dim размерность (число генов в генотипе)
     @param objective целевая функция
     @param rnd_engine генератор равномерно распределённых битов, используемый для порождения
     псевдо-случайных чисел
+    @return Начальная популяции для генетического алгоритма, созданная согласно заданным параметрам
     */
     template <class Container, class Size, class Objective, class UniformRandomBitGenerator>
-    void ga_boolen_initialize_population(Container & population,
-                                         typename Container::difference_type const population_size,
-                                         Size const dim,
-                                         Objective objective,
-                                         UniformRandomBitGenerator & rnd_engine)
+    Container
+    ga_boolen_initial_population(typename Container::difference_type const population_size
+                                 , Size const dim
+                                 , Objective objective
+                                 , UniformRandomBitGenerator & rnd_engine)
     {
         assert(population_size >= 0);
         assert(dim >= 0);
@@ -62,7 +63,7 @@ namespace saga
 
         saga::iid_distribution<std::bernoulli_distribution, Genotype> distr(dim);
 
-        auto gen = [&]
+        auto generator = [&]
         {
             auto x = distr(rnd_engine);
             auto y = objective(x);
@@ -70,17 +71,15 @@ namespace saga
             return Individual{std::move(x), std::move(y)};
         };
 
+        Container population;
         population.reserve(pop_size);
 
-        if(population.size() > pop_size)
-        {
-            population.resize(pop_size);
-        }
-
-        saga::generate(saga::cursor::all(population), gen);
+        saga::generate(saga::cursor::all(population), generator);
 
         assert(population.size() <= pop_size);
-        std::generate_n(std::back_inserter(population), pop_size - population.size(), gen);
+        std::generate_n(std::back_inserter(population), pop_size - population.size(), generator);
+
+        return population;
     }
 
     class ga_boolean_mutation_xor_fn
@@ -207,10 +206,11 @@ namespace saga
 
         // Инициализация
         using Individual = saga::evaluated_solution<Genotype, double>;
-        std::vector<Individual> population;
+        using Population = std::vector<Individual>;
 
-        saga::ga_boolen_initialize_population(population, settings.population_size,
-                                              problem.dimension, problem.objective, rnd);
+        auto population = saga::ga_boolen_initial_population<Population>(settings.population_size
+                                                                         , problem.dimension
+                                                                         , problem.objective, rnd);
 
         saga::for_n(settings.max_iterations, [&]
         {
