@@ -112,6 +112,18 @@ TEST_CASE("unexpected: placement constructor with initializer list and more args
     };
 }
 
+namespace
+{
+    template <class T>
+    void consume_unexpected(saga::unexpected<T>);
+
+    template <class T>
+    using implicit_unexpected_from_init_list
+        =  decltype(consume_unexpected<T>({saga::in_place, {1, 2, 3}}));
+
+    static_assert(!saga::is_detected<::implicit_unexpected_from_init_list, std::vector<int>>{}, "");
+}
+
 TEST_CASE("unexpected : copy constructor")
 {
     {
