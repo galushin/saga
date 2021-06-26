@@ -77,7 +77,7 @@ namespace saga
         // Конструктор на основе unexpected<Other> const &
         template <class Err,
                   std::enable_if_t<std::is_convertible<Err const &, Error>{}, bool> = false,
-                  class = std::enable_if_t<std::is_constructible<Error, Err>{}>,
+                  class = std::enable_if_t<std::is_constructible<Error, Err const &>{}>,
                   class = std::enable_if_t<!detail::can_convert<unexpected<Err>, Error>()>>
         constexpr unexpected(unexpected<Err> const & other)
          : value_(other.value())
@@ -85,7 +85,7 @@ namespace saga
 
         template <class Err,
                   std::enable_if_t<!std::is_convertible<Err const &, Error>{}, bool> = false,
-                  class = std::enable_if_t<std::is_constructible<Error, Err>{}>,
+                  class = std::enable_if_t<std::is_constructible<Error, Err const &>{}>,
                   class = std::enable_if_t<!detail::can_convert<unexpected<Err>, Error>()>>
         constexpr explicit unexpected(unexpected<Err> const & other)
          : value_(other.value())
