@@ -52,6 +52,26 @@ namespace
     }
 }
 
+TEST_CASE("is_local_maximum_binary")
+{
+    using Argument = std::vector<bool>;
+
+    saga_test::property_checker << [](Argument x_opt, Argument x_init)
+    {
+        auto const dim = std::min(x_opt.size(), x_init.size());
+        x_opt.resize(dim);
+        x_init.resize(dim);
+
+        auto const objective = [&x_opt](Argument const & arg)
+        {
+            return arg.size() - saga::boolean_manhattan_distance(arg, x_opt);
+        };
+
+        REQUIRE(is_local_maximum_binary(objective, x_opt) == true);
+        REQUIRE(is_local_maximum_binary(objective, x_init) ==  (x_init == x_opt));
+    };
+}
+
 TEST_CASE("local search (pseudoboolen, first improvement) : L1 norm")
 {
     saga_test::property_checker << [](std::vector<bool> const & x_init)
