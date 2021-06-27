@@ -106,33 +106,38 @@ namespace
 
         friend void swap(struct_2 &, struct_2 &) noexcept(false)
         {}
+
+        friend void swap(struct_1 &, struct_2 &) noexcept(false);
+        friend void swap(struct_2 &, struct_1 &) noexcept(false);
     };
 
-    struct struct_3 {};
-    struct struct_4 {};
+    struct struct_3
+    {
+        friend void swap(struct_2 &, struct_3 &) noexcept(false);
+        friend void swap(struct_3 &, struct_2 &) = delete;
+    };
 
-    void swap(struct_1 &, struct_2 &) noexcept(false) {}
-    void swap(struct_2 &, struct_1 &) noexcept(false) {}
+    struct struct_4
+    {
+        friend void swap(struct_1 &, struct_4 &) noexcept;
+        friend void swap(struct_4 &, struct_1 &) noexcept;
 
-    void swap(struct_2 &, struct_3 &) noexcept(false) {}
-    void swap(struct_3 &, struct_2 &) = delete;
+        friend void swap(struct_2 &, struct_4 &) noexcept;
+        friend void swap(struct_4 &, struct_2 &) noexcept(false);
+    };
 
-    void swap(struct_1 &, struct_4 &) noexcept {}
-    void swap(struct_4 &, struct_1 &) noexcept {}
 
-    void swap(struct_2 &, struct_4 &) noexcept {}
-    void swap(struct_4 &, struct_2 &) noexcept(false) {}
 
     struct rvalue_swap
     {
         friend void swap(rvalue_swap &, rvalue_swap &) = delete;
-        friend void swap(rvalue_swap &&, rvalue_swap &&) noexcept(false) {}
+        friend void swap(rvalue_swap &&, rvalue_swap &&) noexcept(false);
     };
 
     struct rvalue_swap_noexcept
     {
         friend void swap(rvalue_swap_noexcept &, rvalue_swap_noexcept &) = delete;
-        friend void swap(rvalue_swap_noexcept &&, rvalue_swap_noexcept &&) noexcept {}
+        friend void swap(rvalue_swap_noexcept &&, rvalue_swap_noexcept &&) noexcept;
     };
 
     struct deleted_swap
@@ -146,8 +151,7 @@ namespace
         {};
 
         template <class T>
-        void swap(T &, T &) noexcept
-        {}
+        void swap(T &, T &) noexcept;
     }
 }
 
