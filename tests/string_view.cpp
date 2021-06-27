@@ -1065,11 +1065,17 @@ namespace
         {
             oss << std::setfill(fill);
         }
+
         if (width < 0)
         {
             width = -width;
             oss << std::right;
         }
+        else
+        {
+            oss << std::left;
+        }
+
         oss << std::setw(width) << s;
         return oss.str();
     }
