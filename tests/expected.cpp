@@ -389,6 +389,49 @@ namespace Catch
 }
 // namespace Catch
 
+TEST_CASE("expected_carrier<void, Error>: conversion to string")
+{
+    using Error = long;
+
+    using Expected = ::expected_carrier<void, Error>;
+
+    Expected const exp_value(saga::in_place);
+
+    REQUIRE(Catch::StringMaker<Expected>::convert(exp_value) == "Value: ");
+
+    saga_test::property_checker << [](Error const & error)
+    {
+        Expected const exp_error(saga::unexpect, error);
+
+        REQUIRE(Catch::StringMaker<Expected>::convert(exp_error)
+                == "Unexpected: " + Catch::StringMaker<Error>::convert(error));
+    };
+}
+
+TEST_CASE("expected_carrier<Value, Error>: conversion to string")
+{
+    using Value = std::string;
+    using Error = long;
+
+    using Expected = ::expected_carrier<Value, Error>;
+
+    saga_test::property_checker
+    << [](Value const & value)
+    {
+        Expected const exp_value(saga::in_place, value);
+
+        REQUIRE(Catch::StringMaker<Expected>::convert(exp_value)
+                == "Value: " + Catch::StringMaker<Value>::convert(value));
+    }
+    << [](Error const & error)
+    {
+        Expected const exp_error(saga::unexpect, error);
+
+        REQUIRE(Catch::StringMaker<Expected>::convert(exp_error)
+                == "Unexpected: " + Catch::StringMaker<Error>::convert(error));
+    };
+}
+
 namespace saga_test
 {
     template <class Value, class Error, class SFINAE = void>
