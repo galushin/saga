@@ -7,8 +7,7 @@
 
 Качество кода: [![Codacy Badge](https://app.codacy.com/project/badge/Grade/4fd6eb3bb85440fc87f62320d09dc704)](https://www.codacy.com/gh/galushin/saga/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=galushin/saga&amp;utm_campaign=Badge_Grade)
 
-Отказ от ответственности
-----
+## Отказ от ответственности
 
 Никакие гарантии не предоставляются.
 
@@ -16,7 +15,6 @@
 
 Если вы нашли ошибку, то сообщите о ней через систему слежения за ошибками, либо автору лично.
 
-Лицензия
-----
+## Лицензия
 
 SAGA распространяется по открытой лицензии GNU General Public License версии 3 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) или выше.
