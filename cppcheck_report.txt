@@ -8,16 +8,16 @@
 [tests/saga_test.hpp:323]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/saga_test.hpp:327]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/saga_test.hpp:356]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/expected.cpp:1209]: (style) Struct 'throwing_implicit_ctor_from_int' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1344]: (style) Struct 'ctor_from_in_place_t' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:1979]: (style) Struct 'ctor_but_no_assign' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:2035]: (style) Struct 'wrapper' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:2338]: (style) Struct 'throwing_move_int' has a constructor with 1 argument that is not explicit.
-[tests/expected.cpp:400]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
-[tests/expected.cpp:428]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
-[tests/expected.cpp:941]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/expected.cpp:986]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/expected.cpp:993]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/expected.cpp:1252]: (style) Struct 'throwing_implicit_ctor_from_int' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:1387]: (style) Struct 'ctor_from_in_place_t' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:2022]: (style) Struct 'ctor_but_no_assign' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:2078]: (style) Struct 'wrapper' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:2381]: (style) Struct 'throwing_move_int' has a constructor with 1 argument that is not explicit.
+[tests/expected.cpp:443]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
+[tests/expected.cpp:471]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
+[tests/expected.cpp:984]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/expected.cpp:1029]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/expected.cpp:1036]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/iterator.cpp:222]: (error) Out of bounds access in dest because dest is empty.
 [tests/iterator.cpp:223]: (error) Out of bounds access in dest because dest is empty.
 [tests/iterator.cpp:224]: (error) Out of bounds access in dest because dest is empty.
