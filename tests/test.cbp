@@ -104,6 +104,7 @@
 		<Unit filename="random/iid_distribution.cpp" />
 		<Unit filename="random_engine.cpp" />
 		<Unit filename="random_engine.hpp" />
+		<Unit filename="saga_test.cpp" />
 		<Unit filename="saga_test.hpp" />
 		<Unit filename="string_view.cpp" />
 		<Unit filename="type_traits.cpp" />
