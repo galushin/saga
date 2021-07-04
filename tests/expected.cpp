@@ -2412,11 +2412,73 @@ namespace
 
         ~throwing_move_int() = default;
 
-        friend bool operator==(throwing_move_int const & lhs, throwing_move_int const & rhs)\
+        friend bool operator==(throwing_move_int const & lhs, throwing_move_int const & rhs)
         {
             return lhs.value == rhs.value;
         }
     };
+
+
+    struct throws_on_move
+    {
+        int value = 0;
+
+        throws_on_move(int init_value)
+         : value(init_value)
+        {}
+
+        throws_on_move(throws_on_move const & rhs) noexcept(false)
+         : value(rhs.value)
+        {}
+
+        throws_on_move(throws_on_move &&) noexcept(false)
+        {
+            throw std::runtime_error("throws_on_move::move ctor");
+        }
+
+        throws_on_move & operator=(throws_on_move &&) noexcept(false)
+        {
+            throw std::runtime_error("throws_on_move::move ctor");
+            return *this;
+        }
+
+        friend bool operator==(throws_on_move const & lhs, throws_on_move const & rhs)
+        {
+            return lhs.value == rhs.value;
+        }
+    };
+}
+
+TEST_CASE("expected::swap: value throws on move")
+{
+    auto const value = 42;
+    auto const error = 13;
+
+    saga::expected<::throws_on_move, int> obj_value(saga::in_place, value);
+    saga::expected<::throws_on_move, int> obj_error(saga::unexpect, error);
+
+    REQUIRE_THROWS_AS(obj_value.swap(obj_error), std::runtime_error);
+
+    REQUIRE(obj_value.value() == value);
+
+    REQUIRE(!obj_error.has_value());
+    REQUIRE(obj_error.error() == error);
+}
+
+TEST_CASE("expected::swap: error throws on move")
+{
+    auto const value = 42;
+    auto const error = 13;
+
+    saga::expected<int, ::throws_on_move> obj_value(saga::in_place, value);
+    saga::expected<int, ::throws_on_move> obj_error(saga::unexpect, error);
+
+    REQUIRE_THROWS_AS(obj_value.swap(obj_error), std::runtime_error);
+
+    REQUIRE(obj_value.value() == value);
+
+    REQUIRE(!obj_error.has_value());
+    REQUIRE(obj_error.error() == error);
 }
 
 namespace saga_test
