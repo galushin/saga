@@ -2438,7 +2438,7 @@ namespace
 
         throws_on_move & operator=(throws_on_move &&) noexcept(false)
         {
-            throw std::runtime_error("throws_on_move::move ctor");
+            throw std::runtime_error("throws_on_move::move assign");
             return *this;
         }
 
@@ -2457,12 +2457,15 @@ TEST_CASE("expected::swap: value throws on move")
     saga::expected<::throws_on_move, int> obj_value(saga::in_place, value);
     saga::expected<::throws_on_move, int> obj_error(saga::unexpect, error);
 
+    auto const obj_value_old = obj_value;
+    auto const obj_error_old = obj_error;
+
     REQUIRE_THROWS_AS(obj_value.swap(obj_error), std::runtime_error);
 
-    REQUIRE(obj_value.value() == value);
+    REQUIRE(obj_value == obj_value_old);
+    REQUIRE(obj_error == obj_error_old);
 
-    REQUIRE(!obj_error.has_value());
-    REQUIRE(obj_error.error() == error);
+    REQUIRE_THROWS_AS(::throws_on_move(std::move(obj_value.value())), std::runtime_error);
 }
 
 TEST_CASE("expected::swap: error throws on move")
