@@ -2465,7 +2465,8 @@ TEST_CASE("expected::swap: value throws on move")
     REQUIRE(obj_value == obj_value_old);
     REQUIRE(obj_error == obj_error_old);
 
-    REQUIRE_THROWS_AS(::throws_on_move(std::move(obj_value.value())), std::runtime_error);
+    ::throws_on_move sink(0);
+    REQUIRE_THROWS_AS(sink = std::move(obj_value.value()), std::runtime_error);
 }
 
 TEST_CASE("expected::swap: error throws on move")
