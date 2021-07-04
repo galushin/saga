@@ -2226,6 +2226,11 @@ namespace
 
         ::check_expected_emplace_not_void(obj, value);
     }
+
+    struct throws_on_ctor
+    {
+        throws_on_ctor() { throw std::runtime_error("throws_on_error default ctor"); };
+    };
 }
 
 TEST_CASE("expected<void, Error>::emplace")
@@ -2256,6 +2261,19 @@ TEST_CASE("expected<Value, Error>::emplace in error")
         << ::check_expected_emplace_in_error<std::string, int>
         << ::check_expected_emplace_in_error<std::string, std::vector<int>>
         << ::check_expected_emplace_in_error<int, std::vector<int>>;
+}
+
+TEST_CASE("expected<Value, Error>::emplace in error with exception")
+{
+    using Error = int;
+    auto const error = Error(42);
+
+    saga::expected<::throws_on_ctor, Error> obj(saga::unexpect, error);
+
+    REQUIRE_THROWS_AS(obj.emplace(), std::runtime_error);
+
+    REQUIRE(!obj.has_value());
+    REQUIRE(obj.error() == error);
 }
 
 TEST_CASE("expected<Value, Error>::emplace with initializer_list")
