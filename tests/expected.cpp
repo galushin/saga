@@ -2226,6 +2226,11 @@ namespace
 
         ::check_expected_emplace_not_void(obj, value);
     }
+
+    struct throws_on_ctor
+    {
+        throws_on_ctor() { throw std::runtime_error("throws_on_error default ctor"); };
+    };
 }
 
 TEST_CASE("expected<void, Error>::emplace")
@@ -2256,6 +2261,19 @@ TEST_CASE("expected<Value, Error>::emplace in error")
         << ::check_expected_emplace_in_error<std::string, int>
         << ::check_expected_emplace_in_error<std::string, std::vector<int>>
         << ::check_expected_emplace_in_error<int, std::vector<int>>;
+}
+
+TEST_CASE("expected<Value, Error>::emplace in error with exception")
+{
+    using Error = int;
+    auto const error = Error(42);
+
+    saga::expected<::throws_on_ctor, Error> obj(saga::unexpect, error);
+
+    REQUIRE_THROWS_AS(obj.emplace(), std::runtime_error);
+
+    REQUIRE(!obj.has_value());
+    REQUIRE(obj.error() == error);
 }
 
 TEST_CASE("expected<Value, Error>::emplace with initializer_list")
@@ -2394,11 +2412,77 @@ namespace
 
         ~throwing_move_int() = default;
 
-        friend bool operator==(throwing_move_int const & lhs, throwing_move_int const & rhs)\
+        friend bool operator==(throwing_move_int const & lhs, throwing_move_int const & rhs)
         {
             return lhs.value == rhs.value;
         }
     };
+
+
+    struct throws_on_move
+    {
+        int value = 0;
+
+        throws_on_move(int init_value)
+         : value(init_value)
+        {}
+
+        throws_on_move(throws_on_move const & rhs) noexcept(false)
+         : value(rhs.value)
+        {}
+
+        throws_on_move(throws_on_move &&) noexcept(false)
+        {
+            throw std::runtime_error("throws_on_move::move ctor");
+        }
+
+        throws_on_move & operator=(throws_on_move &&) noexcept(false)
+        {
+            throw std::runtime_error("throws_on_move::move assign");
+            return *this;
+        }
+
+        friend bool operator==(throws_on_move const & lhs, throws_on_move const & rhs)
+        {
+            return lhs.value == rhs.value;
+        }
+    };
+}
+
+TEST_CASE("expected::swap: value throws on move")
+{
+    auto const value = 42;
+    auto const error = 13;
+
+    saga::expected<::throws_on_move, int> obj_value(saga::in_place, value);
+    saga::expected<::throws_on_move, int> obj_error(saga::unexpect, error);
+
+    auto const obj_value_old = obj_value;
+    auto const obj_error_old = obj_error;
+
+    REQUIRE_THROWS_AS(obj_value.swap(obj_error), std::runtime_error);
+
+    REQUIRE(obj_value == obj_value_old);
+    REQUIRE(obj_error == obj_error_old);
+
+    ::throws_on_move sink(0);
+    REQUIRE_THROWS_AS(sink = std::move(obj_value.value()), std::runtime_error);
+}
+
+TEST_CASE("expected::swap: error throws on move")
+{
+    auto const value = 42;
+    auto const error = 13;
+
+    saga::expected<int, ::throws_on_move> obj_value(saga::in_place, value);
+    saga::expected<int, ::throws_on_move> obj_error(saga::unexpect, error);
+
+    REQUIRE_THROWS_AS(obj_value.swap(obj_error), std::runtime_error);
+
+    REQUIRE(obj_value.value() == value);
+
+    REQUIRE(!obj_error.has_value());
+    REQUIRE(obj_error.error() == error);
 }
 
 namespace saga_test
