@@ -28,7 +28,7 @@ namespace saga
     {
     public:
         // Создание, копирование, уничтожение
-        istream_cursor(IStream & stream)
+        explicit istream_cursor(IStream & stream)
          : stream_(std::addressof(stream))
          , value_()
         {
