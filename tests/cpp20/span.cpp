@@ -245,7 +245,7 @@ TEST_CASE("span : initialization from const contiguous container (vector)")
     using Element = int;
 
     saga_test::property_checker
-    << [](std::vector<Element> const src)
+    << [](std::vector<Element> const & src)
     {
         saga::span<Element const> const s(src);
 
@@ -257,7 +257,7 @@ TEST_CASE("span : initialization from const contiguous container (vector)")
 TEST_CASE("span : ctor from const string")
 {
     saga_test::property_checker
-    << [](std::string const src)
+    << [](std::string const & src)
     {
         saga::span<char const> const s(src);
 
