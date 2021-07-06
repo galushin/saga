@@ -358,7 +358,7 @@ namespace saga
 
         bool starts_with(basic_string_view str) const noexcept
         {
-            return this->size() >= str.size() && this->compare(0, str.size(), str) == 0;
+            return this->substr(0, str.size()) == str;
         }
 
         bool starts_with(charT c) const noexcept
