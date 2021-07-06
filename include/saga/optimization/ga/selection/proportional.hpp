@@ -39,8 +39,8 @@ namespace saga
         {
             assert(obj_values.empty() == false);
 
-            auto const extr
-                = std::minmax_element(obj_values.begin(), obj_values.end(), std::ref(cmp));
+            auto const extr = std::minmax_element(obj_values.begin(), obj_values.end()
+                                                  , std::move(cmp));
 
             std::vector<double> weights;
             weights.reserve(obj_values.size());
