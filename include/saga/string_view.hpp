@@ -205,12 +205,12 @@ namespace saga
         }
 
         // Ёмкость
-        constexpr size_type size() const
+        constexpr size_type size() const noexcept
         {
             return this->size_;
         }
 
-        constexpr size_type length() const
+        constexpr size_type length() const noexcept
         {
             return this->size();
         }
@@ -358,12 +358,12 @@ namespace saga
 
         bool starts_with(basic_string_view str) const noexcept
         {
-            return this->size() >= str.size() && this->compare(0, str.size(), str) == 0;
+            return this->substr(0, str.size()) == str;
         }
 
         bool starts_with(charT c) const noexcept
         {
-            return this->starts_with(basic_string_view(&c, 1));
+            return !this->empty() && traits_type::eq(this->front(), c);
         }
 
         bool starts_with(charT const * s) const
@@ -379,7 +379,7 @@ namespace saga
 
         bool ends_with(charT c) const noexcept
         {
-            return this->ends_with(basic_string_view(&c, 1));
+            return !this->empty() && traits_type::eq(this->back(), c);
         }
 
         bool ends_with(charT const * s) const

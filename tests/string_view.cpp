@@ -87,6 +87,9 @@ TEST_CASE("string_view : default ctor")
     static_assert(sv0.data() == nullptr, "");
 }
 
+static_assert(noexcept(saga::string_view{}.size()), "Must be noexcept");
+static_assert(noexcept(saga::string_view{}.length()), "Must be noexcept");
+
 // Конструктор копий и присваивание нельзя тестировать полноценно без других конструкторов
 static_assert(std::is_nothrow_copy_constructible<saga::string_view>{}, "");
 static_assert(std::is_nothrow_copy_assignable<saga::string_view>{}, "");

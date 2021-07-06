@@ -197,7 +197,7 @@ namespace detail
     struct emplace_fn
     {
     public:
-        emplace_fn(Iterator it)
+        explicit emplace_fn(Iterator it)
          : position(std::move(it))
         {}
 
