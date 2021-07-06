@@ -47,7 +47,8 @@ namespace saga
         template <class Selection>
         explicit any_selection(Selection selection)
          : backend_([selection](argument_type obj_values, compare const & cmp)
-                    { return distribution_type(selection.build_distribution(obj_values, cmp)); })
+                    { return distribution_type(selection.build_distribution(obj_values
+                                                                            , std::cref(cmp))); })
         {}
 
         // Селекция
