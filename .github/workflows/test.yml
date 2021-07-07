@@ -167,6 +167,7 @@ jobs:
         env:
           CXX: ${{ matrix.config.cxx }}
           CC: ${{ matrix.config.cc }}
+          CFLAGS: ${{ matrix.config.cflags }}
           
         run: >
           $CXX -v
