@@ -29,6 +29,7 @@ jobs:
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: none,
+              CFLAGS: "-std=gnu++17",
             }
           - {
               name: "Linux GCC default UBSAN",
@@ -90,6 +91,7 @@ jobs:
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: none,
+              CFLAGS: "-std=c++17",
             }
           - {
               name: "Linux Clang default ASAN",
