@@ -24,6 +24,13 @@ jobs:
               SANITIZE: none,
             }
           - {
+              name: "MacOS GCC default",
+              os: macos-latest,
+              CC: "gcc", 
+              CXX: "g++",
+              SANITIZE: none,
+            }
+          - {
               name: "Linux GCC default UBSAN",
               os: ubuntu-latest,
               CC: "gcc", 
@@ -73,6 +80,13 @@ jobs:
           - {
               name: "Linux Clang default",
               os: ubuntu-latest,
+              CC: "clang", 
+              CXX: "clang++",
+              SANITIZE: none,
+            }
+          - {
+              name: "MacOS Clang default",
+              os: macos-latest,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: none,
