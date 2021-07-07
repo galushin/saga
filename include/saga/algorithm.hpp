@@ -27,6 +27,8 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/detail/static_empty_const.hpp>
 
+#include <algorithm>
+
 namespace saga
 {
     // Типы результатов алгоритмов

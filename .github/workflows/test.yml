@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.config.os }}
     
     strategy:
       fail-fast: false
@@ -18,12 +18,22 @@ jobs:
           # GCC
           - {
               name: "Linux GCC default",
+              os: ubuntu-latest,
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: none,
             }
           - {
+              name: "MacOS GCC default",
+              os: macos-latest,
+              CC: "gcc", 
+              CXX: "g++",
+              SANITIZE: none,
+              CFLAGS: "-std=gnu++17",
+            }
+          - {
               name: "Linux GCC default UBSAN",
+              os: ubuntu-latest,
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: UB,
@@ -32,6 +42,7 @@ jobs:
             }
           - {
               name: "Linux GCC default FLOAT-CAST-OVERFLOW",
+              os: ubuntu-latest,
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: float-cast-overflow,
@@ -40,24 +51,28 @@ jobs:
             }
           - {
               name: "Linux GCC 7",
+              os: ubuntu-latest,
               CC: "gcc-7", 
               CXX: "g++-7",
               SANITIZE: none,
             }
           - {
               name: "Linux GCC 8",
+              os: ubuntu-latest,
               CC: "gcc-8", 
               CXX: "g++-8",
               SANITIZE: none,
             }
           - {
               name: "Linux GCC 9",
+              os: ubuntu-latest,
               CC: "gcc-9", 
               CXX: "g++-9",
               SANITIZE: none,
             }
           - {
               name: "Linux GCC 10",
+              os: ubuntu-latest,
               CC: "gcc-10", 
               CXX: "g++-10",
               SANITIZE: none,
@@ -65,12 +80,22 @@ jobs:
           # Clang
           - {
               name: "Linux Clang default",
+              os: ubuntu-latest,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: none,
             }
           - {
+              name: "MacOS Clang default",
+              os: macos-latest,
+              CC: "clang", 
+              CXX: "clang++",
+              SANITIZE: none,
+              CFLAGS: "-std=c++17",
+            }
+          - {
               name: "Linux Clang default ASAN",
+              os: ubuntu-latest,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: address,
@@ -80,6 +105,7 @@ jobs:
             }
           - {
               name: "Linux Clang default UBSAN",
+              os: ubuntu-latest,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: UB,
@@ -88,6 +114,7 @@ jobs:
             }
           - {
               name: "Linux Clang default FLOAT-CAST-OVERFLOW",
+              os: ubuntu-latest,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: float-cast-overflow,
@@ -96,18 +123,21 @@ jobs:
             }
           - {
               name: "Linux Clang 10",
+              os: ubuntu-latest,
               CC: "clang-10", 
               CXX: "clang++-10",
               SANITIZE: none,
             }
           - {
               name: "Linux Clang 11",
+              os: ubuntu-latest,
               CC: "clang-11", 
               CXX: "clang++-11",
               SANITIZE: none,
             }
           - {
               name: "Linux Clang 12",
+              os: ubuntu-latest,
               CC: "clang-12", 
               CXX: "clang++-12",
               SANITIZE: none,
@@ -137,6 +167,7 @@ jobs:
         env:
           CXX: ${{ matrix.config.cxx }}
           CC: ${{ matrix.config.cc }}
+          CFLAGS: ${{ matrix.config.cflags }}
           
         run: >
           $CXX -v
