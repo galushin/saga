@@ -39,9 +39,9 @@ OBJDIR_SAMPLEDLL_DEBUG = .objs
 DEP_SAMPLEDLL_DEBUG = 
 OUT_SAMPLEDLL_DEBUG = /sampleDLL.so
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/directory.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/exception.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/operations.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o $(OBJDIR_DEBUG)/main.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/directory.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/exception.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/operations.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/utf8_codecvt_facet.o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o $(OBJDIR_DEBUG)/main.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/directory.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/exception.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/operations.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o $(OBJDIR_RELEASE)/main.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/directory.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/exception.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/operations.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/utf8_codecvt_facet.o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o $(OBJDIR_RELEASE)/main.o
 
 OBJ_SAMPLEDLL_DEBUG = $(OBJDIR_SAMPLEDLL_DEBUG)/sample_library.o
 
@@ -59,7 +59,7 @@ after_debug:
 debug: before_debug out_debug after_debug
 
 out_debug: before_debug $(OBJ_DEBUG) $(DEP_DEBUG)
-	$(LD) $(LIBDIR_DEBUG) -o $(OUT_DEBUG) $(OBJ_DEBUG)  $(LDFLAGS_DEBUG) $(LIB_DEBUG) -ldl
+	$(LD) $(LIBDIR_DEBUG) -o $(OUT_DEBUG) $(OBJ_DEBUG)  $(LDFLAGS_DEBUG) $(LIB_DEBUG)
 
 $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o: ../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c ../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp -o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o
@@ -78,6 +78,9 @@ $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o: ../../con
 
 $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o: ../../contrib/boost_1_72_0/libs/filesystem/src/path_traits.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c ../../contrib/boost_1_72_0/libs/filesystem/src/path_traits.cpp -o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o
+
+$(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/utf8_codecvt_facet.o: ../../contrib/boost_1_72_0/libs/filesystem/src/utf8_codecvt_facet.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c ../../contrib/boost_1_72_0/libs/filesystem/src/utf8_codecvt_facet.cpp -o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/utf8_codecvt_facet.o
 
 $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o: ../../contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c ../../contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.cpp -o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o
@@ -101,7 +104,7 @@ after_release:
 release: before_release out_release after_release
 
 out_release: before_release $(OBJ_RELEASE) $(DEP_RELEASE)
-	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE) -ldl
+	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE)
 
 $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o: ../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c ../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp -o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o
@@ -120,6 +123,9 @@ $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path.o: ../../c
 
 $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o: ../../contrib/boost_1_72_0/libs/filesystem/src/path_traits.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c ../../contrib/boost_1_72_0/libs/filesystem/src/path_traits.cpp -o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/path_traits.o
+
+$(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/utf8_codecvt_facet.o: ../../contrib/boost_1_72_0/libs/filesystem/src/utf8_codecvt_facet.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c ../../contrib/boost_1_72_0/libs/filesystem/src/utf8_codecvt_facet.cpp -o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/utf8_codecvt_facet.o
 
 $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o: ../../contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c ../../contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.cpp -o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/windows_file_codecvt.o
