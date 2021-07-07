@@ -59,7 +59,7 @@ after_debug:
 debug: before_debug out_debug after_debug
 
 out_debug: before_debug $(OBJ_DEBUG) $(DEP_DEBUG)
-	$(LD) $(LIBDIR_DEBUG) -o $(OUT_DEBUG) $(OBJ_DEBUG)  $(LDFLAGS_DEBUG) $(LIB_DEBUG)
+	$(LD) $(LIBDIR_DEBUG) -o $(OUT_DEBUG) $(OBJ_DEBUG)  $(LDFLAGS_DEBUG) $(LIB_DEBUG) -ldl
 
 $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o: ../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c ../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp -o $(OBJDIR_DEBUG)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o
@@ -104,7 +104,7 @@ after_release:
 release: before_release out_release after_release
 
 out_release: before_release $(OBJ_RELEASE) $(DEP_RELEASE)
-	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE)
+	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE) -ldl
 
 $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o: ../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c ../../contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.cpp -o $(OBJDIR_RELEASE)/__/__/contrib/boost_1_72_0/libs/filesystem/src/codecvt_error_category.o
