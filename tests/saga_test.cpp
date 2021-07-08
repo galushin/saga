@@ -52,4 +52,7 @@ TEST_CASE("saga_test::bounded - positive")
         REQUIRE(Bounded::min() <= value);
         REQUIRE(value <= Bounded::max());
     };
+
+    REQUIRE_THROWS_AS(Bounded(x_max + 1), std::out_of_range);
+    REQUIRE_THROWS_AS(Bounded(x_min - 20), std::out_of_range);
 }
