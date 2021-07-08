@@ -36,3 +36,15 @@ TEST_CASE("saga_test::detail::function_input_iterator: operator++ without value"
 
     REQUIRE(*iter == 1);
 }
+
+TEST_CASE("saga_test::bounded - positive")
+{
+    constexpr auto const x_min = int(13);
+    constexpr auto const x_max = int(42);
+
+    saga_test::property_checker << [](saga_test::bounded<int, x_min, x_max> const & value)
+    {
+        REQUIRE(x_min <= value);
+        REQUIRE(value <= x_max);
+    };
+}

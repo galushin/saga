@@ -333,6 +333,62 @@ namespace saga_test
         }
     };
 
+    template <class IntType, IntType x_min, IntType x_max>
+    struct bounded
+    {
+    public:
+        // Конструкторы
+        constexpr explicit bounded(IntType value)
+         : value_(std::move(value))
+        {
+            if(this->value_ < x_min || x_max < this->value_)
+            {
+                throw std::out_of_range("saga_test::bounded");
+            }
+        }
+
+        // Преобразование
+        constexpr IntType const & value() const
+        {
+            return this->value_;
+        }
+
+        constexpr operator IntType const & () const
+        {
+            return this->value();
+        }
+
+    private:
+        IntType value_;
+    };
+
+    template <class IntType, IntType x_min, IntType x_max>
+    struct arbitrary<saga_test::bounded<IntType, x_min, x_max>>
+    {
+        static_assert(x_min <= x_max, "Incorrect bounds");
+
+        using value_type = saga_test::bounded<IntType, x_min, x_max>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            assert(generation >= 0);
+
+            switch(generation)
+            {
+            case 0:
+                return value_type(x_min);
+
+            case 1:
+                return value_type(x_max);
+
+            default:
+                std::uniform_int_distribution<IntType> distr(x_min, x_max);
+                return value_type(distr(urbg));
+            }
+        }
+    };
+
     namespace detail
     {
         template <class F, class Tuple, std::size_t... Indices>
