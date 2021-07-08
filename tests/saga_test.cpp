@@ -42,9 +42,14 @@ TEST_CASE("saga_test::bounded - positive")
     constexpr auto const x_min = int(13);
     constexpr auto const x_max = int(42);
 
-    saga_test::property_checker << [](saga_test::bounded<int, x_min, x_max> const & value)
+    using Bounded = saga_test::bounded<int, x_min, x_max>;
+
+    static_assert(Bounded::min() == x_min, "");
+    static_assert(Bounded::max() == x_max, "");
+
+    saga_test::property_checker << [](Bounded const & value)
     {
-        REQUIRE(x_min <= value);
-        REQUIRE(value <= x_max);
+        REQUIRE(Bounded::min() <= value);
+        REQUIRE(value <= Bounded::max());
     };
 }

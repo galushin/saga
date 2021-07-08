@@ -337,6 +337,17 @@ namespace saga_test
     struct bounded
     {
     public:
+        // Свойства типа
+        constexpr static IntType min()
+        {
+            return x_min;
+        }
+
+        constexpr static IntType max()
+        {
+            return x_max;
+        }
+
         // Конструкторы
         constexpr explicit bounded(IntType value)
          : value_(std::move(value))
