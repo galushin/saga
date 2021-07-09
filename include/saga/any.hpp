@@ -47,7 +47,13 @@ namespace saga
         // @todo Как протестировать, что этот конструктор constexpr, если деструктор не тривиальный?
         constexpr any() noexcept = default;
 
-        any(any const &) = delete;
+        any(any const & other)
+         : type_(other.type_)
+         , destroy_(other.destroy_)
+         , copy_(other.copy_)
+         , data_(other.make_copy())
+        {}
+
         any(any &&) = delete;
 
         template <class T
@@ -57,6 +63,7 @@ namespace saga
         any(T && value)
          : type_(&typeid(std::decay_t<T>))
          , destroy_(&any::destroy_heap<std::decay_t<T>>)
+         , copy_(&any::copy_heap<std::decay_t<T>>)
          , data_(new std::decay_t<T>(std::forward<T>(value)))
         {}
 
@@ -66,7 +73,13 @@ namespace saga
         }
 
         // Присваивание
-        any & operator=(any const &) = delete;
+        any & operator=(any const & rhs)
+        {
+            any(rhs).swap(*this);
+
+            return *this;
+        }
+
         any & operator=(any &&) = delete;
 
         // Свойства
@@ -83,20 +96,43 @@ namespace saga
         }
 
     private:
+        // @todo Должно быть public, покрыть тестами
         void reset()
         {
             this->destroy_(this->data_);
 
-            this->data_ = nullptr;
             this->type_ = &typeid(void);
             this->destroy_ = &any::destroy_empty;
+            this->copy_ = &any::copy_empty;
+            this->data_ = nullptr;
         }
 
-        using Destroy = void (*)(void *);
+        // @todo Должно быть public, покрыть тестами
+        void swap(any & rhs) noexcept
+        {
+            using std::swap;
+            swap(this->type_, rhs.type_);
+            swap(this->destroy_, rhs.destroy_);
+            swap(this->copy_, rhs.copy_);
+            swap(this->data_, rhs.data_);
+        }
+
+        void * make_copy() const
+        {
+            return this->copy_(this->data_);
+        }
+
+        using Destroy_strategy = void (*)(void *);
+        using Copy_strategy = void * (*)(void *);
 
         static void destroy_empty(void *)
         {
             return;
+        }
+
+        static void * copy_empty(void *)
+        {
+            return nullptr;
         }
 
         template <class T>
@@ -105,8 +141,17 @@ namespace saga
             delete static_cast<T*>(data);
         }
 
+        template <class T>
+        static void * copy_heap(void * data)
+        {
+            assert(data != nullptr);
+
+            return new T(*static_cast<T*>(data));
+        }
+
         std::type_info const * type_ = &typeid(void);
-        Destroy destroy_ = &any::destroy_empty;
+        Destroy_strategy destroy_ = &any::destroy_empty;
+        Copy_strategy copy_ = &any::copy_empty;
         void * data_ = nullptr;
     };
 
@@ -138,9 +183,14 @@ namespace saga
     }
 
     template <class T>
-    T * any_cast(any *) noexcept
+    T * any_cast(any * operand) noexcept
     {
-        return nullptr;
+        if(operand == nullptr)
+        {
+            return nullptr;
+        }
+
+        return saga::detail::any_cast_impl<T>(*operand);
     }
 }
 // namespace saga
