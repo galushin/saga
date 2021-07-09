@@ -9,6 +9,7 @@
 [tests/saga_test.hpp:384]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/saga_test.hpp:327]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/saga_test.hpp:423]: (warning) Redundant code: Found a statement that begins with numeric constant.
+[tests/any.cpp:113] -> [tests/any.cpp:120]: (style) Local variable var shadows outer variable
 [tests/expected.cpp:2439]: (style) 'operator=' should either return reference to 'this' instance or be declared private and left unimplemented.
 [tests/expected.cpp:1252]: (style) Struct 'throwing_implicit_ctor_from_int' has a constructor with 1 argument that is not explicit.
 [tests/expected.cpp:1387]: (style) Struct 'ctor_from_in_place_t' has a constructor with 1 argument that is not explicit.
