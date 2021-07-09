@@ -110,11 +110,6 @@ TEMPLATE_LIST_TEST_CASE("any_cast mutable pointer", "any", Value_types_list)
 
     REQUIRE(saga::any_cast<Value>(static_cast<saga::any*>(nullptr)) == nullptr);
 
-    saga::any var0;
-
-    REQUIRE(var0.has_value() == false);
-    REQUIRE(saga::any_cast<Value>(&var0) == nullptr);
-
     saga_test::property_checker << [](Value const & value)
     {
         saga::any var(value);
