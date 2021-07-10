@@ -22,6 +22,8 @@ SAGA -- это свободной программное обеспечение:
  @brief Объект, который позволяет хранить значение любого типа и получать к нему доступ.
 */
 
+#include <saga/type_traits.hpp>
+
 #include <cassert>
 #include <typeinfo>
 #include <type_traits>
@@ -29,6 +31,16 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    class bad_any_cast
+     : public std::bad_cast
+    {
+    public:
+        const char * what() const noexcept override
+        {
+            return "saga::bad_any_cast";
+        }
+    };
+
     class any;
 
     namespace detail
@@ -191,6 +203,51 @@ namespace saga
         }
 
         return saga::detail::any_cast_impl<T>(*operand);
+    }
+
+    template <class T>
+    T any_cast(any const & operand)
+    {
+        using U = saga::remove_cvref_t<T>;
+
+        if(auto ptr = saga::any_cast<U>(&operand))
+        {
+            return static_cast<T>(*ptr);
+        }
+        else
+        {
+            throw saga::bad_any_cast{};
+        }
+    }
+
+    template <class T>
+    T any_cast(any & operand)
+    {
+        using U = saga::remove_cvref_t<T>;
+
+        if(auto ptr = saga::any_cast<U>(&operand))
+        {
+            return static_cast<T>(*ptr);
+        }
+        else
+        {
+            throw saga::bad_any_cast{};
+        }
+    }
+
+    template <class T>
+    T any_cast(any && operand)
+    {
+        using U = saga::remove_cvref_t<T>;
+
+        if(auto ptr = saga::any_cast<U>(&operand))
+        {
+            return static_cast<T>(std::move(*ptr));
+        }
+        else
+        {
+            throw saga::bad_any_cast{};
+        }
     }
 }
 // namespace saga
