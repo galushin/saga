@@ -207,6 +207,13 @@ TEST_CASE("any: copy assignment")
 
 static_assert(std::is_base_of<std::bad_cast, saga::bad_any_cast>{}, "");
 
+TEST_CASE("bad_any_cast")
+{
+    saga::bad_any_cast obj;
+
+    REQUIRE(std::string(obj.what()).empty() == false);
+}
+
 TEMPLATE_LIST_TEST_CASE("any_cast: from empty", "any", Value_types_list)
 {
     using Value = TestType;
