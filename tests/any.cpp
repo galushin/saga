@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
+#include <saga/utility/as_const.hpp>
 
 namespace
 {
@@ -201,5 +202,62 @@ TEST_CASE("any: copy assignment")
         REQUIRE(saga::any_cast<Value1>(&var) == nullptr);
         REQUIRE(saga::any_cast<Value2>(&var) == nullptr);
         REQUIRE(std::addressof(res4) == std::addressof(var));
+    };
+}
+
+static_assert(std::is_base_of<std::bad_cast, saga::bad_any_cast>{}, "");
+
+TEST_CASE("bad_any_cast")
+{
+    saga::bad_any_cast obj;
+
+    REQUIRE(std::string(obj.what()).empty() == false);
+}
+
+TEMPLATE_LIST_TEST_CASE("any_cast: from empty", "any", Value_types_list)
+{
+    using Value = TestType;
+
+    saga::any obj;
+    REQUIRE(obj.has_value() == false);
+
+    REQUIRE_THROWS_AS(saga::any_cast<Value>(obj), saga::bad_any_cast);
+    REQUIRE_THROWS_AS(saga::any_cast<Value>(saga::as_const(obj)), saga::bad_any_cast);
+    REQUIRE_THROWS_AS(saga::any_cast<Value>(std::move(obj)), saga::bad_any_cast);
+}
+
+TEMPLATE_LIST_TEST_CASE("any_cast: value and reference", "any", Value_types_list)
+{
+    using Value = TestType;
+
+    saga_test::property_checker << [](Value const & old_value, Value const & new_value)
+    {
+        saga::any obj(old_value);
+
+        static_assert(std::is_same<decltype(saga::any_cast<Value>(obj)), Value>{}, "");
+        static_assert(std::is_same<decltype(saga::any_cast<Value&>(obj)), Value&>{}, "");
+        static_assert(std::is_same<decltype(saga::any_cast<Value const&>(saga::as_const(obj)))
+                                  , Value const&>{}, "");
+
+        REQUIRE(saga::any_cast<Value>(obj) == old_value);
+
+        saga::any_cast<Value&>(obj) = new_value;
+
+        REQUIRE(saga::any_cast<Value const &>(saga::as_const(obj)) == new_value);
+    };
+}
+
+TEST_CASE("any_cast: rvalue reference")
+{
+    using Container = std::vector<int>;
+
+    saga_test::property_checker << [](Container const & value)
+    {
+        saga::any obj(value);
+
+        auto res = saga::any_cast<Container>(std::move(obj));
+
+        REQUIRE(res == value);
+        REQUIRE(saga::any_cast<Container const &>(obj).empty());
     };
 }
