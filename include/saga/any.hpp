@@ -71,8 +71,8 @@ namespace saga
 
         template <class T, class Value = std::decay_t<T>
                   , class = std::enable_if_t<!std::is_same<Value, saga::any>{}>
-                  , class = std::enable_if_t<std::is_copy_constructible<Value>{}>>
-        // @todo Ограничение: Value не специализация in_place_type_t
+                  , class = std::enable_if_t<std::is_copy_constructible<Value>{}>
+                  , class = std::enable_if_t<!detail::is_in_place_type_t<Value>{}>>
         // @todo Предусловие
         any(T && value)
          : any(saga::in_place_type<Value>, std::forward<T>(value))
