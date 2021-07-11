@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
+#include <set>
 #include <saga/utility/as_const.hpp>
 
 namespace
@@ -261,3 +262,80 @@ TEST_CASE("any_cast: rvalue reference")
         REQUIRE(saga::any_cast<Container const &>(obj).empty());
     };
 }
+
+TEST_CASE("any: copy of non-const any")
+{
+    using Value = std::string;
+
+    saga_test::property_checker << [](Value const & value)
+    {
+        saga::any src(value);
+
+        saga::any const dest(src);
+
+        REQUIRE(saga::any_cast<Value const &>(dest) == value);
+    };
+}
+
+TEST_CASE("any: in_place_type ctor no args")
+{
+    using Value = int;
+    using Container = std::vector<Value>;
+
+    saga::any const obj(saga::in_place_type<Container>);
+    REQUIRE(saga::any_cast<const Container&>(obj) == Container{});
+}
+
+static_assert(std::is_constructible<saga::any, saga::in_place_type_t<int>>{}, "");
+static_assert(!std::is_convertible<saga::in_place_type_t<int>, saga::any>{}, "");
+
+static_assert(!std::is_constructible<int, std::string>{}, "");
+static_assert(!std::is_constructible<saga::any, saga::in_place_type_t<int>, std::string>{}, "");
+
+TEST_CASE("any: in_place_type ctor with args")
+{
+    using Value = int;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> num
+                                      , Value const & value)
+    {
+        saga::any const obj(saga::in_place_type<Container>, num, value);
+
+        REQUIRE(saga::any_cast<const Container&>(obj) == Container(num, value));
+    };
+}
+
+TEST_CASE("any: placement constructor with initializer list")
+{
+    saga_test::property_checker << [](int value1, int value2)
+    {
+        using Container = std::vector<int>;
+        Container const expected{value1, value2};
+
+        saga::any const actual(saga::in_place_type<Container>, {value1, value2});
+
+        REQUIRE(saga::any_cast<Container const &>(actual) == expected);
+    };
+}
+
+TEST_CASE("any: placement constructor with initializer list and more args")
+{
+    saga_test::property_checker << [](int value1, int value2)
+    {
+        using Compare = bool(*)(int const &, int const &);
+        using Container = std::set<int, Compare>;
+
+        auto const cmp = Compare([](int const & x, int const & y) { return x < y; });
+
+        Container const expected({value1, value2}, cmp);
+
+        saga::any const obj(saga::in_place_type<Container>, {value1, value2}, cmp);
+
+        REQUIRE(saga::any_cast<Container const &>(obj) == expected);
+    };
+}
+
+static_assert(!std::is_constructible<int, std::initializer_list<int>&>{}, "");
+static_assert(!std::is_constructible<saga::any, saga::in_place_type_t<int>
+                                              , std::initializer_list<int>&>{}, "");

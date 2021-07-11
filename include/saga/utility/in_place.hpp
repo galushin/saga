@@ -33,9 +33,16 @@ namespace saga
         explicit in_place_t() = default;
     };
 
+    template <class T>
+    struct in_place_type_t
+    {};
+
     namespace
     {
         constexpr auto const in_place = detail::static_empty_const<in_place_t>::value;
+
+        template <class T>
+        constexpr auto const in_place_type = detail::static_empty_const<in_place_type_t<T>>::value;
     }
 }
 // namespace saga
