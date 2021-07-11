@@ -33,9 +33,32 @@ namespace saga
         explicit in_place_t() = default;
     };
 
+    template <class T>
+    struct in_place_type_t
+    {
+        // @todo Почему конструкторе без аргументов должен быть явным?
+        explicit in_place_type_t() = default;
+    };
+
     namespace
     {
         constexpr auto const in_place = detail::static_empty_const<in_place_t>::value;
+
+        template <class T>
+        constexpr auto const in_place_type = detail::static_empty_const<in_place_type_t<T>>::value;
+    }
+
+    namespace detail
+    {
+        template <class T>
+        struct is_in_place_type_t
+         : std::false_type
+        {};
+
+        template <class T>
+        struct is_in_place_type_t<in_place_type_t<T>>
+         : std::true_type
+        {};
     }
 }
 // namespace saga

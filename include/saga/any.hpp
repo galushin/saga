@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/type_traits.hpp>
+#include <saga/utility/in_place.hpp>
 
 #include <cassert>
 #include <typeinfo>
@@ -68,15 +69,37 @@ namespace saga
 
         any(any &&) = delete;
 
-        template <class T
-                  , std::enable_if_t<std::is_copy_constructible<std::decay_t<T>>{}> * = nullptr>
-        // @todo Ограничения
-        // @todo explicit?
+        template <class T, class Value = std::decay_t<T>
+                  , class = std::enable_if_t<!std::is_same<Value, saga::any>{}>
+                  , class = std::enable_if_t<std::is_copy_constructible<Value>{}>
+                  , class = std::enable_if_t<!detail::is_in_place_type_t<Value>{}>>
+        // @todo Предусловие
         any(T && value)
-         : type_(&typeid(std::decay_t<T>))
-         , destroy_(&any::destroy_heap<std::decay_t<T>>)
-         , copy_(&any::copy_heap<std::decay_t<T>>)
-         , data_(new std::decay_t<T>(std::forward<T>(value)))
+         : any(saga::in_place_type<Value>, std::forward<T>(value))
+        {}
+
+        // @todo explicit проверить?
+        // @todo Ограничения типа: is_copy_constructible_v<VT>
+        // @todo Предусловие: VT meets the Cpp17CopyConstructible requirements.
+        template <class T, class... Args, class Value = std::decay_t<T>
+                 , class = std::enable_if_t<std::is_constructible<Value, Args...>{}>>
+        explicit any(in_place_type_t<T>, Args &&... args)
+         : type_(&typeid(Value))
+         , destroy_(&any::destroy_heap<Value>)
+         , copy_(&any::copy_heap<Value>)
+         , data_(new Value(std::forward<Args>(args)...))
+        {}
+
+        template <class T, class U, class... Args, class Value = std::decay_t<T>
+                 , class = std::enable_if_t<std::is_constructible<Value, std::initializer_list<U>&, Args...>{}>>
+        // @todo explicit проверить?
+        // @todo ограничение: is_copy_constructible_v<VT> is true
+        // @todo Предусловие: VT meets the Cpp17CopyConstructible requirements.
+        explicit any(in_place_type_t<T>, std::initializer_list<U> inits, Args &&... args)
+         : type_(&typeid(Value))
+         , destroy_(&any::destroy_heap<Value>)
+         , copy_(&any::copy_heap<Value>)
+         , data_(new Value(inits, std::forward<Args>(args)...))
         {}
 
         ~any()
