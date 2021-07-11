@@ -339,3 +339,37 @@ TEST_CASE("any: placement constructor with initializer list and more args")
 static_assert(!std::is_constructible<int, std::initializer_list<int>&>{}, "");
 static_assert(!std::is_constructible<saga::any, saga::in_place_type_t<int>
                                               , std::initializer_list<int>&>{}, "");
+
+TEST_CASE("make_any: no initializer_list")
+{
+    using Value = int;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> num
+                                      , Value const & value)
+    {
+        auto obj = saga::make_any<Container>(num, value);
+
+        static_assert(std::is_same<decltype(obj), saga::any>{}, "");
+
+        REQUIRE(saga::any_cast<const Container&>(obj) == Container(num, value));
+    };
+}
+
+TEST_CASE("make_any: with initializer list and more args")
+{
+    saga_test::property_checker << [](int value1, int value2)
+    {
+        using Compare = bool(*)(int const &, int const &);
+        using Container = std::set<int, Compare>;
+
+        auto const cmp = Compare([](int const & x, int const & y) { return x < y; });
+
+        Container const expected({value1, value2}, cmp);
+
+        auto obj = saga::make_any<Container>({value1, value2}, cmp);
+        static_assert(std::is_same<decltype(obj), saga::any>{}, "");
+
+        REQUIRE(saga::any_cast<Container const &>(obj) == expected);
+    };
+}

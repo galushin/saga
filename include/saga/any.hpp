@@ -67,7 +67,7 @@ namespace saga
          , data_(other.make_copy())
         {}
 
-        any(any &&) = delete;
+        // @todo any(any &&);
 
         template <class T, class Value = std::decay_t<T>
                   , class = std::enable_if_t<!std::is_same<Value, saga::any>{}>
@@ -189,6 +189,20 @@ namespace saga
         Copy_strategy copy_ = &any::copy_empty;
         void * data_ = nullptr;
     };
+
+    template <class T, class... Args>
+    saga::any
+    make_any(Args&&... args)
+    {
+        return saga::any(saga::in_place_type<T>, std::forward<Args>(args)...);
+    }
+
+    template <class T, class U, class... Args>
+    saga::any
+    make_any(std::initializer_list<U> inits, Args&&... args)
+    {
+        return saga::any(saga::in_place_type<T>, inits, std::forward<Args>(args)...);
+    }
 
     namespace detail
     {
