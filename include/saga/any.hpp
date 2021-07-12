@@ -67,7 +67,17 @@ namespace saga
          , data_(other.make_copy())
         {}
 
-        // @todo any(any &&);
+        any(any && other) noexcept
+         : type_(other.type_)
+         , destroy_(other.destroy_)
+         , copy_(other.copy_)
+         , data_(other.data_)
+        {
+            other.type_ = &typeid(void);
+            other.destroy_ = &any::destroy_empty;
+            other.copy_ = &any::copy_empty;
+            other.data_ = nullptr;
+        }
 
         template <class T, class Value = std::decay_t<T>
                   , class = std::enable_if_t<!std::is_same<Value, saga::any>{}>
@@ -115,7 +125,12 @@ namespace saga
             return *this;
         }
 
-        any & operator=(any &&) = delete;
+        any & operator=(any && rhs) noexcept
+        {
+            any(std::move(rhs)).swap(*this);
+
+            return *this;
+        }
 
         // Свойства
         bool has_value() const noexcept

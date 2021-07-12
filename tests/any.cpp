@@ -23,8 +23,9 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
-#include <set>
 #include <saga/utility/as_const.hpp>
+
+#include <set>
 
 namespace
 {
@@ -371,5 +372,85 @@ TEST_CASE("make_any: with initializer list and more args")
         static_assert(std::is_same<decltype(obj), saga::any>{}, "");
 
         REQUIRE(saga::any_cast<Container const &>(obj) == expected);
+    };
+}
+
+static_assert(std::is_nothrow_move_constructible<saga::any>{}, "any must be nothrow move constructible");
+static_assert(std::is_nothrow_move_assignable<saga::any>{}, "any must be nothrow move assignable");
+
+TEST_CASE("any: move constructor from empty")
+{
+    saga::any empty_src;
+
+    saga::any const obj(std::move(empty_src));
+
+    REQUIRE(empty_src.has_value() == false);
+    REQUIRE(empty_src.type() == typeid(void));
+    REQUIRE(saga::any_cast<std::vector<int>>(&empty_src) == nullptr);
+
+    REQUIRE(obj.has_value() == false);
+    REQUIRE(obj.type() == typeid(void));
+    REQUIRE(saga::any_cast<std::vector<int>>(&obj) == nullptr);
+}
+
+TEST_CASE("any: move constructor from big value")
+{
+    using Container = std::vector<int>;
+
+    saga_test::property_checker << [](Container const & value)
+    {
+        saga::any src(value);
+
+        auto const old_data = saga::any_cast<Container const &>(src).data();
+
+        saga::any const obj(std::move(src));
+
+        REQUIRE(saga::any_cast<Container const &>(obj) == value);
+        REQUIRE(saga::any_cast<Container const &>(obj).data() == old_data);
+
+        REQUIRE((!src.has_value() || saga::any_cast<Container const &>(obj).empty()));
+    };
+}
+
+TEST_CASE("any: move assignment")
+{
+    using Value1 = std::vector<long>;
+    using Value2 = std::vector<int>;
+
+    saga_test::property_checker << [](Value1 const & value_1, Value2 const & value_2)
+    {
+        saga::any src_0{};
+        saga::any src_1(value_1);
+        saga::any src_2(value_2);
+
+        auto const old_data_1 = saga::any_cast<Value1 const &>(src_1).data();
+        auto const old_data_2 = saga::any_cast<Value2 const &>(src_2).data();
+
+        saga::any var;
+
+        static_assert(std::is_same<decltype(var = std::move(src_0)), saga::any &>{}, "");
+
+        auto const & res1 = (var = std::move(src_0));
+
+        REQUIRE(var.has_value() == false);
+        REQUIRE(std::addressof(res1) == std::addressof(var));
+        REQUIRE(!src_0.has_value());
+
+        auto const & res2 = (var = std::move(src_1));
+
+        REQUIRE(saga::any_cast<Value1 const &>(var) == value_1);
+        REQUIRE(saga::any_cast<Value1 const &>(var).data() == old_data_1);
+        REQUIRE(std::addressof(res2) == std::addressof(var));
+
+        auto const & res3 = (var = std::move(src_2));
+
+        REQUIRE(saga::any_cast<Value2 const &>(var) == value_2);
+        REQUIRE(saga::any_cast<Value2 const &>(var).data() == old_data_2);
+        REQUIRE(std::addressof(res3) == std::addressof(var));
+
+        auto const & res4 = (var = std::move(src_0));
+
+        REQUIRE(var.has_value() == false);
+        REQUIRE(std::addressof(res4) == std::addressof(var));
     };
 }
