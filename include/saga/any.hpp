@@ -132,6 +132,17 @@ namespace saga
             return *this;
         }
 
+        // Модифицирующие операции
+        void reset()
+        {
+            this->destroy_(this->data_);
+
+            this->type_ = &typeid(void);
+            this->destroy_ = &any::destroy_empty;
+            this->copy_ = &any::copy_empty;
+            this->data_ = nullptr;
+        }
+
         // Свойства
         bool has_value() const noexcept
         {
@@ -146,17 +157,6 @@ namespace saga
         }
 
     private:
-        // @todo Должно быть public, покрыть тестами
-        void reset()
-        {
-            this->destroy_(this->data_);
-
-            this->type_ = &typeid(void);
-            this->destroy_ = &any::destroy_empty;
-            this->copy_ = &any::copy_empty;
-            this->data_ = nullptr;
-        }
-
         // @todo Должно быть public, покрыть тестами
         void swap(any & rhs) noexcept
         {

@@ -454,3 +454,28 @@ TEST_CASE("any: move assignment")
         REQUIRE(std::addressof(res4) == std::addressof(var));
     };
 }
+
+TEST_CASE("any: reset empty")
+{
+    saga::any obj;
+
+    obj.reset();
+
+    REQUIRE(obj.has_value() == false);
+}
+
+TEMPLATE_LIST_TEST_CASE("any: reset not empty", "any", Value_types_list)
+{
+    using Value = TestType;
+
+    saga_test::property_checker << [](Value const & value)
+    {
+        saga::any obj(value);
+
+        REQUIRE(saga::any_cast<Value const &>(obj) == value);
+
+        obj.reset();
+
+        REQUIRE(obj.has_value() == false);
+    };
+}
