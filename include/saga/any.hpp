@@ -216,9 +216,6 @@ namespace saga
             return this->copy_(this->data_);
         }
 
-        using Destroy_strategy = void (*)(void *) noexcept;
-        using Copy_strategy = void * (*)(void *);
-
         static void destroy_empty(void *) noexcept
         {
             return;
@@ -242,6 +239,9 @@ namespace saga
 
             return new T(*static_cast<T*>(data));
         }
+
+        using Destroy_strategy = decltype(&any::destroy_empty);
+        using Copy_strategy = decltype(&any::copy_empty);
 
         std::type_info const * type_ = &typeid(void);
         Destroy_strategy destroy_ = &any::destroy_empty;
