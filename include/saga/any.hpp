@@ -79,18 +79,18 @@ namespace saga
             other.data_ = nullptr;
         }
 
+        /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
         template <class T, class Value = std::decay_t<T>
                   , class = std::enable_if_t<!std::is_same<Value, saga::any>{}>
                   , class = std::enable_if_t<std::is_copy_constructible<Value>{}>
                   , class = std::enable_if_t<!detail::is_in_place_type_t<Value>{}>>
-        // @todo Предусловие
         any(T && value)
          : any(saga::in_place_type<Value>, std::forward<T>(value))
         {}
 
+        /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
         // @todo explicit проверить?
         // @todo Ограничения типа: is_copy_constructible_v<VT>
-        // @todo Предусловие: VT meets the Cpp17CopyConstructible requirements.
         template <class T, class... Args, class Value = std::decay_t<T>
                  , class = std::enable_if_t<std::is_constructible<Value, Args...>{}>>
         explicit any(in_place_type_t<T>, Args &&... args)
@@ -100,11 +100,11 @@ namespace saga
          , data_(new Value(std::forward<Args>(args)...))
         {}
 
+        /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
         template <class T, class U, class... Args, class Value = std::decay_t<T>
                  , class = std::enable_if_t<std::is_constructible<Value, std::initializer_list<U>&, Args...>{}>>
         // @todo explicit проверить?
         // @todo ограничение: is_copy_constructible_v<VT> is true
-        // @todo Предусловие: VT meets the Cpp17CopyConstructible requirements.
         explicit any(in_place_type_t<T>, std::initializer_list<U> inits, Args &&... args)
          : type_(&typeid(Value))
          , destroy_(&any::destroy_heap<Value>)
@@ -133,7 +133,35 @@ namespace saga
         }
 
         // Модифицирующие операции
-        void reset()
+        /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
+        template<class T, class... Args
+                , std::enable_if_t<std::is_copy_constructible<std::decay_t<T>>{}> * = nullptr
+                , std::enable_if_t<std::is_constructible<std::decay_t<T>, Args...>{}> * = nullptr>
+        std::decay_t<T> &
+        emplace(Args&&... args)
+        {
+            using Value = std::decay_t<T>;
+
+            this->reset();
+
+            return this->acquire_heap(new Value(std::forward<Args>(args)...));
+        }
+
+        /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
+        template <class T, class U, class... Args
+                 , std::enable_if_t<std::is_copy_constructible<std::decay_t<T>>{}> * = nullptr
+                 , std::enable_if_t<std::is_constructible<std::decay_t<T>, std::initializer_list<U>&, Args...>{}> * = nullptr>
+        std::decay_t<T> &
+        emplace(std::initializer_list<U> inits, Args&&... args)
+        {
+            using Value = std::decay_t<T>;
+
+            this->reset();
+
+            return this->acquire_heap(new Value(inits, std::forward<Args>(args)...));
+        }
+
+        void reset() noexcept
         {
             this->destroy_(this->data_);
 
@@ -167,26 +195,42 @@ namespace saga
             swap(this->data_, rhs.data_);
         }
 
+        /* @pre <tt>this->has_value() == false</tt>
+        @pre @c ptr указывает на объект в динамической памяти
+        @post <tt>*this</tt> владеет объектом, на который указывает @c ptr
+        */
+        template <class Value>
+        Value & acquire_heap(Value * ptr) noexcept
+        {
+            // @todo Уменьшить дублирование с конструкторами
+            this->data_ = ptr;
+            this->type_ = &typeid(Value);
+            this->destroy_ = &any::destroy_heap<Value>;
+            this->copy_ = &any::copy_heap<Value>;
+
+            return *ptr;
+        }
+
         void * make_copy() const
         {
             return this->copy_(this->data_);
         }
 
-        using Destroy_strategy = void (*)(void *);
+        using Destroy_strategy = void (*)(void *) noexcept;
         using Copy_strategy = void * (*)(void *);
 
-        static void destroy_empty(void *)
+        static void destroy_empty(void *) noexcept
         {
             return;
         }
 
-        static void * copy_empty(void *)
+        static void * copy_empty(void *) noexcept
         {
             return nullptr;
         }
 
         template <class T>
-        static void destroy_heap(void * data)
+        static void destroy_heap(void * data) noexcept
         {
             delete static_cast<T*>(data);
         }

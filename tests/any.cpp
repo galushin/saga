@@ -462,6 +462,8 @@ TEST_CASE("any: reset empty")
     obj.reset();
 
     REQUIRE(obj.has_value() == false);
+
+    static_assert(noexcept(obj.reset()), "any::reset must be noexcept");
 }
 
 TEMPLATE_LIST_TEST_CASE("any: reset not empty", "any", Value_types_list)
@@ -477,5 +479,154 @@ TEMPLATE_LIST_TEST_CASE("any: reset not empty", "any", Value_types_list)
         obj.reset();
 
         REQUIRE(obj.has_value() == false);
+    };
+}
+
+TEST_CASE("any::emplace: no args")
+{
+    using Value = std::vector<long>;
+
+    {
+        saga::any obj;
+
+        auto const & result = obj.emplace<Value>();
+
+        REQUIRE(saga::any_cast<Value const &>(obj) == Value{});
+
+        static_assert(std::is_same<decltype(obj.emplace<Value>()), Value&>{}, "");
+        REQUIRE(std::addressof(result) == std::addressof(saga::any_cast<Value const &>(obj)));
+    }
+
+    using Other = int;
+
+    saga_test::property_checker << [](Other const & init_value)
+    {
+        saga::any obj(init_value);
+        auto const & result = obj.emplace<Value>();
+
+        REQUIRE(saga::any_cast<Value const &>(obj) == Value{});
+
+        REQUIRE(std::addressof(result) == std::addressof(saga::any_cast<Value const &>(obj)));
+    };
+}
+
+namespace
+{
+    template <class Container>
+    void check_any_emplace(saga::any & obj, std::size_t num
+                           , typename Container::value_type const & value)
+    {
+        auto const & result = obj.emplace<Container>(num, value);
+
+        REQUIRE(saga::any_cast<const Container&>(obj) == Container(num, value));
+
+        static_assert(std::is_same<decltype(obj.emplace<Container>(num, value)), Container&>{}, "");
+        REQUIRE(std::addressof(result) == std::addressof(saga::any_cast<Container const &>(obj)));
+    }
+
+    template <class Container>
+    void check_any_emplace_init_list(saga::any & obj
+                                     , typename Container::value_type const & value1
+                                     , typename Container::value_type const & value2)
+    {
+
+        Container const expected{value1, value2};
+
+        auto & result = obj.emplace<Container>({value1, value2});
+
+        REQUIRE(saga::any_cast<Container const &>(obj) == expected);
+
+        static_assert(std::is_same<decltype(result), Container&>{}, "");
+        REQUIRE(std::addressof(result) == std::addressof(saga::any_cast<Container const &>(obj)));
+    }
+
+    template <class Element>
+    void check_any_emplace_init_list_args(saga::any & obj
+                                          , Element const & value1
+                                          , Element const & value2)
+    {
+        using Compare = bool(*)(Element const &, Element const &);
+        using Container = std::set<Element, Compare>;
+
+        auto const cmp = Compare([](Element const & x, Element const & y) { return x < y; });
+
+        Container const expected({value1, value2}, cmp);
+
+        auto & result = obj.emplace<Container>({value1, value2}, cmp);
+
+        REQUIRE(saga::any_cast<Container const &>(obj) == expected);
+
+        static_assert(std::is_same<decltype(result), Container&>{}, "");
+        REQUIRE(std::addressof(result) == std::addressof(saga::any_cast<Container const &>(obj)));
+    }
+
+    template <class T, class... Args>
+    using any_emplace_type = decltype(saga::any{}.emplace<T>(std::declval<Args>()...));
+}
+
+static_assert(std::is_same<decltype(saga::any{}.emplace<int const>()), int &>{}, "");
+static_assert(std::is_same<decltype(saga::any{}.emplace<std::vector<int> const>({1, 2, 3}))
+                           , std::vector<int> &>{}, "");
+
+static_assert(!saga::is_detected<any_emplace_type, int, std::vector<int>>{}, "");
+static_assert(!saga::is_detected<any_emplace_type, std::unique_ptr<int>>{}, "");
+
+static_assert(!saga::is_detected<any_emplace_type, int, std::initializer_list<int>&>{}, "");
+static_assert(!saga::is_detected<any_emplace_type,
+                                 std::vector<int>, std::initializer_list<int>&, std::string>{}, "");
+
+TEST_CASE("any::emplace with args")
+{
+    using Element = int;
+    using Container = std::vector<Element>;
+    using Other = long;
+
+    saga_test::property_checker
+    << [](saga_test::container_size<std::size_t> num, Element const & value)
+    {
+        saga::any obj;
+
+        ::check_any_emplace<Container>(obj, num, value);
+    }
+    << [](Other const & other, saga_test::container_size<std::size_t> num, Element const & value)
+    {
+        saga::any obj(other);
+
+        ::check_any_emplace<Container>(obj, num, value);
+    };
+}
+
+TEST_CASE("any::emplace with initializer list")
+{
+    using Container = std::vector<int>;
+
+    saga_test::property_checker
+    << [](int value1, int value2)
+    {
+        saga::any obj;
+        ::check_any_emplace_init_list<Container>(obj, value1, value2);
+    }
+    << [](std::string const & other, int value1, int value2)
+    {
+        saga::any obj(other);
+
+        ::check_any_emplace_init_list<Container>(obj, value1, value2);
+    };
+}
+
+TEST_CASE("any::emplace: with initializer list and more args")
+{
+    saga_test::property_checker
+    << [](int value1, int value2)
+    {
+        saga::any obj;
+
+        ::check_any_emplace_init_list_args(obj, value1, value2);
+    }
+    << [](std::string const & other, int value1, int value2)
+    {
+        saga::any obj(other);
+
+        ::check_any_emplace_init_list_args(obj, value1, value2);
     };
 }
