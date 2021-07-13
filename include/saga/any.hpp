@@ -240,8 +240,8 @@ namespace saga
             return new T(*static_cast<T*>(data));
         }
 
-        using Destroy_strategy = decltype(&any::destroy_empty);
-        using Copy_strategy = decltype(&any::copy_empty);
+        using Destroy_strategy = decltype(&any::destroy_heap<int>);
+        using Copy_strategy = decltype(&any::copy_heap<int>);
 
         std::type_info const * type_ = &typeid(void);
         Destroy_strategy destroy_ = &any::destroy_empty;
