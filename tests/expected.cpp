@@ -2417,36 +2417,6 @@ namespace
             return lhs.value == rhs.value;
         }
     };
-
-
-    struct throws_on_move
-    {
-        int value = 0;
-
-        throws_on_move(int init_value)
-         : value(init_value)
-        {}
-
-        throws_on_move(throws_on_move const & rhs) noexcept(false)
-         : value(rhs.value)
-        {}
-
-        throws_on_move(throws_on_move &&) noexcept(false)
-        {
-            throw std::runtime_error("throws_on_move::move ctor");
-        }
-
-        throws_on_move & operator=(throws_on_move &&) noexcept(false)
-        {
-            throw std::runtime_error("throws_on_move::move assign");
-            return *this;
-        }
-
-        friend bool operator==(throws_on_move const & lhs, throws_on_move const & rhs)
-        {
-            return lhs.value == rhs.value;
-        }
-    };
 }
 
 TEST_CASE("expected::swap: value throws on move")
@@ -2454,8 +2424,8 @@ TEST_CASE("expected::swap: value throws on move")
     auto const value = 42;
     auto const error = 13;
 
-    saga::expected<::throws_on_move, int> obj_value(saga::in_place, value);
-    saga::expected<::throws_on_move, int> obj_error(saga::unexpect, error);
+    saga::expected<saga_test::throws_on_move, int> obj_value(saga::in_place, value);
+    saga::expected<saga_test::throws_on_move, int> obj_error(saga::unexpect, error);
 
     auto const obj_value_old = obj_value;
     auto const obj_error_old = obj_error;
@@ -2465,7 +2435,7 @@ TEST_CASE("expected::swap: value throws on move")
     REQUIRE(obj_value == obj_value_old);
     REQUIRE(obj_error == obj_error_old);
 
-    ::throws_on_move sink(0);
+    saga_test::throws_on_move sink(0);
     REQUIRE_THROWS_AS(sink = std::move(obj_value.value()), std::runtime_error);
 }
 
@@ -2474,8 +2444,8 @@ TEST_CASE("expected::swap: error throws on move")
     auto const value = 42;
     auto const error = 13;
 
-    saga::expected<int, ::throws_on_move> obj_value(saga::in_place, value);
-    saga::expected<int, ::throws_on_move> obj_error(saga::unexpect, error);
+    saga::expected<int, saga_test::throws_on_move> obj_value(saga::in_place, value);
+    saga::expected<int, saga_test::throws_on_move> obj_error(saga::unexpect, error);
 
     REQUIRE_THROWS_AS(obj_value.swap(obj_error), std::runtime_error);
 

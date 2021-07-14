@@ -132,6 +132,17 @@ namespace saga
             return *this;
         }
 
+        /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
+        template <class T
+                 , std::enable_if_t<!std::is_same<std::decay_t<T>, saga::any>{}> * = nullptr
+                 , std::enable_if_t<std::is_copy_constructible<std::decay_t<T>>{}> * = nullptr>
+        any & operator=(T && rhs)
+        {
+            any(std::forward<T>(rhs)).swap(*this);
+
+            return *this;
+        }
+
         // Модифицирующие операции
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
         template<class T, class... Args
