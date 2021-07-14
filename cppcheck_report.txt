@@ -1,7 +1,6 @@
 [example/ga/exe_objective.cpp:57]: (style) Consider using std::transform algorithm instead of a raw loop.
 [example/local_search/sample_library.cpp:33]: (performance, inconclusive) Technically the member function '::sample_library_registrar::do_init' can be static (but you may consider moving to unnamed namespace).
 [tests/saga_test.hpp:537]: (style) 'operator=' should either return reference to 'this' instance or be declared private and left unimplemented.
-[tests/saga_test.hpp:524]: (style) Struct 'throws_on_move' has a constructor with 1 argument that is not explicit.
 [tests/saga_test.hpp:67]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/saga_test.hpp:98]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
 [tests/saga_test.hpp:200]: (performance, inconclusive) Function parameter 'generation' should be passed by const reference.
