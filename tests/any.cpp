@@ -630,3 +630,80 @@ TEST_CASE("any::emplace: with initializer list and more args")
         ::check_any_emplace_init_list_args(obj, value1, value2);
     };
 }
+
+namespace
+{
+    template <class T>
+    void check_any_assign_value(saga::any & obj, T const & value)
+    {
+        auto & result = (obj = value);
+
+        static_assert(std::is_same<decltype(result), saga::any &>{}, "");
+
+        REQUIRE(std::addressof(result) == std::addressof(obj));
+        REQUIRE(saga::any_cast<T const &>(obj) == value);
+    }
+}
+
+TEST_CASE("any: assign value")
+{
+    using Value = int;
+    using Other = std::string;
+
+    saga_test::property_checker
+    << [](Value const & value)
+    {
+        saga::any obj;
+        ::check_any_assign_value(obj, value);
+    }
+    << [](Other const & other, Value const & value)
+    {
+        saga::any obj(other);
+        ::check_any_assign_value(obj, value);
+    };
+}
+
+TEST_CASE("any: assign temporary value do move")
+{
+    using Container = std::vector<int>;
+    using Other = int;
+
+    saga_test::property_checker << [](Other const & other, Container const & old_value)
+    {
+        saga::any obj(other);
+
+        auto tmp = old_value;
+        obj = std::move(tmp);
+
+        REQUIRE(saga::any_cast<Container const &>(obj) == old_value);
+        REQUIRE(tmp.empty());
+    };
+}
+
+static_assert(!std::is_assignable<saga::any, std::unique_ptr<int>>{}, "");
+
+TEST_CASE("any: throwing assign value has no effect")
+{
+    using Value = std::string;
+
+    saga_test::property_checker << [](Value const & old_value, int const & new_value)
+    {
+        saga::any obj(old_value);
+        auto const ptr_old = saga::any_cast<Value>(&obj);
+
+        REQUIRE_THROWS(obj = saga_test::throws_on_move{new_value});
+
+        REQUIRE(saga::any_cast<Value const &>(obj) == old_value);
+        REQUIRE(saga::any_cast<Value>(&obj) == ptr_old);
+    };
+}
+
+TEST_CASE("any: assign non-const any")
+{
+    saga::any src;
+    saga::any dest(42);
+
+    dest = src;
+
+    REQUIRE(!dest.has_value());
+}

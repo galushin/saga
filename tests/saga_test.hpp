@@ -517,6 +517,35 @@ namespace saga_test
         static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg);
     };
 
+    struct throws_on_move
+    {
+        int value = 0;
+
+        explicit throws_on_move(int init_value)
+         : value(init_value)
+        {}
+
+        throws_on_move(throws_on_move const & rhs) noexcept(false)
+         : value(rhs.value)
+        {}
+
+        throws_on_move(throws_on_move &&) noexcept(false)
+        {
+            throw std::runtime_error("throws_on_move::move ctor");
+        }
+
+        throws_on_move & operator=(throws_on_move &&) noexcept(false)
+        {
+            throw std::runtime_error("throws_on_move::move assign");
+            return *this;
+        }
+
+        friend bool operator==(throws_on_move const & lhs, throws_on_move const & rhs)
+        {
+            return lhs.value == rhs.value;
+        }
+    };
+
     class Base
     {
     public:
