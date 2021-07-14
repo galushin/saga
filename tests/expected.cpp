@@ -2452,7 +2452,7 @@ TEST_CASE("expected::swap: error throws on move")
     REQUIRE(obj_value.value() == value);
 
     REQUIRE(!obj_error.has_value());
-    REQUIRE(obj_error.error() == error);
+    REQUIRE(obj_error.error().value == error);
 }
 
 namespace saga_test

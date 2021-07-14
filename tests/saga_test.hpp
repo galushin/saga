@@ -521,7 +521,7 @@ namespace saga_test
     {
         int value = 0;
 
-        throws_on_move(int init_value)
+        explicit throws_on_move(int init_value)
          : value(init_value)
         {}
 
