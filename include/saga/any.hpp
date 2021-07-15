@@ -53,8 +53,10 @@ namespace saga
     class any
     {
     public:
-        template <class T>
-        friend T * saga::detail::any_cast_impl(any const &);
+        friend void swap(any & lhs, any & rhs) noexcept
+        {
+            lhs.swap(rhs);
+        }
 
         // Создание и уничтожение
         // @todo Как протестировать, что этот конструктор constexpr, если деструктор не тривиальный?
@@ -182,6 +184,15 @@ namespace saga
             this->data_ = nullptr;
         }
 
+        void swap(any & rhs) noexcept
+        {
+            using std::swap;
+            swap(this->type_, rhs.type_);
+            swap(this->destroy_, rhs.destroy_);
+            swap(this->copy_, rhs.copy_);
+            swap(this->data_, rhs.data_);
+        }
+
         // Свойства
         bool has_value() const noexcept
         {
@@ -196,15 +207,8 @@ namespace saga
         }
 
     private:
-        // @todo Должно быть public, покрыть тестами
-        void swap(any & rhs) noexcept
-        {
-            using std::swap;
-            swap(this->type_, rhs.type_);
-            swap(this->destroy_, rhs.destroy_);
-            swap(this->copy_, rhs.copy_);
-            swap(this->data_, rhs.data_);
-        }
+        template <class T>
+        friend T * saga::detail::any_cast_impl(any const &);
 
         /* @pre <tt>this->has_value() == false</tt>
         @pre @c ptr указывает на объект в динамической памяти

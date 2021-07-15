@@ -707,3 +707,62 @@ TEST_CASE("any: assign non-const any")
 
     REQUIRE(!dest.has_value());
 }
+
+TEST_CASE("any::swap: two empty")
+{
+    saga::any obj1;
+    saga::any obj2;
+
+    obj1.swap(obj2);
+    static_assert(noexcept(obj1.swap(obj2)), "any::swap must be noexcept");
+
+    REQUIRE(obj1.has_value() == false);
+    REQUIRE(obj2.has_value() == false);
+
+    swap(obj1, obj2);
+    static_assert(noexcept(swap(obj1, obj2)), "swapof any's must be noexcept");
+
+    REQUIRE(obj1.has_value() == false);
+    REQUIRE(obj2.has_value() == false);
+}
+
+TEST_CASE("any::swap: empty and value")
+{
+    using Value = long;
+    saga_test::property_checker << [](Value const & value)
+    {
+        saga::any obj0;
+        saga::any obj1(value);
+
+        obj0.swap(obj1);
+
+        REQUIRE(saga::any_cast<Value const &>(obj0) == value);
+        REQUIRE(obj1.has_value() == false);
+
+        swap(obj0, obj1);
+
+        REQUIRE(obj0.has_value() == false);
+        REQUIRE(saga::any_cast<Value const &>(obj1) == value);
+    };
+}
+
+TEST_CASE("any::swap: two values")
+{
+    using Value1 = long;
+    using Value2 = std::string;
+    saga_test::property_checker << [](Value1 const & value1, Value2 const & value2)
+    {
+        saga::any obj1(value1);
+        saga::any obj2(value2);
+
+        obj1.swap(obj2);
+
+        REQUIRE(saga::any_cast<Value2 const &>(obj1) == value2);
+        REQUIRE(saga::any_cast<Value1 const &>(obj2) == value1);
+
+        swap(obj1, obj2);
+
+        REQUIRE(saga::any_cast<Value1 const &>(obj1) == value1);
+        REQUIRE(saga::any_cast<Value2 const &>(obj2) == value2);
+    };
+}
