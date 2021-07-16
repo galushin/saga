@@ -75,6 +75,7 @@
 		<Unit filename="../include/saga/random/iid_distribution.hpp" />
 		<Unit filename="../include/saga/ranges.hpp" />
 		<Unit filename="../include/saga/string_view.hpp" />
+		<Unit filename="../include/saga/test/regular_tracer.hpp" />
 		<Unit filename="../include/saga/type_traits.hpp" />
 		<Unit filename="../include/saga/utility/as_const.hpp" />
 		<Unit filename="../include/saga/utility/copy_and_swap.hpp" />
@@ -109,6 +110,7 @@
 		<Unit filename="saga_test.cpp" />
 		<Unit filename="saga_test.hpp" />
 		<Unit filename="string_view.cpp" />
+		<Unit filename="test/regular_tracer.cpp" />
 		<Unit filename="type_traits.cpp" />
 		<Unit filename="utility/as_const.cpp" />
 		<Unit filename="utility/equality_comparable_box.cpp" />
