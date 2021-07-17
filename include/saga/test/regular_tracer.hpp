@@ -73,8 +73,17 @@ namespace saga
         using tag_type = Tag;
 
         // Создание, присваивание и уничтожение
-        explicit regular_tracer(T init_value)
-         : value_(std::move(init_value))
+        template <class... Args, class = std::enable_if_t<std::is_constructible<T, Args...>{}>>
+        explicit regular_tracer(Args &&... args)
+         : value_(std::forward<Args>(args)...)
+        {
+            ++ regular_tracer::constructed_ref();
+        }
+
+        template <class U, class... Args
+                  , class = std::enable_if_t<std::is_constructible<T, std::initializer_list<U>&, Args...>{}>>
+        explicit regular_tracer(std::initializer_list<U> inits, Args&&... args)
+         : value_(inits, std::forward<Args>(args)...)
         {
             ++ regular_tracer::constructed_ref();
         }

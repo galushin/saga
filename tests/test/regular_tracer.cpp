@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
+#include <set>
 
 // Тесты
 static_assert(std::is_same<saga::regular_tracer<long>::value_type, long>{}, "");
@@ -253,4 +254,29 @@ TEST_CASE("tracer: move assignment")
     REQUIRE(Tracer::copy_assignments() == copy_assignments_old);
     REQUIRE(Tracer::copy_constructed() == copy_constructed_old);
     REQUIRE(Tracer::move_constructed() == move_constructed_old);
+}
+
+static_assert(!std::is_constructible<int, std::initializer_list<int>&>{}, "");
+static_assert(!std::is_constructible<saga::regular_tracer<int, void*>
+                                    , std::initializer_list<int>&>{}, "");
+
+TEST_CASE("regular_tracer: initializer_list constructor")
+{
+    using Element = int;
+    using Value = std::vector<Element>;
+    using Tracer = saga::regular_tracer<Value>;
+
+    REQUIRE(Tracer({3, 1, 4, 1, 5}).value() == Value{3, 1, 4, 1, 5});
+}
+
+TEST_CASE("regular_tracer: initializer_list constructor and more args")
+{
+    using Element = int;
+    using Compare = bool(*)(Element const &, Element const &);
+    using Value = std::set<Element, Compare>;
+    using Tracer = saga::regular_tracer<Value>;
+
+    auto const cmp = Compare([](int const & x, int const & y) { return x < y; });
+
+    REQUIRE(Tracer({1, 2, 3}, cmp).value() == Value({1, 2, 3}, cmp));
 }

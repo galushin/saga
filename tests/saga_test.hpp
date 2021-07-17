@@ -22,7 +22,10 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/detail/static_empty_const.hpp>
 #include <saga/type_traits.hpp>
+#include <saga/test/regular_tracer.hpp>
 #include <saga/utility/operators.hpp>
+
+#include <catch/catch.hpp>
 
 #include <cassert>
 
@@ -227,7 +230,8 @@ namespace saga_test
         {};
 
         template <typename T>
-        struct is_sequence_container<T, saga::void_t<typename T::value_type>>
+        struct is_sequence_container<T, saga::void_t<typename T::value_type
+                                                    , typename T::iterator>>
          : std::is_constructible<T, typename T::value_type const *, typename T::value_type const *>
         {};
     }
@@ -330,6 +334,19 @@ namespace saga_test
             std::uniform_int_distribution<IntType> distr(0, generation);
 
             return {distr(urbg)};
+        }
+    };
+
+    template <class T, class Tag>
+    struct arbitrary<saga::regular_tracer<T, Tag>>
+    {
+    public:
+        using value_type = saga::regular_tracer<T, Tag>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            return value_type(saga_test::arbitrary<T>::generate(generation, urbg));
         }
     };
 
@@ -603,6 +620,19 @@ namespace saga_test
     }
 }
 // namespace saga_test
+
+namespace Catch
+{
+    template <class T, class Tag>
+    struct StringMaker<saga::regular_tracer<T, Tag>>
+    {
+        static std::string convert(saga::regular_tracer<T> const & rhs)
+        {
+            return Catch::StringMaker<T>::convert(rhs.value());
+        }
+    };
+}
+// namespace Catch
 
 #endif
 // Z_SAGA_TEST_HPP_INCLUDED

@@ -24,6 +24,7 @@ SAGA -- это свободной программное обеспечение:
 
 // Вспомогательные файлы
 #include <saga/utility/as_const.hpp>
+#include <saga/test/regular_tracer.hpp>
 
 #include <set>
 
@@ -67,7 +68,7 @@ TEST_CASE("any_cast for nullptr")
 
 TEMPLATE_LIST_TEST_CASE("any - value constructor", "any", Value_types_list)
 {
-    using Value = TestType;
+    using Value = saga::regular_tracer<TestType>;
 
     saga_test::property_checker << [](Value const & value)
     {
@@ -82,6 +83,8 @@ TEMPLATE_LIST_TEST_CASE("any - value constructor", "any", Value_types_list)
         REQUIRE(ptr != nullptr);
         REQUIRE(*ptr == value);
     };
+
+    REQUIRE(Value::constructed() == Value::destructed());
 }
 
 static_assert(!std::is_constructible<saga::any, std::unique_ptr<int>>{}
@@ -89,13 +92,18 @@ static_assert(!std::is_constructible<saga::any, std::unique_ptr<int>>{}
 
 TEST_CASE("any - value constructor performs move")
 {
-    using Container = std::vector<int>;
+    using Container = saga::regular_tracer<std::vector<int>>;
+
     saga_test::property_checker << [](Container const & value_old)
     {
         auto value = value_old;
+
+        auto const move_constructed_old = Container::move_constructed();
+
         saga::any const obj(std::move(value));
 
-        REQUIRE(value.empty());
+        REQUIRE(value.value().empty());
+        REQUIRE(Container::move_constructed() == move_constructed_old + 1);
 
         REQUIRE(obj.has_value());
         REQUIRE(obj.type() == typeid(Container));
@@ -105,11 +113,13 @@ TEST_CASE("any - value constructor performs move")
         REQUIRE(ptr != nullptr);
         REQUIRE(*ptr == value_old);
     };
+
+    REQUIRE(Container::constructed() == Container::destructed());
 }
 
 TEMPLATE_LIST_TEST_CASE("any_cast mutable pointer", "any", Value_types_list)
 {
-    using Value = TestType;
+    using Value = saga::regular_tracer<TestType>;
 
     REQUIRE(saga::any_cast<Value>(static_cast<saga::any*>(nullptr)) == nullptr);
 
@@ -126,6 +136,8 @@ TEMPLATE_LIST_TEST_CASE("any_cast mutable pointer", "any", Value_types_list)
         REQUIRE(ptr != nullptr);
         REQUIRE(*ptr == value);
     };
+
+    REQUIRE(Value::constructed() == Value::destructed());
 }
 
 TEST_CASE("any: copy constructor from empty")
@@ -136,12 +148,13 @@ TEST_CASE("any: copy constructor from empty")
 
     REQUIRE(obj.has_value() == false);
     REQUIRE(obj.type() == typeid(void));
+    REQUIRE(saga::any_cast<long>(&obj) == nullptr);
     REQUIRE(saga::any_cast<std::vector<int>>(&obj) == nullptr);
 }
 
 TEMPLATE_LIST_TEST_CASE("any: copy constructor from not empty", "any", Value_types_list)
 {
-    using Value = TestType;
+    using Value = saga::regular_tracer<TestType>;
 
     saga_test::property_checker << [](Value const & value)
     {
@@ -154,12 +167,14 @@ TEMPLATE_LIST_TEST_CASE("any: copy constructor from not empty", "any", Value_typ
         REQUIRE(saga::any_cast<Value>(&obj) != nullptr);
         REQUIRE(*saga::any_cast<Value>(&obj) == value);
     };
+
+    REQUIRE(Value::constructed() == Value::destructed());
 }
 
 TEST_CASE("any: copy assignment")
 {
-    using Value1 = std::string;
-    using Value2 = long;
+    using Value1 = saga::regular_tracer<std::string>;
+    using Value2 = saga::regular_tracer<long>;
 
     saga_test::property_checker << [](Value1 const & value_1, Value2 const & value_2)
     {
@@ -230,7 +245,7 @@ TEMPLATE_LIST_TEST_CASE("any_cast: from empty", "any", Value_types_list)
 
 TEMPLATE_LIST_TEST_CASE("any_cast: value and reference", "any", Value_types_list)
 {
-    using Value = TestType;
+    using Value = saga::regular_tracer<TestType>;
 
     saga_test::property_checker << [](Value const & old_value, Value const & new_value)
     {
@@ -247,11 +262,13 @@ TEMPLATE_LIST_TEST_CASE("any_cast: value and reference", "any", Value_types_list
 
         REQUIRE(saga::any_cast<Value const &>(saga::as_const(obj)) == new_value);
     };
+
+    REQUIRE(Value::constructed() == Value::destructed());
 }
 
 TEST_CASE("any_cast: rvalue reference")
 {
-    using Container = std::vector<int>;
+    using Container = saga::regular_tracer<std::vector<int>>;
 
     saga_test::property_checker << [](Container const & value)
     {
@@ -260,13 +277,15 @@ TEST_CASE("any_cast: rvalue reference")
         auto res = saga::any_cast<Container>(std::move(obj));
 
         REQUIRE(res == value);
-        REQUIRE(saga::any_cast<Container const &>(obj).empty());
+        REQUIRE(saga::any_cast<Container const &>(obj).value().empty());
     };
+
+    REQUIRE(Container::constructed() == Container::destructed());
 }
 
 TEST_CASE("any: copy of non-const any")
 {
-    using Value = std::string;
+    using Value = saga::regular_tracer<std::string>;
 
     saga_test::property_checker << [](Value const & value)
     {
@@ -276,15 +295,20 @@ TEST_CASE("any: copy of non-const any")
 
         REQUIRE(saga::any_cast<Value const &>(dest) == value);
     };
+
+    REQUIRE(Value::constructed() == Value::destructed());
 }
 
 TEST_CASE("any: in_place_type ctor no args")
 {
-    using Value = int;
-    using Container = std::vector<Value>;
+    using Container = saga::regular_tracer<std::vector<long>>;
 
-    saga::any const obj(saga::in_place_type<Container>);
-    REQUIRE(saga::any_cast<const Container&>(obj) == Container{});
+    {
+        saga::any const obj(saga::in_place_type<Container>);
+        REQUIRE(saga::any_cast<const Container&>(obj) == Container{});
+    }
+
+    REQUIRE(Container::constructed() == Container::destructed());
 }
 
 static_assert(std::is_constructible<saga::any, saga::in_place_type_t<int>>{}, "");
@@ -295,39 +319,47 @@ static_assert(!std::is_constructible<saga::any, saga::in_place_type_t<int>, std:
 
 TEST_CASE("any: in_place_type ctor with args")
 {
-    using Value = int;
-    using Container = std::vector<Value>;
+    using Element = int;
+    using Container = std::vector<Element>;
+    using Tracer = saga::regular_tracer<Container>;
 
-    saga_test::property_checker << [](saga_test::container_size<std::size_t> num
-                                      , Value const & value)
+    saga_test::property_checker << [](saga_test::container_size<Container::size_type> num
+                                      , Element const & value)
     {
-        saga::any const obj(saga::in_place_type<Container>, num, value);
+        saga::any const obj(saga::in_place_type<Tracer>, num, value);
 
-        REQUIRE(saga::any_cast<const Container&>(obj) == Container(num, value));
+        REQUIRE(saga::any_cast<const Tracer&>(obj) == Tracer(num, value));
     };
+
+    REQUIRE(Tracer::constructed() == Tracer::destructed());
 }
 
 TEST_CASE("any: placement constructor with initializer list")
 {
-    saga_test::property_checker << [](int value1, int value2)
+    using Element = int;
+    using Container = saga::regular_tracer<std::vector<Element>>;
+
+    saga_test::property_checker << [](Element const & value1, Element const & value2)
     {
-        using Container = std::vector<int>;
-        Container const expected{value1, value2};
+        Container const expected({value1, value2});
 
         saga::any const actual(saga::in_place_type<Container>, {value1, value2});
 
         REQUIRE(saga::any_cast<Container const &>(actual) == expected);
     };
+
+    REQUIRE(Container::constructed() == Container::destructed());
 }
 
 TEST_CASE("any: placement constructor with initializer list and more args")
 {
-    saga_test::property_checker << [](int value1, int value2)
-    {
-        using Compare = bool(*)(int const &, int const &);
-        using Container = std::set<int, Compare>;
+    using Element = int;
+    using Compare = bool(*)(Element const &, Element const &);
+    using Container = saga::regular_tracer<std::set<Element, Compare>>;
 
-        auto const cmp = Compare([](int const & x, int const & y) { return x < y; });
+    saga_test::property_checker << [](Element value1, Element value2)
+    {
+        auto const cmp = Compare([](Element const & x, Element const & y) { return x < y; });
 
         Container const expected({value1, value2}, cmp);
 
@@ -335,6 +367,8 @@ TEST_CASE("any: placement constructor with initializer list and more args")
 
         REQUIRE(saga::any_cast<Container const &>(obj) == expected);
     };
+
+    REQUIRE(Container::constructed() == Container::destructed());
 }
 
 static_assert(!std::is_constructible<int, std::initializer_list<int>&>{}, "");
@@ -344,7 +378,7 @@ static_assert(!std::is_constructible<saga::any, saga::in_place_type_t<int>
 TEST_CASE("make_any: no initializer_list")
 {
     using Value = int;
-    using Container = std::vector<Value>;
+    using Container = saga::regular_tracer<std::vector<Value>>;
 
     saga_test::property_checker << [](saga_test::container_size<std::size_t> num
                                       , Value const & value)
@@ -355,15 +389,18 @@ TEST_CASE("make_any: no initializer_list")
 
         REQUIRE(saga::any_cast<const Container&>(obj) == Container(num, value));
     };
+
+    REQUIRE(Container::constructed() == Container::destructed());
 }
 
 TEST_CASE("make_any: with initializer list and more args")
 {
+    using Element = int;
+    using Compare = bool(*)(Element const &, Element const &);
+    using Container = saga::regular_tracer<std::set<Element, Compare>>;
+
     saga_test::property_checker << [](int value1, int value2)
     {
-        using Compare = bool(*)(int const &, int const &);
-        using Container = std::set<int, Compare>;
-
         auto const cmp = Compare([](int const & x, int const & y) { return x < y; });
 
         Container const expected({value1, value2}, cmp);
@@ -373,6 +410,8 @@ TEST_CASE("make_any: with initializer list and more args")
 
         REQUIRE(saga::any_cast<Container const &>(obj) == expected);
     };
+
+    REQUIRE(Container::constructed() == Container::destructed());
 }
 
 static_assert(std::is_nothrow_move_constructible<saga::any>{}, "any must be nothrow move constructible");
@@ -395,27 +434,29 @@ TEST_CASE("any: move constructor from empty")
 
 TEST_CASE("any: move constructor from big value")
 {
-    using Container = std::vector<int>;
+    using Container = saga::regular_tracer<std::vector<int>>;
 
     saga_test::property_checker << [](Container const & value)
     {
         saga::any src(value);
 
-        auto const old_data = saga::any_cast<Container const &>(src).data();
+        auto const old_data = saga::any_cast<Container const &>(src).value().data();
 
         saga::any const obj(std::move(src));
 
         REQUIRE(saga::any_cast<Container const &>(obj) == value);
-        REQUIRE(saga::any_cast<Container const &>(obj).data() == old_data);
+        REQUIRE(saga::any_cast<Container const &>(obj).value().data() == old_data);
 
-        REQUIRE((!src.has_value() || saga::any_cast<Container const &>(obj).empty()));
+        REQUIRE((!src.has_value() || saga::any_cast<Container const &>(obj).value().empty()));
     };
+
+    REQUIRE(Container::constructed() == Container::destructed());
 }
 
 TEST_CASE("any: move assignment")
 {
-    using Value1 = std::vector<long>;
-    using Value2 = std::vector<int>;
+    using Value1 = saga::regular_tracer<std::vector<long>>;
+    using Value2 = saga::regular_tracer<std::vector<int>>;
 
     saga_test::property_checker << [](Value1 const & value_1, Value2 const & value_2)
     {
@@ -423,8 +464,8 @@ TEST_CASE("any: move assignment")
         saga::any src_1(value_1);
         saga::any src_2(value_2);
 
-        auto const old_data_1 = saga::any_cast<Value1 const &>(src_1).data();
-        auto const old_data_2 = saga::any_cast<Value2 const &>(src_2).data();
+        auto const old_data_1 = saga::any_cast<Value1 const &>(src_1).value().data();
+        auto const old_data_2 = saga::any_cast<Value2 const &>(src_2).value().data();
 
         saga::any var;
 
@@ -439,13 +480,13 @@ TEST_CASE("any: move assignment")
         auto const & res2 = (var = std::move(src_1));
 
         REQUIRE(saga::any_cast<Value1 const &>(var) == value_1);
-        REQUIRE(saga::any_cast<Value1 const &>(var).data() == old_data_1);
+        REQUIRE(saga::any_cast<Value1 const &>(var).value().data() == old_data_1);
         REQUIRE(std::addressof(res2) == std::addressof(var));
 
         auto const & res3 = (var = std::move(src_2));
 
         REQUIRE(saga::any_cast<Value2 const &>(var) == value_2);
-        REQUIRE(saga::any_cast<Value2 const &>(var).data() == old_data_2);
+        REQUIRE(saga::any_cast<Value2 const &>(var).value().data() == old_data_2);
         REQUIRE(std::addressof(res3) == std::addressof(var));
 
         auto const & res4 = (var = std::move(src_0));
@@ -453,6 +494,9 @@ TEST_CASE("any: move assignment")
         REQUIRE(var.has_value() == false);
         REQUIRE(std::addressof(res4) == std::addressof(var));
     };
+
+    REQUIRE(Value1::constructed() == Value1::destructed());
+    REQUIRE(Value2::constructed() == Value2::destructed());
 }
 
 TEST_CASE("any: reset empty")
@@ -468,7 +512,7 @@ TEST_CASE("any: reset empty")
 
 TEMPLATE_LIST_TEST_CASE("any: reset not empty", "any", Value_types_list)
 {
-    using Value = TestType;
+    using Value = saga::regular_tracer<TestType>;
 
     saga_test::property_checker << [](Value const & value)
     {
@@ -480,11 +524,13 @@ TEMPLATE_LIST_TEST_CASE("any: reset not empty", "any", Value_types_list)
 
         REQUIRE(obj.has_value() == false);
     };
+
+    REQUIRE(Value::constructed() == Value::destructed());
 }
 
 TEST_CASE("any::emplace: no args")
 {
-    using Value = std::vector<long>;
+    using Value = saga::regular_tracer<std::vector<long>>;
 
     {
         saga::any obj;
@@ -497,7 +543,7 @@ TEST_CASE("any::emplace: no args")
         REQUIRE(std::addressof(result) == std::addressof(saga::any_cast<Value const &>(obj)));
     }
 
-    using Other = int;
+    using Other = saga::regular_tracer<int>;
 
     saga_test::property_checker << [](Other const & init_value)
     {
@@ -508,13 +554,15 @@ TEST_CASE("any::emplace: no args")
 
         REQUIRE(std::addressof(result) == std::addressof(saga::any_cast<Value const &>(obj)));
     };
+
+    REQUIRE(Value::constructed() == Value::destructed());
+    REQUIRE(Other::constructed() == Other::destructed());
 }
 
 namespace
 {
-    template <class Container>
-    void check_any_emplace(saga::any & obj, std::size_t num
-                           , typename Container::value_type const & value)
+    template <class Container, class Element>
+    void check_any_emplace(saga::any & obj, std::size_t num, Element const & value)
     {
         auto const & result = obj.emplace<Container>(num, value);
 
@@ -524,13 +572,13 @@ namespace
         REQUIRE(std::addressof(result) == std::addressof(saga::any_cast<Container const &>(obj)));
     }
 
-    template <class Container>
+    template <class Container, class Element>
     void check_any_emplace_init_list(saga::any & obj
-                                     , typename Container::value_type const & value1
-                                     , typename Container::value_type const & value2)
+                                     , Element const & value1
+                                     , Element const & value2)
     {
 
-        Container const expected{value1, value2};
+        Container const expected({value1, value2});
 
         auto & result = obj.emplace<Container>({value1, value2});
 
@@ -578,8 +626,8 @@ static_assert(!saga::is_detected<any_emplace_type,
 TEST_CASE("any::emplace with args")
 {
     using Element = int;
-    using Container = std::vector<Element>;
-    using Other = long;
+    using Container = saga::regular_tracer<std::vector<Element>>;
+    using Other = saga::regular_tracer<long>;
 
     saga_test::property_checker
     << [](saga_test::container_size<std::size_t> num, Element const & value)
@@ -594,11 +642,15 @@ TEST_CASE("any::emplace with args")
 
         ::check_any_emplace<Container>(obj, num, value);
     };
+
+    REQUIRE(Container::constructed() == Container::destructed());
+    REQUIRE(Other::constructed() == Other::destructed());
 }
 
 TEST_CASE("any::emplace with initializer list")
 {
-    using Container = std::vector<int>;
+    using Container = saga::regular_tracer<std::vector<int>>;
+    using Other = saga::regular_tracer<std::string>;
 
     saga_test::property_checker
     << [](int value1, int value2)
@@ -606,16 +658,23 @@ TEST_CASE("any::emplace with initializer list")
         saga::any obj;
         ::check_any_emplace_init_list<Container>(obj, value1, value2);
     }
-    << [](std::string const & other, int value1, int value2)
+    << [](Other const & other, int value1, int value2)
     {
         saga::any obj(other);
 
         ::check_any_emplace_init_list<Container>(obj, value1, value2);
     };
+
+    REQUIRE(Container::constructed() == Container::destructed());
+    REQUIRE(Other::constructed() == Other::destructed());
 }
 
 TEST_CASE("any::emplace: with initializer list and more args")
 {
+    using Other = saga::regular_tracer<std::string>;
+
+    // @todo Использовать трассировщик для создаваемого в check_any_emplace_init_list_args
+
     saga_test::property_checker
     << [](int value1, int value2)
     {
@@ -629,6 +688,8 @@ TEST_CASE("any::emplace: with initializer list and more args")
 
         ::check_any_emplace_init_list_args(obj, value1, value2);
     };
+
+    REQUIRE(Other::constructed() == Other::destructed());
 }
 
 namespace
@@ -647,8 +708,8 @@ namespace
 
 TEST_CASE("any: assign value")
 {
-    using Value = int;
-    using Other = std::string;
+    using Value = saga::regular_tracer<int>;
+    using Other = saga::regular_tracer<std::string>;
 
     saga_test::property_checker
     << [](Value const & value)
@@ -661,12 +722,15 @@ TEST_CASE("any: assign value")
         saga::any obj(other);
         ::check_any_assign_value(obj, value);
     };
+
+    REQUIRE(Value::constructed() == Value::destructed());
+    REQUIRE(Other::constructed() == Other::destructed());
 }
 
 TEST_CASE("any: assign temporary value do move")
 {
-    using Container = std::vector<int>;
-    using Other = int;
+    using Container = saga::regular_tracer<std::vector<int>>;
+    using Other = saga::regular_tracer<int>;
 
     saga_test::property_checker << [](Other const & other, Container const & old_value)
     {
@@ -676,15 +740,18 @@ TEST_CASE("any: assign temporary value do move")
         obj = std::move(tmp);
 
         REQUIRE(saga::any_cast<Container const &>(obj) == old_value);
-        REQUIRE(tmp.empty());
+        REQUIRE(tmp.value().empty());
     };
+
+    REQUIRE(Container::constructed() == Container::destructed());
+    REQUIRE(Other::constructed() == Other::destructed());
 }
 
 static_assert(!std::is_assignable<saga::any, std::unique_ptr<int>>{}, "");
 
 TEST_CASE("any: throwing assign value has no effect")
 {
-    using Value = std::string;
+    using Value = saga::regular_tracer<std::string>;
 
     saga_test::property_checker << [](Value const & old_value, int const & new_value)
     {
@@ -696,6 +763,8 @@ TEST_CASE("any: throwing assign value has no effect")
         REQUIRE(saga::any_cast<Value const &>(obj) == old_value);
         REQUIRE(saga::any_cast<Value>(&obj) == ptr_old);
     };
+
+    REQUIRE(Value::constructed() == Value::destructed());
 }
 
 TEST_CASE("any: assign non-const any")
@@ -728,7 +797,8 @@ TEST_CASE("any::swap: two empty")
 
 TEST_CASE("any::swap: empty and value")
 {
-    using Value = long;
+    using Value = saga::regular_tracer<long>;
+
     saga_test::property_checker << [](Value const & value)
     {
         saga::any obj0;
@@ -744,12 +814,15 @@ TEST_CASE("any::swap: empty and value")
         REQUIRE(obj0.has_value() == false);
         REQUIRE(saga::any_cast<Value const &>(obj1) == value);
     };
+
+    REQUIRE(Value::constructed() == Value::destructed());
 }
 
 TEST_CASE("any::swap: two values")
 {
-    using Value1 = long;
-    using Value2 = std::string;
+    using Value1 = saga::regular_tracer<long>;
+    using Value2 = saga::regular_tracer<std::string>;
+
     saga_test::property_checker << [](Value1 const & value1, Value2 const & value2)
     {
         saga::any obj1(value1);
@@ -765,4 +838,7 @@ TEST_CASE("any::swap: two values")
         REQUIRE(saga::any_cast<Value1 const &>(obj1) == value1);
         REQUIRE(saga::any_cast<Value2 const &>(obj2) == value2);
     };
+
+    REQUIRE(Value1::constructed() == Value1::destructed());
+    REQUIRE(Value2::constructed() == Value2::destructed());
 }
