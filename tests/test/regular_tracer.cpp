@@ -20,6 +20,7 @@ SAGA -- это свободной программное обеспечение:
 
 // Тестовая инфраструктура
 #include <catch/catch.hpp>
+#include "../saga_test.hpp"
 
 // Вспомогательные файлы
 #include <set>
@@ -279,4 +280,18 @@ TEST_CASE("regular_tracer: initializer_list constructor and more args")
     auto const cmp = Compare([](int const & x, int const & y) { return x < y; });
 
     REQUIRE(Tracer({1, 2, 3}, cmp).value() == Value({1, 2, 3}, cmp));
+}
+
+TEST_CASE("regular_tracer: Catch::StringMaker")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](Value const & value)
+    {
+        using Tracer = saga::regular_tracer<Value, void*>;
+        Tracer const tracer(value);
+
+        REQUIRE(Catch::StringMaker<Tracer>::convert(tracer)
+                == Catch::StringMaker<Value>::convert(value));
+    };
 }

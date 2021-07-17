@@ -626,7 +626,7 @@ namespace Catch
     template <class T, class Tag>
     struct StringMaker<saga::regular_tracer<T, Tag>>
     {
-        static std::string convert(saga::regular_tracer<T> const & rhs)
+        static std::string convert(saga::regular_tracer<T, Tag> const & rhs)
         {
             return Catch::StringMaker<T>::convert(rhs.value());
         }
