@@ -25,7 +25,6 @@
 [tests/iterator.cpp:223]: (error) Out of bounds access in dest because dest is empty.
 [tests/iterator.cpp:224]: (error) Out of bounds access in dest because dest is empty.
 [tests/string_view.cpp:912]: (warning) Redundant code: Found a statement that begins with numeric constant.
-[tests/test/regular_tracer.cpp:158]: (warning, inconclusive) Access of moved variable 'src'.
 [tests/utility/equality_comparable_box.cpp:147]: (warning) Redundant code: Found a statement that begins with numeric constant.
 [tests/view/indices.cpp:110]: (performance) Prefer prefix ++/-- operators for non-primitive types.
 [tests/view/indices.cpp:120]: (performance) Prefer prefix ++/-- operators for non-primitive types.
