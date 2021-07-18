@@ -59,7 +59,6 @@ namespace saga
         }
 
         // Создание и уничтожение
-        // @todo Как протестировать, что этот конструктор constexpr, если деструктор не тривиальный?
         constexpr any() noexcept = default;
 
         any(any const & other)
@@ -91,16 +90,14 @@ namespace saga
         {}
 
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
-        // @todo explicit проверить?
-        // @todo Ограничения типа: is_copy_constructible_v<VT>
         template <class T, class... Args, class Value = std::decay_t<T>
+                 , class = std::enable_if_t<std::is_copy_constructible<Value>{}>
                  , class = std::enable_if_t<std::is_constructible<Value, Args...>{}>>
         explicit any(in_place_type_t<T>, Args &&... args)
-         : type_(&typeid(Value))
-         , destroy_(&any::destroy_heap<Value>)
-         , copy_(&any::copy_heap<Value>)
-         , data_(new Value(std::forward<Args>(args)...))
-        {}
+         : any()
+        {
+            this->acquire_heap(new Value(std::forward<Args>(args)...));
+        }
 
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
         template <class T, class U, class... Args, class Value = std::decay_t<T>
@@ -108,11 +105,10 @@ namespace saga
         // @todo explicit проверить?
         // @todo ограничение: is_copy_constructible_v<VT> is true
         explicit any(in_place_type_t<T>, std::initializer_list<U> inits, Args &&... args)
-         : type_(&typeid(Value))
-         , destroy_(&any::destroy_heap<Value>)
-         , copy_(&any::copy_heap<Value>)
-         , data_(new Value(inits, std::forward<Args>(args)...))
-        {}
+         : any()
+        {
+            this->acquire_heap(new Value(inits, std::forward<Args>(args)...));
+        }
 
         ~any()
         {
@@ -217,7 +213,8 @@ namespace saga
         template <class Value>
         Value & acquire_heap(Value * ptr) noexcept
         {
-            // @todo Уменьшить дублирование с конструкторами
+            assert(this->has_value() == false);
+
             this->data_ = ptr;
             this->type_ = &typeid(Value);
             this->destroy_ = &any::destroy_heap<Value>;

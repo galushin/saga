@@ -311,6 +311,8 @@ TEST_CASE("any: in_place_type ctor no args")
     REQUIRE(Container::constructed() == Container::destructed());
 }
 
+static_assert(!std::is_constructible<saga::any, saga::in_place_type_t<std::unique_ptr<int>>>{}, "");
+
 static_assert(std::is_constructible<saga::any, saga::in_place_type_t<int>>{}, "");
 static_assert(!std::is_convertible<saga::in_place_type_t<int>, saga::any>{}, "");
 
