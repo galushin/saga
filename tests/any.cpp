@@ -357,7 +357,7 @@ namespace
 {
     template <class T>
     using detect_return_implicit_initializer_list
-        = decltype(saga::any_cast<int>({saga::in_place_type<std::vector<int>>, {1, 2, 3}}));
+        = decltype(saga::any_cast<T>({saga::in_place_type<T>, {1, 2, 3}}));
 
     struct no_copy_init_list
     {
@@ -368,7 +368,7 @@ namespace
     };
 }
 
-static_assert(!saga::is_detected<detect_return_implicit_initializer_list, saga::any>{}
+static_assert(!saga::is_detected<detect_return_implicit_initializer_list, std::vector<int>>{}
               , "Must be explicit");
 
 static_assert(std::is_constructible<::no_copy_init_list, std::initializer_list<int>&>{}, "");
