@@ -311,6 +311,8 @@ TEST_CASE("any: in_place_type ctor no args")
     REQUIRE(Container::constructed() == Container::destructed());
 }
 
+static_assert(!std::is_constructible<saga::any, saga::in_place_type_t<std::unique_ptr<int>>>{}, "");
+
 static_assert(std::is_constructible<saga::any, saga::in_place_type_t<int>>{}, "");
 static_assert(!std::is_convertible<saga::in_place_type_t<int>, saga::any>{}, "");
 
@@ -350,6 +352,28 @@ TEST_CASE("any: placement constructor with initializer list")
 
     REQUIRE(Container::constructed() == Container::destructed());
 }
+
+namespace
+{
+    template <class T>
+    using detect_return_implicit_initializer_list
+        = decltype(saga::any_cast<T>({saga::in_place_type<T>, {1, 2, 3}}));
+
+    struct no_copy_init_list
+    {
+        explicit no_copy_init_list(std::initializer_list<int>);
+
+        no_copy_init_list(no_copy_init_list const &) = delete;
+        no_copy_init_list & operator=(no_copy_init_list const &) = delete;
+    };
+}
+
+static_assert(!saga::is_detected<detect_return_implicit_initializer_list, std::vector<int>>{}
+              , "Must be explicit");
+
+static_assert(std::is_constructible<::no_copy_init_list, std::initializer_list<int>&>{}, "");
+static_assert(!std::is_constructible<saga::any, saga::in_place_type_t<::no_copy_init_list>
+                                                , std::initializer_list<int>&>{}, "");
 
 TEST_CASE("any: placement constructor with initializer list and more args")
 {
@@ -588,14 +612,10 @@ namespace
         REQUIRE(std::addressof(result) == std::addressof(saga::any_cast<Container const &>(obj)));
     }
 
-    template <class Element>
-    void check_any_emplace_init_list_args(saga::any & obj
-                                          , Element const & value1
-                                          , Element const & value2)
+    template <class Container, class Compare, class Element>
+    void check_any_emplace_init_list_args(saga::any & obj,
+                                          Element const & value1, Element const & value2)
     {
-        using Compare = bool(*)(Element const &, Element const &);
-        using Container = std::set<Element, Compare>;
-
         auto const cmp = Compare([](Element const & x, Element const & y) { return x < y; });
 
         Container const expected({value1, value2}, cmp);
@@ -673,23 +693,26 @@ TEST_CASE("any::emplace: with initializer list and more args")
 {
     using Other = saga::regular_tracer<std::string>;
 
-    // @todo Использовать трассировщик для создаваемого в check_any_emplace_init_list_args
+    using Element = int;
+    using Compare = bool(*)(Element const &, Element const &);
+    using Container = saga::regular_tracer<std::set<Element, Compare>>;
 
     saga_test::property_checker
     << [](int value1, int value2)
     {
         saga::any obj;
 
-        ::check_any_emplace_init_list_args(obj, value1, value2);
+        ::check_any_emplace_init_list_args<Container, Compare>(obj, value1, value2);
     }
     << [](std::string const & other, int value1, int value2)
     {
         saga::any obj(other);
 
-        ::check_any_emplace_init_list_args(obj, value1, value2);
+        ::check_any_emplace_init_list_args<Container, Compare>(obj, value1, value2);
     };
 
     REQUIRE(Other::constructed() == Other::destructed());
+    REQUIRE(Container::constructed() == Container::destructed());
 }
 
 namespace

@@ -48,6 +48,34 @@ namespace saga
     {
         template <class T>
         T * any_cast_impl(saga::any const & operand);
+
+        template <class Value>
+        constexpr bool any_is_constructible_from()
+        {
+            return !std::is_same<Value, saga::any>{}
+                   && std::is_copy_constructible<Value>{}
+                   && !detail::is_in_place_type_t<Value>{};
+        }
+
+        template <class Value, class... Args>
+        constexpr bool any_has_in_place_ctor()
+        {
+            return std::is_copy_constructible<Value>{}
+                   && std::is_constructible<Value, Args...>{};
+        }
+
+        template <class Value, class U, class... Args>
+        constexpr bool any_has_in_place_ctor_init_list()
+        {
+            return std::is_constructible<Value, std::initializer_list<U>&, Args...>{}
+                    && std::is_copy_constructible<Value>{};
+        }
+
+        template <class Value>
+        constexpr bool any_has_assign_from()
+        {
+            return !std::is_same<Value, saga::any>{} && std::is_copy_constructible<Value>{};
+        }
     }
 
     class any
@@ -59,7 +87,6 @@ namespace saga
         }
 
         // Создание и уничтожение
-        // @todo Как протестировать, что этот конструктор constexpr, если деструктор не тривиальный?
         constexpr any() noexcept = default;
 
         any(any const & other)
@@ -83,36 +110,28 @@ namespace saga
 
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
         template <class T, class Value = std::decay_t<T>
-                  , class = std::enable_if_t<!std::is_same<Value, saga::any>{}>
-                  , class = std::enable_if_t<std::is_copy_constructible<Value>{}>
-                  , class = std::enable_if_t<!detail::is_in_place_type_t<Value>{}>>
+                  , class = std::enable_if_t<detail::any_is_constructible_from<Value>()>>
         any(T && value)
          : any(saga::in_place_type<Value>, std::forward<T>(value))
         {}
 
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
-        // @todo explicit проверить?
-        // @todo Ограничения типа: is_copy_constructible_v<VT>
         template <class T, class... Args, class Value = std::decay_t<T>
-                 , class = std::enable_if_t<std::is_constructible<Value, Args...>{}>>
+                 , class = std::enable_if_t<detail::any_has_in_place_ctor<Value, Args...>()>>
         explicit any(in_place_type_t<T>, Args &&... args)
-         : type_(&typeid(Value))
-         , destroy_(&any::destroy_heap<Value>)
-         , copy_(&any::copy_heap<Value>)
-         , data_(new Value(std::forward<Args>(args)...))
-        {}
+         : any()
+        {
+            this->acquire_heap(new Value(std::forward<Args>(args)...));
+        }
 
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
         template <class T, class U, class... Args, class Value = std::decay_t<T>
-                 , class = std::enable_if_t<std::is_constructible<Value, std::initializer_list<U>&, Args...>{}>>
-        // @todo explicit проверить?
-        // @todo ограничение: is_copy_constructible_v<VT> is true
+                 , class = std::enable_if_t<detail::any_has_in_place_ctor_init_list<Value, U, Args...>()>>
         explicit any(in_place_type_t<T>, std::initializer_list<U> inits, Args &&... args)
-         : type_(&typeid(Value))
-         , destroy_(&any::destroy_heap<Value>)
-         , copy_(&any::copy_heap<Value>)
-         , data_(new Value(inits, std::forward<Args>(args)...))
-        {}
+         : any()
+        {
+            this->acquire_heap(new Value(inits, std::forward<Args>(args)...));
+        }
 
         ~any()
         {
@@ -135,10 +154,9 @@ namespace saga
         }
 
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
-        template <class T
-                 , std::enable_if_t<!std::is_same<std::decay_t<T>, saga::any>{}> * = nullptr
-                 , std::enable_if_t<std::is_copy_constructible<std::decay_t<T>>{}> * = nullptr>
-        any & operator=(T && rhs)
+        template <class T>
+        auto operator=(T && rhs)
+        -> std::enable_if_t<detail::any_has_assign_from<std::decay_t<T>>(), any &>
         {
             any(std::forward<T>(rhs)).swap(*this);
 
@@ -147,11 +165,9 @@ namespace saga
 
         // Модифицирующие операции
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
-        template<class T, class... Args
-                , std::enable_if_t<std::is_copy_constructible<std::decay_t<T>>{}> * = nullptr
-                , std::enable_if_t<std::is_constructible<std::decay_t<T>, Args...>{}> * = nullptr>
-        std::decay_t<T> &
-        emplace(Args&&... args)
+        template<class T, class... Args>
+        auto emplace(Args&&... args)
+        -> std::enable_if_t<detail::any_has_in_place_ctor<std::decay_t<T>, Args...>(), std::decay_t<T> &>
         {
             using Value = std::decay_t<T>;
 
@@ -161,11 +177,9 @@ namespace saga
         }
 
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
-        template <class T, class U, class... Args
-                 , std::enable_if_t<std::is_copy_constructible<std::decay_t<T>>{}> * = nullptr
-                 , std::enable_if_t<std::is_constructible<std::decay_t<T>, std::initializer_list<U>&, Args...>{}> * = nullptr>
-        std::decay_t<T> &
-        emplace(std::initializer_list<U> inits, Args&&... args)
+        template <class T, class U, class... Args>
+        auto emplace(std::initializer_list<U> inits, Args&&... args)
+        -> std::enable_if_t<detail::any_has_in_place_ctor_init_list<std::decay_t<T>, U, Args...>(), std::decay_t<T> &>
         {
             using Value = std::decay_t<T>;
 
@@ -217,7 +231,8 @@ namespace saga
         template <class Value>
         Value & acquire_heap(Value * ptr) noexcept
         {
-            // @todo Уменьшить дублирование с конструкторами
+            assert(this->has_value() == false);
+
             this->data_ = ptr;
             this->type_ = &typeid(Value);
             this->destroy_ = &any::destroy_heap<Value>;
