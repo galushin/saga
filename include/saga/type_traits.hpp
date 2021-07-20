@@ -249,6 +249,16 @@ namespace saga
     struct is_equality_comparable
      : is_detected_exact<bool, detail::equality_op_result, T>
     {};
+
+    template <class Type, template <class...> class Generic>
+    struct is_specialization_of
+     : std::false_type
+    {};
+
+    template <template <class...> class Generic, class... Args>
+    struct is_specialization_of<Generic<Args...>, Generic>
+     : std::true_type
+    {};
 }
 // namespace saga
 

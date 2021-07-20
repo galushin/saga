@@ -47,19 +47,6 @@ namespace saga
         template <class T>
         constexpr auto const in_place_type = detail::static_empty_const<in_place_type_t<T>>::value;
     }
-
-    namespace detail
-    {
-        template <class T>
-        struct is_in_place_type_t
-         : std::false_type
-        {};
-
-        template <class T>
-        struct is_in_place_type_t<in_place_type_t<T>>
-         : std::true_type
-        {};
-    }
 }
 // namespace saga
 
