@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <utility>
+#include <atomic>
 
 namespace saga
 {
@@ -30,47 +31,46 @@ namespace saga
     class regular_tracer
     {
     public:
-        // Счётчики операций
-        using count_type = long;
+        // Типы
+        using value_type = T;
+        using tag_type = Tag;
+        using count_type = std::ptrdiff_t;
 
-        static count_type const & constructed()
+        // Счётчики операций
+        static count_type constructed()
         {
             return regular_tracer::constructed_ref();
         }
 
-        static count_type const & destructed()
+        static count_type destructed()
         {
             return regular_tracer::destructed_ref();
         }
 
-        static count_type const & copy_constructed()
+        static count_type copy_constructed()
         {
             return regular_tracer::copy_constructed_ref();
         }
 
-        static count_type const & move_constructed()
+        static count_type move_constructed()
         {
             return regular_tracer::move_constructed_ref();
         }
 
-        static count_type const & copy_assignments()
+        static count_type copy_assignments()
         {
             return regular_tracer::copy_assignments_ref();
         }
 
-        static count_type const & move_assignments()
+        static count_type move_assignments()
         {
             return regular_tracer::move_assignments_ref();
         }
 
-        static count_type const & equality_comparisons()
+        static count_type equality_comparisons()
         {
             return regular_tracer::equality_comparisons_ref();
         }
-
-        // Типы
-        using value_type = T;
-        using tag_type = Tag;
 
         // Создание, присваивание и уничтожение
         template <class... Args, class = std::enable_if_t<std::is_constructible<T, Args...>{}>>
@@ -147,45 +147,47 @@ namespace saga
     private:
         T value_;
 
-        static count_type & constructed_ref()
+        using count_impl_type = std::atomic<count_type>;
+
+        static count_impl_type & constructed_ref()
         {
-            static count_type instance{0};
+            static count_impl_type instance{0};
             return instance;
         }
 
-        static count_type & destructed_ref()
+        static count_impl_type & destructed_ref()
         {
-            static count_type instance{0};
+            static count_impl_type instance{0};
             return instance;
         }
 
-        static count_type & copy_constructed_ref()
+        static count_impl_type & copy_constructed_ref()
         {
-            static count_type instance{0};
+            static count_impl_type instance{0};
             return instance;
         }
 
-        static count_type & move_constructed_ref()
+        static count_impl_type & move_constructed_ref()
         {
-            static count_type instance{0};
+            static count_impl_type instance{0};
             return instance;
         }
 
-        static count_type & copy_assignments_ref()
+        static count_impl_type & copy_assignments_ref()
         {
-            static count_type instance{0};
+            static count_impl_type instance{0};
             return instance;
         }
 
-        static count_type & move_assignments_ref()
+        static count_impl_type & move_assignments_ref()
         {
-            static count_type instance{0};
+            static count_impl_type instance{0};
             return instance;
         }
 
-        static count_type & equality_comparisons_ref()
+        static count_impl_type & equality_comparisons_ref()
         {
-            static count_type instance{0};
+            static count_impl_type instance{0};
             return instance;
         }
     };
