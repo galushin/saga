@@ -19,6 +19,7 @@ SAGA -- это свободной программное обеспечение:
 #define Z_SAGA_EXPECTED_DETAIL_HPP_INCLUDED
 
 #include <saga/expected/unexpected.hpp>
+#include <saga/type_traits.hpp>
 
 #include <saga/detail/default_ctor_enabler.hpp>
 
@@ -860,12 +861,7 @@ namespace saga
 
         template <class T>
         struct is_expected
-         : std::false_type
-        {};
-
-        template <class Value, class Error>
-        struct is_expected<saga::expected<Value, Error>>
-         : std::true_type
+         : saga::is_specialization_of<T, saga::expected>
         {};
 
         template <class Value, class Error, class Arg>

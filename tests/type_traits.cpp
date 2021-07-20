@@ -397,3 +397,8 @@ static_assert(saga::is_detected_convertible_v<int, diff_t, int_diff>, "");
 static_assert(!saga::is_detected_convertible_v<int, diff_t, void_diff>, "");
 #endif
 //__cpp_variable_templates
+
+// is_specialization
+static_assert(saga::is_specialization_of<std::vector<int>, std::vector>{}, "");
+static_assert(!saga::is_specialization_of<std::unique_ptr<int>, std::vector>{}, "");
+static_assert(!saga::is_specialization_of<int, std::vector>{}, "");

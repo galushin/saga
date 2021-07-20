@@ -54,7 +54,7 @@ namespace saga
         {
             return !std::is_same<Value, saga::any>{}
                    && std::is_copy_constructible<Value>{}
-                   && !detail::is_in_place_type_t<Value>{};
+                   && !saga::is_specialization_of<Value, saga::in_place_type_t>{};
         }
 
         template <class Value, class... Args>
