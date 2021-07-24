@@ -90,22 +90,15 @@ namespace saga
         constexpr any() noexcept = default;
 
         any(any const & other)
-         : type_(other.type_)
-         , destroy_(other.destroy_)
-         , copy_(other.copy_)
-         , data_(other.make_copy())
-        {}
+        {
+            other.vtable_.copy(other.storage_, this->storage_);
+            this->vtable_ = other.vtable_;
+        }
 
         any(any && other) noexcept
-         : type_(other.type_)
-         , destroy_(other.destroy_)
-         , copy_(other.copy_)
-         , data_(other.data_)
         {
-            other.type_ = &typeid(void);
-            other.destroy_ = &any::destroy_empty;
-            other.copy_ = &any::copy_empty;
-            other.data_ = nullptr;
+            other.vtable_.move(other.storage_, this->storage_);
+            this->vtable_ = std::exchange(other.vtable_, {});
         }
 
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
@@ -119,18 +112,20 @@ namespace saga
         template <class T, class... Args, class Value = std::decay_t<T>
                  , class = std::enable_if_t<detail::any_has_in_place_ctor<Value, Args...>()>>
         explicit any(in_place_type_t<T>, Args &&... args)
-         : any()
+         : vtable_(any::manager_for<Value>::make_vtable())
+         , storage_()
         {
-            this->acquire_heap(new Value(std::forward<Args>(args)...));
+            any::manager_for<Value>::create(this->storage_, std::forward<Args>(args)...);
         }
 
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
         template <class T, class U, class... Args, class Value = std::decay_t<T>
                  , class = std::enable_if_t<detail::any_has_in_place_ctor_init_list<Value, U, Args...>()>>
         explicit any(in_place_type_t<T>, std::initializer_list<U> inits, Args &&... args)
-         : any()
+         : vtable_(any::manager_for<Value>::make_vtable())
+         , storage_()
         {
-            this->acquire_heap(new Value(inits, std::forward<Args>(args)...));
+            any::manager_for<Value>::create(this->storage_, inits, std::forward<Args>(args)...);
         }
 
         ~any()
@@ -141,14 +136,23 @@ namespace saga
         // Присваивание
         any & operator=(any const & rhs)
         {
-            any(rhs).swap(*this);
+            *this = any(rhs);
 
             return *this;
         }
 
         any & operator=(any && rhs) noexcept
         {
-            any(std::move(rhs)).swap(*this);
+            if(!rhs.has_value())
+            {
+                this->reset();
+            }
+            else if(this != &rhs)
+            {
+                this->reset();
+                rhs.vtable_.move(rhs.storage_, this->storage_);
+                this->vtable_ = rhs.vtable_;
+            }
 
             return *this;
         }
@@ -173,7 +177,12 @@ namespace saga
 
             this->reset();
 
-            return this->acquire_heap(new Value(std::forward<Args>(args)...));
+            using Manager = any::manager_for<Value>;
+
+            auto & result = Manager::create(this->storage_, std::forward<Args>(args)...);
+            this->vtable_ = Manager::make_vtable();
+
+            return result;
         }
 
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
@@ -185,26 +194,25 @@ namespace saga
 
             this->reset();
 
-            return this->acquire_heap(new Value(inits, std::forward<Args>(args)...));
+            using Manager = any::manager_for<Value>;
+
+            auto & result = Manager::create(this->storage_, inits, std::forward<Args>(args)...);
+            this->vtable_ = Manager::make_vtable();
+
+            return result;
         }
 
         void reset() noexcept
         {
-            this->destroy_(this->data_);
-
-            this->type_ = &typeid(void);
-            this->destroy_ = &any::destroy_empty;
-            this->copy_ = &any::copy_empty;
-            this->data_ = nullptr;
+            this->vtable_.destroy(this->storage_);
+            this->vtable_ = {};
         }
 
         void swap(any & rhs) noexcept
         {
-            using std::swap;
-            swap(this->type_, rhs.type_);
-            swap(this->destroy_, rhs.destroy_);
-            swap(this->copy_, rhs.copy_);
-            swap(this->data_, rhs.data_);
+            auto tmp = std::move(*this);
+            *this = std::move(rhs);
+            rhs = std::move(tmp);
         }
 
         // Свойства
@@ -215,68 +223,167 @@ namespace saga
 
         std::type_info const & type() const noexcept
         {
-            assert(this->type_ != nullptr);
+            assert(this->vtable_.type != nullptr);
 
-            return *this->type_;
+            return *this->vtable_.type;
         }
 
     private:
+        struct Storage
+        {
+            union
+            {
+                void * ptr = nullptr;
+                alignas(void*) char buffer[sizeof(void*)];
+            };
+
+            constexpr Storage() noexcept = default;
+
+            Storage(Storage const &);
+            Storage & operator=(Storage const &);
+        };
+
         template <class T>
         friend T * saga::detail::any_cast_impl(any const &);
 
-        /* @pre <tt>this->has_value() == false</tt>
-        @pre @c ptr указывает на объект в динамической памяти
-        @post <tt>*this</tt> владеет объектом, на который указывает @c ptr
-        */
-        template <class Value>
-        Value & acquire_heap(Value * ptr) noexcept
-        {
-            assert(this->has_value() == false);
-
-            this->data_ = ptr;
-            this->type_ = &typeid(Value);
-            this->destroy_ = &any::destroy_heap<Value>;
-            this->copy_ = &any::copy_heap<Value>;
-
-            return *ptr;
-        }
-
-        void * make_copy() const
-        {
-            return this->copy_(this->data_);
-        }
-
-        static void destroy_empty(void *) noexcept
+        static void destroy_empty(Storage &) noexcept
         {
             return;
         }
 
-        static void * copy_empty(void *) noexcept
+        static void copy_empty(Storage const &, Storage &) noexcept
         {
+            return;
+        }
+
+        static void move_empty(Storage &, Storage &) noexcept
+        {
+            return;
+        }
+
+        static void * access_empty(Storage const &) noexcept
+        {
+            assert(false);
             return nullptr;
         }
 
         template <class T>
-        static void destroy_heap(void * data) noexcept
+        static void destroy_heap(Storage & storage) noexcept
         {
-            delete static_cast<T*>(data);
+            delete static_cast<T*>(storage.ptr);
         }
 
         template <class T>
-        static void * copy_heap(void * data)
+        static void copy_heap(Storage const & src, Storage & dest)
         {
-            assert(data != nullptr);
+            assert(src.ptr != nullptr);
 
-            return new T(*static_cast<T*>(data));
+            dest.ptr = new T(*static_cast<T*>(src.ptr));
+        }
+
+        template <class T>
+        static void move_heap(Storage & src, Storage & dest) noexcept
+        {
+            dest.ptr = std::exchange(src.ptr, nullptr);
+        }
+
+        template <class T>
+        static void * access_heap(Storage const & storage) noexcept
+        {
+            return storage.ptr;
         }
 
         using Destroy_strategy = decltype(&any::destroy_heap<int>);
         using Copy_strategy = decltype(&any::copy_heap<int>);
+        using Move_strategy = decltype(&any::move_heap<int>);
+        using Access_strategy = decltype(&any::access_heap<int>);
 
-        std::type_info const * type_ = &typeid(void);
-        Destroy_strategy destroy_ = &any::destroy_empty;
-        Copy_strategy copy_ = &any::copy_empty;
-        void * data_ = nullptr;
+        struct VTable
+        {
+            std::type_info const * type = &typeid(void);
+            Destroy_strategy destroy = &any::destroy_empty;
+            Copy_strategy copy = &any::copy_empty;
+            Move_strategy move = &any::move_empty;
+            Access_strategy access = &any::access_empty;
+        };
+
+        template <class T>
+        struct manager_heap
+        {
+            static VTable make_vtable()
+            {
+                return {std::addressof(typeid(T)), &destroy_heap<T>, &copy_heap<T>
+                        , &move_heap<T>, &access_heap<T>};
+            }
+
+            template <class... Args>
+            static T & create(Storage & storage, Args &&... args)
+            {
+                auto ptr = new T(std::forward<Args>(args)...);
+                storage.ptr = ptr;
+                return *ptr;
+            }
+        };
+
+        template <class T>
+        struct manager_small
+        {
+            static void destroy(Storage & storage) noexcept
+            {
+                auto ptr = static_cast<T*>(manager_small::access(storage));
+                ptr->~T();
+            }
+
+            static void copy(Storage const & src, Storage & dest)
+            {
+                auto const ptr = reinterpret_cast<const T*>(&src.buffer);
+                assert(ptr != nullptr);
+
+                manager_small::create(dest, *ptr);
+            }
+
+            static void move(Storage & src, Storage & dest) noexcept
+            {
+                auto const ptr = reinterpret_cast<T*>(&src.buffer);
+                assert(ptr != nullptr);
+
+                manager_small::create(dest, std::move(*ptr));
+            }
+
+            static void * access(Storage const & storage) noexcept
+            {
+                return const_cast<void*>(reinterpret_cast<const void*>(&storage.buffer));
+            }
+
+            static VTable make_vtable()
+            {
+                return {std::addressof(typeid(T)), &manager_small::destroy
+                        , &manager_small::copy, &manager_small::move
+                        , &manager_small::access};
+            }
+
+            template <class... Args>
+            static T & create(Storage & storage, Args &&... args)
+            {
+                // @todo Нужно ли здесь использовать launder?
+                auto ptr = ::new(&storage.buffer) T(std::forward<Args>(args)...);
+                return *ptr;
+            }
+        };
+
+        template <class T>
+        constexpr static bool is_fit()
+        {
+            return std::is_nothrow_move_constructible<T>{}
+                   && sizeof(T) <= sizeof(void*)
+                   && alignof(T) <= alignof(void*);
+        }
+
+        template <class T>
+        using manager_for = std::conditional_t<any::is_fit<T>(), manager_small<T>, manager_heap<T>>;
+
+        VTable vtable_;
+        Storage storage_;
     };
 
     template <class T, class... Args>
@@ -300,7 +407,7 @@ namespace saga
         {
             if(operand.type() == typeid(T))
             {
-                return static_cast<T*>(operand.data_);
+                return static_cast<T*>(operand.vtable_.access(operand.storage_));
             }
             else
             {
