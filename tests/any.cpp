@@ -142,7 +142,7 @@ TEMPLATE_LIST_TEST_CASE("any_cast mutable pointer", "any", Value_types_list)
 
 TEST_CASE("any: copy constructor from empty")
 {
-    saga::any const empty_src;
+    saga::any const empty_src{};
 
     saga::any const obj(empty_src);
 
