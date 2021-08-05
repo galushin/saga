@@ -142,7 +142,7 @@ TEMPLATE_LIST_TEST_CASE("any_cast mutable pointer", "any", Value_types_list)
 
 TEST_CASE("any: copy constructor from empty")
 {
-    saga::any const empty_src;
+    saga::any const empty_src{};
 
     saga::any const obj(empty_src);
 
@@ -151,6 +151,9 @@ TEST_CASE("any: copy constructor from empty")
     REQUIRE(saga::any_cast<long>(&obj) == nullptr);
     REQUIRE(saga::any_cast<std::vector<int>>(&obj) == nullptr);
 }
+
+static_assert(std::is_nothrow_move_constructible<saga::regular_tracer<int>>{}, "");
+static_assert(std::is_nothrow_move_assignable<saga::regular_tracer<int>>{}, "");
 
 TEMPLATE_LIST_TEST_CASE("any: copy constructor from not empty", "any", Value_types_list)
 {
@@ -220,6 +223,9 @@ TEST_CASE("any: copy assignment")
         REQUIRE(saga::any_cast<Value2>(&var) == nullptr);
         REQUIRE(std::addressof(res4) == std::addressof(var));
     };
+
+    REQUIRE(Value1::constructed() == Value1::destructed());
+    REQUIRE(Value2::constructed() == Value2::destructed());
 }
 
 static_assert(std::is_base_of<std::bad_cast, saga::bad_any_cast>{}, "");
@@ -818,7 +824,7 @@ TEST_CASE("any::swap: two empty")
     REQUIRE(obj2.has_value() == false);
 }
 
-TEST_CASE("any::swap: empty and value")
+TEMPLATE_LIST_TEST_CASE("any::swap: empty and value", "any", Value_types_list)
 {
     using Value = saga::regular_tracer<long>;
 
@@ -841,7 +847,30 @@ TEST_CASE("any::swap: empty and value")
     REQUIRE(Value::constructed() == Value::destructed());
 }
 
-TEST_CASE("any::swap: two values")
+TEMPLATE_LIST_TEST_CASE("any::swap: two values", "any", Value_types_list)
+{
+    using Value = saga::regular_tracer<TestType>;
+
+    saga_test::property_checker << [](Value const & value1, Value const & value2)
+    {
+        saga::any obj1(value1);
+        saga::any obj2(value2);
+
+        obj1.swap(obj2);
+
+        REQUIRE(saga::any_cast<Value const &>(obj1) == value2);
+        REQUIRE(saga::any_cast<Value const &>(obj2) == value1);
+
+        swap(obj1, obj2);
+
+        REQUIRE(saga::any_cast<Value const &>(obj1) == value1);
+        REQUIRE(saga::any_cast<Value const &>(obj2) == value2);
+    };
+
+    REQUIRE(Value::constructed() == Value::destructed());
+}
+
+TEST_CASE("any::swap: small and big values")
 {
     using Value1 = saga::regular_tracer<long>;
     using Value2 = saga::regular_tracer<std::string>;

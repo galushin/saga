@@ -95,14 +95,15 @@ namespace saga
             ++ regular_tracer::constructed_ref();
         }
 
-        regular_tracer(regular_tracer && rhs)
+        regular_tracer(regular_tracer && rhs) noexcept(std::is_nothrow_move_constructible<T>{})
          : value_(std::move(rhs.value_))
         {
             ++ regular_tracer::move_constructed_ref();
             ++ regular_tracer::constructed_ref();
         }
 
-        regular_tracer & operator=(regular_tracer const & rhs)
+        regular_tracer &
+        operator=(regular_tracer const & rhs)
         {
             this->value_ = rhs.value();
 
@@ -111,7 +112,8 @@ namespace saga
             return *this;
         }
 
-        regular_tracer & operator=(regular_tracer && rhs)
+        regular_tracer &
+        operator=(regular_tracer && rhs) noexcept(std::is_nothrow_move_assignable<T>{})
         {
             this->value_ = std::move(rhs.value_);
 
