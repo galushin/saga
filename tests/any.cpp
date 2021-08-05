@@ -152,6 +152,9 @@ TEST_CASE("any: copy constructor from empty")
     REQUIRE(saga::any_cast<std::vector<int>>(&obj) == nullptr);
 }
 
+static_assert(std::is_nothrow_move_constructible<saga::regular_tracer<int>>{}, "");
+static_assert(std::is_nothrow_move_assignable<saga::regular_tracer<int>>{}, "");
+
 TEMPLATE_LIST_TEST_CASE("any: copy constructor from not empty", "any", Value_types_list)
 {
     using Value = saga::regular_tracer<TestType>;
@@ -220,6 +223,9 @@ TEST_CASE("any: copy assignment")
         REQUIRE(saga::any_cast<Value2>(&var) == nullptr);
         REQUIRE(std::addressof(res4) == std::addressof(var));
     };
+
+    REQUIRE(Value1::constructed() == Value1::destructed());
+    REQUIRE(Value2::constructed() == Value2::destructed());
 }
 
 static_assert(std::is_base_of<std::bad_cast, saga::bad_any_cast>{}, "");
@@ -818,7 +824,7 @@ TEST_CASE("any::swap: two empty")
     REQUIRE(obj2.has_value() == false);
 }
 
-TEST_CASE("any::swap: empty and value")
+TEMPLATE_LIST_TEST_CASE("any::swap: empty and value", "any", Value_types_list)
 {
     using Value = saga::regular_tracer<long>;
 
@@ -841,6 +847,7 @@ TEST_CASE("any::swap: empty and value")
     REQUIRE(Value::constructed() == Value::destructed());
 }
 
+// @todo Разные сочетания больших и малых значений?
 TEST_CASE("any::swap: two values")
 {
     using Value1 = saga::regular_tracer<long>;

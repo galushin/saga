@@ -90,15 +90,17 @@ namespace saga
         constexpr any() noexcept = default;
 
         any(any const & other)
+         : any()
         {
             other.vtable_.copy(other.storage_, this->storage_);
             this->vtable_ = other.vtable_;
         }
 
         any(any && other) noexcept
+         : any()
         {
             other.vtable_.move(other.storage_, this->storage_);
-            this->vtable_ = std::exchange(other.vtable_, {});
+            this->vtable_ = std::exchange(other.vtable_, VTable{});
         }
 
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
@@ -150,8 +152,9 @@ namespace saga
             else if(this != &rhs)
             {
                 this->reset();
+
                 rhs.vtable_.move(rhs.storage_, this->storage_);
-                this->vtable_ = rhs.vtable_;
+                this->vtable_ = std::exchange(rhs.vtable_, VTable{});
             }
 
             return *this;
@@ -162,7 +165,7 @@ namespace saga
         auto operator=(T && rhs)
         -> std::enable_if_t<detail::any_has_assign_from<std::decay_t<T>>(), any &>
         {
-            any(std::forward<T>(rhs)).swap(*this);
+            *this = any(std::forward<T>(rhs));
 
             return *this;
         }
@@ -210,7 +213,7 @@ namespace saga
 
         void swap(any & rhs) noexcept
         {
-            auto tmp = std::move(*this);
+            any tmp = std::move(*this);
             *this = std::move(rhs);
             rhs = std::move(tmp);
         }
@@ -261,12 +264,6 @@ namespace saga
             return;
         }
 
-        static void * access_empty(Storage const &) noexcept
-        {
-            assert(false);
-            return nullptr;
-        }
-
         template <class T>
         static void destroy_heap(Storage & storage) noexcept
         {
@@ -304,7 +301,7 @@ namespace saga
             Destroy_strategy destroy = &any::destroy_empty;
             Copy_strategy copy = &any::copy_empty;
             Move_strategy move = &any::move_empty;
-            Access_strategy access = &any::access_empty;
+            Access_strategy access = &any::access_heap<int>;
         };
 
         template <class T>
@@ -348,6 +345,7 @@ namespace saga
                 assert(ptr != nullptr);
 
                 manager_small::create(dest, std::move(*ptr));
+                manager_small::destroy(src);
             }
 
             static void * access(Storage const & storage) noexcept
