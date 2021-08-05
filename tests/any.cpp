@@ -228,6 +228,39 @@ TEST_CASE("any: copy assignment")
     REQUIRE(Value2::constructed() == Value2::destructed());
 }
 
+TEST_CASE("any: self-assignment to empty")
+{
+    saga::any obj;
+
+    obj = obj;
+
+    REQUIRE(!obj.has_value());
+
+    obj = std::move(obj);
+
+    REQUIRE(!obj.has_value());
+}
+
+TEMPLATE_LIST_TEST_CASE("any: copy self-assignment to value", "any", Value_types_list)
+{
+    using Value = saga::regular_tracer<TestType>;
+
+    saga_test::property_checker << [](Value const & value)
+    {
+        saga::any obj(value);
+
+        obj = obj;
+
+        REQUIRE(saga::any_cast<Value const &>(obj) == value);
+
+        obj = std::move(obj);
+
+        REQUIRE(saga::any_cast<Value const &>(obj) == value);
+    };
+
+    REQUIRE(Value::constructed() == Value::destructed());
+}
+
 static_assert(std::is_base_of<std::bad_cast, saga::bad_any_cast>{}, "");
 
 TEST_CASE("bad_any_cast")
@@ -823,6 +856,38 @@ TEST_CASE("any::swap: two empty")
     REQUIRE(obj1.has_value() == false);
     REQUIRE(obj2.has_value() == false);
 }
+
+TEST_CASE("any: self swap: empty")
+{
+    saga::any obj;
+
+    obj.swap(obj);
+
+    swap(obj, obj);
+
+    REQUIRE(!obj.has_value());
+}
+
+TEMPLATE_LIST_TEST_CASE("any: self-swap: value", "any", Value_types_list)
+{
+    using Value = saga::regular_tracer<long>;
+
+    saga_test::property_checker << [](Value const & value)
+    {
+        saga::any obj(value);
+
+        obj.swap(obj);
+
+        REQUIRE(saga::any_cast<Value const &>(obj) == value);
+
+        swap(obj, obj);
+
+        REQUIRE(saga::any_cast<Value const &>(obj) == value);
+    };
+
+    REQUIRE(Value::constructed() == Value::destructed());
+}
+
 
 TEMPLATE_LIST_TEST_CASE("any::swap: empty and value", "any", Value_types_list)
 {
