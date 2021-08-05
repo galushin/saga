@@ -847,8 +847,30 @@ TEMPLATE_LIST_TEST_CASE("any::swap: empty and value", "any", Value_types_list)
     REQUIRE(Value::constructed() == Value::destructed());
 }
 
-// @todo Разные сочетания больших и малых значений?
-TEST_CASE("any::swap: two values")
+TEMPLATE_LIST_TEST_CASE("any::swap: two values", "any", Value_types_list)
+{
+    using Value = saga::regular_tracer<TestType>;
+
+    saga_test::property_checker << [](Value const & value1, Value const & value2)
+    {
+        saga::any obj1(value1);
+        saga::any obj2(value2);
+
+        obj1.swap(obj2);
+
+        REQUIRE(saga::any_cast<Value const &>(obj1) == value2);
+        REQUIRE(saga::any_cast<Value const &>(obj2) == value1);
+
+        swap(obj1, obj2);
+
+        REQUIRE(saga::any_cast<Value const &>(obj1) == value1);
+        REQUIRE(saga::any_cast<Value const &>(obj2) == value2);
+    };
+
+    REQUIRE(Value::constructed() == Value::destructed());
+}
+
+TEST_CASE("any::swap: small and big values")
 {
     using Value1 = saga::regular_tracer<long>;
     using Value2 = saga::regular_tracer<std::string>;
