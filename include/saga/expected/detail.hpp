@@ -199,12 +199,12 @@ namespace saga
 
                     try
                     {
-                        new(std::addressof(this->impl_.value_)) Value(std::forward<Args>(args)...);
+                        ::new(std::addressof(this->impl_.value_)) Value(std::forward<Args>(args)...);
                         this->impl_.has_value_ = true;
                     }
                     catch(...)
                     {
-                        new(std::addressof(this->impl_.error_)) unexpected_type(std::move(tmp));
+                        ::new(std::addressof(this->impl_.error_)) unexpected_type(std::move(tmp));
                         throw;
                     }
                 }
@@ -226,7 +226,7 @@ namespace saga
                     // @todo Доказать, что это безопасно при исключениях
                     this->impl_.value_.~Value();
 
-                    new(std::addressof(this->impl_.error_)) unexpected_type(std::forward<OtherError>(error));
+                    ::new(std::addressof(this->impl_.error_)) unexpected_type(std::forward<OtherError>(error));
                     this->impl_.has_value_ = false;
                 }
                 assert(!this->has_value());
@@ -269,11 +269,11 @@ namespace saga
             {
                 if(rhs.has_value())
                 {
-                    new(std::addressof(this->impl_.value_)) Value(*rhs);
+                    ::new(std::addressof(this->impl_.value_)) Value(*rhs);
                 }
                 else
                 {
-                    new(std::addressof(this->impl_.error_)) unexpected_type(rhs.error());
+                    ::new(std::addressof(this->impl_.error_)) unexpected_type(rhs.error());
                 }
                 this->impl_.has_value_ = rhs.has_value();
             }
@@ -284,11 +284,11 @@ namespace saga
             {
                 if(rhs.has_value())
                 {
-                    new(std::addressof(this->impl_.value_)) Value(std::move(*rhs));
+                    ::new(std::addressof(this->impl_.value_)) Value(std::move(*rhs));
                 }
                 else
                 {
-                    new(std::addressof(this->impl_.error_)) unexpected_type(std::move(rhs.error()));
+                    ::new(std::addressof(this->impl_.error_)) unexpected_type(std::move(rhs.error()));
                 }
                 this->impl_.has_value_ = rhs.has_value();
             }
@@ -307,14 +307,14 @@ namespace saga
 
                 try
                 {
-                    new(std::addressof(rhs.impl_.value_)) Value(std::move(**this));
+                    ::new(std::addressof(rhs.impl_.value_)) Value(std::move(**this));
                     rhs.impl_.has_value_ = true;
 
                     this->assign_error(std::move(tmp_unex));
                 }
                 catch(...)
                 {
-                    new(std::addressof(rhs.impl_.error_)) unexpected_type(std::move(tmp_unex));
+                    ::new(std::addressof(rhs.impl_.error_)) unexpected_type(std::move(tmp_unex));
                     throw;
                 }
             }
@@ -332,14 +332,14 @@ namespace saga
 
                 try
                 {
-                    new(std::addressof(this->impl_.error_)) unexpected_type(std::move(rhs.error()));
+                    ::new(std::addressof(this->impl_.error_)) unexpected_type(std::move(rhs.error()));
                     this->impl_.has_value_ = false;
 
                     rhs.emplace(std::move(tmp_value));
                 }
                 catch(...)
                 {
-                    new(std::addressof(this->impl_.value_)) Value(std::move(tmp_value));
+                    ::new(std::addressof(this->impl_.value_)) Value(std::move(tmp_value));
                     throw;
                 }
             }
