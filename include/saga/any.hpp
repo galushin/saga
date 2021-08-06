@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Объект, который позволяет хранить значение любого типа и получать к нему доступ.
 */
 
+#include <saga/cpp17/launder.hpp>
 #include <saga/type_traits.hpp>
 #include <saga/utility/in_place.hpp>
 
@@ -242,8 +243,8 @@ namespace saga
 
             constexpr Storage() noexcept = default;
 
-            Storage(Storage const &);
-            Storage & operator=(Storage const &);
+            Storage(Storage const &) = delete;
+            Storage & operator=(Storage const &) = delete;
         };
 
         template <class T>
@@ -325,15 +326,24 @@ namespace saga
         template <class T>
         struct manager_small
         {
+            static T * get_pointer(Storage & storage) noexcept
+            {
+                return static_cast<T*>(manager_small::access(storage));
+            }
+
+            static T const * get_pointer(Storage const & storage) noexcept
+            {
+                return static_cast<T const*>(manager_small::access(storage));
+            }
+
             static void destroy(Storage & storage) noexcept
             {
-                auto ptr = static_cast<T*>(manager_small::access(storage));
-                ptr->~T();
+                manager_small::get_pointer(storage)->~T();
             }
 
             static void copy(Storage const & src, Storage & dest)
             {
-                auto const ptr = reinterpret_cast<const T*>(&src.buffer);
+                auto const ptr = manager_small::get_pointer(src);
                 assert(ptr != nullptr);
 
                 manager_small::create(dest, *ptr);
@@ -341,7 +351,7 @@ namespace saga
 
             static void move(Storage & src, Storage & dest) noexcept
             {
-                auto const ptr = reinterpret_cast<T*>(&src.buffer);
+                auto const ptr = manager_small::get_pointer(src);
                 assert(ptr != nullptr);
 
                 manager_small::create(dest, std::move(*ptr));
@@ -350,7 +360,7 @@ namespace saga
 
             static void * access(Storage const & storage) noexcept
             {
-                return const_cast<void*>(reinterpret_cast<const void*>(&storage.buffer));
+                return saga::launder(const_cast<T *>(reinterpret_cast<const T*>(&storage.buffer)));
             }
 
             static VTable make_vtable()
@@ -363,7 +373,6 @@ namespace saga
             template <class... Args>
             static T & create(Storage & storage, Args &&... args)
             {
-                // @todo Нужно ли здесь использовать launder?
                 auto ptr = ::new(&storage.buffer) T(std::forward<Args>(args)...);
                 return *ptr;
             }
