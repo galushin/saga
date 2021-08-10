@@ -31,7 +31,11 @@ SAGA -- это свободной программное обеспечение:
 namespace
 {
     using Value_types_list = std::tuple<int, double, std::string, std::vector<long>>;
+
+    using any_size_goal = std::tuple<void*, void*>;
 }
+
+static_assert(sizeof(saga::any) <= sizeof(::any_size_goal), "");
 
 // Тесты
 TEST_CASE("any - default constructor")

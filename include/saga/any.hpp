@@ -93,15 +93,21 @@ namespace saga
         any(any const & other)
          : any()
         {
-            other.vtable_.copy(other.storage_, this->storage_);
-            this->vtable_ = other.vtable_;
+            if(other.has_value())
+            {
+                other.pvtable_->copy(other.storage_, this->storage_);
+                this->pvtable_ = other.pvtable_;
+            }
         }
 
         any(any && other) noexcept
          : any()
         {
-            other.vtable_.move(other.storage_, this->storage_);
-            this->vtable_ = std::exchange(other.vtable_, VTable{});
+            if(other.has_value())
+            {
+                other.pvtable_->move(other.storage_, this->storage_);
+                this->pvtable_ = std::exchange(other.pvtable_, nullptr);
+            }
         }
 
         /// @pre  std::decay<T> удовлетворяет требованиям Cpp17CopyConstructible
@@ -115,7 +121,7 @@ namespace saga
         template <class T, class... Args, class Value = std::decay_t<T>
                  , class = std::enable_if_t<detail::any_has_in_place_ctor<Value, Args...>()>>
         explicit any(in_place_type_t<T>, Args &&... args)
-         : vtable_(any::manager_for<Value>::make_vtable())
+         : pvtable_(any::manager_for<Value>::get_pvtable())
          , storage_()
         {
             any::manager_for<Value>::create(this->storage_, std::forward<Args>(args)...);
@@ -125,7 +131,7 @@ namespace saga
         template <class T, class U, class... Args, class Value = std::decay_t<T>
                  , class = std::enable_if_t<detail::any_has_in_place_ctor_init_list<Value, U, Args...>()>>
         explicit any(in_place_type_t<T>, std::initializer_list<U> inits, Args &&... args)
-         : vtable_(any::manager_for<Value>::make_vtable())
+         : pvtable_(any::manager_for<Value>::get_pvtable())
          , storage_()
         {
             any::manager_for<Value>::create(this->storage_, inits, std::forward<Args>(args)...);
@@ -154,8 +160,8 @@ namespace saga
             {
                 this->reset();
 
-                rhs.vtable_.move(rhs.storage_, this->storage_);
-                this->vtable_ = std::exchange(rhs.vtable_, VTable{});
+                rhs.pvtable_->move(rhs.storage_, this->storage_);
+                this->pvtable_ = std::exchange(rhs.pvtable_, nullptr);
             }
 
             return *this;
@@ -184,7 +190,7 @@ namespace saga
             using Manager = any::manager_for<Value>;
 
             auto & result = Manager::create(this->storage_, std::forward<Args>(args)...);
-            this->vtable_ = Manager::make_vtable();
+            this->pvtable_ = Manager::get_pvtable();
 
             return result;
         }
@@ -201,15 +207,18 @@ namespace saga
             using Manager = any::manager_for<Value>;
 
             auto & result = Manager::create(this->storage_, inits, std::forward<Args>(args)...);
-            this->vtable_ = Manager::make_vtable();
+            this->pvtable_ = Manager::get_pvtable();
 
             return result;
         }
 
         void reset() noexcept
         {
-            this->vtable_.destroy(this->storage_);
-            this->vtable_ = {};
+            if(this->has_value())
+            {
+                this->pvtable_->destroy(this->storage_);
+                this->pvtable_ = nullptr;
+            }
         }
 
         void swap(any & rhs) noexcept
@@ -222,14 +231,19 @@ namespace saga
         // Свойства
         bool has_value() const noexcept
         {
-            return this->type() != typeid(void);
+            return this->pvtable_ != nullptr;
         }
 
         std::type_info const & type() const noexcept
         {
-            assert(this->vtable_.type != nullptr);
+            if(!this->has_value())
+            {
+                return typeid(void);
+            }
 
-            return *this->vtable_.type;
+            assert(this->pvtable_->type != nullptr);
+
+            return *this->pvtable_->type;
         }
 
     private:
@@ -249,21 +263,6 @@ namespace saga
 
         template <class T>
         friend T * saga::detail::any_cast_impl(any const &);
-
-        static void destroy_empty(Storage &) noexcept
-        {
-            return;
-        }
-
-        static void copy_empty(Storage const &, Storage &) noexcept
-        {
-            return;
-        }
-
-        static void move_empty(Storage &, Storage &) noexcept
-        {
-            return;
-        }
 
         template <class T>
         static void destroy_heap(Storage & storage) noexcept
@@ -298,20 +297,22 @@ namespace saga
 
         struct VTable
         {
-            std::type_info const * type = &typeid(void);
-            Destroy_strategy destroy = &any::destroy_empty;
-            Copy_strategy copy = &any::copy_empty;
-            Move_strategy move = &any::move_empty;
-            Access_strategy access = &any::access_heap<int>;
+            std::type_info const * type;
+            Destroy_strategy destroy;
+            Copy_strategy copy;
+            Move_strategy move;
+            Access_strategy access;
         };
 
         template <class T>
         struct manager_heap
         {
-            static VTable make_vtable()
+            static VTable const * get_pvtable()
             {
-                return {std::addressof(typeid(T)), &destroy_heap<T>, &copy_heap<T>
-                        , &move_heap<T>, &access_heap<T>};
+                static VTable instance{std::addressof(typeid(T)), &destroy_heap<T>, &copy_heap<T>
+                                      , &move_heap<T>, &access_heap<T>};
+
+                return std::addressof(instance);
             }
 
             template <class... Args>
@@ -363,11 +364,12 @@ namespace saga
                 return saga::launder(const_cast<T *>(reinterpret_cast<const T*>(&storage.buffer)));
             }
 
-            static VTable make_vtable()
+            static VTable const * get_pvtable()
             {
-                return {std::addressof(typeid(T)), &manager_small::destroy
-                        , &manager_small::copy, &manager_small::move
-                        , &manager_small::access};
+                static VTable instance{std::addressof(typeid(T)), &manager_small::destroy
+                                      , &manager_small::copy, &manager_small::move
+                                      , &manager_small::access};
+                return std::addressof(instance);
             }
 
             template <class... Args>
@@ -389,7 +391,7 @@ namespace saga
         template <class T>
         using manager_for = std::conditional_t<any::is_fit<T>(), manager_small<T>, manager_heap<T>>;
 
-        VTable vtable_;
+        VTable const * pvtable_ = nullptr;
         Storage storage_;
     };
 
@@ -414,7 +416,7 @@ namespace saga
         {
             if(operand.type() == typeid(T))
             {
-                return static_cast<T*>(operand.vtable_.access(operand.storage_));
+                return static_cast<T*>(operand.pvtable_->access(operand.storage_));
             }
             else
             {
