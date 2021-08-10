@@ -39,6 +39,13 @@ namespace saga
         struct expected_uninitialized
         {};
 
+        enum class expected_storage_state
+        {
+            empty,
+            value,
+            error
+        };
+
         struct two_phase_ctor_tag{};
 
         template <class Value, class Error,
@@ -46,7 +53,6 @@ namespace saga
                   bool Error_trivially_destructible = std::is_trivially_destructible<Error>::value>
         struct expected_destructible
         {
-        public:
             // Переменные-члены
             using unexpected_type = saga::unexpected<Error>;
             union
@@ -56,36 +62,37 @@ namespace saga
                 unexpected_type error_;
             };
 
-            bool has_value_ = false;
+            expected_storage_state state_ = expected_storage_state::empty;
 
             // Конструкторы и деструктор
             explicit expected_destructible(expected_uninitialized)
              : no_init_{}
-             , has_value_(false)
+             , state_(expected_storage_state::empty)
             {}
 
             template <class... Args>
             constexpr explicit expected_destructible(in_place_t, Args &&... args)
              : value_(std::forward<Args>(args)...)
-             , has_value_(true)
+             , state_(expected_storage_state::value)
             {}
 
             template <class... Args>
             constexpr explicit expected_destructible(unexpect_t, Args &&... args)
              : error_(saga::in_place_t{}, std::forward<Args>(args)...)
-             , has_value_(false)
+             , state_(expected_storage_state::error)
             {}
 
             ~expected_destructible()
             {
-                if(this->has_value_)
+                if(this->state_ == expected_storage_state::value)
                 {
                     this->value_.~Value();
                 }
-                else
+                else if(this->state_ == expected_storage_state::error)
                 {
                     this->error_.~unexpected();
                 }
+                static_assert(std::is_trivially_destructible<expected_uninitialized>{}, "");
             }
         };
 
@@ -95,7 +102,6 @@ namespace saga
             static_assert(std::is_trivially_destructible<Value>{}, "");
             static_assert(std::is_trivially_destructible<Error>{}, "");
 
-        public:
             // Переменные-члены
             using unexpected_type = saga::unexpected<Error>;
             union
@@ -105,57 +111,100 @@ namespace saga
                 unexpected_type error_;
             };
 
-            bool has_value_ = false;
+            expected_storage_state state_ = expected_storage_state::empty;
 
             // Конструкторы и деструктор
             explicit expected_destructible(expected_uninitialized)
              : no_init_{}
-             , has_value_(false)
+             , state_(expected_storage_state::empty)
             {}
 
             template <class... Args>
             constexpr explicit expected_destructible(in_place_t, Args &&... args)
              : value_(std::forward<Args>(args)...)
-             , has_value_(true)
+             , state_(expected_storage_state::value)
             {}
 
             template <class... Args>
             constexpr explicit expected_destructible(unexpect_t, Args &&... args)
              : error_(saga::in_place_t{}, std::forward<Args>(args)...)
-             , has_value_(false)
+             , state_(expected_storage_state::error)
             {}
 
             ~expected_destructible() = default;
         };
 
-        /**
-        @todo Уменьшить дублирование между функциями, в частности - инкапсулировать вызовы new и
-        декструкторов
-        */
         template <class Value, class Error>
-        class expected_storage
+        class expected_storage_basic
         {
-            using unexpected_type = unexpected<Error>;
+            using unexpected_type = saga::unexpected<Error>;
 
         public:
             // Создание и копирование
+            constexpr explicit expected_storage_basic(expected_uninitialized)
+             : impl_(expected_uninitialized{})
+            {}
+
             template <class... Args>
-            constexpr explicit expected_storage(in_place_t, Args &&... args)
+            constexpr explicit expected_storage_basic(in_place_t, Args &&... args)
              : impl_(in_place_t{}, std::forward<Args>(args)...)
             {}
 
             template <class... Args>
-            constexpr explicit expected_storage(unexpect_t, Args &&... args)
+            constexpr explicit expected_storage_basic(unexpect_t, Args &&... args)
              : impl_(unexpect_t{}, std::forward<Args>(args)...)
             {}
 
             // Уничтожение
-            ~expected_storage() = default;
+            ~expected_storage_basic() = default;
+
+            // Модифицирующие операции
+            void destroy_value() noexcept
+            {
+                assert(this->impl_.state_ == expected_storage_state::value);
+
+                this->impl_.value_.~Value();
+                this->impl_.state_ = expected_storage_state::empty;
+            }
+
+            void destroy_error() noexcept
+            {
+                assert(this->impl_.state_ == expected_storage_state::error);
+
+                this->impl_.error_.~unexpected_type();
+                this->impl_.state_ = expected_storage_state::empty;
+            }
+
+            template <class... Args>
+            void emplace_value(Args &&... args)
+            {
+                assert(this->state() == expected_storage_state::empty);
+
+                ::new(std::addressof(this->impl_.value_)) Value(std::forward<Args>(args)...);
+
+                this->impl_.state_ = expected_storage_state::value;
+            }
+
+            template <class... Args>
+            void emplace_error(Args &&... args)
+            {
+                assert(this->state() == expected_storage_state::empty);
+
+                 ::new(std::addressof(this->impl_.error_))
+                    unexpected_type(saga::in_place, std::forward<Args>(args)...);
+
+                this->impl_.state_ = expected_storage_state::error;
+            }
 
             // Свойства
+            constexpr expected_storage_state state() const
+            {
+                return this->impl_.state_;
+            }
+
             constexpr bool has_value() const
             {
-                return this->impl_.has_value_;
+                return this->state() == expected_storage_state::value;
             }
 
             constexpr Value const & operator*() const
@@ -182,6 +231,33 @@ namespace saga
                 return this->impl_.error_.value();
             }
 
+        private:
+            // @todo Доступ к value_ и error_ должен быть через saga::launder
+            expected_destructible<Value, Error> impl_;
+        };
+
+        /**
+        @todo Уменьшить дублирование между функциями, в частности - инкапсулировать вызовы new и
+        декструкторов
+        */
+        template <class Value, class Error>
+        class expected_storage
+         : private expected_storage_basic<Value, Error>
+        {
+            using Base = expected_storage_basic<Value, Error>;
+        public:
+            // Создание и копирование
+            using Base::Base;
+
+            // Уничтожение
+            ~expected_storage() = default;
+
+            // Свойства
+            using Base::has_value;
+
+            using Base::operator*;
+            using Base::error;
+
             // Модифицирующие опреации
             template <class... Args>
             Value & emplace(Args &&... args)
@@ -193,18 +269,17 @@ namespace saga
                 else
                 {
                     // @todo Оптимизация для случая, когда конструкторы не порождают исключения
-                    auto tmp = unexpected_type(std::move(this->error()));
+                    auto tmp = std::move(this->error());
 
-                    this->impl_.error_.~unexpected_type();
+                    Base::destroy_error();
 
                     try
                     {
-                        ::new(std::addressof(this->impl_.value_)) Value(std::forward<Args>(args)...);
-                        this->impl_.has_value_ = true;
+                        Base::emplace_value(std::forward<Args>(args)...);
                     }
                     catch(...)
                     {
-                        ::new(std::addressof(this->impl_.error_)) unexpected_type(std::move(tmp));
+                        Base::emplace_error(std::move(tmp));
                         throw;
                     }
                 }
@@ -219,16 +294,16 @@ namespace saga
                 // @todo Оптимизация: не создавать unexpected_type, а передавать исходный?
                 if(!this->has_value())
                 {
-                    this->impl_.error_ = unexpected_type(std::forward<OtherError>(error));
+                    this->error() = std::forward<OtherError>(error);
                 }
                 else
                 {
                     // @todo Доказать, что это безопасно при исключениях
-                    this->impl_.value_.~Value();
+                    Base::destroy_value();
 
-                    ::new(std::addressof(this->impl_.error_)) unexpected_type(std::forward<OtherError>(error));
-                    this->impl_.has_value_ = false;
+                    Base::emplace_error(std::forward<OtherError>(error));
                 }
+
                 assert(!this->has_value());
             }
 
@@ -265,86 +340,82 @@ namespace saga
             template <class OtherValue, class OtherError>
             expected_storage(two_phase_ctor_tag,
                              expected_storage<OtherValue, OtherError> const & rhs)
-             : impl_(expected_uninitialized{})
+             : Base(expected_uninitialized{})
             {
                 if(rhs.has_value())
                 {
-                    ::new(std::addressof(this->impl_.value_)) Value(*rhs);
+                    Base::emplace_value(*rhs);
                 }
                 else
                 {
-                    ::new(std::addressof(this->impl_.error_)) unexpected_type(rhs.error());
+                    Base::emplace_error(rhs.error());
                 }
-                this->impl_.has_value_ = rhs.has_value();
             }
 
             template <class OtherValue, class OtherError>
             expected_storage(two_phase_ctor_tag, expected_storage<OtherValue, OtherError> && rhs)
-             : impl_(expected_uninitialized{})
+             : Base(expected_uninitialized{})
             {
                 if(rhs.has_value())
                 {
-                    ::new(std::addressof(this->impl_.value_)) Value(std::move(*rhs));
+                    Base::emplace_value(std::move(*rhs));
                 }
                 else
                 {
-                    ::new(std::addressof(this->impl_.error_)) unexpected_type(std::move(rhs.error()));
+                    Base::emplace_error(std::move(rhs.error()));
                 }
-                this->impl_.has_value_ = rhs.has_value();
             }
 
         private:
-            void swap_value_error(expected_storage & rhs, std::true_type)
+            void swap_value_error(Base & rhs, std::true_type)
             {
                 static_assert(std::is_nothrow_move_constructible<Error>{}, "");
 
                 assert(this->has_value());
-                assert(!rhs.has_value());
+                assert(rhs.state() == expected_storage_state::error);
 
                 // @todo Доказать, что это безопасно при исключениях
                 auto tmp_unex = std::move(rhs.error());
-                rhs.impl_.error_.~unexpected_type();
+                rhs.destroy_error();
 
                 try
                 {
-                    ::new(std::addressof(rhs.impl_.value_)) Value(std::move(**this));
-                    rhs.impl_.has_value_ = true;
+                    rhs.emplace_value(std::move(**this));
 
                     this->assign_error(std::move(tmp_unex));
                 }
                 catch(...)
                 {
-                    ::new(std::addressof(rhs.impl_.error_)) unexpected_type(std::move(tmp_unex));
+                    rhs.emplace_error(std::move(tmp_unex));
                     throw;
                 }
             }
 
-            void swap_value_error(expected_storage & rhs, std::false_type)
+            void swap_value_error(Base & rhs, std::false_type)
             {
                 static_assert(std::is_nothrow_move_constructible<Value>{}, "");
 
                 assert(this->has_value());
-                assert(!rhs.has_value());
+                assert(rhs.state() == expected_storage_state::error);
 
                 // @todo Доказать, что это безопасно при исключениях
                 auto tmp_value = std::move(**this);
-                this->impl_.value_.~Value();
+
+                this->destroy_value();
 
                 try
                 {
-                    ::new(std::addressof(this->impl_.error_)) unexpected_type(std::move(rhs.error()));
-                    this->impl_.has_value_ = false;
+                    this->emplace_error(std::move(rhs.error()));
 
-                    rhs.emplace(std::move(tmp_value));
+                    rhs.destroy_error();
+                    rhs.emplace_value(std::move(tmp_value));
                 }
                 catch(...)
                 {
-                    ::new(std::addressof(this->impl_.value_)) Value(std::move(tmp_value));
+                    this->emplace_value(std::move(tmp_value));
                     throw;
                 }
             }
-
-            expected_destructible<Value, Error> impl_;
         };
 
         template <class Value, class Error,

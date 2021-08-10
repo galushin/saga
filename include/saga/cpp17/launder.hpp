@@ -32,6 +32,7 @@ namespace saga
     template <class T>
     constexpr T * launder(T * ptr) noexcept
     {
+        // @tood Можно ли реализовать правильно, но оставить constexpr в С++14?
         return ptr;
     }
 #endif

@@ -37,6 +37,7 @@
 		<Unit filename="../include/saga/algorithm.hpp" />
 		<Unit filename="../include/saga/any.hpp" />
 		<Unit filename="../include/saga/container/reserve_if_supported.hpp" />
+		<Unit filename="../include/saga/cpp17/launder.hpp" />
 		<Unit filename="../include/saga/cpp20/span.hpp" />
 		<Unit filename="../include/saga/cursor/cursor_traits.hpp" />
 		<Unit filename="../include/saga/cursor/cycle.hpp" />

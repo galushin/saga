@@ -373,7 +373,7 @@ namespace saga
             template <class... Args>
             static T & create(Storage & storage, Args &&... args)
             {
-                auto ptr = ::new(&storage.buffer) T(std::forward<Args>(args)...);
+                auto ptr = ::new(saga::launder(&storage.buffer)) T(std::forward<Args>(args)...);
                 return *ptr;
             }
         };
