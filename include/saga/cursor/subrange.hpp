@@ -42,6 +42,7 @@ namespace saga
         // Типы
         using reference = typename std::iterator_traits<ForwardIterator>::reference;
         using difference_type = typename std::iterator_traits<ForwardIterator>::difference_type;
+        using cursor_category = typename std::iterator_traits<ForwardIterator>::iterator_category;
         using iterator = ForwardIterator;
 
         // Создание, копирование, уничтожение
@@ -108,6 +109,21 @@ namespace saga
         difference_type size() const
         {
             return this->end() - this->begin();
+        }
+
+        void drop_front(difference_type num)
+        {
+            assert(num <= this->size());
+
+            this->cur_ += num;
+        }
+
+        void drop_back(difference_type num)
+        {
+            assert(num <= this->size());
+
+            this->last_ -= num;
+            this->back_ -= num;
         }
 
     private:

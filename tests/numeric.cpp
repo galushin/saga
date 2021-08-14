@@ -41,7 +41,7 @@ TEST_CASE("accumulate - default operation")
     saga_test::property_checker << [](std::vector<Element> container,
                                       InitValue const & init_value)
     {
-        auto const values = saga_test::random_subrange_of(container);
+        auto const values = saga_test::random_subcursor_of(saga::cursor::all(container));
 
         auto const expected = std::accumulate(values.begin(), values.end(), init_value);
 
@@ -63,7 +63,7 @@ TEST_CASE("accumulate - generic operation")
     saga_test::property_checker << [](std::vector<Element> const & container,
                                       InitValue const & init_value)
     {
-        auto const values = saga_test::random_subrange_of(container);
+        auto const values = saga_test::random_subcursor_of(saga::cursor::all(container));
 
         auto const min_op = [](InitValue const & lhs, InitValue const & rhs)
         {

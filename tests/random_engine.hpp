@@ -19,6 +19,7 @@ SAGA -- это свободной программное обеспечение:
 #define Z_SAGA_TEST_RANDOM_ENGINE_HPP_INCLUDED
 
 #include <saga/utility/as_const.hpp>
+#include <saga/cursor/cursor_traits.hpp>
 
 #include <algorithm>
 #include <iterator>
@@ -89,46 +90,26 @@ namespace saga_test
     template <class Container>
     void random_const_iterator_of(Container && container) = delete;
 
-    template <class Iterator>
-    class subrange
+    namespace detail
     {
-    public:
-        subrange(Iterator first, Iterator last)
-         : first_(std::move(first))
-         , last_(std::move(last))
-        {}
-
-        Iterator begin() const
-        {
-            return this->first_;
-        }
-
-        Iterator end() const
-        {
-            return this->last_;
-        }
-
-    private:
-        Iterator first_;
-        Iterator last_;
-    };
-
-    template <class Iterator>
-    auto make_subrange(Iterator first, Iterator last)
-    {
-        return saga_test::subrange<Iterator>(std::move(first), std::move(last));
     }
+    // namespace detail
 
-    template <class Container, class = std::enable_if_t<std::is_reference<Container>{}>>
-    auto random_subrange_of(Container && container)
+    template <class Cursor>
+    Cursor random_subcursor_of(Cursor cur)
     {
-        auto const pos1 = saga_test::random_position_of(container);
-        auto const pos2 = saga_test::random_position_of(container);
+        auto const num = saga::cursor::size(cur);
 
-        auto ps = std::minmax(pos1, pos2);
+        auto const pos1 = saga_test::random_uniform(0*num, num);
+        auto const pos2 = saga_test::random_uniform(0*num, num);
 
-        return saga_test::make_subrange(std::next(container.begin(), ps.first)
-                                       ,std::next(container.begin(), ps.second));
+        auto const n_front = std::min(pos1, pos2);
+        auto const n_back  = num - std::max(pos1, pos2);
+
+        saga::cursor::drop_front_n(cur, n_front);
+        saga::cursor::drop_back_n(cur, n_back);
+
+        return cur;
     }
 }
 // namespace saga_test

@@ -20,10 +20,125 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/detail/static_empty_const.hpp>
 
+#include <iterator>
+
 namespace saga
 {
     template <class Cursor>
     using cursor_reference = typename Cursor::reference;
+
+    template <class Cursor>
+    using cursor_difference = typename Cursor::difference_type;
+
+    template <class Cursor>
+    using cursor_category = typename Cursor::cursor_category;
+
+    namespace cursor
+    {
+        namespace detail
+        {
+            struct size_fn
+            {
+            private:
+                template <class Cursor>
+                saga::cursor_difference<Cursor>
+                operator()(Cursor cur, std::forward_iterator_tag) const
+                {
+                    auto num = typename Cursor::difference_type(0);
+
+                    for(; !!cur; ++ cur)
+                    {}
+
+                    return num;
+                }
+
+                template <class Cursor>
+                saga::cursor_difference<Cursor>
+                operator()(Cursor cur, std::random_access_iterator_tag) const
+                {
+                    return cur.size();
+                }
+
+            public:
+                template <class Cursor>
+                saga::cursor_difference<Cursor>
+                operator()(Cursor cur) const
+                {
+                    return (*this)(cur, saga::cursor_category<Cursor>{});
+                }
+            };
+
+            struct drop_front_n_fn
+            {
+            private:
+                template <class Cursor>
+                void operator()(Cursor & cur, saga::cursor_difference<Cursor> num
+                                , std::forward_iterator_tag) const
+                {
+                    for(; num > 0; -- num)
+                    {
+                        cur.drop_front();
+                    }
+                }
+
+                template <class Cursor>
+                void operator()(Cursor & cur, saga::cursor_difference<Cursor> num
+                                , std::random_access_iterator_tag) const
+                {
+                    cur.drop_front(num);
+                }
+
+            public:
+                template <class Cursor>
+                void operator()(Cursor & cur, typename Cursor::difference_type num) const
+                {
+                    return (*this)(cur, num, saga::cursor_category<Cursor>{});
+                }
+            };
+
+            struct drop_back_n_fn
+            {
+            private:
+                template <class Cursor>
+                void operator()(Cursor & cur, saga::cursor_difference<Cursor> num
+                                , std::bidirectional_iterator_tag) const
+                {
+                    for(; num > 0; -- num)
+                    {
+                        cur.drop_back();
+                    }
+                }
+
+                template <class Cursor>
+                void operator()(Cursor & cur, saga::cursor_difference<Cursor> num
+                                , std::random_access_iterator_tag) const
+                {
+                    cur.drop_back(num);
+                }
+
+            public:
+                template <class Cursor>
+                void operator()(Cursor & cur, typename Cursor::difference_type num) const
+                {
+                    return (*this)(cur, num, saga::cursor_category<Cursor>{});
+                }
+            };
+        }
+        // namespace detail
+
+        namespace
+        {
+            constexpr auto const & drop_front_n
+                = saga::detail::static_empty_const<detail::drop_front_n_fn>::value;
+
+            constexpr auto const & drop_back_n
+                = saga::detail::static_empty_const<detail::drop_back_n_fn>::value;
+
+            constexpr auto const & size
+                = saga::detail::static_empty_const<detail::size_fn>::value;
+        }
+    }
+    //namespace cursor
 }
 // namespace saga
 
