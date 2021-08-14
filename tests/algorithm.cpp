@@ -27,36 +27,52 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/istream_cursor.hpp>
 #include <saga/iterator/reverse.hpp>
 
+#include <forward_list>
 #include <list>
 #include <string>
+#include <vector>
 
 // Тесты
-// @todo Аналогичные тесты для forward_list
-TEST_CASE("random_position_of: vector")
+namespace
 {
-    saga_test::property_checker << [](std::vector<int> const & src)
+    using Containers = std::tuple<std::forward_list<int>, std::list<int>, std::vector<int>>;
+}
+
+TEMPLATE_LIST_TEST_CASE("cursor::size", "saga_test", Containers)
+{
+    saga_test::property_checker << [](TestType const & src)
+    {
+        REQUIRE(saga::cursor::size(saga::cursor::all(src))
+                == std::distance(src.begin(), src.end()));
+    };
+}
+
+TEMPLATE_LIST_TEST_CASE("random_position_of", "saga_test", Containers)
+{
+    saga_test::property_checker << [](TestType const & src)
     {
         auto const pos = saga_test::random_position_of(src);
 
         REQUIRE(0 <= pos);
-        REQUIRE(pos <= src.size());
+        REQUIRE(pos <= std::distance(src.begin(), src.end()));
     };
 }
 
-TEST_CASE("random_subrange_of: vector")
+TEMPLATE_LIST_TEST_CASE("random_subcursor_of", "saga_test", Containers)
 {
-    saga_test::property_checker << [](std::vector<int> const & src)
+    saga_test::property_checker << [](TestType const & src)
     {
-        auto const result = saga_test::random_subrange_of(src);
+        auto const result = saga_test::random_subcursor_of(saga::cursor::all(src));
+        auto const num = std::distance(src.begin(), src.end());
 
-        auto const pos1 = result.begin() - src.begin();
-        auto const pos2 = result.end() - src.begin();
+        auto const pos1 = std::distance(src.begin(), result.begin());
+        auto const pos2 = std::distance(src.begin(), result.end());
 
         REQUIRE(0 <= pos1);
-        REQUIRE(pos1 <= src.size());
+        REQUIRE(pos1 <= num);
 
         REQUIRE(0 <= pos2);
-        REQUIRE(pos2 <= src.size());
+        REQUIRE(pos2 <= num);
 
         REQUIRE(pos1 <= pos2);
     };
@@ -71,11 +87,8 @@ TEST_CASE("copy")
         auto dest = dest_old;
 
         // Взять подинтервалы контейнеров
-        auto const src_subrange = saga_test::random_subrange_of(src);
-        auto const dest_subrange = saga_test::random_subrange_of(dest);
-
-        auto const src_cur = saga::cursor::all(src_subrange);
-        auto const dest_cur = saga::cursor::all(dest_subrange);
+        auto const src_cur = saga_test::random_subcursor_of(saga::cursor::all(src));
+        auto const dest_cur = saga_test::random_subcursor_of(saga::cursor::all(dest));
 
         auto const dest_prefix_size = (dest_cur.begin() - dest.begin());
 
@@ -281,7 +294,7 @@ TEST_CASE("reverse : subrange")
     {
         auto values = values_old;
 
-        auto const src = saga_test::random_subrange_of(values);
+        auto const src = saga_test::random_subcursor_of(saga::cursor::all(values));
 
         std::reverse(src.begin(), src.end());
 
@@ -298,7 +311,7 @@ TEST_CASE("reverse_copy : to back_inserter")
 
     saga_test::property_checker << [](Container const & src)
     {
-        auto const src_sub = saga_test::random_subrange_of(src);
+        auto const src_sub = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         // std
         Container out_std;
@@ -306,7 +319,7 @@ TEST_CASE("reverse_copy : to back_inserter")
 
         // saga
         Container out_saga;
-        saga::reverse_copy(saga::cursor::all(src_sub), saga::back_inserter(out_saga));
+        saga::reverse_copy(src_sub, saga::back_inserter(out_saga));
 
         // Сравнение результатов
         REQUIRE(out_std == out_saga);
@@ -320,11 +333,8 @@ TEST_CASE("reverse_copy : subcontainer to subcontainer")
     {
         static_assert(!std::is_same<decltype(src_container), decltype(dest_container)>{}, "");
 
-        auto const src_range = saga_test::random_subrange_of(src_container);
-        auto const dest_range = saga_test::random_subrange_of(dest_container);
-
-        auto const src = saga::cursor::all(src_range);
-        auto const dest = saga::cursor::all(dest_range);
+        auto const src = saga_test::random_subcursor_of(saga::cursor::all(src_container));
+        auto const dest = saga_test::random_subcursor_of(saga::cursor::all(dest_container));
 
         auto dest_container_std = dest_container;
 
