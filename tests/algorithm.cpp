@@ -35,7 +35,7 @@ SAGA -- это свободной программное обеспечение:
 // Тесты
 namespace
 {
-    using Containers = std::tuple<std::vector<int>, std::forward_list<int>>;
+    using Containers = std::tuple<std::forward_list<int>, std::list<int>, std::vector<int>>;
 }
 
 TEMPLATE_LIST_TEST_CASE("random_position_of", "saga_test", Containers)
