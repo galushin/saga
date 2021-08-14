@@ -27,36 +27,43 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/istream_cursor.hpp>
 #include <saga/iterator/reverse.hpp>
 
+#include <forward_list>
 #include <list>
 #include <string>
+#include <vector>
 
 // Тесты
-// @todo Аналогичные тесты для forward_list
-TEST_CASE("random_position_of: vector")
+namespace
 {
-    saga_test::property_checker << [](std::vector<int> const & src)
+    using Containers = std::tuple<std::vector<int>, std::forward_list<int>>;
+}
+
+TEMPLATE_LIST_TEST_CASE("random_position_of", "saga_test", Containers)
+{
+    saga_test::property_checker << [](TestType const & src)
     {
         auto const pos = saga_test::random_position_of(src);
 
         REQUIRE(0 <= pos);
-        REQUIRE(pos <= src.size());
+        REQUIRE(pos <= std::distance(src.begin(), src.end()));
     };
 }
 
-TEST_CASE("random_subrange_of: vector")
+TEMPLATE_LIST_TEST_CASE("random_subcursor_of", "saga_test", Containers)
 {
-    saga_test::property_checker << [](std::vector<int> const & src)
+    saga_test::property_checker << [](TestType const & src)
     {
         auto const result = saga_test::random_subcursor_of(saga::cursor::all(src));
+        auto const num = std::distance(src.begin(), src.end());
 
-        auto const pos1 = result.begin() - src.begin();
-        auto const pos2 = result.end() - src.begin();
+        auto const pos1 = std::distance(src.begin(), result.begin());
+        auto const pos2 = std::distance(src.begin(), result.end());
 
         REQUIRE(0 <= pos1);
-        REQUIRE(pos1 <= src.size());
+        REQUIRE(pos1 <= num);
 
         REQUIRE(0 <= pos2);
-        REQUIRE(pos2 <= src.size());
+        REQUIRE(pos2 <= num);
 
         REQUIRE(pos1 <= pos2);
     };

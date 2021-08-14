@@ -389,7 +389,7 @@ TEST_CASE("string_view : copy")
         {
             auto const result = sv.copy(std::addressof(str_dest[0]), num, pos);
 
-            REQUIRE(result == std::min(num, sv.size() - pos));
+            REQUIRE(result == std::min(num + 0*sv.size(), sv.size() - pos));
 
             static_assert(std::is_same<decltype(result), std::size_t const>{}, "");
 

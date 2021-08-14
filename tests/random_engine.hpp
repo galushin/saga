@@ -53,7 +53,7 @@ namespace saga_test
     template <class Container>
     auto random_position_of(Container const & container)
     {
-        return ::saga_test::random_uniform(0, container.size());
+        return ::saga_test::random_uniform(0, std::distance(container.begin(), container.end()));
     }
 
     template <class Container>
@@ -92,24 +92,41 @@ namespace saga_test
 
     namespace detail
     {
+        template <class Cursor>
+        Cursor random_subcursor_of(Cursor cur, std::forward_iterator_tag)
+        {
+            auto const num = saga::cursor::size(cur);
+
+            auto const n_front = saga_test::random_uniform(0*num, num);
+
+            saga::cursor::drop_front_n(cur, n_front);
+
+            return cur;
+        }
+
+        template <class Cursor>
+        Cursor random_subcursor_of(Cursor cur, std::bidirectional_iterator_tag)
+        {
+            auto const num = saga::cursor::size(cur);
+
+            auto const pos1 = saga_test::random_uniform(0*num, num);
+            auto const pos2 = saga_test::random_uniform(0*num, num);
+
+            auto const n_front = std::min(pos1, pos2);
+            auto const n_back  = num - std::max(pos1, pos2);
+
+            saga::cursor::drop_front_n(cur, n_front);
+            saga::cursor::drop_back_n(cur, n_back);
+
+            return cur;
+        }
     }
     // namespace detail
 
     template <class Cursor>
     Cursor random_subcursor_of(Cursor cur)
     {
-        auto const num = saga::cursor::size(cur);
-
-        auto const pos1 = saga_test::random_uniform(0*num, num);
-        auto const pos2 = saga_test::random_uniform(0*num, num);
-
-        auto const n_front = std::min(pos1, pos2);
-        auto const n_back  = num - std::max(pos1, pos2);
-
-        saga::cursor::drop_front_n(cur, n_front);
-        saga::cursor::drop_back_n(cur, n_back);
-
-        return cur;
+        return detail::random_subcursor_of(std::move(cur), saga::cursor_category<Cursor>{});
     }
 }
 // namespace saga_test
