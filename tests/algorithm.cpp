@@ -38,6 +38,15 @@ namespace
     using Containers = std::tuple<std::forward_list<int>, std::list<int>, std::vector<int>>;
 }
 
+TEMPLATE_LIST_TEST_CASE("cursor::size", "saga_test", Containers)
+{
+    saga_test::property_checker << [](TestType const & src)
+    {
+        REQUIRE(saga::cursor::size(saga::cursor::all(src))
+                == std::distance(src.begin(), src.end()));
+    };
+}
+
 TEMPLATE_LIST_TEST_CASE("random_position_of", "saga_test", Containers)
 {
     saga_test::property_checker << [](TestType const & src)

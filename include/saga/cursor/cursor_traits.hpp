@@ -47,7 +47,9 @@ namespace saga
                     auto num = typename Cursor::difference_type(0);
 
                     for(; !!cur; ++ cur)
-                    {}
+                    {
+                        ++ num;
+                    }
 
                     return num;
                 }
