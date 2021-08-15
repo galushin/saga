@@ -26,6 +26,9 @@ SAGA -- это свободной программное обеспечение:
 
 // @todo Убедиться, что итераторы являются непрерывными
 
+static_assert(!std::is_constructible<saga::span<int>, std::nullptr_t>{}, "");
+static_assert(!std::is_constructible<saga::span<int, 13>, std::nullptr_t>{}, "");
+
 // Типы
 TEST_CASE("span: types and static constants, static extent")
 {
