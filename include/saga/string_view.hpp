@@ -15,6 +15,8 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
+#include <string_view>
+
 #ifndef Z_SAGA_STRING_VIEW_HPP_INCLUDED
 #define Z_SAGA_STRING_VIEW_HPP_INCLUDED
 
@@ -137,8 +139,10 @@ namespace saga
         Сложность пропорциональна <tt>traits::length(str)</tt>
         */
         basic_string_view(charT const * str)
-         : basic_string_view(str, str == nullptr ? 0 : traits_type::length(str))
+         : basic_string_view(str, (assert(str != nullptr), traits_type::length(str)))
         {}
+
+        basic_string_view(std::nullptr_t) = delete;
 
         /** @brief Конструктор на основе строки, заверщающейся нулевым символом
         @param str указатель на массив символов

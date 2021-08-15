@@ -65,6 +65,11 @@ static_assert(saga::string_view::npos == saga::string_view::size_type(-1), "");
 
 static_assert(std::is_nothrow_default_constructible<saga::string_view>{}, "");
 
+// Запрет конструирования string_view из nullptr
+// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2166r1.html
+static_assert(!std::is_constructible<saga::string_view, std::nullptr_t>{}, "");
+static_assert(!std::is_assignable<saga::string_view &, std::nullptr_t>{}, "");
+
 namespace
 {
     struct string_view_struct
@@ -105,14 +110,6 @@ TEST_CASE("string_view : ctor from null-terminated string")
         REQUIRE(sv.size() == saga::string_view::traits_type::length(z_str));
         REQUIRE(sv.data() == z_str);
     };
-}
-
-TEST_CASE("string_view : construct from nullptr")
-{
-    saga::string_view const sv(nullptr);
-
-    REQUIRE(sv.size() == 0);
-    REQUIRE(sv.data() == nullptr);
 }
 
 TEST_CASE("string_view : ctor from pointer and size")
@@ -287,7 +284,7 @@ TEST_CASE("string_view : at")
     saga_test::property_checker << [](std::string const & str)
     {
         auto const num = saga_test::random_position_of(str);
-        auto const index = saga_test::random_uniform(0, 2*num+1);
+        auto const index = saga_test::random_uniform(0*str.size(), 2*num+1);
 
         saga::string_view const sv(str.c_str(), num);
 
