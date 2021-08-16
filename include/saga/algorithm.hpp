@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Аналоги алгоритмов STL, работающие с курсорами и интервалами
 */
 
+#include <saga/functional.hpp>
 #include <saga/iterator.hpp>
 #include <saga/cursor/cursor_traits.hpp>
 
@@ -70,8 +71,7 @@ namespace saga
         template <class InputCursor, class UnaryPredicate>
         InputCursor operator()(InputCursor cur, UnaryPredicate pred) const
         {
-            // @todo Выразить через not_fn
-            return find_if_fn{}(std::move(cur), [&pred](auto const & x) { return !pred(x); });
+            return find_if_fn{}(std::move(cur), saga::not_fn(std::move(pred)));
         }
     };
 
