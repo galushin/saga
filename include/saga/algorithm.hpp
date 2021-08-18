@@ -56,7 +56,7 @@ namespace saga
         {
             for(; !!cur; ++cur)
             {
-                if(pred(*cur))
+                if(saga::invoke(pred,*cur))
                 {
                     break;
                 }
@@ -105,10 +105,10 @@ namespace saga
     struct count_fn
     {
         template <class InputCursor, class T>
-        typename InputCursor::difference_type
+        cursor_difference<InputCursor>
         operator()(InputCursor cur, T const & value) const
         {
-            typename InputCursor::difference_type result = {0};
+            auto result = cursor_difference<InputCursor>(0);
 
             for(; !!cur; ++ cur)
             {

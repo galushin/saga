@@ -117,6 +117,47 @@ TEST_CASE("all_of, any_of, some_of - subcursor")
     };
 }
 
+TEST_CASE("count - minimal")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & value)
+    {
+        auto src_istream = saga_test::make_istringstream_from_range(src);
+
+        REQUIRE(saga::count(saga::make_istream_cursor<Value>(src_istream), value)
+                == std::count(src.begin(), src.end(), value));
+    };
+}
+
+TEST_CASE("count >= 0")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](saga_test::container_size<Value> num, Value const & value)
+    {
+        std::vector<Value> const src(num.value, value);
+
+        auto src_istream = saga_test::make_istringstream_from_range(src);
+
+        REQUIRE(saga::count(saga::make_istream_cursor<Value>(src_istream), value)
+                == std::count(src.begin(), src.end(), value));
+    };
+}
+
+TEST_CASE("count - subcursor")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & values, Value const & value)
+    {
+        auto const src = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        REQUIRE(saga::count(saga::cursor::all(src), value)
+                == std::count(src.begin(), src.end(), value));
+    };
+}
+
 TEST_CASE("copy")
 {
     using Value = int;
