@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Аналоги алгоритмов STL, работающие с курсорами и интервалами
 */
 
+#include <saga/functional.hpp>
 #include <saga/iterator.hpp>
 #include <saga/cursor/cursor_traits.hpp>
 
@@ -48,6 +49,59 @@ namespace saga
     };
 
     // Немодифицирующие операции
+    struct find_if_fn
+    {
+        template <class InputCursor, class UnaryPredicate>
+        InputCursor operator()(InputCursor cur, UnaryPredicate pred) const
+        {
+            for(; !!cur; ++cur)
+            {
+                if(pred(*cur))
+                {
+                    break;
+                }
+            }
+
+            return cur;
+        }
+    };
+
+    struct find_if_not_fn
+    {
+        template <class InputCursor, class UnaryPredicate>
+        InputCursor operator()(InputCursor cur, UnaryPredicate pred) const
+        {
+            return find_if_fn{}(std::move(cur), saga::not_fn(std::move(pred)));
+        }
+    };
+
+    struct all_of_fn
+    {
+        template <class InputCursor, class UnaryPredicate>
+        bool operator()(InputCursor cur, UnaryPredicate pred) const
+        {
+            return !find_if_not_fn{}(std::move(cur), std::move(pred));
+        }
+    };
+
+    struct any_of_fn
+    {
+        template <class InputCursor, class UnaryPredicate>
+        bool operator()(InputCursor cur, UnaryPredicate pred) const
+        {
+            return !!find_if_fn{}(std::move(cur), std::move(pred));
+        }
+    };
+
+    struct none_of_fn
+    {
+        template <class InputCursor, class UnaryPredicate>
+        bool operator()(InputCursor cur, UnaryPredicate pred) const
+        {
+            return !any_of_fn{}(std::move(cur), std::move(pred));
+        }
+    };
+
     struct count_fn
     {
         template <class InputCursor, class T>
@@ -262,6 +316,10 @@ namespace saga
     // Функциональные объекты
     namespace
     {
+        constexpr auto const & all_of = detail::static_empty_const<all_of_fn>::value;
+        constexpr auto const & any_of = detail::static_empty_const<any_of_fn>::value;
+        constexpr auto const & none_of = detail::static_empty_const<none_of_fn>::value;
+
         constexpr auto const & count = detail::static_empty_const<count_fn>::value;
 
         constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;

@@ -22,6 +22,11 @@ SAGA -- это свободной программное обеспечение:
  @brief Функциональные объекты
 */
 
+#include <saga/type_traits.hpp>
+
+#include <utility>
+#include <type_traits>
+
 namespace saga
 {
     template <class Arg = void>
@@ -65,6 +70,31 @@ namespace saga
             return arg;
         }
     };
+
+    // not_fn
+    namespace detail
+    {
+        template <class F>
+        struct not_fn_t
+        {
+            F fun_;
+
+            template <class... Args>
+            auto operator()(Args&&... args) &
+            noexcept(noexcept(!saga::invoke(fun_, std::forward<Args>(args)...)))
+            -> decltype(!saga::invoke(fun_, std::forward<Args>(args)...))
+            {
+                return !saga::invoke(fun_, std::forward<Args>(args)...);
+            }
+        };
+    }
+    // namespace detail
+
+    template <class F>
+    auto not_fn(F && f) -> detail::not_fn_t<std::decay_t<F>>
+    {
+        return { std::forward<F>(f)};
+    }
 }
 
 #endif

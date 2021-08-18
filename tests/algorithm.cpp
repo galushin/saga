@@ -78,6 +78,45 @@ TEMPLATE_LIST_TEST_CASE("random_subcursor_of", "saga_test", Containers)
     };
 }
 
+TEST_CASE("all_of, any_of, some_of - minimal")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const pred = [](Value const & x) { return x % 2 == 0; };
+
+        auto src_istream_all = saga_test::make_istringstream_from_range(src);
+        auto src_istream_any = saga_test::make_istringstream_from_range(src);
+        auto src_istream_none = saga_test::make_istringstream_from_range(src);
+
+        REQUIRE(saga::all_of(saga::make_istream_cursor<Value>(src_istream_all), pred)
+                == std::all_of(src.begin(), src.end(), pred));
+
+        REQUIRE(saga::any_of(saga::make_istream_cursor<Value>(src_istream_any), pred)
+                == std::any_of(src.begin(), src.end(), pred));
+
+        REQUIRE(saga::none_of(saga::make_istream_cursor<Value>(src_istream_none), pred)
+                == std::none_of(src.begin(), src.end(), pred));
+    };
+}
+
+TEST_CASE("all_of, any_of, some_of - subcursor")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & values)
+    {
+        auto const pred = [](Value const & x) { return x % 2 == 0; };
+
+        auto const src = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        REQUIRE(saga::all_of(src, pred)  == std::all_of(src.begin(), src.end(), pred));
+        REQUIRE(saga::any_of(src, pred)  == std::any_of(src.begin(), src.end(), pred));
+        REQUIRE(saga::none_of(src, pred) == std::none_of(src.begin(), src.end(), pred));
+    };
+}
+
 TEST_CASE("copy")
 {
     using Value = int;
