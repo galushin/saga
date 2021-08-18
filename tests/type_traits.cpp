@@ -409,12 +409,48 @@ namespace
     struct Base
     {
         int var;
+
+        int size();
     };
 
     struct Derived : Base{};
 }
 
-// @todo 1. Обработка случая: указатель на функцию-член
+// 1. Обработка случая: указатель на функцию-член
+static_assert(std::is_same<saga::invoke_result_t<int (Base::*)(), Derived&>
+                          , int>{}, "");
+static_assert(std::is_same<saga::invoke_result_t<int const & (Base::*)() const, Derived &>
+                          , int const&>{}, "");
+static_assert(std::is_same<saga::invoke_result_t<int && (Base::*)() &&, Derived&&>
+                          , int &&>{}, "");
+static_assert(std::is_same<saga::invoke_result_t<int const && (Base::*)() const &&, Derived const &&>
+                          , int const &&>{}, "");
+
+// 1.2 Аргумент - специализация std::reference_wrapper
+static_assert(std::is_same<saga::invoke_result_t<int (Base::*)(), std::reference_wrapper<Derived>>
+                          , int>{}, "");
+static_assert(std::is_same<saga::invoke_result_t<int & (Base::*)()
+                                                , std::reference_wrapper<Derived> const>
+                          , int &>{}, "");
+static_assert(std::is_same<saga::invoke_result_t<int const& (Base::*)() const
+                                                , std::reference_wrapper<Derived const>>
+                          , int const &>{}, "");
+static_assert(std::is_same<saga::invoke_result_t<int const & (Base::*)() const
+                                                ,std::reference_wrapper<Derived const> const &>
+                          , int const &>{}, "");
+
+// 1.3 Остальное (считаем, что аргумент - указатель или умный указатель)
+static_assert(std::is_same<saga::invoke_result_t<int & (Base::*)(double), Derived*, double>
+                          , int &>{}, "");
+static_assert(std::is_same<saga::invoke_result_t<int const & (Base::*)(double) const
+                                                , Derived const*, double>
+                          , int const&>{}, "");
+static_assert(std::is_same<saga::invoke_result_t<int & (Base::*)(double),
+                                                 std::unique_ptr<Derived>, double>
+                          , int&>{}, "");
+static_assert(std::is_same<saga::invoke_result_t<int const & (Base::*)(double) const
+                                                , std::unique_ptr<Derived const>, double>
+                          , int const&>{}, "");
 
 // 2. Обработка случая: указатель на переменную-член
 // 2.1 Аргумент - ссылка
@@ -437,7 +473,7 @@ static_assert(std::is_same<saga::invoke_result_t<int Base::*, std::reference_wra
 static_assert(std::is_same<saga::invoke_result_t<int Base::*, std::reference_wrapper<Derived const> const &>
                           , int const &>{}, "");
 
-// 2.3 Остальное (аргумент - указатель или умный указатель)
+// 2.3 Остальное (считаем, что аргумент - указатель или умный указатель)
 static_assert(std::is_same<saga::invoke_result_t<int Base::*, Derived*>
                           , int&>{}, "");
 static_assert(std::is_same<saga::invoke_result_t<int Base::*, Derived const *>
@@ -447,4 +483,17 @@ static_assert(std::is_same<saga::invoke_result_t<int Base::*, std::unique_ptr<De
 static_assert(std::is_same<saga::invoke_result_t<int Base::*, std::unique_ptr<Derived const>>
                           , int const&>{}, "");
 
-// @todo 3. Обработка случая: остальное (функциональный объект)
+// 3. Обработка случая: остальное (функциональный объект)
+namespace
+{
+    struct Functor
+    {
+        double operator()(char, int&);
+        float operator()(int);
+    };
+}
+
+static_assert(std::is_same<saga::invoke_result_t<Functor, int>, float>{}, "");
+static_assert(std::is_same<saga::invoke_result_t<Functor, char, int &>, double>{}, "");
+
+static_assert(std::is_same<saga::invoke_result_t<void(double, char), double, char>, void>{}, "");

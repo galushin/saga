@@ -286,11 +286,14 @@ namespace saga
             template <class F, class... Args>
             static auto call(F && fun, Args&&... args)
             noexcept(noexcept(std::forward<F>(fun)(std::forward<Args>(args)...)))
-            -> decltype(std::forward<F>(fun)(std::forward<Args>(args)...));
+            -> decltype(std::forward<F>(fun)(std::forward<Args>(args)...))
+            {
+                return std::forward<F>(fun)(std::forward<Args>(args)...);
+            }
         };
 
-        template <class FP, class C>
-        struct invoke_impl<FP C::*>
+        template <class MP, class C>
+        struct invoke_impl<MP C::*>
         {
             template <class T, class Td = std::decay_t<T>
                      , class = std::enable_if_t<std::is_base_of<C, std::remove_reference_t<Td>>{}>>
@@ -305,13 +308,17 @@ namespace saga
                      , class = std::enable_if_t<!std::is_base_of<C, std::remove_reference_t<Td>>{}>>
             static auto get(T && t) noexcept(noexcept(*t)) -> decltype(*t);
 
-            template <class Fn, class Arg>
-            static auto call(Fn fun, Arg && arg)
-            noexcept(noexcept(invoke_impl::get(std::forward<Arg>(arg)).*fun))
-            -> decltype(invoke_impl::get(std::forward<Arg>(arg)).*fun);
-        };
+            template <class T, class... Args, class MF
+                      , class = std::enable_if_t<std::is_function<MF>{}>>
+            static auto call(MF C::*pmf, T && obj, Args &&... args)
+            noexcept(noexcept((invoke_impl::get(std::forward<T>(obj)).*pmf)(std::forward<Args>(args)...)))
+            -> decltype((invoke_impl::get(std::forward<T>(obj)).*pmf)(std::forward<Args>(args)...));
 
-        // @todo Полная реализация (обработка случаев, когда T - указатель на функцию-член)
+            template <class Fn, class T>
+            static auto call(Fn pmv, T && obj)
+            noexcept(noexcept(invoke_impl::get(std::forward<T>(obj)).*pmv))
+            -> decltype(invoke_impl::get(std::forward<T>(obj)).*pmv);
+        };
 
         template <class AlwaysVoid, class Fun, class... Args>
         struct invoke_result
@@ -341,8 +348,8 @@ namespace saga
     invoke_result_t<F, Args...>
     invoke(F && fun, Args &&... args) noexcept(saga::is_nothrow_invocable<F, Args...>{})
     {
-        // @todo Полная реализация
-        return std::forward<F>(fun)(std::forward<Args>(args)...);
+        using Invoker = detail::invoke_impl<std::decay_t<F>>;
+        return Invoker::call(std::forward<F>(fun), std::forward<Args>(args)...);
     }
 }
 // namespace saga
