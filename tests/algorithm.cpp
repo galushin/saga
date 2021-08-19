@@ -379,7 +379,6 @@ TEST_CASE("copy: container to back_inserter")
 }
 // @todo Тест copy c минималистичными типами: из istream_cursor в back_inserter или ostream_joiner
 
-
 TEST_CASE("reverse : whole container")
 {
     using Container = std::list<int>;
@@ -491,6 +490,92 @@ TEST_CASE("reverse_copy : constexpr")
     constexpr int values[] = {1, 2, 3, 4, 5};
 
     static_assert(::check_reverse_copy_constexpr(values), "");
+}
+
+TEST_CASE("includes - minimal")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
+    {
+        std::sort(in1.begin(), in1.end());
+        std::sort(in2.begin(), in2.end());
+
+        auto in1_istream = saga_test::make_istringstream_from_range(in1);
+        auto in2_istream = saga_test::make_istringstream_from_range(in2);
+
+        REQUIRE(saga::includes(saga::make_istream_cursor<Value>(in1_istream),
+                               saga::make_istream_cursor<Value>(in2_istream))
+                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end()));
+    };
+}
+
+TEST_CASE("includes - minimal, custom compare")
+{
+    using Value = char;
+
+    saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
+    {
+        auto const cmp_no_case = [](char x, char y) { return std::tolower(x) < std::tolower(y); };
+
+        std::sort(in1.begin(), in1.end(), cmp_no_case);
+        std::sort(in2.begin(), in2.end(), cmp_no_case);
+
+        auto in1_istream = saga_test::make_istringstream_from_range(in1);
+        auto in2_istream = saga_test::make_istringstream_from_range(in2);
+
+        REQUIRE(saga::includes(saga::make_istream_cursor<Value>(in1_istream),
+                               saga::make_istream_cursor<Value>(in2_istream), cmp_no_case)
+                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp_no_case));
+    };
+}
+
+TEST_CASE("includes - subrange")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
+    {
+        std::sort(in1.begin(), in1.end());
+        std::sort(in2.begin(), in2.end());
+
+        REQUIRE(saga::includes(saga::cursor::all(in1), saga::cursor::all(in2))
+                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end()));
+    };
+}
+
+TEST_CASE("includes - subrange, custom compare")
+{
+    using Value = char;
+
+    saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
+    {
+        auto const cmp_no_case = [](char x, char y) { return std::tolower(x) < std::tolower(y); };
+
+        std::sort(in1.begin(), in1.end(), cmp_no_case);
+        std::sort(in2.begin(), in2.end(), cmp_no_case);
+
+        REQUIRE(saga::includes(saga::cursor::all(in1), saga::cursor::all(in2), cmp_no_case)
+                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp_no_case));
+    };
+}
+
+TEST_CASE("includes - always true, custom compare")
+{
+    using Value = char;
+
+    saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
+    {
+        auto const cmp_no_case = [](char x, char y) { return std::tolower(x) < std::tolower(y); };
+
+        in1.insert(in1.end(), in2.begin(), in2.end());
+
+        std::sort(in1.begin(), in1.end(), cmp_no_case);
+        std::sort(in2.begin(), in2.end(), cmp_no_case);
+
+        REQUIRE(std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp_no_case));
+        REQUIRE(saga::includes(saga::cursor::all(in1), saga::cursor::all(in2), cmp_no_case));
+    };
 }
 
 TEST_CASE("starts_with : prefix")

@@ -207,6 +207,32 @@ namespace saga
         }
     };
 
+    struct includes_fn
+    {
+        template <class InputCursor1, class InputCursor2, class Compare = std::less<>>
+        bool operator()(InputCursor1 in1, InputCursor2 in2, Compare cmp = Compare()) const
+        {
+            for(; !!in1 && !!in2;)
+            {
+                if(cmp(*in2, *in1))
+                {
+                    return false;
+                }
+                else if(cmp(*in1, *in2))
+                {
+                    ++ in1;
+                }
+                else
+                {
+                    ++ in1;
+                    ++ in2;
+                }
+            }
+
+            return !in2;
+        }
+    };
+
     struct equal_fn
     {
         template <class InputCursor1, class InputCursor2>
@@ -344,6 +370,8 @@ namespace saga
         constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
+
+        constexpr auto const & includes = detail::static_empty_const<includes_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
 
