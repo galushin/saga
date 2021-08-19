@@ -158,6 +158,36 @@ TEST_CASE("count - subcursor")
     };
 }
 
+TEST_CASE("cout_if - minimal")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const pred = [](Value const & x) { return x % 2 == 0; };
+
+        auto src_istream = saga_test::make_istringstream_from_range(src);
+
+        REQUIRE(saga::count_if(saga::make_istream_cursor<Value>(src_istream), pred)
+                == std::count_if(src.begin(), src.end(), pred));
+    };
+}
+
+TEST_CASE("cout_if - subcursor")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & values)
+    {
+        auto const pred = [](Value const & x) { return x % 2 == 0; };
+
+        auto const src = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        REQUIRE(saga::count_if(saga::cursor::all(src), pred)
+                == std::count_if(src.begin(), src.end(), pred));
+    };
+}
+
 TEST_CASE("copy")
 {
     using Value = int;
