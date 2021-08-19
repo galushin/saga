@@ -56,7 +56,7 @@ namespace saga
         {
             for(; !!cur; ++cur)
             {
-                if(pred(*cur))
+                if(saga::invoke(pred,*cur))
                 {
                     break;
                 }
@@ -102,20 +102,35 @@ namespace saga
         }
     };
 
-    struct count_fn
+    struct count_if_fn
     {
-        template <class InputCursor, class T>
-        typename InputCursor::difference_type
-        operator()(InputCursor cur, T const & value) const
+        template <class InputCursor, class UnaryPredicate>
+        cursor_difference<InputCursor>
+        operator()(InputCursor cur, UnaryPredicate pred) const
         {
-            typename InputCursor::difference_type result = {0};
+            auto result = cursor_difference<InputCursor>(0);
 
             for(; !!cur; ++ cur)
             {
-                result += (*cur == value);
+                if(pred(*cur))
+                {
+                    ++ result;
+                }
             }
 
             return result;
+        }
+    };
+
+    struct count_fn
+    {
+        template <class InputCursor, class T>
+        cursor_difference<InputCursor>
+        operator()(InputCursor cur, T const & value) const
+        {
+            auto pred = [&value](auto && arg) { return std::forward<decltype(arg)>(arg) == value; };
+
+            return count_if_fn{}(std::move(cur), std::move(pred));
         }
     };
 
@@ -321,6 +336,7 @@ namespace saga
         constexpr auto const & none_of = detail::static_empty_const<none_of_fn>::value;
 
         constexpr auto const & count = detail::static_empty_const<count_fn>::value;
+        constexpr auto const & count_if = detail::static_empty_const<count_if_fn>::value;
 
         constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;
 

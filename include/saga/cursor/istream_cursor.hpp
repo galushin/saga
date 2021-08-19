@@ -23,10 +23,13 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
-    template <class Value, class IStream>
+    template <class Value, class IStream, class Distance = std::ptrdiff_t>
     class istream_cursor
     {
     public:
+        // Типы
+        using difference_type = Distance;
+
         // Создание, копирование, уничтожение
         explicit istream_cursor(IStream & stream)
          : stream_(std::addressof(stream))
