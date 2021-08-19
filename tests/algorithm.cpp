@@ -501,6 +501,8 @@ TEST_CASE("includes - minimal")
         std::sort(in1.begin(), in1.end());
         std::sort(in2.begin(), in2.end());
 
+        CAPTURE(in1, in2);
+
         auto in1_istream = saga_test::make_istringstream_from_range(in1);
         auto in2_istream = saga_test::make_istringstream_from_range(in2);
 
@@ -521,6 +523,8 @@ TEST_CASE("includes - minimal, custom compare")
         std::sort(in1.begin(), in1.end(), cmp_no_case);
         std::sort(in2.begin(), in2.end(), cmp_no_case);
 
+        CAPTURE(in1, in2);
+
         auto in1_istream = saga_test::make_istringstream_from_range(in1);
         auto in2_istream = saga_test::make_istringstream_from_range(in2);
 
@@ -539,6 +543,8 @@ TEST_CASE("includes - subrange")
         std::sort(in1.begin(), in1.end());
         std::sort(in2.begin(), in2.end());
 
+        CAPTURE(in1, in2);
+
         REQUIRE(saga::includes(saga::cursor::all(in1), saga::cursor::all(in2))
                 == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end()));
     };
@@ -554,6 +560,8 @@ TEST_CASE("includes - subrange, custom compare")
 
         std::sort(in1.begin(), in1.end(), cmp_no_case);
         std::sort(in2.begin(), in2.end(), cmp_no_case);
+
+        CAPTURE(in1, in2);
 
         REQUIRE(saga::includes(saga::cursor::all(in1), saga::cursor::all(in2), cmp_no_case)
                 == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp_no_case));
@@ -572,6 +580,8 @@ TEST_CASE("includes - always true, custom compare")
 
         std::sort(in1.begin(), in1.end(), cmp_no_case);
         std::sort(in2.begin(), in2.end(), cmp_no_case);
+
+        CAPTURE(in1, in2);
 
         REQUIRE(std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp_no_case));
         REQUIRE(saga::includes(saga::cursor::all(in1), saga::cursor::all(in2), cmp_no_case));
