@@ -514,11 +514,11 @@ TEST_CASE("includes - minimal")
 
 TEST_CASE("includes - minimal, custom compare")
 {
-    using Value = char;
+    using Value = int;
 
     saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
     {
-        auto const cmp_no_case = [](char x, char y) { return std::tolower(x) < std::tolower(y); };
+        auto const cmp_no_case = [](int x, int y) { return std::abs(x) < std::abs(y); };
 
         std::sort(in1.begin(), in1.end(), cmp_no_case);
         std::sort(in2.begin(), in2.end(), cmp_no_case);
@@ -552,11 +552,11 @@ TEST_CASE("includes - subrange")
 
 TEST_CASE("includes - subrange, custom compare")
 {
-    using Value = char;
+    using Value = int;
 
     saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
     {
-        auto const cmp_no_case = [](char x, char y) { return std::tolower(x) < std::tolower(y); };
+        auto const cmp_no_case = [](int x, int y) { return std::abs(x) < std::abs(y); };
 
         std::sort(in1.begin(), in1.end(), cmp_no_case);
         std::sort(in2.begin(), in2.end(), cmp_no_case);
@@ -570,11 +570,11 @@ TEST_CASE("includes - subrange, custom compare")
 
 TEST_CASE("includes - always true, custom compare")
 {
-    using Value = char;
+    using Value = int;
 
     saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
     {
-        auto const cmp_no_case = [](char x, char y) { return std::tolower(x) < std::tolower(y); };
+        auto const cmp_no_case = [](int x, int y) { return std::abs(x) < std::abs(y); };
 
         in1.insert(in1.end(), in2.begin(), in2.end());
 
