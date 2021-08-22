@@ -232,6 +232,55 @@ TEST_CASE("copy")
     };
 }
 
+TEST_CASE("copy: container to back_inserter")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        std::vector<Value> dest;
+
+        auto const result = saga::copy(saga::cursor::all(src), saga::back_inserter(dest));
+
+        REQUIRE(!result.in);
+        REQUIRE(!!result.out);
+
+        REQUIRE(dest == src);
+    };
+}
+// @todo Тест copy c минималистичными типами: из istream_cursor в back_inserter или ostream_joiner
+
+// @todo минимальный тест fill, нужно придумать конечный курсор вывода (take_n от back_inserter)
+TEST_CASE("fill - subrange")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & value)
+    {
+        // saga
+        std::forward_list<Value> xs_saga(src.begin(), src.end());
+
+        auto const sub_saga = saga_test::random_subcursor_of(saga::cursor::all(xs_saga));
+
+        saga::fill(sub_saga, value);
+
+        // Проверка
+        auto const n_front = std::distance(xs_saga.begin(), sub_saga.begin());
+        auto const n_back = std::distance(sub_saga.end(), xs_saga.end());
+
+        REQUIRE(std::equal(xs_saga.begin(), std::next(xs_saga.begin(), n_front),
+                           src.begin(), src.begin() + n_front));
+
+        for(auto const & x : sub_saga)
+        {
+            REQUIRE(x == value);
+        }
+
+        REQUIRE(std::equal(std::next(xs_saga.begin(), src.size() - n_back), xs_saga.end(),
+                           src.end() - n_back, src.end()));
+    };
+}
+
 TEST_CASE("transform: minimal")
 {
     using Value = int;
@@ -361,23 +410,45 @@ TEST_CASE("transform binary")
     };
 }
 
-TEST_CASE("copy: container to back_inserter")
+// @todo минимальный тест generate, нужно придумать конечный курсор вывода (take_n от back_inserter)
+TEST_CASE("generate - subrange")
 {
     using Value = int;
 
+    struct Iota
+    {
+        Value operator()()
+        {
+            return ++value_;
+        }
+
+    private:
+        Value value_ = 0;
+    };
+
     saga_test::property_checker << [](std::vector<Value> const & src)
     {
-        std::vector<Value> dest;
+        // saga
+        std::forward_list<Value> xs_saga(src.begin(), src.end());
 
-        auto const result = saga::copy(saga::cursor::all(src), saga::back_inserter(dest));
+        auto const sub_saga = saga_test::random_subcursor_of(saga::cursor::all(xs_saga));
 
-        REQUIRE(!result.in);
-        REQUIRE(!!result.out);
+        saga::generate(sub_saga, Iota{});
 
-        REQUIRE(dest == src);
+        // std
+        std::forward_list<Value> xs_std(src.begin(), src.end());
+
+        auto const n_front = std::distance(xs_saga.begin(), sub_saga.begin());
+
+        auto const std_first = std::next(xs_std.begin(), n_front);
+        auto const std_last = std::next(std_first, saga::cursor::size(sub_saga));
+
+        std::generate(std_first, std_last, Iota{});
+
+        // Проверка
+        REQUIRE(xs_saga == xs_std);
     };
 }
-// @todo Тест copy c минималистичными типами: из istream_cursor в back_inserter или ostream_joiner
 
 TEST_CASE("reverse : whole container")
 {

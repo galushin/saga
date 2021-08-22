@@ -150,6 +150,18 @@ namespace saga
         }
     };
 
+    struct fill_fn
+    {
+        template <class OutputCursor, class T>
+        void operator()(OutputCursor cur, T const & value) const
+        {
+            for(; !!cur; ++ cur)
+            {
+                *cur = value;
+            }
+        }
+    };
+
     struct generate_fn
     {
         template <class OutputCursor, class Generator>
@@ -366,6 +378,7 @@ namespace saga
 
         constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;
 
+        constexpr auto const & fill = detail::static_empty_const<fill_fn>::value;
         constexpr auto const & transform = detail::static_empty_const<transform_fn>::value;
         constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
