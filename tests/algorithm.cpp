@@ -108,8 +108,7 @@ TEST_CASE("equal - minimal, custom predicate")
     {
         CAPTURE(src1, src2);
 
-        auto const bin_pred
-            = [](Value1 const & x, Value2 const & y) { return x % 2 == y % 2; };
+        auto const bin_pred = [](auto const & x, auto const & y) { return x % 2 == y % 2; };
 
         auto src1_in = saga_test::make_istringstream_from_range(src1);
         auto src2_in = saga_test::make_istringstream_from_range(src2);
@@ -142,7 +141,6 @@ TEST_CASE("equal - custom predicate, invented true")
     };
 }
 
-// @todo тесты equal с подинтервалом
 TEST_CASE("equal: subcursor, default predicate")
 {
     using Value1 = int;
@@ -170,8 +168,7 @@ TEST_CASE("equal: subcursor, custom predicate")
     saga_test::property_checker
     << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
     {
-        auto const bin_pred
-            = [](Value1 const & x, Value2 const & y) { return x % 2 == y % 2; };
+        auto const bin_pred = [](auto const & x, auto const & y) { return x % 2 == y % 2; };
 
         auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
@@ -196,8 +193,7 @@ TEST_CASE("equal - subcursor, custom predicate, invented")
 
         CAPTURE(src1, src2);
 
-        auto const bin_pred
-            = [](Value const & x, Value const & y) { return x % 2 == y % 2; };
+        auto const bin_pred = [](auto const & x, auto const & y) { return x % 2 == y % 2; };
 
         auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
