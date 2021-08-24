@@ -247,12 +247,13 @@ namespace saga
 
     struct equal_fn
     {
-        template <class InputCursor1, class InputCursor2>
-        constexpr bool operator()(InputCursor1 cur1, InputCursor2 cur2) const
+        template <class InputCursor1, class InputCursor2, class BinaryPredicate = std::equal_to<>>
+        constexpr bool operator()(InputCursor1 cur1, InputCursor2 cur2
+                                  , BinaryPredicate bin_pred = {}) const
         {
             for(; !!cur1 && !!cur2; ++cur1, (void)++cur2)
             {
-                if(!(*cur1 == *cur2))
+                if(!saga::invoke(bin_pred, *cur1, *cur2))
                 {
                     return false;
                 }

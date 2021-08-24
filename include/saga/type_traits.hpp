@@ -284,7 +284,7 @@ namespace saga
         struct invoke_impl
         {
             template <class F, class... Args>
-            static auto call(F && fun, Args&&... args)
+            constexpr static auto call(F && fun, Args&&... args)
             noexcept(noexcept(std::forward<F>(fun)(std::forward<Args>(args)...)))
             -> decltype(std::forward<F>(fun)(std::forward<Args>(args)...))
             {
@@ -297,25 +297,25 @@ namespace saga
         {
             template <class T, class Td = std::decay_t<T>
                      , class = std::enable_if_t<std::is_base_of<C, std::remove_reference_t<Td>>{}>>
-            static auto get(T && t) noexcept -> T &&;
+            constexpr static auto get(T && t) noexcept -> T &&;
 
             template <class T, class Td = std::decay_t<T>
                      , class = std::enable_if_t<is_specialization_of<Td, std::reference_wrapper>{}>>
-            static auto get(T && t) noexcept(noexcept(t.get())) -> decltype(t.get());
+            constexpr static auto get(T && t) noexcept(noexcept(t.get())) -> decltype(t.get());
 
             template <class T, class Td = std::decay_t<T>
                      , class = std::enable_if_t<!is_specialization_of<Td, std::reference_wrapper>{}>
                      , class = std::enable_if_t<!std::is_base_of<C, std::remove_reference_t<Td>>{}>>
-            static auto get(T && t) noexcept(noexcept(*t)) -> decltype(*t);
+            constexpr static auto get(T && t) noexcept(noexcept(*t)) -> decltype(*t);
 
             template <class T, class... Args, class MF
                       , class = std::enable_if_t<std::is_function<MF>{}>>
-            static auto call(MF C::*pmf, T && obj, Args &&... args)
+            constexpr static auto call(MF C::*pmf, T && obj, Args &&... args)
             noexcept(noexcept((invoke_impl::get(std::forward<T>(obj)).*pmf)(std::forward<Args>(args)...)))
             -> decltype((invoke_impl::get(std::forward<T>(obj)).*pmf)(std::forward<Args>(args)...));
 
             template <class Fn, class T>
-            static auto call(Fn pmv, T && obj)
+            constexpr static auto call(Fn pmv, T && obj)
             noexcept(noexcept(invoke_impl::get(std::forward<T>(obj)).*pmv))
             -> decltype(invoke_impl::get(std::forward<T>(obj)).*pmv);
         };
@@ -345,7 +345,7 @@ namespace saga
 
     // invoke
     template <class F, class... Args>
-    invoke_result_t<F, Args...>
+    constexpr invoke_result_t<F, Args...>
     invoke(F && fun, Args &&... args) noexcept(saga::is_nothrow_invocable<F, Args...>{})
     {
         using Invoker = detail::invoke_impl<std::decay_t<F>>;

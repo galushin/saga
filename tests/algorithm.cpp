@@ -78,6 +78,131 @@ TEMPLATE_LIST_TEST_CASE("random_subcursor_of", "saga_test", Containers)
     };
 }
 
+TEST_CASE("equal - minimal, default predicate")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    {
+        auto src1_in = saga_test::make_istringstream_from_range(src1);
+        auto src2_in = saga_test::make_istringstream_from_range(src2);
+
+        REQUIRE(saga::equal(saga::make_istream_cursor<Value1>(src1_in),
+                            saga::make_istream_cursor<Value2>(src2_in))
+                == std::equal(src1.begin(), src1.end(), src2.begin(), src2.end()));
+
+        REQUIRE(saga::equal(saga::cursor::all(src1), saga::cursor::all(src1)));
+        REQUIRE(saga::equal(saga::cursor::all(src2), saga::cursor::all(src2)));
+    };
+}
+
+TEST_CASE("equal - minimal, custom predicate")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    {
+        CAPTURE(src1, src2);
+
+        auto const bin_pred = [](auto const & x, auto const & y) { return x % 2 == y % 2; };
+
+        auto src1_in = saga_test::make_istringstream_from_range(src1);
+        auto src2_in = saga_test::make_istringstream_from_range(src2);
+
+        REQUIRE(saga::equal(saga::make_istream_cursor<Value1>(src1_in),
+                            saga::make_istream_cursor<Value2>(src2_in), bin_pred)
+                == std::equal(src1.begin(), src1.end(), src2.begin(), src2.end(), bin_pred));
+
+        REQUIRE(saga::equal(saga::cursor::all(src1), saga::cursor::all(src1), bin_pred));
+        REQUIRE(saga::equal(saga::cursor::all(src2), saga::cursor::all(src2), bin_pred));
+    };
+}
+
+TEST_CASE("equal - custom predicate, invented true")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src1)
+    {
+        std::vector<Value> src2;
+        saga::transform(saga::cursor::all(src1), saga::back_inserter(src2),
+                        [](Value const & x) { return x % 2; });
+
+        CAPTURE(src1, src2);
+
+        auto const bin_pred
+            = [](Value const & x, Value const & y) { return x % 2 == y % 2; };
+
+        REQUIRE(saga::equal(saga::cursor::all(src1), saga::cursor::all(src2), bin_pred));
+    };
+}
+
+TEST_CASE("equal: subcursor, default predicate")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    {
+        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
+        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
+
+        REQUIRE(saga::equal(in1, in2)
+                == std::equal(in1.begin(), in1.end(), in2.begin(), in2.end()));
+
+        REQUIRE(saga::equal(in1, in1));
+        REQUIRE(saga::equal(in2, in2));
+    };
+}
+
+TEST_CASE("equal: subcursor, custom predicate")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    {
+        auto const bin_pred = [](auto const & x, auto const & y) { return x % 2 == y % 2; };
+
+        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
+        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
+
+        REQUIRE(saga::equal(in1, in2, bin_pred)
+                == std::equal(in1.begin(), in1.end(), in2.begin(), in2.end(), bin_pred));
+
+        REQUIRE(saga::equal(in1, in1, bin_pred));
+        REQUIRE(saga::equal(in2, in2, bin_pred));
+    };
+}
+
+TEST_CASE("equal - subcursor, custom predicate, invented")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src1)
+    {
+        std::vector<Value> src2;
+        saga::transform(saga::cursor::all(src1), saga::back_inserter(src2),
+                        [](Value const & x) { return x % 2; });
+
+        CAPTURE(src1, src2);
+
+        auto const bin_pred = [](auto const & x, auto const & y) { return x % 2 == y % 2; };
+
+        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
+        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
+
+        REQUIRE(saga::equal(in1, in2, bin_pred)
+                == std::equal(in1.begin(), in1.end(), in2.begin(), in2.end(), bin_pred));
+    };
+}
+
 TEST_CASE("all_of, any_of, some_of - minimal")
 {
     using Value = int;
