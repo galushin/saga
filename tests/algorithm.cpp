@@ -1026,123 +1026,267 @@ TEST_CASE("includes - always true, custom compare")
     };
 }
 
-TEST_CASE("lexicographical_compare - minimal, default compare")
+TEST_CASE("set_difference : minimal, default compare")
 {
-    using Value1 = int;
-    using Value2 = long;
+    using Value = int;
+    using Container = std::vector<Value>;
 
-    saga_test::property_checker
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    saga_test::property_checker << [](Container lhs, Container rhs)
     {
-        auto src1_in = saga_test::make_istringstream_from_range(src1);
-        auto src2_in = saga_test::make_istringstream_from_range(src2);
+        std::sort(lhs.begin(), lhs.end());
+        std::sort(rhs.begin(), rhs.end());
 
-        REQUIRE(saga::lexicographical_compare(saga::make_istream_cursor<Value1>(src1_in)
-                                              , saga::make_istream_cursor<Value2>(src2_in))
-                == std::lexicographical_compare(src1.begin(), src1.end()
-                                                , src2.begin(), src2.end()));
+        CAPTURE(lhs, rhs);
 
-        REQUIRE(!saga::lexicographical_compare(saga::cursor::all(src1), saga::cursor::all(src1)));
-        REQUIRE(!saga::lexicographical_compare(saga::cursor::all(src2), saga::cursor::all(src2)));
+        // std
+        std::vector<Value> diff_std;
+
+        std::set_difference(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
+                            std::back_inserter(diff_std));
+
+        // saga
+        std::vector<Value> diff_saga;
+
+        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
+
+        saga::set_difference(saga::make_istream_cursor<Value>(lhs_in),
+                             saga::make_istream_cursor<Value>(rhs_in),
+                             saga::back_inserter(diff_saga));
+
+        // Проверка
+        REQUIRE(diff_saga == diff_std);
     };
 }
 
-TEST_CASE("lexicographical_compare - minimal, custom predicate")
+TEST_CASE("set_difference : minimal, custom compare")
 {
-    using Value1 = int;
-    using Value2 = long;
+    using Value = int;
+    using Container = std::vector<Value>;
 
-    saga_test::property_checker
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    saga_test::property_checker << [](Container lhs, Container rhs)
     {
-        CAPTURE(src1, src2);
-
         auto const cmp = std::greater<>{};
 
-        auto src1_in = saga_test::make_istringstream_from_range(src1);
-        auto src2_in = saga_test::make_istringstream_from_range(src2);
+        std::sort(lhs.begin(), lhs.end(), cmp);
+        std::sort(rhs.begin(), rhs.end(), cmp);
 
-        REQUIRE(saga::lexicographical_compare(saga::make_istream_cursor<Value1>(src1_in)
-                                              , saga::make_istream_cursor<Value2>(src2_in)
-                                              , cmp)
-                == std::lexicographical_compare(src1.begin(), src1.end()
-                                                , src2.begin(), src2.end(), cmp));
+        // std
+        std::vector<Value> diff_std;
 
-        REQUIRE(!saga::lexicographical_compare(saga::cursor::all(src1)
-                                               , saga::cursor::all(src1), cmp));
-        REQUIRE(!saga::lexicographical_compare(saga::cursor::all(src2)
-                                               , saga::cursor::all(src2), cmp));
+        std::set_difference(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
+                            std::back_inserter(diff_std), cmp);
+
+        // saga
+        std::vector<Value> diff_saga;
+
+        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
+
+        saga::set_difference(saga::make_istream_cursor<Value>(lhs_in),
+                             saga::make_istream_cursor<Value>(rhs_in),
+                             saga::back_inserter(diff_saga), cmp);
+
+        // Проверка
+        REQUIRE(diff_saga == diff_std);
     };
 }
 
-TEST_CASE("lexicographical_compare - subcursor, default compare")
+TEST_CASE("set_intersection : minimal, default compare")
 {
-    using Value1 = int;
-    using Value2 = long;
+    using Value = int;
+    using Container = std::vector<Value>;
 
-    saga_test::property_checker
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    saga_test::property_checker << [](Container lhs, Container rhs)
     {
-        auto in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
-        auto in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
+        std::sort(lhs.begin(), lhs.end());
+        std::sort(rhs.begin(), rhs.end());
 
-        REQUIRE(saga::lexicographical_compare(in1, in2)
-                == std::lexicographical_compare(in1.begin(), in1.end(), in2.begin(), in2.end()));
+        CAPTURE(lhs, rhs);
 
-        REQUIRE(!saga::lexicographical_compare(in1, in1));
-        REQUIRE(!saga::lexicographical_compare(in2, in2));
+        // std
+        std::vector<Value> diff_std;
+
+        std::set_intersection(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
+                             , std::back_inserter(diff_std));
+
+        // saga
+        std::vector<Value> diff_saga;
+
+        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
+
+        saga::set_intersection(saga::make_istream_cursor<Value>(lhs_in)
+                              , saga::make_istream_cursor<Value>(rhs_in)
+                              , saga::back_inserter(diff_saga));
+
+        // Проверка
+        REQUIRE(diff_saga == diff_std);
     };
 }
 
-TEST_CASE("lexicographical_compare - subcursor, custom predicate")
+TEST_CASE("set_intersection : minimal, custom compare")
 {
-    using Value1 = int;
-    using Value2 = long;
+    using Value = int;
+    using Container = std::vector<Value>;
 
-    saga_test::property_checker
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    saga_test::property_checker << [](Container lhs, Container rhs)
     {
-        CAPTURE(src1, src2);
-
         auto const cmp = std::greater<>{};
 
-        auto in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
-        auto in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
+        std::sort(lhs.begin(), lhs.end(), cmp);
+        std::sort(rhs.begin(), rhs.end(), cmp);
 
-        REQUIRE(saga::lexicographical_compare(in1, in2, cmp)
-                == std::lexicographical_compare(in1.begin(), in1.end()
-                                                , in2.begin(), in2.end(), cmp));
+        // std
+        std::vector<Value> diff_std;
 
-        REQUIRE(!saga::lexicographical_compare(in1, in1));
-        REQUIRE(!saga::lexicographical_compare(in2, in2));
+        std::set_intersection(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
+                             , std::back_inserter(diff_std), cmp);
+
+        // saga
+        std::vector<Value> diff_saga;
+
+        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
+
+        saga::set_intersection(saga::make_istream_cursor<Value>(lhs_in)
+                              , saga::make_istream_cursor<Value>(rhs_in)
+                              , saga::back_inserter(diff_saga), cmp);
+
+        // Проверка
+        REQUIRE(diff_saga == diff_std);
     };
 }
 
-TEST_CASE("lexicographical_compare - prefix")
+TEST_CASE("set_symmetric_difference : minimal, default compare")
 {
-    saga_test::property_checker << [](std::string const & str)
-    {
-        auto const sub = std::string(str.begin(), saga_test::random_iterator_of(str));
+    using Value = int;
+    using Container = std::vector<Value>;
 
-        REQUIRE(saga::lexicographical_compare(saga::cursor::all(sub), saga::cursor::all(str))
-                == (sub.size() < str.size()));
+    saga_test::property_checker << [](Container lhs, Container rhs)
+    {
+        std::sort(lhs.begin(), lhs.end());
+        std::sort(rhs.begin(), rhs.end());
+
+        CAPTURE(lhs, rhs);
+
+        // std
+        std::vector<Value> diff_std;
+
+        std::set_symmetric_difference(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
+                                      , std::back_inserter(diff_std));
+
+        // saga
+        std::vector<Value> diff_saga;
+
+        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
+
+        saga::set_symmetric_difference(saga::make_istream_cursor<Value>(lhs_in)
+                                       , saga::make_istream_cursor<Value>(rhs_in)
+                                       , saga::back_inserter(diff_saga));
+
+        // Проверка
+        REQUIRE(diff_saga == diff_std);
     };
 }
 
-TEST_CASE("lexicographical_compare - prefix, custom compare")
+TEST_CASE("set_symmetric_difference : minimal, custom compare")
 {
-    saga_test::property_checker << [](std::string const & str)
+    using Value = int;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](Container lhs, Container rhs)
     {
-        auto sub = std::string(str.begin(), saga_test::random_iterator_of(str));
-        for(auto & c : sub)
-        {
-            c = std::tolower(c);
-        }
+        auto const cmp = std::greater<>{};
 
-        auto const cmp = [](char x, char y) { return std::tolower(x) < std::tolower(y); };
+        std::sort(lhs.begin(), lhs.end(), cmp);
+        std::sort(rhs.begin(), rhs.end(), cmp);
 
-        REQUIRE(saga::lexicographical_compare(saga::cursor::all(sub), saga::cursor::all(str), cmp)
-                == (sub.size() < str.size()));
+        // std
+        std::vector<Value> diff_std;
+
+        std::set_symmetric_difference(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
+                                      , std::back_inserter(diff_std), cmp);
+
+        // saga
+        std::vector<Value> diff_saga;
+
+        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
+
+        saga::set_symmetric_difference(saga::make_istream_cursor<Value>(lhs_in)
+                                       , saga::make_istream_cursor<Value>(rhs_in)
+                                       , saga::back_inserter(diff_saga), cmp);
+
+        // Проверка
+        REQUIRE(diff_saga == diff_std);
+    };
+}
+
+TEST_CASE("set_union : minimal, default compare")
+{
+    using Value = int;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](Container lhs, Container rhs)
+    {
+        std::sort(lhs.begin(), lhs.end());
+        std::sort(rhs.begin(), rhs.end());
+
+        CAPTURE(lhs, rhs);
+
+        // std
+        std::vector<Value> diff_std;
+
+        std::set_union(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
+                       , std::back_inserter(diff_std));
+
+        // saga
+        std::vector<Value> diff_saga;
+
+        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
+
+        saga::set_union(saga::make_istream_cursor<Value>(lhs_in)
+                        , saga::make_istream_cursor<Value>(rhs_in)
+                        , saga::back_inserter(diff_saga));
+
+        // Проверка
+        REQUIRE(diff_saga == diff_std);
+    };
+}
+
+TEST_CASE("set_union : minimal, custom compare")
+{
+    using Value = int;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](Container lhs, Container rhs)
+    {
+        auto const cmp = std::greater<>{};
+
+        std::sort(lhs.begin(), lhs.end(), cmp);
+        std::sort(rhs.begin(), rhs.end(), cmp);
+
+        // std
+        std::vector<Value> diff_std;
+
+        std::set_union(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
+                       , std::back_inserter(diff_std), cmp);
+
+        // saga
+        std::vector<Value> diff_saga;
+
+        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
+
+        saga::set_union(saga::make_istream_cursor<Value>(lhs_in)
+                        , saga::make_istream_cursor<Value>(rhs_in)
+                        , saga::back_inserter(diff_saga), cmp);
+
+        // Проверка
+        REQUIRE(diff_saga == diff_std);
     };
 }
 
