@@ -265,16 +265,16 @@ namespace saga
 
     struct lexicographical_compare_fn
     {
-        template <class InputCursor1, class InputCursor2>
-        bool operator()(InputCursor1 cur1, InputCursor2 cur2) const
+        template <class InputCursor1, class InputCursor2, class Compare = std::less<>>
+        bool operator()(InputCursor1 cur1, InputCursor2 cur2, Compare cmp = {}) const
         {
             for(; !!cur1 && !!cur2; ++cur1, (void)++cur2)
             {
-                if(*cur1 < *cur2)
+                if(saga::invoke(cmp, *cur1, *cur2))
                 {
                     return true;
                 }
-                else if(*cur2 < *cur1)
+                else if(saga::invoke(cmp, *cur2, *cur1))
                 {
                     return false;
                 }

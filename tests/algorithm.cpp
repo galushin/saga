@@ -784,6 +784,126 @@ TEST_CASE("includes - always true, custom compare")
     };
 }
 
+TEST_CASE("lexicographical_compare - minimal, default compare")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    {
+        auto src1_in = saga_test::make_istringstream_from_range(src1);
+        auto src2_in = saga_test::make_istringstream_from_range(src2);
+
+        REQUIRE(saga::lexicographical_compare(saga::make_istream_cursor<Value1>(src1_in)
+                                              , saga::make_istream_cursor<Value2>(src2_in))
+                == std::lexicographical_compare(src1.begin(), src1.end()
+                                                , src2.begin(), src2.end()));
+
+        REQUIRE(!saga::lexicographical_compare(saga::cursor::all(src1), saga::cursor::all(src1)));
+        REQUIRE(!saga::lexicographical_compare(saga::cursor::all(src2), saga::cursor::all(src2)));
+    };
+}
+
+TEST_CASE("lexicographical_compare - minimal, custom predicate")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    {
+        CAPTURE(src1, src2);
+
+        auto const cmp = std::greater<>{};
+
+        auto src1_in = saga_test::make_istringstream_from_range(src1);
+        auto src2_in = saga_test::make_istringstream_from_range(src2);
+
+        REQUIRE(saga::lexicographical_compare(saga::make_istream_cursor<Value1>(src1_in)
+                                              , saga::make_istream_cursor<Value2>(src2_in)
+                                              , cmp)
+                == std::lexicographical_compare(src1.begin(), src1.end()
+                                                , src2.begin(), src2.end(), cmp));
+
+        REQUIRE(!saga::lexicographical_compare(saga::cursor::all(src1)
+                                               , saga::cursor::all(src1), cmp));
+        REQUIRE(!saga::lexicographical_compare(saga::cursor::all(src2)
+                                               , saga::cursor::all(src2), cmp));
+    };
+}
+
+TEST_CASE("lexicographical_compare - subcursor, default compare")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    {
+        auto in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
+        auto in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
+
+        REQUIRE(saga::lexicographical_compare(in1, in2)
+                == std::lexicographical_compare(in1.begin(), in1.end(), in2.begin(), in2.end()));
+
+        REQUIRE(!saga::lexicographical_compare(in1, in1));
+        REQUIRE(!saga::lexicographical_compare(in2, in2));
+    };
+}
+
+TEST_CASE("lexicographical_compare - subcursor, custom predicate")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    {
+        CAPTURE(src1, src2);
+
+        auto const cmp = std::greater<>{};
+
+        auto in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
+        auto in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
+
+        REQUIRE(saga::lexicographical_compare(in1, in2, cmp)
+                == std::lexicographical_compare(in1.begin(), in1.end()
+                                                , in2.begin(), in2.end(), cmp));
+
+        REQUIRE(!saga::lexicographical_compare(in1, in1));
+        REQUIRE(!saga::lexicographical_compare(in2, in2));
+    };
+}
+
+TEST_CASE("lexicographical_compare - prefix")
+{
+    saga_test::property_checker << [](std::string const & str)
+    {
+        auto const sub = std::string(str.begin(), saga_test::random_iterator_of(str));
+
+        REQUIRE(saga::lexicographical_compare(saga::cursor::all(sub), saga::cursor::all(str))
+                == (sub.size() < str.size()));
+    };
+}
+
+TEST_CASE("lexicographical_compare - prefix, custom compare")
+{
+    saga_test::property_checker << [](std::string const & str)
+    {
+        auto sub = std::string(str.begin(), saga_test::random_iterator_of(str));
+        for(auto & c : sub)
+        {
+            c = std::tolower(c);
+        }
+
+        auto const cmp = [](char x, char y) { return std::tolower(x) < std::tolower(y); };
+
+        REQUIRE(saga::lexicographical_compare(saga::cursor::all(sub), saga::cursor::all(str), cmp)
+                == (sub.size() < str.size()));
+    };
+}
+
 TEST_CASE("starts_with : prefix")
 {
     saga_test::property_checker << [](std::string const & str)
