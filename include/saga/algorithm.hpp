@@ -371,11 +371,15 @@ namespace saga
         }
     };
 
+    template <class InputCursor1, class InputCursor2, class OutputCursor>
+    using set_union_result = saga::in_in_out_result<InputCursor1, InputCursor2, OutputCursor>;
+
     struct set_union_fn
     {
         template <class InputCursor1, class InputCursor2, class OutputCursor
                  , class Compare = std::less<>>
-        void operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
+        set_union_result<InputCursor1, InputCursor2, OutputCursor>
+        operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
                         , Compare cmp = {}) const
         {
             for(; !!in1 && !!in2 && !!out;)
@@ -399,7 +403,9 @@ namespace saga
             }
 
             auto result1 = saga::copy_fn{}(std::move(in1), std::move(out));
-            copy_fn{}(std::move(in2), std::move(result1.out));
+            auto result2 = copy_fn{}(std::move(in2), std::move(result1.out));
+
+            return {std::move(result1.in), std::move(result2.in), std::move(result2.out)};
         }
     };
 
@@ -582,7 +588,6 @@ namespace saga
         constexpr auto const & set_union = detail::static_empty_const<set_union_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
-
         constexpr auto const & lexicographical_compare
             = detail::static_empty_const<lexicographical_compare_fn>::value;
 
