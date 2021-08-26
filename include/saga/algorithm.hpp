@@ -150,6 +150,27 @@ namespace saga
         }
     };
 
+    template <class InputCursor, class OutputCursor>
+    using copy_if_result = in_out_result<InputCursor, OutputCursor>;
+
+    struct copy_if_fn
+    {
+        template <class InputCursor, class OutputCursor, class Predicate>
+        copy_if_result<InputCursor, OutputCursor>
+        operator()(InputCursor cur, OutputCursor out, Predicate pred) const
+        {
+            for(; !!cur && !!out; ++ cur)
+            {
+                if(saga::invoke(pred, *cur))
+                {
+                    out << *cur;
+                }
+            }
+
+            return {std::move(cur), std::move(out)};
+        }
+    };
+
     struct fill_fn
     {
         template <class OutputCursor, class T>
@@ -378,6 +399,7 @@ namespace saga
         constexpr auto const & count_if = detail::static_empty_const<count_if_fn>::value;
 
         constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;
+        constexpr auto const & copy_if = detail::static_empty_const<copy_if_fn>::value;
 
         constexpr auto const & fill = detail::static_empty_const<fill_fn>::value;
         constexpr auto const & transform = detail::static_empty_const<transform_fn>::value;
