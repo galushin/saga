@@ -313,6 +313,76 @@ TEST_CASE("cout_if - subcursor")
     };
 }
 
+TEST_CASE("find - minimal")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & value)
+    {
+        auto const r_std = std::find(src.begin(), src.end(), value);
+
+        auto src_istream = saga_test::make_istringstream_from_range(src);
+        auto r_saga = saga::find(saga::make_istream_cursor<Value>(src_istream), value);
+
+        REQUIRE(!r_saga == (r_std == src.end()));
+
+        if(!!r_saga)
+        {
+            REQUIRE(*r_saga == value);
+        }
+
+        REQUIRE((src.end() - r_std) == saga::cursor::size(std::move(r_saga)));
+    };
+}
+
+TEST_CASE("find_if - minimal")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const pred = [](Value const & arg) { return arg % 4 == 0; };
+        auto const r_std = std::find_if(src.begin(), src.end(), pred);
+
+        auto src_istream = saga_test::make_istringstream_from_range(src);
+        auto r_saga = saga::find_if(saga::make_istream_cursor<Value>(src_istream), pred);
+
+        REQUIRE(!r_saga == (r_std == src.end()));
+
+        if(!!r_saga)
+        {
+            REQUIRE(pred(*r_saga));
+        }
+
+        REQUIRE((src.end() - r_std) == saga::cursor::size(std::move(r_saga)));
+    };
+}
+
+TEST_CASE("find_if_not - minimal")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const pred = [](Value const & arg) { return arg % 2 == 0; };
+        auto const r_std = std::find_if_not(src.begin(), src.end(), pred);
+
+        auto src_istream = saga_test::make_istringstream_from_range(src);
+        auto r_saga = saga::find_if_not(saga::make_istream_cursor<Value>(src_istream), pred);
+
+        REQUIRE(!r_saga == (r_std == src.end()));
+
+        if(!!r_saga)
+        {
+            REQUIRE(!pred(*r_saga));
+        }
+
+        REQUIRE((src.end() - r_std) == saga::cursor::size(std::move(r_saga)));
+    };
+}
+
+// @todo Тесты find, find_if, find_if_not для субкурсоров
+
 TEST_CASE("copy")
 {
     using Value = int;

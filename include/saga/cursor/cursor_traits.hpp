@@ -42,7 +42,7 @@ namespace saga
             private:
                 template <class Cursor>
                 saga::cursor_difference<Cursor>
-                operator()(Cursor cur, std::forward_iterator_tag) const
+                operator()(Cursor cur, std::input_iterator_tag) const
                 {
                     auto num = typename Cursor::difference_type(0);
 
@@ -66,7 +66,7 @@ namespace saga
                 saga::cursor_difference<Cursor>
                 operator()(Cursor cur) const
                 {
-                    return (*this)(cur, saga::cursor_category<Cursor>{});
+                    return (*this)(std::move(cur), saga::cursor_category<Cursor>{});
                 }
             };
 
