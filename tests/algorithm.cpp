@@ -373,7 +373,88 @@ TEST_CASE("copy: container to back_inserter")
         REQUIRE(dest == src);
     };
 }
-// @todo Тест copy c минималистичными типами: из istream_cursor в back_inserter или ostream_joiner
+
+TEST_CASE("copy: minimal")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest;
+
+        saga::copy(saga::make_istream_cursor<Value>(src_in), saga::back_inserter(dest));
+
+        REQUIRE(dest == src);
+    };
+}
+
+TEST_CASE("copy_if: minimal")
+{
+    using ValueIn = int;
+    using ValueOut = long;
+
+    saga_test::property_checker << [](std::vector<ValueIn> const & src)
+    {
+        auto src_in = saga_test::make_istringstream_from_range(src);
+        auto const pred = [](ValueIn const & x) { return x % 2 == 0; };
+
+        // saga
+        std::vector<ValueOut> dest_saga;
+        saga::copy_if(saga::make_istream_cursor<ValueIn>(src_in)
+                      , saga::back_inserter(dest_saga), pred);
+
+        // std
+        std::vector<ValueOut> dest_std;
+        std::copy_if(src.begin(), src.end(), std::back_inserter(dest_std), pred);
+
+        // Проверка
+        REQUIRE(dest_saga == dest_std);
+    };
+}
+
+TEST_CASE("copy_if: subcursor")
+{
+    using ValueIn = int;
+    using ValueOut = long;
+
+    saga_test::property_checker
+    << [](std::vector<ValueIn> const & src, std::vector<ValueOut> const & dest_old)
+    {
+        auto const pred = [](ValueIn const & x) { return x % 3 == 0; };
+
+        // Подынтервалы
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_saga = dest_old;
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const result = saga::copy_if(input, out_saga, pred);
+
+        // std
+        std::vector<ValueOut> dest_std;
+        std::copy_if(input.begin(), result.in.begin(), std::back_inserter(dest_std), pred);
+
+        // Проверка
+        auto const n_front = (out_saga.begin() - dest_saga.begin());
+        auto const n_back = (dest_saga.end() - result.out.begin());
+
+        REQUIRE(dest_saga.size() == dest_old.size());
+        REQUIRE(dest_saga.size() == n_front + (result.out.begin() - out_saga.begin()) + n_back);
+        REQUIRE((result.in.begin() - input.begin()) >= (result.out.begin() - out_saga.begin()));
+
+        REQUIRE(std::equal(dest_saga.begin(), dest_saga.begin() + n_front
+                           , dest_old.begin(), dest_old.begin() + n_front));
+
+        REQUIRE(std::equal(out_saga.begin(), result.out.begin(),
+                           dest_std.begin(), dest_std.end()));
+
+        REQUIRE(std::equal(dest_saga.end() - n_back, dest_saga.end(),
+                           dest_old.end() - n_back, dest_old.end()));
+    };
+}
 
 // @todo минимальный тест fill, нужно придумать конечный курсор вывода (take_n от back_inserter)
 TEST_CASE("fill - subrange")
