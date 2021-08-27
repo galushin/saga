@@ -352,6 +352,25 @@ TEST_CASE("find - subcursor")
     };
 }
 
+TEST_CASE("find - invented, true")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> src, Value const & value)
+    {
+        src.push_back(value);
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const r_std = std::find(input.begin(), input.end(), value);
+
+        auto const r_saga = saga::find(input, value);
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == input.end());
+    };
+}
+
 TEST_CASE("find_if - minimal")
 {
     using Value = int;
