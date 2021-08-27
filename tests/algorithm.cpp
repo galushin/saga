@@ -335,6 +335,23 @@ TEST_CASE("find - minimal")
     };
 }
 
+TEST_CASE("find - subcursor")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & value)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const r_std = std::find(input.begin(), input.end(), value);
+
+        auto const r_saga = saga::find(input, value);
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == input.end());
+    };
+}
+
 TEST_CASE("find_if - minimal")
 {
     using Value = int;
@@ -355,6 +372,25 @@ TEST_CASE("find_if - minimal")
         }
 
         REQUIRE((src.end() - r_std) == saga::cursor::size(std::move(r_saga)));
+    };
+}
+
+TEST_CASE("find_if - subcursor")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const pred = [](Value const & x) { return x % 2 == 0; };
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const r_std = std::find_if(input.begin(), input.end(), pred);
+
+        auto const r_saga = saga::find_if(input, pred);
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == input.end());
     };
 }
 
@@ -381,7 +417,24 @@ TEST_CASE("find_if_not - minimal")
     };
 }
 
-// @todo Тесты find, find_if, find_if_not для субкурсоров
+TEST_CASE("find_if_not - subcursor")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const pred = [](Value const & x) { return x % 2 == 0; };
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const r_std = std::find_if_not(input.begin(), input.end(), pred);
+
+        auto const r_saga = saga::find_if_not(input, pred);
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == input.end());
+    };
+}
 
 TEST_CASE("copy")
 {
