@@ -147,7 +147,7 @@ TEST_CASE("equal: subcursor, default predicate")
     using Value2 = long;
 
     saga_test::property_checker
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    << [](std::vector<Value1> const & src1, std::list<Value2> const & src2)
     {
         auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
@@ -157,6 +157,25 @@ TEST_CASE("equal: subcursor, default predicate")
 
         REQUIRE(saga::equal(in1, in1));
         REQUIRE(saga::equal(in2, in2));
+    };
+}
+
+// @todo Аналогичный тест для произвольного предиката, нужен трассировщик для функциональных объектов
+TEST_CASE("equal: random access cursor optimization, default predicate")
+{
+    using Value = saga::regular_tracer<int>;
+
+    saga_test::property_checker << [](std::vector<Value> const & src1, Value const & value)
+    {
+        auto const src2 = [&](){ auto tmp = src1; tmp.push_back(value); return tmp; }();
+
+        REQUIRE(src2.size() != src1.size());
+
+        auto const equality_comparisons_before = Value::equality_comparisons();
+
+        REQUIRE(saga::equal(saga::cursor::all(src1), saga::cursor::all(src2)) == false);
+
+        REQUIRE(Value::equality_comparisons() == equality_comparisons_before);
     };
 }
 
