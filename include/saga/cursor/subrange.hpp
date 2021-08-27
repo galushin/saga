@@ -55,12 +55,12 @@ namespace saga
         }
 
         // Итераторы
-        iterator begin() const
+        constexpr iterator begin() const
         {
             return this->cur_;
         }
 
-        Sentinel end() const
+        constexpr Sentinel end() const
         {
             return this->last_;
         }
@@ -106,7 +106,7 @@ namespace saga
         }
 
         // Курсор произвольного доступа
-        difference_type size() const
+        constexpr difference_type size() const
         {
             return this->end() - this->begin();
         }

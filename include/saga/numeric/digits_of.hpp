@@ -19,6 +19,7 @@ SAGA -- это свободной программное обеспечение:
 #define Z_SAGA_NUMERIC_DIGITS_OF_HPP_INCLUDED
 
 #include <cassert>
+#include <iterator>
 #include <utility>
 
 namespace saga
@@ -29,6 +30,9 @@ namespace saga
     public:
         // Типы
         using reference = IntType const &;
+
+        // @todo Можно ли усилить категорию?
+        using cursor_category = std::input_iterator_tag;
 
         // Создание, копирование, уничтожение
         /**

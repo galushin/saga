@@ -286,9 +286,10 @@ namespace saga
 
     struct equal_fn
     {
-        template <class InputCursor1, class InputCursor2, class BinaryPredicate = std::equal_to<>>
-        constexpr bool operator()(InputCursor1 cur1, InputCursor2 cur2
-                                  , BinaryPredicate bin_pred = {}) const
+    private:
+        template <class InputCursor1, class InputCursor2, class BinaryPredicate>
+        constexpr bool impl(InputCursor1 cur1, InputCursor2 cur2, BinaryPredicate bin_pred
+                            , std::input_iterator_tag, std::input_iterator_tag) const
         {
             for(; !!cur1 && !!cur2; ++cur1, (void)++cur2)
             {
@@ -299,6 +300,29 @@ namespace saga
             }
 
             return !cur1 && !cur2;
+        }
+
+        template <class InputCursor1, class InputCursor2, class BinaryPredicate>
+        constexpr bool impl(InputCursor1 cur1, InputCursor2 cur2, BinaryPredicate bin_pred
+                            , std::random_access_iterator_tag
+                            , std::random_access_iterator_tag) const
+        {
+            if(cur1.size() != cur2.size())
+            {
+                return false;
+            }
+
+            return this->impl(std::move(cur1), std::move(cur2), std::move(bin_pred)
+                              , std::input_iterator_tag{}, std::input_iterator_tag{});
+        }
+
+    public:
+        template <class InputCursor1, class InputCursor2, class BinaryPredicate = std::equal_to<>>
+        constexpr bool operator()(InputCursor1 cur1, InputCursor2 cur2
+                                  , BinaryPredicate bin_pred = {}) const
+        {
+            return equal_fn::impl(std::move(cur1), std::move(cur2), std::move(bin_pred),
+                                  cursor_category<InputCursor1>{}, cursor_category<InputCursor2>{});
         }
     };
 
