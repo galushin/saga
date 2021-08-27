@@ -29,6 +29,7 @@ namespace saga
     public:
         // Типы
         using difference_type = Distance;
+        using cursor_category = std::input_iterator_tag;
 
         // Создание, копирование, уничтожение
         explicit istream_cursor(IStream & stream)

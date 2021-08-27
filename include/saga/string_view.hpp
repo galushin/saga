@@ -15,8 +15,6 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#include <string_view>
-
 #ifndef Z_SAGA_STRING_VIEW_HPP_INCLUDED
 #define Z_SAGA_STRING_VIEW_HPP_INCLUDED
 

@@ -75,6 +75,24 @@ namespace saga
         }
     };
 
+    struct find_fn
+    {
+        template <class InputCursor, class T>
+        InputCursor operator()(InputCursor cur, T const & value) const
+        {
+            // @todo Выразить через find_if_fn?
+            for(; !!cur; ++ cur)
+            {
+                if(*cur == value)
+                {
+                    return cur;
+                }
+            }
+
+            return cur;
+        }
+    };
+
     struct all_of_fn
     {
         template <class InputCursor, class UnaryPredicate>
@@ -397,6 +415,10 @@ namespace saga
 
         constexpr auto const & count = detail::static_empty_const<count_fn>::value;
         constexpr auto const & count_if = detail::static_empty_const<count_if_fn>::value;
+
+        constexpr auto const & find = detail::static_empty_const<find_fn>::value;
+        constexpr auto const & find_if = detail::static_empty_const<find_if_fn>::value;
+        constexpr auto const & find_if_not = detail::static_empty_const<find_if_not_fn>::value;
 
         constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;
         constexpr auto const & copy_if = detail::static_empty_const<copy_if_fn>::value;
