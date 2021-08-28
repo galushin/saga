@@ -284,11 +284,15 @@ namespace saga
         }
     };
 
+    template <class InputCursor, class OutputCursor>
+    using set_difference_result = in_out_result<InputCursor, OutputCursor>;
+
     struct set_difference_fn
     {
         template <class InputCursor1, class InputCursor2, class OutputCursor
                  , class Compare = std::less<>>
-        void operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
+        set_difference_result<InputCursor1, OutputCursor>
+        operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
                         , Compare cmp = {}) const
         {
             for(;!!in1 && !!in2 && !!out;)
@@ -309,15 +313,19 @@ namespace saga
                 }
             }
 
-            saga::copy_fn{}(std::move(in1), std::move(out));
+            return saga::copy_fn{}(std::move(in1), std::move(out));
         }
     };
+
+    template <class InputCursor1, class InputCursor2, class OutputCursor>
+    using set_intersection_result = in_in_out_result<InputCursor1, InputCursor2, OutputCursor>;
 
     struct set_intersection_fn
     {
         template <class InputCursor1, class InputCursor2, class OutputCursor
                  , class Compare = std::less<>>
-        void operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
+        set_intersection_result<InputCursor1, InputCursor2, OutputCursor>
+        operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
                         , Compare cmp = {}) const
         {
             for(; !!in1 && !!in2 && !!out;)
@@ -337,14 +345,21 @@ namespace saga
                     ++ in2;
                 }
             }
+
+            return {std::move(in1), std::move(in2), std::move(out)};
         }
     };
+
+    template <class InputCursor1, class InputCursor2, class OutputCursor>
+    using set_symmetric_difference_result
+        = in_in_out_result<InputCursor1, InputCursor2, OutputCursor>;
 
     struct set_symmetric_difference_fn
     {
         template <class InputCursor1, class InputCursor2, class OutputCursor
                  , class Compare = std::less<>>
-        void operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
+        set_symmetric_difference_result<InputCursor1, InputCursor2, OutputCursor>
+        operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
                         , Compare cmp = {}) const
         {
             for(; !!in1 && !!in2 && !!out;)
@@ -367,7 +382,9 @@ namespace saga
             }
 
             auto result1 = saga::copy_fn{}(std::move(in1), std::move(out));
-            saga::copy_fn{}(std::move(in2), std::move(result1.out));
+            auto result2 = saga::copy_fn{}(std::move(in2), std::move(result1.out));
+
+            return {std::move(result1.in), std::move(result2.in), std::move(result2).out};
         }
     };
 
