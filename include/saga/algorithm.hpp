@@ -261,7 +261,7 @@ namespace saga
     struct includes_fn
     {
         template <class InputCursor1, class InputCursor2, class Compare = std::less<>>
-        bool operator()(InputCursor1 in1, InputCursor2 in2, Compare cmp = Compare()) const
+        bool operator()(InputCursor1 in1, InputCursor2 in2, Compare cmp = {}) const
         {
             for(; !!in1 && !!in2;)
             {
@@ -281,6 +281,148 @@ namespace saga
             }
 
             return !in2;
+        }
+    };
+
+    template <class InputCursor, class OutputCursor>
+    using set_difference_result = in_out_result<InputCursor, OutputCursor>;
+
+    struct set_difference_fn
+    {
+        template <class InputCursor1, class InputCursor2, class OutputCursor
+                 , class Compare = std::less<>>
+        set_difference_result<InputCursor1, OutputCursor>
+        operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
+                        , Compare cmp = {}) const
+        {
+            for(;!!in1 && !!in2 && !!out;)
+            {
+                if(cmp(*in1, *in2))
+                {
+                    out << *in1;
+                    ++ in1;
+                }
+                else if(cmp(*in2, *in1))
+                {
+                    ++ in2;
+                }
+                else
+                {
+                    ++ in1;
+                    ++ in2;
+                }
+            }
+
+            return saga::copy_fn{}(std::move(in1), std::move(out));
+        }
+    };
+
+    template <class InputCursor1, class InputCursor2, class OutputCursor>
+    using set_intersection_result = in_in_out_result<InputCursor1, InputCursor2, OutputCursor>;
+
+    struct set_intersection_fn
+    {
+        template <class InputCursor1, class InputCursor2, class OutputCursor
+                 , class Compare = std::less<>>
+        set_intersection_result<InputCursor1, InputCursor2, OutputCursor>
+        operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
+                        , Compare cmp = {}) const
+        {
+            for(; !!in1 && !!in2 && !!out;)
+            {
+                if(cmp(*in1, *in2))
+                {
+                    ++ in1;
+                }
+                else if(cmp(*in2, *in1))
+                {
+                    ++ in2;
+                }
+                else
+                {
+                    out << *in1;
+                    ++ in1;
+                    ++ in2;
+                }
+            }
+
+            return {std::move(in1), std::move(in2), std::move(out)};
+        }
+    };
+
+    template <class InputCursor1, class InputCursor2, class OutputCursor>
+    using set_symmetric_difference_result
+        = in_in_out_result<InputCursor1, InputCursor2, OutputCursor>;
+
+    struct set_symmetric_difference_fn
+    {
+        template <class InputCursor1, class InputCursor2, class OutputCursor
+                 , class Compare = std::less<>>
+        set_symmetric_difference_result<InputCursor1, InputCursor2, OutputCursor>
+        operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
+                        , Compare cmp = {}) const
+        {
+            for(; !!in1 && !!in2 && !!out;)
+            {
+                if(cmp(*in1, *in2))
+                {
+                    out << *in1;
+                    ++ in1;
+                }
+                else if(cmp(*in2, *in1))
+                {
+                    out << *in2;
+                    ++ in2;
+                }
+                else
+                {
+                    ++ in1;
+                    ++ in2;
+                }
+            }
+
+            auto result1 = saga::copy_fn{}(std::move(in1), std::move(out));
+            auto result2 = saga::copy_fn{}(std::move(in2), std::move(result1.out));
+
+            return {std::move(result1.in), std::move(result2.in), std::move(result2).out};
+        }
+    };
+
+    template <class InputCursor1, class InputCursor2, class OutputCursor>
+    using set_union_result = saga::in_in_out_result<InputCursor1, InputCursor2, OutputCursor>;
+
+    struct set_union_fn
+    {
+        template <class InputCursor1, class InputCursor2, class OutputCursor
+                 , class Compare = std::less<>>
+        set_union_result<InputCursor1, InputCursor2, OutputCursor>
+        operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out
+                        , Compare cmp = {}) const
+        {
+            for(; !!in1 && !!in2 && !!out;)
+            {
+                if(cmp(*in1, *in2))
+                {
+                    out << *in1;
+                    ++ in1;
+                }
+                else if(cmp(*in2, *in1))
+                {
+                    out << *in2;
+                    ++ in2;
+                }
+                else
+                {
+                    out << *in1;
+                    ++ in1;
+                    ++ in2;
+                }
+            }
+
+            auto result1 = saga::copy_fn{}(std::move(in1), std::move(out));
+            auto result2 = copy_fn{}(std::move(in2), std::move(result1.out));
+
+            return {std::move(result1.in), std::move(result2.in), std::move(result2.out)};
         }
     };
 
@@ -454,9 +596,15 @@ namespace saga
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
 
         constexpr auto const & includes = detail::static_empty_const<includes_fn>::value;
+        constexpr auto const & set_difference
+            = detail::static_empty_const<set_difference_fn>::value;
+        constexpr auto const & set_intersection
+            = detail::static_empty_const<set_intersection_fn>::value;
+        constexpr auto const & set_symmetric_difference
+            = detail::static_empty_const<set_symmetric_difference_fn>::value;
+        constexpr auto const & set_union = detail::static_empty_const<set_union_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
-
         constexpr auto const & lexicographical_compare
             = detail::static_empty_const<lexicographical_compare_fn>::value;
 
