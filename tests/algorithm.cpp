@@ -345,10 +345,7 @@ TEST_CASE("find - minimal")
 
         REQUIRE(!r_saga == (r_std == src.end()));
 
-        if(!!r_saga)
-        {
-            REQUIRE(*r_saga == value);
-        }
+        REQUIRE((!r_saga || *r_saga == value));
 
         REQUIRE((src.end() - r_std) == saga::cursor::size(std::move(r_saga)));
     };
@@ -379,7 +376,7 @@ TEST_CASE("find - invented, true")
     {
         src.push_back(value);
 
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+        auto const input = saga::cursor::all(src);
 
         auto const r_std = std::find(input.begin(), input.end(), value);
 
@@ -387,6 +384,9 @@ TEST_CASE("find - invented, true")
 
         REQUIRE(r_saga.begin() == r_std);
         REQUIRE(r_saga.end() == input.end());
+
+        REQUIRE(!!r_saga);
+        REQUIRE(*r_saga == value);
     };
 }
 
