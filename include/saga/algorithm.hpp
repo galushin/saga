@@ -213,6 +213,34 @@ namespace saga
         }
     };
 
+    template <class InputCursor, class OutputCursor>
+    using remove_copy_if_result = in_out_result<InputCursor, OutputCursor>;
+
+    struct remove_copy_if_fn
+    {
+        template <class InputCursor, class OutputCursor, class UnaryPredicate>
+        remove_copy_if_result<InputCursor, OutputCursor>
+        operator()(InputCursor in, OutputCursor out, UnaryPredicate pred) const
+        {
+            return copy_if_fn{}(std::move(in), std::move(out), saga::not_fn(std::move(pred)));
+        }
+    };
+
+    template <class InputCursor, class OutputCursor>
+    using remove_copy_result = in_out_result<InputCursor, OutputCursor>;
+
+    struct remove_copy_fn
+    {
+        template <class InputCursor, class OutputCursor, class T>
+        remove_copy_result<InputCursor, OutputCursor>
+        operator()(InputCursor in, OutputCursor out, T const & value) const
+        {
+            return remove_copy_if_fn{}(std::move(in), std::move(out)
+                                       , [&value](auto && x)
+                                            { return std::forward<decltype(x)>(x) == value; });
+        }
+    };
+
     struct reverse_fn
     {
     public:
@@ -592,6 +620,8 @@ namespace saga
         constexpr auto const & fill = detail::static_empty_const<fill_fn>::value;
         constexpr auto const & transform = detail::static_empty_const<transform_fn>::value;
         constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
+        constexpr auto const & remove_copy = detail::static_empty_const<remove_copy_fn>::value;
+        constexpr auto const & remove_copy_if = detail::static_empty_const<remove_copy_if_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
 
