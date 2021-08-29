@@ -817,6 +817,120 @@ TEST_CASE("generate - subrange")
     };
 }
 
+TEST_CASE("remove_copy: minimal")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & value)
+    {
+        // saga
+        auto src_saga = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest_saga;
+        saga::remove_copy(saga::make_istream_cursor<Value>(src_saga)
+                          , saga::back_inserter(dest_saga), value);
+
+        // std
+        std::vector<Value> dest_std;
+        std::remove_copy(src.begin(), src.end(), std::back_inserter(dest_std), value);
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_std);
+    };
+}
+
+TEST_CASE("remove_copy: subcursors")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , std::vector<Value> const & dest_old, Value const & value)
+    {
+        // Подготовка
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_saga = dest_old;
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const result_saga = saga::remove_copy(input, out_saga, value);
+
+        // std
+        auto dest_std = dest_old;
+        auto const out_std = dest_std.begin() + (out_saga.begin() - dest_saga.begin());
+
+        auto const result_std = std::remove_copy(input.begin(), result_saga.in.begin()
+                                                 , out_std, value);
+
+        // Проверки
+        REQUIRE(dest_saga == dest_std);
+
+        REQUIRE(result_saga.in.end() == input.end());
+
+        REQUIRE((result_saga.out.begin() - out_saga.begin()) == (result_std - out_std));
+        REQUIRE(result_saga.out.end() == out_saga.end());
+    };
+}
+
+TEST_CASE("remove_copy_if: minimal")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const pred = [](Value const & x) { return x % 2 == 0; };
+
+        // saga
+        auto src_saga = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest_saga;
+        saga::remove_copy_if(saga::make_istream_cursor<Value>(src_saga)
+                             , saga::back_inserter(dest_saga), pred);
+
+        // std
+        std::vector<Value> dest_std;
+        std::remove_copy_if(src.begin(), src.end(), std::back_inserter(dest_std), pred);
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_std);
+    };
+}
+
+TEST_CASE("remove_copy_if: subcursors")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , std::vector<Value> const & dest_old)
+    {
+        auto const pred = [&](Value const & x) { return x % 3 == 0; };
+
+        // Подготовка
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_saga = dest_old;
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const result_saga = saga::remove_copy_if(input, out_saga, pred);
+
+        // std
+        auto dest_std = dest_old;
+        auto const out_std = dest_std.begin() + (out_saga.begin() - dest_saga.begin());
+
+        auto const result_std = std::remove_copy_if(input.begin(), result_saga.in.begin()
+                                                    , out_std, pred);
+
+        // Проверки
+        REQUIRE(dest_saga == dest_std);
+
+        REQUIRE(result_saga.in.end() == input.end());
+
+        REQUIRE((result_saga.out.begin() - out_saga.begin()) == (result_std - out_std));
+        REQUIRE(result_saga.out.end() == out_saga.end());
+    };
+}
+
 TEST_CASE("reverse : whole container")
 {
     using Container = std::list<int>;
@@ -885,17 +999,20 @@ TEST_CASE("reverse_copy : subcontainer to subcontainer")
 
         auto dest_container_std = dest_container;
 
+        // saga
         auto const result = saga::reverse_copy(src, dest);
 
         static_assert(std::is_same<decltype(saga::reverse_copy(src, dest))
                                   ,saga::in_out_result<std::remove_cv_t<decltype(src)>
                                                       ,std::remove_cv_t<decltype(dest)>>>{},"");
 
+        // std
         auto const n_common = std::min(src.size(), dest.size());
 
         std::reverse_copy(src.end() - n_common, src.end(),
                           dest_container_std.begin() + (dest.begin() - dest_container.begin()));
 
+        // Сравнение
         CAPTURE(src_container);
 
         REQUIRE(dest_container == dest_container_std);
