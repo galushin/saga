@@ -47,7 +47,8 @@ namespace saga
 
         // Создание, копирование, уничтожение
         constexpr subrange_cursor(ForwardIterator first, Sentinel last, unsafe_tag_t)
-         : cur_(std::move(first))
+         : cur_old_(std::move(first))
+         , cur_(this->cur_old_)
          , last_(std::move(last))
          , back_(this->last_)
         {
@@ -83,6 +84,12 @@ namespace saga
             assert(!!*this);
 
             return *this->cur_;
+        }
+
+        // Прямой курсор
+        subrange_cursor dropped_front() const
+        {
+            return subrange_cursor(this->cur_old_, this->cur_, unsafe_tag_t{});
         }
 
         // Двунаправленный курсор
@@ -127,7 +134,7 @@ namespace saga
         }
 
     private:
-        void tweak_back(std::input_iterator_tag)
+        constexpr void tweak_back(std::input_iterator_tag)
         {}
 
         constexpr void tweak_back(std::bidirectional_iterator_tag)
@@ -139,6 +146,7 @@ namespace saga
         }
 
     private:
+        ForwardIterator cur_old_;
         ForwardIterator cur_;
         Sentinel last_;
         Sentinel back_;

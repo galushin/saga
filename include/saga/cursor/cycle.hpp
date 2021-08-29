@@ -39,14 +39,13 @@ namespace saga
 
         // Создание, копирование, уничтожение
         explicit cycled_cursor(ForwardCursor cur)
-         : cur_(cur)
-         , orig_(std::move(cur))
+         : cur_(std::move(cur))
         {}
 
         // Курсор ввода
         bool operator!() const
         {
-            return !this->orig_;
+            return !this->cur_;
         }
 
         cycled_cursor & operator++()
@@ -57,7 +56,7 @@ namespace saga
 
             if(!this->cur_)
             {
-                this->cur_ = this->orig_;
+                this->cur_ = this->cur_.dropped_front();
             }
 
             return *this;
@@ -71,9 +70,7 @@ namespace saga
         }
 
     private:
-        // @todo Можно ли избежать дублирования?
         ForwardCursor cur_;
-        ForwardCursor orig_;
     };
 
     namespace cursor
