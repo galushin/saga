@@ -123,10 +123,10 @@ namespace saga
     struct count_if_fn
     {
         template <class InputCursor, class UnaryPredicate>
-        cursor_difference<InputCursor>
+        cursor_difference_t<InputCursor>
         operator()(InputCursor cur, UnaryPredicate pred) const
         {
-            auto result = cursor_difference<InputCursor>(0);
+            auto result = cursor_difference_t<InputCursor>(0);
 
             for(; !!cur; ++ cur)
             {
@@ -143,7 +143,7 @@ namespace saga
     struct count_fn
     {
         template <class InputCursor, class T>
-        cursor_difference<InputCursor>
+        cursor_difference_t<InputCursor>
         operator()(InputCursor cur, T const & value) const
         {
             auto pred = [&value](auto && arg) { return std::forward<decltype(arg)>(arg) == value; };
@@ -325,6 +325,38 @@ namespace saga
             }
 
             return {std::move(input), std::move(output)};
+        }
+    };
+
+    template <class InputCursor, class OutputCursor>
+    using unique_copy_result = in_out_result<InputCursor, OutputCursor>;
+
+    struct unique_copy_fn
+    {
+        template <class InputCursor, class OutputCursor, class BinaryPredicate = std::equal_to<>>
+        unique_copy_result<InputCursor, OutputCursor>
+        operator()(InputCursor in, OutputCursor out, BinaryPredicate bin_pred = {}) const
+        {
+            if(!in || !out)
+            {
+                return {std::move(in), std::move(out)};
+            }
+
+            cursor_value_t<InputCursor> last_value = *in;
+            ++ in;
+
+            out << last_value;
+
+            for(; !!in && !!out; ++ in)
+            {
+                if(!saga::invoke(bin_pred, last_value, *in))
+                {
+                    last_value = *in;
+                    out << last_value;
+                }
+            }
+
+            return {std::move(in), std::move(out)};
         }
     };
 
@@ -533,8 +565,9 @@ namespace saga
         constexpr bool operator()(InputCursor1 cur1, InputCursor2 cur2
                                   , BinaryPredicate bin_pred = {}) const
         {
-            return equal_fn::impl(std::move(cur1), std::move(cur2), std::move(bin_pred),
-                                  cursor_category<InputCursor1>{}, cursor_category<InputCursor2>{});
+            return equal_fn::impl(std::move(cur1), std::move(cur2), std::move(bin_pred)
+                                  , cursor_category_t<InputCursor1>{}
+                                  , cursor_category_t<InputCursor2>{});
         }
     };
 
@@ -668,6 +701,7 @@ namespace saga
         constexpr auto const & replace_copy_if = detail::static_empty_const<replace_copy_if_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
+        constexpr auto const & unique_copy = detail::static_empty_const<unique_copy_fn>::value;
 
         constexpr auto const & includes = detail::static_empty_const<includes_fn>::value;
         constexpr auto const & set_difference

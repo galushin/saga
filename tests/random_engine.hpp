@@ -126,7 +126,7 @@ namespace saga_test
     template <class Cursor>
     Cursor random_subcursor_of(Cursor cur)
     {
-        return detail::random_subcursor_of(std::move(cur), saga::cursor_category<Cursor>{});
+        return detail::random_subcursor_of(std::move(cur), saga::cursor_category_t<Cursor>{});
     }
 }
 // namespace saga_test

@@ -25,13 +25,16 @@ SAGA -- это свободной программное обеспечение:
 namespace saga
 {
     template <class Cursor>
-    using cursor_reference = typename Cursor::reference;
+    using cursor_reference_t = typename Cursor::reference;
 
     template <class Cursor>
-    using cursor_difference = typename Cursor::difference_type;
+    using cursor_difference_t = typename Cursor::difference_type;
 
     template <class Cursor>
-    using cursor_category = typename Cursor::cursor_category;
+    using cursor_category_t = typename Cursor::cursor_category;
+
+    template <class Cursor>
+    using cursor_value_t = typename Cursor::value_type;
 
     namespace cursor
     {
@@ -41,7 +44,7 @@ namespace saga
             {
             private:
                 template <class Cursor>
-                saga::cursor_difference<Cursor>
+                saga::cursor_difference_t<Cursor>
                 operator()(Cursor cur, std::input_iterator_tag) const
                 {
                     auto num = typename Cursor::difference_type(0);
@@ -55,7 +58,7 @@ namespace saga
                 }
 
                 template <class Cursor>
-                saga::cursor_difference<Cursor>
+                saga::cursor_difference_t<Cursor>
                 operator()(Cursor cur, std::random_access_iterator_tag) const
                 {
                     return cur.size();
@@ -63,10 +66,10 @@ namespace saga
 
             public:
                 template <class Cursor>
-                saga::cursor_difference<Cursor>
+                saga::cursor_difference_t<Cursor>
                 operator()(Cursor cur) const
                 {
-                    return (*this)(std::move(cur), saga::cursor_category<Cursor>{});
+                    return (*this)(std::move(cur), cursor_category_t<Cursor>{});
                 }
             };
 
@@ -74,7 +77,7 @@ namespace saga
             {
             private:
                 template <class Cursor>
-                void operator()(Cursor & cur, saga::cursor_difference<Cursor> num
+                void operator()(Cursor & cur, cursor_difference_t<Cursor> num
                                 , std::forward_iterator_tag) const
                 {
                     for(; num > 0; -- num)
@@ -84,7 +87,7 @@ namespace saga
                 }
 
                 template <class Cursor>
-                void operator()(Cursor & cur, saga::cursor_difference<Cursor> num
+                void operator()(Cursor & cur, cursor_difference_t<Cursor> num
                                 , std::random_access_iterator_tag) const
                 {
                     cur.drop_front(num);
@@ -92,9 +95,9 @@ namespace saga
 
             public:
                 template <class Cursor>
-                void operator()(Cursor & cur, typename Cursor::difference_type num) const
+                void operator()(Cursor & cur, cursor_difference_t<Cursor> num) const
                 {
-                    return (*this)(cur, num, saga::cursor_category<Cursor>{});
+                    return (*this)(cur, num, cursor_category_t<Cursor>{});
                 }
             };
 
@@ -102,7 +105,7 @@ namespace saga
             {
             private:
                 template <class Cursor>
-                void operator()(Cursor & cur, saga::cursor_difference<Cursor> num
+                void operator()(Cursor & cur, cursor_difference_t<Cursor> num
                                 , std::bidirectional_iterator_tag) const
                 {
                     for(; num > 0; -- num)
@@ -112,7 +115,7 @@ namespace saga
                 }
 
                 template <class Cursor>
-                void operator()(Cursor & cur, saga::cursor_difference<Cursor> num
+                void operator()(Cursor & cur, cursor_difference_t<Cursor> num
                                 , std::random_access_iterator_tag) const
                 {
                     cur.drop_back(num);
@@ -120,9 +123,9 @@ namespace saga
 
             public:
                 template <class Cursor>
-                void operator()(Cursor & cur, typename Cursor::difference_type num) const
+                void operator()(Cursor & cur, cursor_difference_t<Cursor> num) const
                 {
-                    return (*this)(cur, num, saga::cursor_category<Cursor>{});
+                    return (*this)(cur, num, cursor_category_t<Cursor>{});
                 }
             };
         }
