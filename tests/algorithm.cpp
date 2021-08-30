@@ -931,6 +931,127 @@ TEST_CASE("remove_copy_if: subcursors")
     };
 }
 
+TEST_CASE("replace_copy: minimal")
+{
+    using OldValue = long;
+    using NewValue = int;
+
+    saga_test::property_checker << [](std::vector<OldValue> const & src
+                                      , OldValue const & old_value, NewValue const & new_value)
+    {
+        // saga
+        auto src_saga = saga_test::make_istringstream_from_range(src);
+
+        std::vector<OldValue> dest_saga;
+        saga::replace_copy(saga::make_istream_cursor<OldValue>(src_saga)
+                          , saga::back_inserter(dest_saga), old_value, new_value);
+
+        // std
+        std::vector<OldValue> dest_std;
+        std::replace_copy(src.begin(), src.end(), std::back_inserter(dest_std)
+                          , old_value, OldValue{new_value});
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_std);
+    };
+}
+
+TEST_CASE("replace_copy: subcursors")
+{
+    using OldValue = long;
+    using NewValue = int;
+
+    saga_test::property_checker << [](std::vector<OldValue> const & src
+                                      , std::vector<OldValue> const & dest_old
+                                      , OldValue const & old_value
+                                      , NewValue const & new_value)
+    {
+        // Подготовка
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_saga = dest_old;
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const result_saga = saga::replace_copy(input, out_saga, old_value, new_value);
+
+        // std
+        auto dest_std = dest_old;
+        auto const out_std = dest_std.begin() + (out_saga.begin() - dest_saga.begin());
+
+        auto const result_std = std::replace_copy(input.begin(), result_saga.in.begin()
+                                                 , out_std, old_value, OldValue{new_value});
+
+        // Проверки
+        REQUIRE(dest_saga == dest_std);
+
+        REQUIRE(result_saga.in.end() == input.end());
+
+        REQUIRE((result_saga.out.begin() - out_saga.begin()) == (result_std - out_std));
+        REQUIRE(result_saga.out.end() == out_saga.end());
+    };
+}
+
+TEST_CASE("replace_copy_if : minimal")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & new_value)
+    {
+        auto const pred = [](Value const & x) { return x % 2 == 0; };
+
+        // saga
+        auto src_saga = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest_saga;
+        saga::replace_copy_if(saga::make_istream_cursor<Value>(src_saga)
+                              , saga::back_inserter(dest_saga), pred, new_value);
+
+        // std
+        std::vector<Value> dest_std;
+        std::replace_copy_if(src.begin(), src.end(), std::back_inserter(dest_std), pred, new_value);
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_std);
+    };
+}
+
+TEST_CASE("replace_copy_if: subcursors")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , std::vector<Value> const & dest_old
+                                      , Value const & new_value)
+    {
+        auto const pred = [&](Value const & x) { return x % 3 == 0; };
+
+        // Подготовка
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_saga = dest_old;
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const result_saga = saga::replace_copy_if(input, out_saga, pred, new_value);
+
+        // std
+        auto dest_std = dest_old;
+        auto const out_std = dest_std.begin() + (out_saga.begin() - dest_saga.begin());
+
+        auto const result_std = std::replace_copy_if(input.begin(), result_saga.in.begin()
+                                                    , out_std, pred, new_value);
+
+        // Проверки
+        REQUIRE(dest_saga == dest_std);
+
+        REQUIRE(result_saga.in.end() == input.end());
+
+        REQUIRE((result_saga.out.begin() - out_saga.begin()) == (result_std - out_std));
+        REQUIRE(result_saga.out.end() == out_saga.end());
+    };
+}
+
 TEST_CASE("reverse : whole container")
 {
     using Container = std::list<int>;

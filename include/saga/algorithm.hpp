@@ -241,6 +241,48 @@ namespace saga
         }
     };
 
+    template <class InputCursor, class OutputCursor>
+    using replace_copy_if_result = in_out_result<InputCursor, OutputCursor>;
+
+    struct replace_copy_if_fn
+    {
+        template <class InputCursor, class OutputCursor, class UnaryPredicate, class T>
+        replace_copy_if_result<InputCursor, OutputCursor>
+        operator()(InputCursor in, OutputCursor out, UnaryPredicate pred, T const & new_value) const
+        {
+            for(; !!in && !!out; ++ in)
+            {
+                if(saga::invoke(pred, *in))
+                {
+                    out << new_value;
+                }
+                else
+                {
+                    out << *in;
+                }
+            }
+
+            return {std::move(in), std::move(out)};
+        }
+    };
+
+    template <class InputCursor, class OutputCursor>
+    using replace_copy_result = in_out_result<InputCursor, OutputCursor>;
+
+    struct replace_copy_fn
+    {
+        template <class InputCursor, class OutputCursor, class T1, class T2>
+        replace_copy_result<InputCursor, OutputCursor>
+        operator()(InputCursor in, OutputCursor out
+                   , T1 const & old_value, T2 const & new_value) const
+        {
+            return replace_copy_if_fn{}(std::move(in), std::move(out)
+                                        , [&old_value](auto && x)
+                                            { return std::forward<decltype(x)>(x) == old_value;}
+                                        , new_value);
+        }
+    };
+
     struct reverse_fn
     {
     public:
@@ -622,6 +664,8 @@ namespace saga
         constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
         constexpr auto const & remove_copy = detail::static_empty_const<remove_copy_fn>::value;
         constexpr auto const & remove_copy_if = detail::static_empty_const<remove_copy_if_fn>::value;
+        constexpr auto const & replace_copy = detail::static_empty_const<replace_copy_fn>::value;
+        constexpr auto const & replace_copy_if = detail::static_empty_const<replace_copy_if_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
 
