@@ -35,7 +35,7 @@ namespace saga
     {
     public:
         // Типы
-        using reference = saga::cursor_reference<ForwardCursor>;
+        using reference = cursor_reference_t<ForwardCursor>;
 
         // Создание, копирование, уничтожение
         explicit cycled_cursor(ForwardCursor cur)

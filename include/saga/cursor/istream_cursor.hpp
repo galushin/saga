@@ -28,6 +28,7 @@ namespace saga
     {
     public:
         // Типы
+        using value_type = Value;
         using difference_type = Distance;
         using cursor_category = std::input_iterator_tag;
 

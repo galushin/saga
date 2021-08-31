@@ -40,6 +40,7 @@ namespace saga
     {
     public:
         // Типы
+        using value_type = typename std::iterator_traits<ForwardIterator>::value_type;
         using reference = typename std::iterator_traits<ForwardIterator>::reference;
         using difference_type = typename std::iterator_traits<ForwardIterator>::difference_type;
         using cursor_category = typename std::iterator_traits<ForwardIterator>::iterator_category;
