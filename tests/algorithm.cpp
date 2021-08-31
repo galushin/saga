@@ -1280,6 +1280,88 @@ TEST_CASE("unique - subcursors, custom predicate")
     };
 }
 
+TEST_CASE("partition_copy: minimal")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const pred = [](auto const & x) { return x % 2 == 1; };
+
+        // saga
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest_true_saga;
+        std::list<Value> dest_false_saga;
+
+        saga::partition_copy(saga::make_istream_cursor<Value>(src_in)
+                             , saga::back_inserter(dest_true_saga)
+                             , saga::back_inserter(dest_false_saga), pred);
+
+        // std
+        std::vector<Value> dest_true_std;
+        std::list<Value> dest_false_std;
+
+        std::partition_copy(src.begin(), src.end()
+                            , std::back_inserter(dest_true_std)
+                            , std::back_inserter(dest_false_std), pred);
+
+        // Проверка
+        REQUIRE(dest_true_saga == dest_true_std);
+        REQUIRE(dest_false_saga == dest_false_std);
+    };
+}
+
+TEST_CASE("partition_copy: subcursor")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , std::vector<Value> const & dest_true_old
+                                      , std::vector<Value> const & dest_false_old)
+    {
+        auto const pred = [](Value const & x) { return x % 2 == 1; };
+
+        // Подготовка
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_true_saga = dest_true_old;
+        auto dest_false_saga = dest_false_old;
+
+        auto const out_true_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_true_saga));
+        auto const out_false_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_false_saga));
+
+        auto const result_saga = saga::partition_copy(input, out_true_saga, out_false_saga, pred);
+
+        // std
+        auto dest_true_std = dest_true_old;
+        auto dest_false_std = dest_false_old;
+
+        auto const out_true_std
+            = dest_true_std.begin() + (out_true_saga.begin() - dest_true_saga.begin());
+        auto const out_false_std
+            = dest_false_std.begin() + (out_false_saga.begin() - dest_false_saga.begin());
+
+        auto const result_std = std::partition_copy(input.begin(), result_saga.in.begin()
+                                                    , out_true_std, out_false_std, pred);
+
+        // Проверки
+        REQUIRE(dest_true_saga == dest_true_std);
+        REQUIRE(dest_false_saga == dest_false_std);
+
+        REQUIRE(result_saga.in.end() == input.end());
+
+        REQUIRE((result_saga.out1.begin() - out_true_saga.begin())
+                == (result_std.first - out_true_std));
+        REQUIRE((result_saga.out2.begin() - out_false_saga.begin())
+                == (result_std.second - out_false_std));
+
+        REQUIRE(result_saga.out1.end() == out_true_saga.end());
+        REQUIRE(result_saga.out2.end() == out_false_saga.end());
+    };
+}
+
 TEST_CASE("includes - minimal")
 {
     using Value = int;
