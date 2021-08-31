@@ -48,6 +48,14 @@ namespace saga
         Output out;
     };
 
+    template <class Input, class Output1, class Output2>
+    struct in_out_out_result
+    {
+        Input in;
+        Output1 out1;
+        Output2 out2;
+    };
+
     // Немодифицирующие операции
     struct find_if_fn
     {
@@ -357,6 +365,32 @@ namespace saga
             }
 
             return {std::move(in), std::move(out)};
+        }
+    };
+
+    template <class InputCursor, class OutputCursor1, class OutputCursor2>
+    using partition_copy_result = in_out_out_result<InputCursor, OutputCursor1, OutputCursor2>;
+
+    struct partition_copy_fn
+    {
+        template <class InputCursor, class OutputCursor1, class OutputCursor2, class UnaryPredicate>
+        partition_copy_result<InputCursor, OutputCursor1, OutputCursor2>
+        operator()(InputCursor in, OutputCursor1 out_true, OutputCursor2 out_false
+                   , UnaryPredicate pred) const
+        {
+            for(;!!in && !!out_true && !!out_false; ++ in)
+            {
+                if(saga::invoke(pred, *in))
+                {
+                    out_true << *in;
+                }
+                else
+                {
+                    out_false << *in;
+                }
+            }
+
+            return {std::move(in), std::move(out_true), std::move(out_false)};
         }
     };
 
@@ -702,6 +736,7 @@ namespace saga
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
         constexpr auto const & unique_copy = detail::static_empty_const<unique_copy_fn>::value;
+        constexpr auto const & partition_copy = detail::static_empty_const<partition_copy_fn>::value;
 
         constexpr auto const & includes = detail::static_empty_const<includes_fn>::value;
         constexpr auto const & set_difference
