@@ -332,6 +332,100 @@ TEST_CASE("cout_if - subcursor")
     };
 }
 
+TEST_CASE("mismatch - minimal, default predicate")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    {
+        auto src1_in = saga_test::make_istringstream_from_range(src1);
+        auto src2_in = saga_test::make_istringstream_from_range(src2);
+
+        auto r_saga = saga::mismatch(saga::make_istream_cursor<Value1>(src1_in)
+                                    , saga::make_istream_cursor<Value2>(src2_in));
+
+        auto const r_std = std::mismatch(src1.begin(), src1.end(), src2.begin(), src2.end());
+
+        // Проверки
+        REQUIRE(!r_saga.in1 == (r_std.first == src1.end()));
+        REQUIRE(!r_saga.in2 == (r_std.second == src2.end()));
+
+        REQUIRE((!r_saga.in1 || !r_saga.in2 || (*r_saga.in1 != *r_saga.in2)));
+
+        REQUIRE(saga::cursor::size(std::move(r_saga.in1)) == (src1.end() - r_std.first));
+        REQUIRE(saga::cursor::size(std::move(r_saga.in2)) == (src2.end() - r_std.second));
+    };
+}
+
+TEST_CASE("mismatch - minimal, custom predicate")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    {
+        auto const pred = [](Value1 const & x, Value2 const & y) { return x % 7 == y % 7; };
+
+        auto src1_in = saga_test::make_istringstream_from_range(src1);
+        auto src2_in = saga_test::make_istringstream_from_range(src2);
+
+        auto r_saga = saga::mismatch(saga::make_istream_cursor<Value1>(src1_in)
+                                    , saga::make_istream_cursor<Value2>(src2_in), pred);
+
+        auto const r_std = std::mismatch(src1.begin(), src1.end(), src2.begin(), src2.end(), pred);
+
+        // Проверки
+        REQUIRE(!r_saga.in1 == (r_std.first == src1.end()));
+        REQUIRE(!r_saga.in2 == (r_std.second == src2.end()));
+
+        REQUIRE((!r_saga.in1 || !r_saga.in2 || !pred(*r_saga.in1, *r_saga.in2)));
+
+        REQUIRE(saga::cursor::size(std::move(r_saga.in1)) == (src1.end() - r_std.first));
+        REQUIRE(saga::cursor::size(std::move(r_saga.in2)) == (src2.end() - r_std.second));
+    };
+}
+
+TEST_CASE("mismatch - subcursors, default predicate")
+{
+    saga_test::property_checker <<[](std::vector<int> const & src1, std::list<long> const & src2)
+    {
+        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
+        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
+
+        auto const r_saga = saga::mismatch(in1, in2);
+        auto const r_std = std::mismatch(in1.begin(), in1.end(), in2.begin(), in2.end());
+
+        REQUIRE(r_saga.in1.begin() == r_std.first);
+        REQUIRE(r_saga.in1.end() == in1.end());
+
+        REQUIRE(r_saga.in2.begin() == r_std.second);
+        REQUIRE(r_saga.in2.end() == in2.end());
+    };
+}
+
+TEST_CASE("mismatch - subcursors, custom predicate")
+{
+    saga_test::property_checker <<[](std::vector<int> const & src1, std::list<long> const & src2)
+    {
+        auto const bin_pred = [](auto const & x, auto const & y) { return x % 7 == y % 7; };
+
+        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
+        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
+
+        auto const r_saga = saga::mismatch(in1, in2, bin_pred);
+        auto const r_std = std::mismatch(in1.begin(), in1.end(), in2.begin(), in2.end(), bin_pred);
+
+        REQUIRE(r_saga.in1.begin() == r_std.first);
+        REQUIRE(r_saga.in1.end() == in1.end());
+
+        REQUIRE(r_saga.in2.begin() == r_std.second);
+        REQUIRE(r_saga.in2.end() == in2.end());
+    };
+}
+
 TEST_CASE("find - minimal")
 {
     using Value = int;

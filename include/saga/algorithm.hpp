@@ -40,6 +40,13 @@ namespace saga
         Output out;
     };
 
+    template <class Input1, class Input2>
+    struct in_in_result
+    {
+        Input1 in1;
+        Input2 in2;
+    };
+
     template <class Input1, class Input2, class Output>
     struct in_in_out_result
     {
@@ -157,6 +164,27 @@ namespace saga
             auto pred = [&value](auto && arg) { return std::forward<decltype(arg)>(arg) == value; };
 
             return count_if_fn{}(std::move(cur), std::move(pred));
+        }
+    };
+
+    template <class InputCursor1, class InputCursor2>
+    using mismatch_result = in_in_result<InputCursor1, InputCursor2>;
+
+    struct mismatch_fn
+    {
+        template <class InputCursor1, class InputCursor2, class BinaryPredicate = std::equal_to<>>
+        constexpr mismatch_result<InputCursor1, InputCursor2>
+        operator()(InputCursor1 in1, InputCursor2 in2, BinaryPredicate bin_pred = {}) const
+        {
+            for(; !!in1 && !!in2; void(++in1), ++in2)
+            {
+                if(!saga::invoke(bin_pred, *in1, *in2))
+                {
+                    break;
+                }
+            }
+
+            return {std::move(in1), std::move(in2)};
         }
     };
 
@@ -588,15 +616,10 @@ namespace saga
         constexpr bool impl(InputCursor1 cur1, InputCursor2 cur2, BinaryPredicate bin_pred
                             , std::input_iterator_tag, std::input_iterator_tag) const
         {
-            for(; !!cur1 && !!cur2; ++cur1, (void)++cur2)
-            {
-                if(!saga::invoke(bin_pred, *cur1, *cur2))
-                {
-                    return false;
-                }
-            }
+            auto const stop
+                = saga::mismatch_fn{}(std::move(cur1), std::move(cur2), std::move(bin_pred));
 
-            return !cur1 && !cur2;
+            return !stop.in1 && !stop.in2;
         }
 
         template <class InputCursor1, class InputCursor2, class BinaryPredicate>
@@ -737,6 +760,8 @@ namespace saga
 
         constexpr auto const & count = detail::static_empty_const<count_fn>::value;
         constexpr auto const & count_if = detail::static_empty_const<count_if_fn>::value;
+
+        constexpr auto const & mismatch = detail::static_empty_const<mismatch_fn>::value;
 
         constexpr auto const & find = detail::static_empty_const<find_fn>::value;
         constexpr auto const & find_if = detail::static_empty_const<find_if_fn>::value;
