@@ -1168,6 +1168,57 @@ TEST_CASE("reverse_copy : constexpr")
     static_assert(::check_reverse_copy_constexpr(values), "");
 }
 
+TEMPLATE_LIST_TEST_CASE("rotate_copy: minimal", "rotate_copy", Containers)
+{
+    using Container = TestType;
+    using Value = typename Container::value_type;
+
+    saga_test::property_checker << [](Container const & src)
+    {
+        auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        std::vector<Value> dest_saga;
+        saga::rotate_copy(cur, saga::back_inserter(dest_saga));
+
+        // std
+        std::vector<Value> dest_std;
+        std::rotate_copy(src.begin(), cur.begin(), cur.end(), std::back_inserter(dest_std));
+
+        // Сравнение
+        CAPTURE(src, cur.dropped_front(), cur);
+        REQUIRE(dest_saga == dest_std);
+    };
+}
+
+TEST_CASE("rotate_copy: subcursors")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , std::vector<Value> const & dest_old)
+    {
+        auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_saga = dest_old;
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const result = saga::rotate_copy(cur, out_saga);
+
+        // std
+        auto dest_std = dest_old;
+        auto const out_std = dest_std.begin() + (out_saga.begin() - dest_saga.begin());
+        auto const r1_std = std::copy(cur.begin(), result.in2.begin(), out_std);
+        auto const r2_std = std::copy(src.begin(), result.in1.begin(), r1_std);
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_std);
+        REQUIRE((result.out.begin() - out_saga.begin()) == (r2_std - out_std));
+        REQUIRE(result.out.end() == out_saga.end());
+    };
+}
+
 TEST_CASE("unique_copy: minimal, default predicate")
 {
     using Value = long;
