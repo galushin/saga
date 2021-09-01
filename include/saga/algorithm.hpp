@@ -336,6 +336,25 @@ namespace saga
         }
     };
 
+    template <class ForwardCursor, class OutputCursor>
+    using rotate_copy_result = in_in_out_result<ForwardCursor, ForwardCursor, OutputCursor>;
+
+    struct rotate_copy_fn
+    {
+        template <class ForwardCursor, class OutputCursor>
+        rotate_copy_result<ForwardCursor, OutputCursor>
+        operator()(ForwardCursor in, OutputCursor out) const
+        {
+            auto part2 = in.dropped_front();
+
+            auto result1 = saga::copy_fn{}(std::move(in), std::move(out));
+            auto result2 = saga::copy_fn{}(std::move(part2), std::move(result1.out));
+
+            return {std::move(result2.in), std::move(result1.in), std::move(result2.out)};
+        }
+    };
+
+
     template <class InputCursor, class OutputCursor>
     using unique_copy_result = in_out_result<InputCursor, OutputCursor>;
 
@@ -735,6 +754,7 @@ namespace saga
         constexpr auto const & replace_copy_if = detail::static_empty_const<replace_copy_if_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
+        constexpr auto const & rotate_copy = detail::static_empty_const<rotate_copy_fn>::value;
         constexpr auto const & unique_copy = detail::static_empty_const<unique_copy_fn>::value;
         constexpr auto const & partition_copy = detail::static_empty_const<partition_copy_fn>::value;
 
