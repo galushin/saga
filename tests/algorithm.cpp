@@ -261,6 +261,90 @@ TEST_CASE("all_of, any_of, some_of - subcursor")
     };
 }
 
+namespace
+{
+    template <class T>
+    struct sum_accumulator
+    {
+        void operator()(T const & x)
+        {
+            this->sum += x;
+        }
+
+        T sum{0};
+    };
+}
+
+TEST_CASE("for_each - minimal")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        // saga
+        auto src_in = saga_test::make_istringstream_from_range(src);
+        auto const result_saga = saga::for_each(saga::make_istream_cursor<Value>(src_in)
+                                                , ::sum_accumulator<Value>{});
+
+        // std
+        auto const result_std = std::for_each(src.begin(), src.end(), ::sum_accumulator<Value>{});
+
+        // Сравение
+        REQUIRE(result_saga.fun.sum == result_std.sum);
+    };
+}
+
+TEST_CASE("for_each - subcursor, const")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const sub = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto const result_saga = saga::for_each(sub, ::sum_accumulator<Value>{});
+
+        // std
+        auto const result_std = std::for_each(sub.begin(), sub.end(), ::sum_accumulator<Value>{});
+
+        // Сравение
+        REQUIRE(result_saga.in.begin() == sub.end());
+        REQUIRE(result_saga.in.end() == sub.end());
+
+        REQUIRE(result_saga.fun.sum == result_std.sum);
+    };
+}
+
+TEST_CASE("for_each - subcursor, mutable")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const fun = [](Value & x) { x %= 2; };
+
+        // saga
+        auto src_saga = src;
+        auto const cur_saga = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
+
+        auto const result_saga = saga::for_each(cur_saga, fun);
+
+        // std
+        auto src_std = src;
+
+        std::for_each(src_std.begin() + (cur_saga.begin() - src_saga.begin())
+                      , src_std.begin() + (cur_saga.end() - src_saga.begin())
+                      , fun);
+
+        // Сравение
+        REQUIRE(result_saga.in.begin() == cur_saga.end());
+        REQUIRE(result_saga.in.end() == cur_saga.end());
+
+        REQUIRE(src_saga == src_std);
+    };
+}
+
 TEST_CASE("count - minimal")
 {
     using Value = int;

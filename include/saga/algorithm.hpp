@@ -33,6 +33,13 @@ SAGA -- это свободной программное обеспечение:
 namespace saga
 {
     // Типы результатов алгоритмов
+    template <class Input, class Function>
+    struct in_fun_result
+    {
+        Input in;
+        Function fun;
+    };
+
     template <class Input, class Output>
     struct in_out_result
     {
@@ -132,6 +139,24 @@ namespace saga
         bool operator()(InputCursor cur, UnaryPredicate pred) const
         {
             return !any_of_fn{}(std::move(cur), std::move(pred));
+        }
+    };
+
+    template <class InputCursor, class UnaryFunction>
+    using for_each_result = in_fun_result<InputCursor, UnaryFunction>;
+
+    struct for_each_fn
+    {
+        template <class InputCursor, class UnaryFunction>
+        for_each_result<InputCursor, UnaryFunction>
+        operator()(InputCursor cur, UnaryFunction fun) const
+        {
+            for(; !!cur; ++cur)
+            {
+                saga::invoke(fun, *cur);
+            }
+
+            return {std::move(cur), std::move(fun)};
         }
     };
 
@@ -757,6 +782,8 @@ namespace saga
         constexpr auto const & all_of = detail::static_empty_const<all_of_fn>::value;
         constexpr auto const & any_of = detail::static_empty_const<any_of_fn>::value;
         constexpr auto const & none_of = detail::static_empty_const<none_of_fn>::value;
+
+        constexpr auto const & for_each = detail::static_empty_const<for_each_fn>::value;
 
         constexpr auto const & count = detail::static_empty_const<count_fn>::value;
         constexpr auto const & count_if = detail::static_empty_const<count_if_fn>::value;
