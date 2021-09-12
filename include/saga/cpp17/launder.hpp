@@ -35,7 +35,6 @@ namespace saga
         // @tood Можно ли реализовать правильно, но оставить constexpr в С++14?
         return ptr;
     }
-#endif
 
     // Стандарт явно запрещает следующие варианты:
     void launder(void*) = delete;
@@ -44,6 +43,7 @@ namespace saga
     void launder(void const volatile*) = delete;
     template <typename T, typename... Args>
     void launder(T (*)(Args...)) = delete;
+#endif
 }
 // namespace saga
 

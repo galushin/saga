@@ -71,6 +71,15 @@ namespace saga
         }
     };
 
+    // invoke
+    template <class F, class... Args>
+    constexpr invoke_result_t<F, Args...>
+    invoke(F && fun, Args &&... args) noexcept(saga::is_nothrow_invocable<F, Args...>{})
+    {
+        using Invoker = detail::invoke_impl<std::decay_t<F>>;
+        return Invoker::call(std::forward<F>(fun), std::forward<Args>(args)...);
+    }
+
     // not_fn
     namespace detail
     {
