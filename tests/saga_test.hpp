@@ -317,6 +317,19 @@ namespace saga_test
         }
     };
 
+    template <class T1, class T2>
+    struct arbitrary<std::pair<T1, T2>>
+    {
+        using value_type = std::pair<T1, T2>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            return std::make_pair(arbitrary<T1>::generate(generation, urbg)
+                                  , arbitrary<T2>::generate(generation, urbg));
+        }
+    };
+
     template <class IntType>
     struct arbitrary<container_size<IntType>>
     {
