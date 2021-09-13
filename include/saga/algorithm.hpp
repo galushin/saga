@@ -78,7 +78,7 @@ namespace saga
         {
             for(; !!cur; ++cur)
             {
-                if(saga::invoke(pred,*cur))
+                if(saga::invoke(pred, *cur))
                 {
                     break;
                 }
@@ -102,16 +102,9 @@ namespace saga
         template <class InputCursor, class T>
         InputCursor operator()(InputCursor cur, T const & value) const
         {
-            // @todo Выразить через find_if_fn?
-            for(; !!cur; ++ cur)
-            {
-                if(*cur == value)
-                {
-                    return cur;
-                }
-            }
-
-            return cur;
+            return find_if_fn{}(std::move(cur)
+                                , [&](auto && arg)
+                                    { return std::forward<decltype(arg)>(arg) == value; });
         }
     };
 
@@ -170,7 +163,7 @@ namespace saga
 
             for(; !!cur; ++ cur)
             {
-                if(pred(*cur))
+                if(saga::invoke(pred, *cur))
                 {
                     ++ result;
                 }
@@ -269,7 +262,7 @@ namespace saga
         {
             for(; !!cur; ++ cur)
             {
-                *cur = gen();
+                *cur = saga::invoke(gen);
             }
         }
     };
@@ -473,11 +466,11 @@ namespace saga
         {
             for(; !!in1 && !!in2;)
             {
-                if(cmp(*in2, *in1))
+                if(saga::invoke(cmp, *in2, *in1))
                 {
                     return false;
                 }
-                else if(cmp(*in1, *in2))
+                else if(saga::invoke(cmp, *in1, *in2))
                 {
                     ++ in1;
                 }
@@ -505,12 +498,12 @@ namespace saga
         {
             for(;!!in1 && !!in2 && !!out;)
             {
-                if(cmp(*in1, *in2))
+                if(saga::invoke(cmp, *in1, *in2))
                 {
                     out << *in1;
                     ++ in1;
                 }
-                else if(cmp(*in2, *in1))
+                else if(saga::invoke(cmp, *in2, *in1))
                 {
                     ++ in2;
                 }
@@ -538,11 +531,11 @@ namespace saga
         {
             for(; !!in1 && !!in2 && !!out;)
             {
-                if(cmp(*in1, *in2))
+                if(saga::invoke(cmp, *in1, *in2))
                 {
                     ++ in1;
                 }
-                else if(cmp(*in2, *in1))
+                else if(saga::invoke(cmp, *in2, *in1))
                 {
                     ++ in2;
                 }
@@ -572,12 +565,12 @@ namespace saga
         {
             for(; !!in1 && !!in2 && !!out;)
             {
-                if(cmp(*in1, *in2))
+                if(saga::invoke(cmp, *in1, *in2))
                 {
                     out << *in1;
                     ++ in1;
                 }
-                else if(cmp(*in2, *in1))
+                else if(saga::invoke(cmp, *in2, *in1))
                 {
                     out << *in2;
                     ++ in2;
@@ -609,12 +602,12 @@ namespace saga
         {
             for(; !!in1 && !!in2 && !!out;)
             {
-                if(cmp(*in1, *in2))
+                if(saga::invoke(cmp, *in1, *in2))
                 {
                     out << *in1;
                     ++ in1;
                 }
-                else if(cmp(*in2, *in1))
+                else if(saga::invoke(cmp, *in2, *in1))
                 {
                     out << *in2;
                     ++ in2;
@@ -732,7 +725,7 @@ namespace saga
 
             for(; num > 0; -- num)
             {
-                fun();
+                saga::invoke(fun);
             }
 
             return fun;
@@ -755,7 +748,7 @@ namespace saga
         {
             for(; !!input && !!output; ++input)
             {
-                output << fun(*input);
+                output << saga::invoke(fun, *input);
             }
 
             return {std::move(input), std::move(output)};
@@ -769,7 +762,7 @@ namespace saga
         {
             for(; !!in1 && !!in2 && !!out; (void)++in1, ++in2)
             {
-                out << bin_fun(*in1, *in2);
+                out << saga::invoke(bin_fun, *in1, *in2);
             }
 
             return {std::move(in1), std::move(in2), std::move(out)};

@@ -18,6 +18,7 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_NUMERIC_HPP_INCLUDED
 #define Z_SAGA_NUMERIC_HPP_INCLUDED
 
+#include <saga/functional.hpp>
 #include <saga/detail/static_empty_const.hpp>
 
 #include <functional>
@@ -36,7 +37,7 @@ namespace saga
         {
             for(; !!cur; ++ cur)
             {
-                init = bin_op(std::move(init), *cur);
+                init = saga::invoke(bin_op, std::move(init), *cur);
             }
 
             return init;
@@ -47,23 +48,16 @@ namespace saga
     {
     public:
         template <class InputCursor1, class InputCursor2, class T,
-                  class BinaryOperator1, class BinaryOperator2>
-        constexpr T operator()(InputCursor1 in1, InputCursor2 in2, T init_value,
-                               BinaryOperator1 op1, BinaryOperator2 op2) const
+                  class BinaryOperator1 = std::plus<>, class BinaryOperator2 = std::multiplies<>>
+        constexpr T operator()(InputCursor1 in1, InputCursor2 in2, T init,
+                               BinaryOperator1 op1 = {}, BinaryOperator2 op2 = {}) const
         {
             for(; !!in1 && !!in2; ++ in1, (void)++in2)
             {
-                init_value = op1(std::move(init_value), op2(*in1, *in2));
+                init = saga::invoke(op1, std::move(init), saga::invoke(op2, *in1, *in2));
             }
 
-            return init_value;
-        }
-
-        template <class InputCursor1, class InputCursor2, class T>
-        constexpr T operator()(InputCursor1 in1, InputCursor2 in2, T init_value) const
-        {
-            return (*this)(std::move(in1), std::move(in2), std::move(init_value),
-                           std::plus<>{}, std::multiplies<>{});
+            return init;
         }
     };
 
