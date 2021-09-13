@@ -18,6 +18,7 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_NUMERIC_HPP_INCLUDED
 #define Z_SAGA_NUMERIC_HPP_INCLUDED
 
+#include <saga/cursor/cursor_traits.hpp>
 #include <saga/functional.hpp>
 #include <saga/detail/static_empty_const.hpp>
 
@@ -26,6 +27,19 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    struct iota_fn
+    {
+    public:
+        template <class OutputCursor, class Incrementable>
+        void operator()(OutputCursor out, Incrementable value) const
+        {
+            for(; !!out; ++ value)
+            {
+                out << value;
+            }
+        }
+    };
+
     class accumulate_fn
     {
     public:
@@ -41,6 +55,19 @@ namespace saga
             }
 
             return init;
+        }
+    };
+
+    struct reduce_fn
+    {
+    public:
+        template <class InputCursor
+                  , class Value = cursor_value_t<InputCursor>
+                  , class BinaryOperation = std::plus<>>
+        Value
+        operator()(InputCursor cur, Value init_value = {}, BinaryOperation bin_op = {}) const
+        {
+            return accumulate_fn{}(std::move(cur), std::move(init_value), std::move(bin_op));
         }
     };
 
@@ -63,11 +90,10 @@ namespace saga
 
 namespace
 {
-    constexpr auto const & accumulate
-        = detail::static_empty_const<saga::accumulate_fn>::value;
-
-    constexpr auto const & inner_product
-        = detail::static_empty_const<saga::inner_product_fn>::value;
+    constexpr auto const & iota          = detail::static_empty_const<iota_fn>::value;
+    constexpr auto const & accumulate    = detail::static_empty_const<accumulate_fn>::value;
+    constexpr auto const & reduce        = detail::static_empty_const<reduce_fn>::value;
+    constexpr auto const & inner_product = detail::static_empty_const<inner_product_fn>::value;
 }
 
 }

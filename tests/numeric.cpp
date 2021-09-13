@@ -30,6 +30,30 @@ SAGA -- это свободной программное обеспечение:
 #include <vector>
 
 // Тесты
+TEST_CASE("iota")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        // saga
+        auto src_saga = src;
+        auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
+
+        saga::iota(cur, init_value);
+
+        // std
+        auto src_std = src;
+
+        std::iota(src_std.begin() + (cur.begin() - src_saga.begin())
+                  , src_std.begin() + (cur.end() - src_saga.begin())
+                  , init_value);
+
+        // Сравнение
+        REQUIRE(src_saga == src_std);
+    };
+}
+
 // accumulate
 TEST_CASE("accumulate - default operation")
 {
@@ -110,6 +134,94 @@ TEST_CASE("accumulate - move only init value")
                                                   saga_test::move_only<int>(init_value), my_op);
 
         REQUIRE(result_saga.value == result_std);
+    };
+}
+
+// reduce
+TEST_CASE("reduce - general, minimalistic")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        auto const bin_op = std::bit_xor<>{};
+
+        REQUIRE(saga::reduce(saga::make_istream_cursor<Value>(src_in), init_value, bin_op)
+                == saga::accumulate(saga::cursor::all(src), init_value, bin_op));
+
+    };
+}
+
+TEST_CASE("reduce - general, subrange")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const bin_op = std::bit_xor<>{};
+
+        REQUIRE(saga::reduce(cur, init_value, bin_op)
+                == saga::accumulate(cur, init_value, bin_op));
+
+    };
+}
+
+TEST_CASE("reduce - default operation, minimalistic")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        REQUIRE(saga::reduce(saga::make_istream_cursor<Value>(src_in), init_value)
+                == saga::reduce(saga::cursor::all(src), init_value, std::plus<>{}));
+
+    };
+}
+
+TEST_CASE("reduce - default operation, subrange")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        REQUIRE(saga::reduce(cur, init_value)
+                == saga::reduce(cur, init_value, std::plus<>{}));
+
+    };
+}
+
+TEST_CASE("reduce - default init value and operation, minimalistic")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        REQUIRE(saga::reduce(saga::make_istream_cursor<Value>(src_in))
+                == saga::reduce(saga::cursor::all(src), Value{}, std::plus<>{}));
+
+    };
+}
+
+TEST_CASE("reduce - default init value and operation, subrange")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        REQUIRE(saga::reduce(cur) == saga::reduce(cur, Value{}, std::plus<>{}));
+
     };
 }
 
