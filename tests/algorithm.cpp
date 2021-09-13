@@ -1617,10 +1617,10 @@ TEST_CASE("includes - minimal, custom compare")
 
     saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
     {
-        auto const cmp_no_case = [](int x, int y) { return std::abs(x) < std::abs(y); };
+        auto const cmp = std::greater<>{};
 
-        std::sort(in1.begin(), in1.end(), cmp_no_case);
-        std::sort(in2.begin(), in2.end(), cmp_no_case);
+        std::sort(in1.begin(), in1.end(), cmp);
+        std::sort(in2.begin(), in2.end(), cmp);
 
         CAPTURE(in1, in2);
 
@@ -1628,8 +1628,8 @@ TEST_CASE("includes - minimal, custom compare")
         auto in2_istream = saga_test::make_istringstream_from_range(in2);
 
         REQUIRE(saga::includes(saga::make_istream_cursor<Value>(in1_istream),
-                               saga::make_istream_cursor<Value>(in2_istream), cmp_no_case)
-                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp_no_case));
+                               saga::make_istream_cursor<Value>(in2_istream), cmp)
+                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp));
     };
 }
 
@@ -1655,15 +1655,15 @@ TEST_CASE("includes - subrange, custom compare")
 
     saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
     {
-        auto const cmp_no_case = [](int x, int y) { return std::abs(x) < std::abs(y); };
+        auto const cmp = std::greater<>{};
 
-        std::sort(in1.begin(), in1.end(), cmp_no_case);
-        std::sort(in2.begin(), in2.end(), cmp_no_case);
+        std::sort(in1.begin(), in1.end(), cmp);
+        std::sort(in2.begin(), in2.end(), cmp);
 
         CAPTURE(in1, in2);
 
-        REQUIRE(saga::includes(saga::cursor::all(in1), saga::cursor::all(in2), cmp_no_case)
-                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp_no_case));
+        REQUIRE(saga::includes(saga::cursor::all(in1), saga::cursor::all(in2), cmp)
+                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp));
     };
 }
 
@@ -1673,17 +1673,17 @@ TEST_CASE("includes - always true, custom compare")
 
     saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
     {
-        auto const cmp_no_case = [](int x, int y) { return std::abs(x) < std::abs(y); };
+        auto const cmp = std::greater<>{};
 
         in1.insert(in1.end(), in2.begin(), in2.end());
 
-        std::sort(in1.begin(), in1.end(), cmp_no_case);
-        std::sort(in2.begin(), in2.end(), cmp_no_case);
+        std::sort(in1.begin(), in1.end(), cmp);
+        std::sort(in2.begin(), in2.end(), cmp);
 
         CAPTURE(in1, in2);
 
-        REQUIRE(std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp_no_case));
-        REQUIRE(saga::includes(saga::cursor::all(in1), saga::cursor::all(in2), cmp_no_case));
+        REQUIRE(std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp));
+        REQUIRE(saga::includes(saga::cursor::all(in1), saga::cursor::all(in2), cmp));
     };
 }
 
