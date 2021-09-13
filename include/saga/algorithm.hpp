@@ -29,6 +29,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/detail/static_empty_const.hpp>
 
 #include <algorithm>
+#include <functional>
 
 namespace saga
 {
@@ -433,6 +434,18 @@ namespace saga
         }
     };
 
+    struct is_partitioned_fn
+    {
+        template <class InputCursor, class UnaryPredicate>
+        bool operator()(InputCursor cur, UnaryPredicate pred) const
+        {
+            cur = find_if_not_fn{}(std::move(cur), std::ref(pred));
+            cur = find_if_fn{}(std::move(cur), std::move(pred));
+
+            return !cur;
+        }
+    };
+
     template <class InputCursor, class OutputCursor1, class OutputCursor2>
     using partition_copy_result = in_out_out_result<InputCursor, OutputCursor1, OutputCursor2>;
 
@@ -456,6 +469,37 @@ namespace saga
             }
 
             return {std::move(in), std::move(out_true), std::move(out_false)};
+        }
+    };
+
+    template <class InputCursor1, class InputCursor2, class OutputCursor>
+    using merge_result = in_in_out_result<InputCursor1, InputCursor2, OutputCursor>;
+
+    struct merge_fn
+    {
+        template <class InputCursor1, class InputCursor2, class OutputCursor
+                 , class Compare = std::less<>>
+        merge_result<InputCursor1, InputCursor2, OutputCursor>
+        operator()(InputCursor1 in1, InputCursor2 in2, OutputCursor out, Compare cmp = {}) const
+        {
+            for(; !!in1 && !!in2 && !!out; )
+            {
+                if(saga::invoke(cmp, *in2, *in1))
+                {
+                    out << *in2;
+                    ++ in2;
+                }
+                else
+                {
+                    out << *in1;
+                    ++ in1;
+                }
+            }
+
+            auto result1 = saga::copy_fn{}(std::move(in1), std::move(out));
+            auto result2 = saga::copy_fn{}(std::move(in2), std::move(result1.out));
+
+            return {std::move(result1.in), std::move(result2.in), std::move(result2.out)};
         }
     };
 
@@ -801,7 +845,11 @@ namespace saga
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
         constexpr auto const & rotate_copy = detail::static_empty_const<rotate_copy_fn>::value;
         constexpr auto const & unique_copy = detail::static_empty_const<unique_copy_fn>::value;
+
+        constexpr auto const & is_partitioned = detail::static_empty_const<is_partitioned_fn>::value;
         constexpr auto const & partition_copy = detail::static_empty_const<partition_copy_fn>::value;
+
+        constexpr auto const & merge = detail::static_empty_const<merge_fn>::value;
 
         constexpr auto const & includes = detail::static_empty_const<includes_fn>::value;
         constexpr auto const & set_difference

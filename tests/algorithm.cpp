@@ -1509,6 +1509,52 @@ TEST_CASE("unique - subcursors, custom predicate")
     };
 }
 
+TEST_CASE("is_partitioned: minimal")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const pred = [](Value const & arg) { return arg % 3 == 0; };
+
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        REQUIRE(saga::is_partitioned(saga::make_istream_cursor<Value>(src_in), pred)
+                == std::is_partitioned(src.begin(), src.end(), pred));
+    };
+}
+
+TEST_CASE("is_partitioned: subcursor")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const pred = [](Value const & arg) { return arg % 3 == 0; };
+
+        auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        REQUIRE(saga::is_partitioned(cur, pred)
+                == std::is_partitioned(cur.begin(), cur.end(), pred));
+    };
+}
+
+TEST_CASE("is_partitioned: invented true")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> src)
+    {
+        auto const pred = [](Value const & arg) { return arg % 3 == 0; };
+
+        auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        std::partition(src.begin(), src.end(), pred);
+
+        REQUIRE(saga::is_partitioned(cur, pred));
+    };
+}
+
 TEST_CASE("partition_copy: minimal")
 {
     using Value = long;
@@ -1588,6 +1634,72 @@ TEST_CASE("partition_copy: subcursor")
 
         REQUIRE(result_saga.out1.end() == out_true_saga.end());
         REQUIRE(result_saga.out2.end() == out_false_saga.end());
+    };
+}
+
+TEST_CASE("merge : minimal, default compare")
+{
+    using Value = int;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](Container lhs, Container rhs)
+    {
+        std::sort(lhs.begin(), lhs.end());
+        std::sort(rhs.begin(), rhs.end());
+
+        CAPTURE(lhs, rhs);
+
+        // std
+        std::vector<Value> diff_std;
+
+        std::merge(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
+                   , std::back_inserter(diff_std));
+
+        // saga
+        std::vector<Value> diff_saga;
+
+        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
+
+        saga::merge(saga::make_istream_cursor<Value>(lhs_in)
+                    , saga::make_istream_cursor<Value>(rhs_in)
+                    , saga::back_inserter(diff_saga));
+
+        // Проверка
+        REQUIRE(diff_saga == diff_std);
+    };
+}
+
+TEST_CASE("merge : minimal, custom compare")
+{
+    using Value = int;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](Container lhs, Container rhs)
+    {
+        auto const cmp = std::greater<>{};
+
+        std::sort(lhs.begin(), lhs.end(), cmp);
+        std::sort(rhs.begin(), rhs.end(), cmp);
+
+        // std
+        std::vector<Value> diff_std;
+
+        std::merge(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
+                   , std::back_inserter(diff_std), cmp);
+
+        // saga
+        std::vector<Value> diff_saga;
+
+        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
+
+        saga::merge(saga::make_istream_cursor<Value>(lhs_in)
+                    , saga::make_istream_cursor<Value>(rhs_in)
+                    , saga::back_inserter(diff_saga), cmp);
+
+        // Проверка
+        REQUIRE(diff_saga == diff_std);
     };
 }
 
