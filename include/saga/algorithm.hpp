@@ -296,6 +296,32 @@ namespace saga
         }
     };
 
+    struct replace_if_fn
+    {
+        template <class ForwardCursor, class UnaryPredicate, class T>
+        void operator()(ForwardCursor cur, UnaryPredicate pred, T const & new_value) const
+        {
+            for(; !!cur; ++cur)
+            {
+                if(saga::invoke(pred, *cur))
+                {
+                    *cur = new_value;
+                }
+            }
+        }
+    };
+
+    struct replace_fn
+    {
+        template <class ForwardCursor, class T>
+        void operator()(ForwardCursor cur, T const & old_value, T const & new_value) const
+        {
+            return replace_if_fn{}(std::move(cur)
+                                   , [&](auto const & arg) { return arg == old_value; }
+                                   , new_value);
+        }
+    };
+
     template <class InputCursor, class OutputCursor>
     using replace_copy_if_result = in_out_result<InputCursor, OutputCursor>;
 
@@ -839,6 +865,8 @@ namespace saga
         constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
         constexpr auto const & remove_copy = detail::static_empty_const<remove_copy_fn>::value;
         constexpr auto const & remove_copy_if = detail::static_empty_const<remove_copy_if_fn>::value;
+        constexpr auto const & replace = detail::static_empty_const<replace_fn>::value;
+        constexpr auto const & replace_if = detail::static_empty_const<replace_if_fn>::value;
         constexpr auto const & replace_copy = detail::static_empty_const<replace_copy_fn>::value;
         constexpr auto const & replace_copy_if = detail::static_empty_const<replace_copy_if_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
