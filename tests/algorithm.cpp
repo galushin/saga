@@ -1109,6 +1109,67 @@ TEST_CASE("remove_copy_if: subcursors")
     };
 }
 
+TEST_CASE("replace")
+{
+    using Value = int;
+    using NewValue = short;
+
+    saga_test::property_checker
+    << [](std::forward_list<Value> const & src
+          , NewValue const & old_value, NewValue const & new_value)
+    {
+        // saga
+        auto src_saga = src;
+
+        auto const in_saga = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
+
+        saga::replace(in_saga, old_value, new_value);
+
+        // std
+        auto src_std = src;
+
+        auto const first_std
+            = std::next(src_std.begin(), std::distance(src_saga.begin(), in_saga.begin()));
+        auto const last_std = std::next(first_std, saga::cursor::size(in_saga));
+
+        std::replace(first_std, last_std, old_value, new_value);
+
+        // Сравнение
+        REQUIRE(src_saga == src_std);
+    };
+}
+
+TEST_CASE("replace_if")
+{
+    using OldValue = long;
+    using NewValue = int;
+
+    saga_test::property_checker
+    << [](std::forward_list<OldValue> const & src, NewValue const & new_value)
+    {
+        auto const pred = [](OldValue const & x) { return x % 2 == 0; };
+
+        // saga
+        auto src_saga = src;
+
+        auto const in_saga = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
+
+        saga::replace_if(in_saga, pred, new_value);
+
+        // std
+        auto src_std = src;
+
+        auto const first_std
+            = std::next(src_std.begin(), std::distance(src_saga.begin(), in_saga.begin()));
+        auto const last_std = std::next(first_std, saga::cursor::size(in_saga));
+
+        std::replace_if(first_std, last_std, pred, new_value);
+
+        // Сравнение
+        REQUIRE(src_saga == src_std);
+    };
+}
+
 TEST_CASE("replace_copy: minimal")
 {
     using OldValue = long;
