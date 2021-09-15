@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Аналоги алгоритмов STL, работающие с курсорами и интервалами
 */
 
+#include <saga/algorithm/result_types.hpp>
 #include <saga/functional.hpp>
 #include <saga/iterator.hpp>
 #include <saga/cursor/cursor_traits.hpp>
@@ -33,44 +34,6 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
-    // Типы результатов алгоритмов
-    template <class Input, class Function>
-    struct in_fun_result
-    {
-        Input in;
-        Function fun;
-    };
-
-    template <class Input, class Output>
-    struct in_out_result
-    {
-        Input in;
-        Output out;
-    };
-
-    template <class Input1, class Input2>
-    struct in_in_result
-    {
-        Input1 in1;
-        Input2 in2;
-    };
-
-    template <class Input1, class Input2, class Output>
-    struct in_in_out_result
-    {
-        Input1 in1;
-        Input2 in2;
-        Output out;
-    };
-
-    template <class Input, class Output1, class Output2>
-    struct in_out_out_result
-    {
-        Input in;
-        Output1 out1;
-        Output2 out2;
-    };
-
     // Немодифицирующие операции
     struct find_if_fn
     {

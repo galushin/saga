@@ -35,6 +35,7 @@
 			<Add directory="../include" />
 		</Compiler>
 		<Unit filename="../include/saga/algorithm.hpp" />
+		<Unit filename="../include/saga/algorithm/result_types.hpp" />
 		<Unit filename="../include/saga/any.hpp" />
 		<Unit filename="../include/saga/container/reserve_if_supported.hpp" />
 		<Unit filename="../include/saga/cpp17/launder.hpp" />

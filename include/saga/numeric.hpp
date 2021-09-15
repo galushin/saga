@@ -18,6 +18,7 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_NUMERIC_HPP_INCLUDED
 #define Z_SAGA_NUMERIC_HPP_INCLUDED
 
+#include <saga/algorithm/result_types.hpp>
 #include <saga/cursor/cursor_traits.hpp>
 #include <saga/functional.hpp>
 #include <saga/detail/static_empty_const.hpp>
@@ -58,19 +59,6 @@ namespace saga
         }
     };
 
-    struct reduce_fn
-    {
-    public:
-        template <class InputCursor
-                  , class Value = cursor_value_t<InputCursor>
-                  , class BinaryOperation = std::plus<>>
-        Value
-        operator()(InputCursor cur, Value init_value = {}, BinaryOperation bin_op = {}) const
-        {
-            return accumulate_fn{}(std::move(cur), std::move(init_value), std::move(bin_op));
-        }
-    };
-
     class inner_product_fn
     {
     public:
@@ -88,12 +76,52 @@ namespace saga
         }
     };
 
+    struct partial_sum_fn
+    {
+        template <class InputCursor, class OutputCursor, class BinaryOperation = std::plus<>>
+        in_out_result<InputCursor, OutputCursor>
+        operator()(InputCursor in, OutputCursor out, BinaryOperation op = {}) const
+        {
+            if(!in || !out)
+            {
+                return {std::move(in), std::move(out)};
+            }
+
+            cursor_value_t<InputCursor> total = *in;
+            ++ in;
+
+            out << total;
+
+            for(; !!in && !!out; (void)++in, ++out)
+            {
+                total = saga::invoke(op, std::move(total), *in);
+                *out = total;
+            }
+
+            return {std::move(in), std::move(out)};
+        }
+    };
+
+    struct reduce_fn
+    {
+    public:
+        template <class InputCursor
+                  , class Value = cursor_value_t<InputCursor>
+                  , class BinaryOperation = std::plus<>>
+        Value
+        operator()(InputCursor cur, Value init_value = {}, BinaryOperation bin_op = {}) const
+        {
+            return accumulate_fn{}(std::move(cur), std::move(init_value), std::move(bin_op));
+        }
+    };
+
 namespace
 {
     constexpr auto const & iota          = detail::static_empty_const<iota_fn>::value;
     constexpr auto const & accumulate    = detail::static_empty_const<accumulate_fn>::value;
-    constexpr auto const & reduce        = detail::static_empty_const<reduce_fn>::value;
     constexpr auto const & inner_product = detail::static_empty_const<inner_product_fn>::value;
+    constexpr auto const & partial_sum   = detail::static_empty_const<partial_sum_fn>::value;
+    constexpr auto const & reduce        = detail::static_empty_const<reduce_fn>::value;
 }
 
 }
