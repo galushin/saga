@@ -76,6 +76,33 @@ namespace saga
         }
     };
 
+    struct adjacent_difference_fn
+    {
+        template <class InputCursor, class OutputCursor, class BinaryOperation = std::minus<>>
+        in_out_result<InputCursor, OutputCursor>
+        operator()(InputCursor in, OutputCursor out, BinaryOperation op = {}) const
+        {
+            if(!in || !out)
+            {
+                return {std::move(in), std::move(out)};
+            }
+
+            saga::cursor_value_t<InputCursor> prev_value = *in;
+            ++ in;
+
+            out << prev_value;
+
+            for(; !!in && !!out; (void)++in, ++out)
+            {
+                auto cur_value = *in;
+                *out = saga::invoke(op, cur_value, std::move(prev_value)) ;
+                prev_value = std::move(cur_value);
+            }
+
+            return {std::move(in), std::move(out)};
+        }
+    };
+
     struct partial_sum_fn
     {
         template <class InputCursor, class OutputCursor, class BinaryOperation = std::plus<>>
@@ -120,6 +147,8 @@ namespace
     constexpr auto const & iota          = detail::static_empty_const<iota_fn>::value;
     constexpr auto const & accumulate    = detail::static_empty_const<accumulate_fn>::value;
     constexpr auto const & inner_product = detail::static_empty_const<inner_product_fn>::value;
+    constexpr auto const & adjacent_difference
+        = detail::static_empty_const<adjacent_difference_fn>::value;
     constexpr auto const & partial_sum   = detail::static_empty_const<partial_sum_fn>::value;
     constexpr auto const & reduce        = detail::static_empty_const<reduce_fn>::value;
 }

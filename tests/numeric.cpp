@@ -137,6 +137,115 @@ TEST_CASE("accumulate - move only init value")
     };
 }
 
+// adjacent_difference
+TEST_CASE("adjacent_difference - minimalistic, default operation")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        // saga
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest_saga;
+        saga::adjacent_difference(saga::make_istream_cursor<Value>(src_in)
+                                  , saga::back_inserter(dest_saga));
+
+        // std
+        std::vector<Value> dest_std;
+        std::adjacent_difference(src.begin(), src.end(), std::back_inserter(dest_std));
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_std);
+    };
+}
+
+TEST_CASE("adjacent_difference - subcursor, default operation")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_saga = dest_old;
+
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const result_saga = saga::adjacent_difference(input, out_saga);
+
+        // std
+        auto dest_std = dest_old;
+
+        auto const result_std
+            = std::adjacent_difference(input.begin(), result_saga.in.begin()
+                                       , dest_std.begin() + (out_saga.begin() - dest_saga.begin()));
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_std);
+        REQUIRE((result_saga.out.begin() - dest_saga.begin()) == (result_std - dest_std.begin()));
+        REQUIRE(result_saga.out.end() == out_saga.end());
+    };
+}
+
+TEST_CASE("adjacent_difference - minimalistic, custom operation")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const op = std::plus<>{};
+
+        // std
+        std::vector<Value> dest_std;
+        std::adjacent_difference(src.begin(), src.end(), std::back_inserter(dest_std), op);
+
+        // saga
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest_saga;
+        saga::adjacent_difference(saga::make_istream_cursor<Value>(src_in)
+                                  , saga::back_inserter(dest_saga), op);
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_std);
+    };
+}
+
+TEST_CASE("adjacent_difference - subcursor, custom operation")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
+    {
+        auto const op = std::plus<>{};
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_saga = dest_old;
+
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const result_saga = saga::adjacent_difference(input, out_saga, op);
+
+        // std
+        auto dest_std = dest_old;
+
+        auto const result_std
+            = std::adjacent_difference(input.begin(), result_saga.in.begin()
+                                       , dest_std.begin() + (out_saga.begin() - dest_saga.begin()), op);
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_std);
+        REQUIRE((result_saga.out.begin() - dest_saga.begin()) == (result_std - dest_std.begin()));
+        REQUIRE(result_saga.out.end() == out_saga.end());
+    };
+}
+
 // partial sum
 TEST_CASE("partial_sum - minimalistic, default operation")
 {
