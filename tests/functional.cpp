@@ -73,7 +73,7 @@ TEST_CASE("increment and decrement functional objects")
 
 #include <complex>
 
-TEST_CASE("invoke: variable member pointer")
+TEST_CASE("invoke: function member pointer")
 {
     using Scalar = double;
 
@@ -92,7 +92,7 @@ TEST_CASE("invoke: variable member pointer")
     };
 }
 
-TEST_CASE("invoke: function member pointer")
+TEST_CASE("invoke: variable member pointer")
 {
     using Pair = std::pair<long, std::string>;
 
