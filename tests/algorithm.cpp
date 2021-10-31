@@ -652,6 +652,83 @@ TEST_CASE("find_if_not - subcursor")
     };
 }
 
+TEST_CASE("adjacent_find - subcursor, default predicate")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & src)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const r_std = std::adjacent_find(input.begin(), input.end());
+        auto const r_saga = saga::adjacent_find(input);
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == input.end());
+
+        REQUIRE(r_saga.dropped_front().begin() == src.begin());
+        REQUIRE(r_saga.dropped_front().end() == r_saga.begin());
+    };
+}
+
+TEST_CASE("adjacent_find - guaranty, default predicate")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::forward_list<Value> src, Value const & value)
+    {
+        src.push_front(value);
+        src.push_front(value);
+
+        auto const r_saga = saga::adjacent_find(saga::cursor::all(src));
+
+        REQUIRE(r_saga.begin() == src.begin());
+        REQUIRE(r_saga.end() == src.end());
+    };
+}
+
+TEST_CASE("adjacent_find - subcursor, custom predicate")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & src)
+    {
+        auto const pred = std::greater<>{};
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const r_std = std::adjacent_find(input.begin(), input.end(), pred);
+        auto const r_saga = saga::adjacent_find(input, pred);
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == input.end());
+
+        REQUIRE(r_saga.dropped_front().begin() == src.begin());
+        REQUIRE(r_saga.dropped_front().end() == r_saga.begin());
+    };
+}
+
+TEST_CASE("adjacent_find - guaranty, custom predicate")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::forward_list<Value> src, Value const & value)
+    {
+        src.push_front(value);
+        src.push_front(value);
+        src.sort();
+
+        auto const pred = std::less_equal<>{};
+
+        CAPTURE(src);
+
+        auto const r_saga = saga::adjacent_find(saga::cursor::all(src), pred);
+
+        REQUIRE(r_saga.begin() == src.begin());
+        REQUIRE(r_saga.end() == src.end());
+    };
+}
+
 TEST_CASE("copy")
 {
     using Value = int;

@@ -170,6 +170,31 @@ namespace saga
         }
     };
 
+    struct adjacent_find_fn
+    {
+        template <class InputCursor, class BinaryPredicate = std::equal_to<>>
+        InputCursor operator()(InputCursor cur, BinaryPredicate bin_pred = {}) const
+        {
+            if(!cur)
+            {
+                return cur;
+            }
+
+            auto next = cur;
+            ++ next;
+
+            for(; !!next; ++ next, void(++cur))
+            {
+                if(saga::invoke(bin_pred, *cur, *next))
+                {
+                    return cur;
+                }
+            }
+
+            return next;
+        }
+    };
+
     // Модифицирующие операции
     struct copy_fn
     {
@@ -819,6 +844,8 @@ namespace saga
         constexpr auto const & find = detail::static_empty_const<find_fn>::value;
         constexpr auto const & find_if = detail::static_empty_const<find_if_fn>::value;
         constexpr auto const & find_if_not = detail::static_empty_const<find_if_not_fn>::value;
+
+        constexpr auto const & adjacent_find = detail::static_empty_const<adjacent_find_fn>::value;
 
         constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;
         constexpr auto const & copy_if = detail::static_empty_const<copy_if_fn>::value;
