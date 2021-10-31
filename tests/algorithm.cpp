@@ -1775,6 +1775,118 @@ TEST_CASE("partition_copy: subcursor")
     };
 }
 
+TEST_CASE("is_sorted: default compare")
+{
+    using Value = int;
+    using Container = std::forward_list<Value>;
+
+    saga_test::property_checker << [](Container const & src)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_std = std::is_sorted(input.begin(), input.end());
+        auto const result_saga = saga::is_sorted(input);
+
+        REQUIRE(result_saga == result_std);
+    };
+}
+
+TEST_CASE("is_sorted: default compare, sorted")
+{
+    using Value = int;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](Container src)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        std::sort(input.begin(), input.end());
+
+        REQUIRE(saga::is_sorted(input));
+    };
+}
+
+TEST_CASE("is_sorted: custom compare")
+{
+    using Value = int;
+    using Container = std::forward_list<Value>;
+
+    saga_test::property_checker << [](Container const & src)
+    {
+        auto const cmp = std::greater<>{};
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_std = std::is_sorted(input.begin(), input.end(), cmp);
+        auto const result_saga = saga::is_sorted(input, cmp);
+
+        REQUIRE(result_std == result_saga);
+    };
+}
+
+TEST_CASE("is_sorted: custom compare, sorted")
+{
+    using Value = int;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](Container src)
+    {
+        auto const cmp = std::greater<>{};
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        std::sort(input.begin(), input.end(), cmp);
+
+        REQUIRE(saga::is_sorted(input, cmp));
+    };
+}
+
+TEST_CASE("is_sorted_until: default compare")
+{
+    using Value = int;
+    using Container = std::forward_list<Value>;
+
+    saga_test::property_checker << [](Container const & src)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_std = std::is_sorted_until(input.begin(), input.end());
+        auto const result_saga = saga::is_sorted_until(input);
+
+        CAPTURE(src);
+
+        REQUIRE(result_saga.begin() == result_std);
+        REQUIRE(result_saga.end() == input.end());
+
+        REQUIRE(result_saga.dropped_front().begin() == src.begin());
+        REQUIRE(result_saga.dropped_front().end() == result_std);
+    };
+}
+
+TEST_CASE("is_sorted_until: custom compare")
+{
+    using Value = int;
+    using Container = std::forward_list<Value>;
+
+    saga_test::property_checker << [](Container const & src)
+    {
+        auto const cmp = std::greater<>{};
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_std = std::is_sorted_until(input.begin(), input.end(), cmp);
+        auto const result_saga = saga::is_sorted_until(input, cmp);
+
+        CAPTURE(src);
+
+        REQUIRE(result_saga.begin() == result_std);
+        REQUIRE(result_saga.end() == input.end());
+
+        REQUIRE(result_saga.dropped_front().begin() == src.begin());
+        REQUIRE(result_saga.dropped_front().end() == result_std);
+    };
+}
+
 TEST_CASE("merge : minimal, default compare")
 {
     using Value = int;

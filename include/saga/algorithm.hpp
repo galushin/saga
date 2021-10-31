@@ -172,8 +172,8 @@ namespace saga
 
     struct adjacent_find_fn
     {
-        template <class InputCursor, class BinaryPredicate = std::equal_to<>>
-        InputCursor operator()(InputCursor cur, BinaryPredicate bin_pred = {}) const
+        template <class ForwardCursor, class BinaryPredicate = std::equal_to<>>
+        ForwardCursor operator()(ForwardCursor cur, BinaryPredicate bin_pred = {}) const
         {
             if(!cur)
             {
@@ -483,6 +483,36 @@ namespace saga
             }
 
             return {std::move(in), std::move(out_true), std::move(out_false)};
+        }
+    };
+
+    struct is_sorted_until_fn
+    {
+        template <class ForwardCursor, class Compare = std::less<>>
+        ForwardCursor operator()(ForwardCursor cur, Compare cmp = {}) const
+        {
+            auto pred = [cmp = std::move(cmp)](auto && lhs, auto && rhs)
+            {
+                return cmp(rhs, lhs);
+            };
+
+            auto result = saga::adjacent_find_fn{}(std::move(cur), std::move(pred));
+
+            if(!!result)
+            {
+                ++ result;
+            }
+
+            return result;
+        }
+    };
+
+    struct is_sorted_fn
+    {
+        template <class ForwardCursor, class Compare = std::less<>>
+        bool operator()(ForwardCursor cur, Compare cmp = {}) const
+        {
+            return !saga::is_sorted_until_fn{}(std::move(cur), std::move(cmp));
         }
     };
 
@@ -854,18 +884,26 @@ namespace saga
         constexpr auto const & transform = detail::static_empty_const<transform_fn>::value;
         constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
         constexpr auto const & remove_copy = detail::static_empty_const<remove_copy_fn>::value;
-        constexpr auto const & remove_copy_if = detail::static_empty_const<remove_copy_if_fn>::value;
+        constexpr auto const & remove_copy_if
+            = detail::static_empty_const<remove_copy_if_fn>::value;
         constexpr auto const & replace = detail::static_empty_const<replace_fn>::value;
         constexpr auto const & replace_if = detail::static_empty_const<replace_if_fn>::value;
         constexpr auto const & replace_copy = detail::static_empty_const<replace_copy_fn>::value;
-        constexpr auto const & replace_copy_if = detail::static_empty_const<replace_copy_if_fn>::value;
+        constexpr auto const & replace_copy_if
+            = detail::static_empty_const<replace_copy_if_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
         constexpr auto const & rotate_copy = detail::static_empty_const<rotate_copy_fn>::value;
         constexpr auto const & unique_copy = detail::static_empty_const<unique_copy_fn>::value;
 
-        constexpr auto const & is_partitioned = detail::static_empty_const<is_partitioned_fn>::value;
-        constexpr auto const & partition_copy = detail::static_empty_const<partition_copy_fn>::value;
+        constexpr auto const & is_partitioned
+            = detail::static_empty_const<is_partitioned_fn>::value;
+        constexpr auto const & partition_copy
+            = detail::static_empty_const<partition_copy_fn>::value;
+
+        constexpr auto const & is_sorted = detail::static_empty_const<is_sorted_fn>::value;
+        constexpr auto const & is_sorted_until
+            = detail::static_empty_const<is_sorted_until_fn>::value;
 
         constexpr auto const & merge = detail::static_empty_const<merge_fn>::value;
 
