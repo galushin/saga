@@ -121,17 +121,24 @@ namespace saga
 
         void drop_front(difference_type num)
         {
-            assert(num <= this->size());
+            assert(0 <= num && num <= this->size());
 
             this->cur_ += num;
         }
 
         void drop_back(difference_type num)
         {
-            assert(num <= this->size());
+            assert(0 <= num && num <= this->size());
 
             this->last_ -= num;
             this->back_ -= num;
+        }
+
+        reference operator[](difference_type index) const
+        {
+            assert(0 <= index && index < this->size());
+
+            return this->cur_[index];
         }
 
     private:

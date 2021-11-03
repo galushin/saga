@@ -2482,6 +2482,158 @@ TEST_CASE("set_union - subcursor, custom compare")
     };
 }
 
+TEST_CASE("is_heap_until - default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_std = std::is_heap_until(input.begin(), input.end());
+        auto const result_saga = saga::is_heap_until(input);
+
+        REQUIRE(result_saga.begin() == result_std);
+        REQUIRE(result_saga.end() == input.end());
+
+        REQUIRE(result_saga.dropped_front().begin() == src.begin());
+        REQUIRE(result_saga.dropped_front().end() == result_saga.begin());
+    };
+}
+
+TEST_CASE("is_heap_until - custom compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const cmp = std::greater<>{};
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_std = std::is_heap_until(input.begin(), input.end(), cmp);
+        auto const result_saga = saga::is_heap_until(input, cmp);
+
+        REQUIRE(result_saga.begin() == result_std);
+        REQUIRE(result_saga.end() == input.end());
+
+        REQUIRE(result_saga.dropped_front().begin() == src.begin());
+        REQUIRE(result_saga.dropped_front().end() == result_saga.begin());
+    };
+}
+
+TEST_CASE("is_heap_until - default compare, guaranty")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> src)
+    {
+        std::make_heap(src.begin(), src.end());
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_std = std::is_heap_until(input.begin(), input.end());
+        auto const result_saga = saga::is_heap_until(input);
+
+        REQUIRE(result_saga.begin() == result_std);
+        REQUIRE(result_saga.end() == input.end());
+
+        REQUIRE(result_saga.dropped_front().begin() == src.begin());
+        REQUIRE(result_saga.dropped_front().end() == result_saga.begin());
+    };
+}
+
+TEST_CASE("is_heap_until - custom compare, guaranty")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> src)
+    {
+        auto const cmp = std::greater<>{};
+
+        std::make_heap(src.begin(), src.end(), cmp);
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_std = std::is_heap_until(input.begin(), input.end(), cmp);
+        auto const result_saga = saga::is_heap_until(input, cmp);
+
+        REQUIRE(result_saga.begin() == result_std);
+        REQUIRE(result_saga.end() == input.end());
+
+        REQUIRE(result_saga.dropped_front().begin() == src.begin());
+        REQUIRE(result_saga.dropped_front().end() == result_saga.begin());
+    };
+}
+
+TEST_CASE("is_heap - default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_std = std::is_heap(input.begin(), input.end());
+        auto const result_saga = saga::is_heap(input);
+
+        REQUIRE(result_saga == result_std);
+    };
+}
+
+TEST_CASE("is_heap - custom compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const cmp = std::greater<>{};
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_std = std::is_heap(input.begin(), input.end(), cmp);
+        auto const result_saga = saga::is_heap(input, cmp);
+
+        REQUIRE(result_saga == result_std);
+    };
+}
+
+TEST_CASE("is_heap - default compare, guaranty")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> src)
+    {
+        std::make_heap(src.begin(), src.end());
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_std = std::is_heap(input.begin(), input.end());
+        auto const result_saga = saga::is_heap(input);
+
+        REQUIRE(result_saga == result_std);
+    };
+}
+
+TEST_CASE("is_heap - custom compare, guaranty")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> src)
+    {
+        auto const cmp = std::greater<>{};
+
+        std::make_heap(src.begin(), src.end(), cmp);
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_std = std::is_heap(input.begin(), input.end(), cmp);
+        auto const result_saga = saga::is_heap(input, cmp);
+
+        REQUIRE(result_saga == result_std);
+    };
+}
+
 TEST_CASE("lexicographical_compare - minimal, default compare")
 {
     using Value1 = int;
