@@ -715,6 +715,45 @@ namespace saga
         }
     };
 
+    struct is_heap_until_fn
+    {
+        template <class RandomAccessCursor, class Compare = std::less<>>
+        RandomAccessCursor
+        operator()(RandomAccessCursor cur, Compare cmp = {}) const
+        {
+            if(!cur)
+            {
+                return cur;
+            }
+
+            auto const num = cur.size();
+            auto index = 1 + 0*num;
+
+            for(; index < num; ++index)
+            {
+                auto const parent = (index - 1) / 2;
+
+                if(saga::invoke(cmp, cur[parent], cur[index]))
+                {
+                    break;
+                }
+            }
+
+            cur.drop_front(index);
+
+            return cur;
+        }
+    };
+
+    struct is_heap_fn
+    {
+        template <class RandomAccessCursor, class Compare = std::less<>>
+        bool operator()(RandomAccessCursor cur, Compare cmp = {}) const
+        {
+            return !saga::is_heap_until_fn{}(std::move(cur), std::move(cmp));
+        }
+    };
+
     struct equal_fn
     {
     private:
@@ -915,6 +954,9 @@ namespace saga
         constexpr auto const & set_symmetric_difference
             = detail::static_empty_const<set_symmetric_difference_fn>::value;
         constexpr auto const & set_union = detail::static_empty_const<set_union_fn>::value;
+
+        constexpr auto const & is_heap = detail::static_empty_const<is_heap_fn>::value;
+        constexpr auto const & is_heap_until = detail::static_empty_const<is_heap_until_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
         constexpr auto const & lexicographical_compare
