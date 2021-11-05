@@ -26,6 +26,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/subrange.hpp>
 #include <saga/cursor/istream_cursor.hpp>
 #include <saga/iterator/reverse.hpp>
+#include <saga/view/indices.hpp>
 
 #include <forward_list>
 #include <list>
@@ -869,6 +870,102 @@ TEST_CASE("copy_if: subcursor")
 
         REQUIRE(std::equal(dest_saga.end() - n_back, dest_saga.end(),
                            dest_old.end() - n_back, dest_old.end()));
+    };
+}
+
+TEST_CASE("move: minimal with not moveable input")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest;
+
+        saga::move(saga::make_istream_cursor<Value>(src_in), saga::back_inserter(dest));
+
+        REQUIRE(dest == src);
+    };
+}
+
+TEST_CASE("move - subcursors")
+{
+    using Value = std::vector<int>;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](Container const & src, Container const & dest)
+    {
+        // saga
+        auto src_saga = src;
+        auto dest_saga = dest;
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
+        auto const output = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        std::size_t const src_prefix_size = input.dropped_front().size();
+        std::size_t const dest_prefix_size = output.dropped_front().size();
+        auto const n_common = std::min(saga::cursor::size(input), saga::cursor::size(output));
+
+        std::vector<Value::const_pointer> addresses;
+
+        for(auto index : saga::view::indices(dest_prefix_size))
+        {
+            addresses.push_back(dest_saga[index].data());
+        }
+
+        for(auto index : saga::view::indices(n_common))
+        {
+            addresses.push_back(src_saga.at(src_prefix_size + index).data());
+        }
+
+        for(auto index : saga::view::indices(dest_prefix_size + n_common, dest.size()))
+        {
+            addresses.push_back(dest_saga[index].data());
+        }
+
+        REQUIRE(addresses.size() == dest.size());
+
+        auto const result_saga = saga::move(input, output);
+
+        // std
+        auto src_std = src;
+
+        auto const first_std = src_std.begin() + input.dropped_front().size();
+        auto const last_std = first_std + n_common;
+
+        std::vector<Value> dest_std;
+        std::move(first_std, last_std, std::back_inserter(dest_std));
+
+        // Проверить возвращаемое значение
+        REQUIRE(result_saga.in.begin() == input.begin() + n_common);
+        REQUIRE(result_saga.in.end() == input.end());
+        REQUIRE(result_saga.out.begin() == output.begin() + n_common);
+        REQUIRE(result_saga.out.end() == output.end());
+
+        // Проверить значения
+        REQUIRE(src_saga == src_std);
+
+        for(auto index : saga::view::indices(dest_prefix_size))
+        {
+            REQUIRE(dest_saga[index] == dest[index]);
+        }
+
+        for(auto index : saga::view::indices(n_common))
+        {
+            REQUIRE(dest_saga[dest_prefix_size + index] == src[src_prefix_size + index]);
+        }
+
+        for(auto index : saga::view::indices(dest_prefix_size + n_common, dest.size()))
+        {
+            REQUIRE(dest_saga[index] == dest[index]);
+        }
+
+        // Проверить адреса
+        for(auto index : saga::view::indices_of(dest))
+        {
+            REQUIRE(dest_saga[index].data() == addresses[index]);
+        }
     };
 }
 

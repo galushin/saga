@@ -232,6 +232,24 @@ namespace saga
         }
     };
 
+    template <class InputCursor, class OutputCursor>
+    using move_result = in_out_result<InputCursor, OutputCursor>;
+
+    struct move_fn
+    {
+        template <class InputCursor, class OutputCursor>
+        move_result<InputCursor, OutputCursor>
+        operator()(InputCursor cur, OutputCursor out) const
+        {
+            for(; !!cur && !!out; ++cur)
+            {
+                out << std::move(*cur);
+            }
+
+            return {std::move(cur), std::move(out)};
+        }
+    };
+
     struct fill_fn
     {
         template <class OutputCursor, class T>
@@ -918,6 +936,7 @@ namespace saga
 
         constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;
         constexpr auto const & copy_if = detail::static_empty_const<copy_if_fn>::value;
+        constexpr auto const & move = detail::static_empty_const<move_fn>::value;
 
         constexpr auto const & fill = detail::static_empty_const<fill_fn>::value;
         constexpr auto const & transform = detail::static_empty_const<transform_fn>::value;
