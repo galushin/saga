@@ -733,6 +733,15 @@ namespace saga
         }
     };
 
+    namespace detail
+    {
+        template <class IntType>
+        IntType heap_parent(IntType index)
+        {
+            return (index - 1)/2;
+        }
+    }
+
     struct is_heap_until_fn
     {
         template <class RandomAccessCursor, class Compare = std::less<>>
@@ -749,7 +758,7 @@ namespace saga
 
             for(; index < num; ++index)
             {
-                auto const parent = (index - 1) / 2;
+                auto const parent = detail::heap_parent(index);
 
                 if(saga::invoke(cmp, cur[parent], cur[index]))
                 {
@@ -769,6 +778,31 @@ namespace saga
         bool operator()(RandomAccessCursor cur, Compare cmp = {}) const
         {
             return !saga::is_heap_until_fn{}(std::move(cur), std::move(cmp));
+        }
+    };
+
+    struct push_heap_fn
+    {
+        template <class RandomAccessCursor, class Compare = std::less<>>
+        void operator()(RandomAccessCursor input, Compare cmp = {}) const
+        {
+            auto const num = input.size();
+
+            assert(num > 0);
+
+            auto value = std::move(input[num-1]);
+            auto hole = num - 1;
+
+            auto parent = detail::heap_parent(hole);
+
+            for(; hole > 0 && saga::invoke(cmp, input[parent], value);)
+            {
+                input[hole] = std::move(input[parent]);
+                hole = parent;
+                parent = detail::heap_parent(hole);
+            }
+
+            input[hole] = std::move(value);
         }
     };
 
@@ -976,6 +1010,7 @@ namespace saga
 
         constexpr auto const & is_heap = detail::static_empty_const<is_heap_fn>::value;
         constexpr auto const & is_heap_until = detail::static_empty_const<is_heap_until_fn>::value;
+        constexpr auto const & push_heap = detail::static_empty_const<push_heap_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
         constexpr auto const & lexicographical_compare

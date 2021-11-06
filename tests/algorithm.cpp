@@ -2731,6 +2731,62 @@ TEST_CASE("is_heap - custom compare, guaranty")
     };
 }
 
+TEST_CASE("push_heap - default compare, subcursor")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> src, Value const & value)
+    {
+        src.push_back(value);
+
+        auto const src_old = src;
+
+        auto const input = saga::cursor::all(src);
+
+        for(auto cur = saga::cursor::all(input); !!cur;)
+        {
+            REQUIRE(saga::is_heap(cur.dropped_front()));
+
+            ++ cur;
+
+            saga::push_heap(cur.dropped_front());
+
+            REQUIRE(saga::is_heap(cur.dropped_front()));
+            REQUIRE(std::is_permutation(input.begin(), cur.begin(),
+                                        src_old.begin() + (input.begin() - src.begin())));
+        }
+    };
+}
+
+TEST_CASE("push_heap - custom compare, subcursor")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> src, Value const & value)
+    {
+        src.push_back(value);
+
+        auto const cmp = std::greater<>{};
+
+        auto const src_old = src;
+
+        auto const input = saga::cursor::all(src);
+
+        for(auto cur = saga::cursor::all(input); !!cur;)
+        {
+            REQUIRE(saga::is_heap(cur.dropped_front(), cmp));
+
+            ++ cur;
+
+            saga::push_heap(cur.dropped_front(), cmp);
+
+            REQUIRE(saga::is_heap(cur.dropped_front(), cmp));
+            REQUIRE(std::is_permutation(input.begin(), cur.begin(),
+                                        src_old.begin() + (input.begin() - src.begin())));
+        }
+    };
+}
+
 TEST_CASE("lexicographical_compare - minimal, default compare")
 {
     using Value1 = int;
