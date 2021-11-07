@@ -2739,17 +2739,21 @@ TEST_CASE("push_heap - default compare, subcursor")
     {
         src.push_back(value);
 
-        auto const src_old = src;
-
         auto const input = saga::cursor::all(src);
 
         for(auto cur = saga::cursor::all(input); !!cur;)
         {
+            auto const src_old = src;
+
             REQUIRE(saga::is_heap(cur.dropped_front()));
 
             ++ cur;
 
             saga::push_heap(cur.dropped_front());
+
+            REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
+            REQUIRE(std::equal(cur.begin(), src.end(),
+                               src_old.begin() + (cur.begin() - src.begin())));
 
             REQUIRE(saga::is_heap(cur.dropped_front()));
             REQUIRE(std::is_permutation(input.begin(), cur.begin(),
@@ -2768,17 +2772,21 @@ TEST_CASE("push_heap - custom compare, subcursor")
 
         auto const cmp = std::greater<>{};
 
-        auto const src_old = src;
-
         auto const input = saga::cursor::all(src);
 
         for(auto cur = saga::cursor::all(input); !!cur;)
         {
+            auto const src_old = src;
+
             REQUIRE(saga::is_heap(cur.dropped_front(), cmp));
 
             ++ cur;
 
             saga::push_heap(cur.dropped_front(), cmp);
+
+            REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
+            REQUIRE(std::equal(cur.begin(), src.end(),
+                               src_old.begin() + (cur.begin() - src.begin())));
 
             REQUIRE(saga::is_heap(cur.dropped_front(), cmp));
             REQUIRE(std::is_permutation(input.begin(), cur.begin(),
@@ -2799,6 +2807,10 @@ TEST_CASE("make_heap - default compare")
         saga::make_heap(input);
 
         CAPTURE(src_old, src);
+
+        REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
+        REQUIRE(std::equal(input.end(), src.end(),
+                           src_old.begin() + (input.end() - src.begin())));
 
         REQUIRE(saga::is_heap(input));
         REQUIRE(std::is_permutation(input.begin(), input.end()
@@ -2821,11 +2833,53 @@ TEST_CASE("make_heap - custom compare")
 
         CAPTURE(src_old, src);
 
+        REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
+        REQUIRE(std::equal(input.end(), src.end(),
+                           src_old.begin() + (input.end() - src.begin())));
+
         REQUIRE(saga::is_heap(input, cmp));
         REQUIRE(std::is_permutation(input.begin(), input.end()
                                     , src_old.begin() + input.dropped_front().size()));
     };
 }
+
+TEST_CASE("pop_heap - default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> src, Value value)
+    {
+        src.push_back(std::move(value));
+
+        auto input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        saga::make_heap(input);
+        REQUIRE(saga::is_heap(input));
+
+        for(;!!input;)
+        {
+            auto const src_old = src;
+
+            saga::pop_heap(input);
+
+            CAPTURE(src_old, src);
+
+            REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
+            REQUIRE(std::equal(input.end(), src.end(),
+                               src_old.begin() + (input.end() - src.begin())));
+
+            REQUIRE(std::is_permutation(input.begin(), input.end(),
+                                        src_old.begin() + (input.begin() - src.begin())));
+            REQUIRE(input.back() == src_old[input.begin() - src.begin()]);
+
+            input.drop_back();
+
+            REQUIRE(saga::is_heap(input));
+        }
+    };
+}
+
+// @todo pop_heap - custom compare
 
 TEST_CASE("lexicographical_compare - minimal, default compare")
 {

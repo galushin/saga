@@ -833,19 +833,6 @@ namespace saga
         }
     };
 
-    struct push_heap_fn
-    {
-        template <class RandomAccessCursor, class Compare = std::less<>>
-        void operator()(RandomAccessCursor input, Compare cmp = {}) const
-        {
-            auto const num = input.size();
-
-            assert(num > 0);
-
-            detail::push_heap(std::move(input), num - 1, num*0, std::move(input[num-1]), cmp);
-        }
-    };
-
     struct make_heap_fn
     {
         template <class RandomAccessCursor, class Compare = std::less<>>
@@ -868,6 +855,37 @@ namespace saga
                 {
                     return;
                 }
+            }
+        }
+    };
+
+    struct push_heap_fn
+    {
+        template <class RandomAccessCursor, class Compare = std::less<>>
+        void operator()(RandomAccessCursor input, Compare cmp = {}) const
+        {
+            auto const num = input.size();
+
+            assert(num > 0);
+
+            detail::push_heap(std::move(input), num - 1, num*0, std::move(input[num-1]), cmp);
+        }
+    };
+
+    struct pop_heap_fn
+    {
+        template <class RandomAccessCursor, class Compare = std::less<>>
+        void operator()(RandomAccessCursor input, Compare cmp = {}) const
+        {
+            auto num = input.size();
+            assert(num > 0);
+
+            if(num > 1)
+            {
+                auto value = std::move(input.back());
+                input.back() = std::move(input.front());
+
+                saga::detail::adjust_heap(input, 0*num, num-1, std::move(value), cmp);
             }
         }
     };
@@ -1078,6 +1096,7 @@ namespace saga
         constexpr auto const & is_heap_until = detail::static_empty_const<is_heap_until_fn>::value;
         constexpr auto const & make_heap = detail::static_empty_const<make_heap_fn>::value;
         constexpr auto const & push_heap = detail::static_empty_const<push_heap_fn>::value;
+        constexpr auto const & pop_heap = detail::static_empty_const<pop_heap_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
         constexpr auto const & lexicographical_compare
