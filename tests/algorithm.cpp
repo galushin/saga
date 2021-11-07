@@ -2787,6 +2787,46 @@ TEST_CASE("push_heap - custom compare, subcursor")
     };
 }
 
+TEST_CASE("make_heap - default compare")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & src_old)
+    {
+        auto src = src_old;
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        saga::make_heap(input);
+
+        CAPTURE(src_old, src);
+
+        REQUIRE(saga::is_heap(input));
+        REQUIRE(std::is_permutation(input.begin(), input.end()
+                                    , src_old.begin() + input.dropped_front().size()));
+    };
+}
+
+TEST_CASE("make_heap - custom compare")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & src_old)
+    {
+        auto const cmp = std::greater<>{};
+
+        auto src = src_old;
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        saga::make_heap(input, cmp);
+
+        CAPTURE(src_old, src);
+
+        REQUIRE(saga::is_heap(input, cmp));
+        REQUIRE(std::is_permutation(input.begin(), input.end()
+                                    , src_old.begin() + input.dropped_front().size()));
+    };
+}
+
 TEST_CASE("lexicographical_compare - minimal, default compare")
 {
     using Value1 = int;

@@ -740,6 +740,58 @@ namespace saga
         {
             return (index - 1)/2;
         }
+
+        template <class IntType>
+        IntType heap_second_child(IntType index)
+        {
+            return 2*(index + 1);
+        }
+
+        template <class RandomAccessCursor, class Distance, class T, class Compare>
+        void push_heap(RandomAccessCursor input, Distance hole, Distance top_index
+                       , T value, Compare & cmp)
+        {
+            auto parent = detail::heap_parent(hole);
+
+            for(; hole > top_index && saga::invoke(cmp, input[parent], value);)
+            {
+                input[hole] = std::move(input[parent]);
+                hole = parent;
+                parent = detail::heap_parent(hole);
+            }
+
+            input[hole] = std::move(value);
+        }
+
+        template <class RandomAccessCursor, class Distance, class T, class Compare>
+        void
+        adjust_heap(RandomAccessCursor cur, Distance hole, Distance length, T value, Compare & cmp)
+        {
+            auto const top_index = hole;
+            auto second_child = hole;
+
+            while(second_child < (length - 1)/2)
+            {
+                second_child = saga::detail::heap_second_child(second_child);
+
+                if(saga::invoke(cmp, cur[second_child], cur[second_child - 1]))
+                {
+                    -- second_child;
+                }
+
+                cur[hole] = std::move(cur[second_child]);
+                hole = second_child;
+            }
+
+            if(length % 2 == 0 && second_child == (length - 2)/2)
+            {
+                second_child = saga::detail::heap_second_child(second_child);
+                cur[hole] = std::move(cur[second_child - 1]);
+                hole = second_child - 1;
+            }
+
+            saga::detail::push_heap(std::move(cur), hole, top_index, std::move(value), cmp);
+        }
     }
 
     struct is_heap_until_fn
@@ -790,19 +842,33 @@ namespace saga
 
             assert(num > 0);
 
-            auto value = std::move(input[num-1]);
-            auto hole = num - 1;
+            detail::push_heap(std::move(input), num - 1, num*0, std::move(input[num-1]), cmp);
+        }
+    };
 
-            auto parent = detail::heap_parent(hole);
+    struct make_heap_fn
+    {
+        template <class RandomAccessCursor, class Compare = std::less<>>
+        void operator()(RandomAccessCursor input, Compare cmp = {}) const
+        {
+            auto const len = input.size();
 
-            for(; hole > 0 && saga::invoke(cmp, input[parent], value);)
+            if(len < 2)
             {
-                input[hole] = std::move(input[parent]);
-                hole = parent;
-                parent = detail::heap_parent(hole);
+                return;
             }
 
-            input[hole] = std::move(value);
+            auto parent = (len - 2)/2;
+
+            for(;; -- parent)
+            {
+                saga::detail::adjust_heap(input, parent, len, std::move(input[parent]), cmp);
+
+                if(parent == 0)
+                {
+                    return;
+                }
+            }
         }
     };
 
@@ -1010,6 +1076,7 @@ namespace saga
 
         constexpr auto const & is_heap = detail::static_empty_const<is_heap_fn>::value;
         constexpr auto const & is_heap_until = detail::static_empty_const<is_heap_until_fn>::value;
+        constexpr auto const & make_heap = detail::static_empty_const<make_heap_fn>::value;
         constexpr auto const & push_heap = detail::static_empty_const<push_heap_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
