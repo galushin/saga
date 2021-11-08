@@ -2917,6 +2917,60 @@ TEST_CASE("pop_heap - custom compare")
     };
 }
 
+TEST_CASE("sort_heap - default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src_old)
+    {
+        // Подготовка
+        auto src = src_old;
+        auto input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        saga::make_heap(input);
+
+        // Алгоритм
+        saga::sort_heap(input);
+
+        // Проверки
+        REQUIRE(saga::is_sorted(input));
+        REQUIRE(std::is_permutation(input.begin(), input.end(),
+                                    src_old.begin() + (input.begin() - src.begin())));
+
+        REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
+        REQUIRE(std::equal(input.end(), src.end(),
+                           src_old.begin() + (input.end() - src.begin())));
+    };
+}
+
+TEST_CASE("sort_heap - custom compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src_old)
+    {
+        auto const cmp = std::greater<>{};
+
+        // Подготовка
+        auto src = src_old;
+        auto input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        saga::make_heap(input, cmp);
+
+        // Алгоритм
+        saga::sort_heap(input, cmp);
+
+        // Проверки
+        REQUIRE(saga::is_sorted(input, cmp));
+        REQUIRE(std::is_permutation(input.begin(), input.end(),
+                                    src_old.begin() + (input.begin() - src.begin())));
+
+        REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
+        REQUIRE(std::equal(input.end(), src.end(),
+                           src_old.begin() + (input.end() - src.begin())));
+    };
+}
+
 TEST_CASE("lexicographical_compare - minimal, default compare")
 {
     using Value1 = int;

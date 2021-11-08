@@ -890,6 +890,18 @@ namespace saga
         }
     };
 
+    struct sort_heap_fn
+    {
+        template <class RandomAccessCursor, class Compare = std::less<>>
+        void operator()(RandomAccessCursor input, Compare cmp = {}) const
+        {
+            for(; !!input; input.drop_back())
+            {
+                saga::pop_heap_fn{}(input, cmp);
+            }
+        }
+    };
+
     struct equal_fn
     {
     private:
@@ -1097,6 +1109,7 @@ namespace saga
         constexpr auto const & make_heap = detail::static_empty_const<make_heap_fn>::value;
         constexpr auto const & push_heap = detail::static_empty_const<push_heap_fn>::value;
         constexpr auto const & pop_heap = detail::static_empty_const<pop_heap_fn>::value;
+        constexpr auto const & sort_heap = detail::static_empty_const<sort_heap_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
         constexpr auto const & lexicographical_compare
