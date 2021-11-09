@@ -27,6 +27,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/istream_cursor.hpp>
 
 #include <forward_list>
+#include <list>
 #include <sstream>
 
 // Тесты
@@ -52,5 +53,68 @@ TEST_CASE("equal: forward sequence")
     {
         REQUIRE(saga::equal(saga::cursor::all(xs), saga::cursor::all(xs)));
         REQUIRE(saga::equal(saga::cursor::all(xs), saga::cursor::all(ys)) == (xs == ys));
+    };
+}
+
+TEST_CASE("iterator rebase")
+{
+    using Container1 = std::list<int>;
+    using Container2 = std::forward_list<long>;
+
+    saga_test::property_checker
+    << [](Container1 const & src, Container2 dest)
+    {
+        for(auto const & item : src)
+        {
+            dest.push_front(item);
+        }
+
+        auto const pos = saga_test::random_iterator_of(src);
+
+        auto const result_const
+            = saga::rebase_iterator(pos, src, saga::as_const(dest), saga::unsafe_tag_t{});
+
+        auto const result_mutable
+            = saga::rebase_iterator(pos, src, dest, saga::unsafe_tag_t{});
+
+        static_assert(std::is_same<decltype(result_const), Container2::const_iterator const>{}, "");
+        static_assert(std::is_same<decltype(result_mutable), Container2::iterator const>{}, "");
+
+        REQUIRE(std::distance(dest.cbegin(), result_const) == std::distance(src.begin(), pos));
+        REQUIRE(std::distance(dest.begin(), result_mutable) == std::distance(src.begin(), pos));
+    };
+}
+
+TEST_CASE("subrange cursor rebase")
+{
+    saga_test::property_checker << [](std::list<int> const & src, std::vector<int> dest)
+    {
+        dest.insert(dest.end(), src.begin(), src.end());
+
+        auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_mutable = saga::rebase_cursor(cur, dest);
+        auto const result_const = saga::rebase_cursor(cur, saga::as_const(dest));
+
+        static_assert(std::is_same<decltype(result_mutable)
+                                  ,decltype(saga::cursor::all(dest)) const>{}, "");
+        static_assert(std::is_same<decltype(result_const)
+                                  ,decltype(saga::cursor::all(saga::as_const(dest))) const>{}, "");
+
+        REQUIRE(result_const.begin()
+                == saga::rebase_iterator(cur.begin(), src, dest, saga::unsafe_tag_t{}));
+        REQUIRE(result_const.end()
+                == saga::rebase_iterator(cur.end(), src, dest, saga::unsafe_tag_t{}));
+
+        REQUIRE(result_const.dropped_front().begin() == dest.begin());
+        REQUIRE(result_const.dropped_back().end() == dest.end());
+
+        REQUIRE(result_mutable.begin()
+                == saga::rebase_iterator(cur.begin(), src, dest, saga::unsafe_tag_t{}));
+        REQUIRE(result_mutable.end()
+                == saga::rebase_iterator(cur.end(), src, dest, saga::unsafe_tag_t{}));
+
+        REQUIRE(result_mutable.dropped_front().begin() == dest.begin());
+        REQUIRE(result_mutable.dropped_back().end() == dest.end());
     };
 }

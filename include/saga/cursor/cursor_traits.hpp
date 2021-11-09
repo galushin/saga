@@ -20,6 +20,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/detail/static_empty_const.hpp>
 
+#include <cassert>
 #include <iterator>
 
 namespace saga
@@ -97,6 +98,8 @@ namespace saga
                 template <class Cursor>
                 void operator()(Cursor & cur, cursor_difference_t<Cursor> num) const
                 {
+                    assert(num >= 0);
+
                     return (*this)(cur, num, cursor_category_t<Cursor>{});
                 }
             };
@@ -125,6 +128,8 @@ namespace saga
                 template <class Cursor>
                 void operator()(Cursor & cur, cursor_difference_t<Cursor> num) const
                 {
+                    assert(num >= 0);
+
                     return (*this)(cur, num, cursor_category_t<Cursor>{});
                 }
             };

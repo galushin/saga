@@ -49,8 +49,9 @@ namespace saga
         // Создание, копирование, уничтожение
         constexpr subrange_cursor(ForwardIterator first, Sentinel last, unsafe_tag_t)
          : cur_old_(std::move(first))
+         , last_old_(std::move(last))
          , cur_(this->cur_old_)
-         , last_(std::move(last))
+         , last_(this->last_old_)
          , back_(this->last_)
         {
             this->tweak_back(typename std::iterator_traits<Sentinel>::iterator_category{});
@@ -113,6 +114,11 @@ namespace saga
             return *this->back_;
         }
 
+        subrange_cursor dropped_back() const
+        {
+            return subrange_cursor(this->last_, this->last_old_, saga::unsafe_tag_t{});
+        }
+
         // Курсор произвольного доступа
         constexpr difference_type size() const
         {
@@ -155,6 +161,7 @@ namespace saga
 
     private:
         ForwardIterator cur_old_;
+        ForwardIterator last_old_;
         ForwardIterator cur_;
         Sentinel last_;
         Sentinel back_;
@@ -178,6 +185,40 @@ namespace saga
         }
     }
     // namespace cursor
+
+    /** @brief Перенос итератора с одного контейнера на другой
+    @pre pos - является итератором для контейнера src
+    @pre dest содержит не меньше элементов, чем std::distance(src.begin(), pos)
+    */
+    template <class Container1, class Container2>
+    auto rebase_iterator(typename Container1::const_iterator pos
+                        , Container1 const & src, Container2 && dest, unsafe_tag_t)
+    {
+        return std::next(dest.begin(), std::distance(src.begin(), pos));
+    }
+
+    /** @brief Перенос курсора на другой контейнер
+    @pre dest содержит не меньше элементов, чем cur и cur.dropped_front()
+    */
+    template <class Cursor, class Container>
+    auto rebase_cursor(Cursor cur, Container && dest)
+    {
+        auto result = saga::cursor::all(dest);
+
+        auto const n_front = saga::cursor::size(cur.dropped_front());
+        auto const n_not_back = n_front + saga::cursor::size(cur);
+
+        auto const n_result = saga::cursor::size(result);
+
+        assert(n_not_back <= n_result);
+
+        auto const n_back = n_result - n_not_back;
+
+        saga::cursor::drop_front_n(result, n_front);
+        saga::cursor::drop_back_n(result, n_back);
+
+        return result;
+    }
 }
 // namespace saga
 
