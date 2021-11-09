@@ -333,10 +333,9 @@ TEST_CASE("for_each - subcursor, mutable")
 
         // std
         auto src_std = src;
+        auto const range_std = saga::rebase_cursor(cur_saga, src_std);
 
-        std::for_each(src_std.begin() + (cur_saga.begin() - src_saga.begin())
-                      , src_std.begin() + (cur_saga.end() - src_saga.begin())
-                      , fun);
+        std::for_each(range_std.begin(), range_std.end(), fun);
 
         // Сравение
         REQUIRE(result_saga.in.begin() == cur_saga.end());
@@ -2904,7 +2903,7 @@ TEST_CASE("pop_heap - custom compare")
 
             REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
             REQUIRE(std::equal(input.end(), src.end(),
-                               src_old.begin() + (input.end() - src.begin())));
+                              src_old.begin() + (input.end() - src.begin())));
 
             REQUIRE(std::is_permutation(input.begin(), input.end(),
                                         src_old.begin() + (input.begin() - src.begin())));
@@ -2934,12 +2933,13 @@ TEST_CASE("sort_heap - default compare")
 
         // Проверки
         REQUIRE(saga::is_sorted(input));
-        REQUIRE(std::is_permutation(input.begin(), input.end(),
-                                    src_old.begin() + (input.begin() - src.begin())));
 
-        REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
-        REQUIRE(std::equal(input.end(), src.end(),
-                           src_old.begin() + (input.end() - src.begin())));
+        auto const cur_src_old = saga::rebase_cursor(input, src_old);
+
+        REQUIRE(std::is_permutation(input.begin(), input.end(), cur_src_old.begin()));
+
+        REQUIRE(saga::equal(input.dropped_front(), cur_src_old.dropped_front()));
+        REQUIRE(saga::equal(input.dropped_back(), cur_src_old.dropped_back()));
     };
 }
 
@@ -2962,12 +2962,13 @@ TEST_CASE("sort_heap - custom compare")
 
         // Проверки
         REQUIRE(saga::is_sorted(input, cmp));
-        REQUIRE(std::is_permutation(input.begin(), input.end(),
-                                    src_old.begin() + (input.begin() - src.begin())));
 
-        REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
-        REQUIRE(std::equal(input.end(), src.end(),
-                           src_old.begin() + (input.end() - src.begin())));
+        auto const cur_src_old = saga::rebase_cursor(input, src_old);
+
+        REQUIRE(std::is_permutation(input.begin(), input.end(), cur_src_old.begin()));
+
+        REQUIRE(saga::equal(input.dropped_front(), cur_src_old.dropped_front()));
+        REQUIRE(saga::equal(input.dropped_back(), cur_src_old.dropped_back()));
     };
 }
 
