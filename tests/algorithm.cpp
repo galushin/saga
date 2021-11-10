@@ -2972,6 +2972,72 @@ TEST_CASE("sort_heap - custom compare")
     };
 }
 
+TEST_CASE("partial_sort - default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src_old)
+    {
+        auto src = src_old;
+
+        auto const subrange = saga_test::random_subcursor_of(saga::cursor::all(src));
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(subrange));
+
+        saga::partial_sort(input);
+
+        CAPTURE(src_old, src);
+
+        REQUIRE(saga::is_sorted(input.dropped_front()));
+
+        auto const subrange_src_old = saga::rebase_cursor(subrange, src_old);
+        auto const input_src_old = saga::rebase_cursor(input, subrange_src_old);
+
+        REQUIRE(saga::equal(subrange.dropped_front(), subrange_src_old.dropped_front()));
+        REQUIRE(std::is_permutation(subrange.begin(), input.end(),
+                                    subrange_src_old.begin(), input_src_old.end()));
+        REQUIRE(std::equal(input.end(), src.end(), input_src_old.end(), src_old.end()));
+
+        if(!!input)
+        {
+            REQUIRE(saga::none_of(input.dropped_front(), [&](auto const & x){return *input < x;}));
+        }
+    };
+}
+
+TEST_CASE("partial_sort - custom compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src_old)
+    {
+        auto const cmp = std::greater<>{};
+
+        auto src = src_old;
+
+        auto const subrange = saga_test::random_subcursor_of(saga::cursor::all(src));
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(subrange));
+
+        saga::partial_sort(input, cmp);
+
+        CAPTURE(src_old, src);
+
+        REQUIRE(saga::is_sorted(input.dropped_front(), cmp));
+
+        auto const subrange_src_old = saga::rebase_cursor(subrange, src_old);
+        auto const input_src_old = saga::rebase_cursor(input, subrange_src_old);
+
+        REQUIRE(saga::equal(subrange.dropped_front(), subrange_src_old.dropped_front()));
+        REQUIRE(std::is_permutation(subrange.begin(), input.end(),
+                                    subrange_src_old.begin(), input_src_old.end()));
+        REQUIRE(std::equal(input.end(), src.end(), input_src_old.end(), src_old.end()));
+
+        if(!!input)
+        {
+            REQUIRE(saga::none_of(input.dropped_front(), [&](auto const & x){return cmp(*input, x);}));
+        }
+    };
+}
+
 TEST_CASE("lexicographical_compare - minimal, default compare")
 {
     using Value1 = int;

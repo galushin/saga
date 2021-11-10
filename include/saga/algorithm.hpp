@@ -882,7 +882,8 @@ namespace saga
 
             if(num > 1)
             {
-                auto value = std::move(input.back());
+                saga::cursor_value_t<RandomAccessCursor> value = std::move(input.back());
+
                 input.back() = std::move(input.front());
 
                 saga::detail::adjust_heap(input, 0*num, num-1, std::move(value), cmp);
@@ -899,6 +900,37 @@ namespace saga
             {
                 saga::pop_heap_fn{}(input, cmp);
             }
+        }
+    };
+
+    struct partial_sort_fn
+    {
+        template <class RandomAccessCursor, class Compare = std::less<>>
+        void operator()(RandomAccessCursor input, Compare cmp = {}) const
+        {
+            auto out = input.dropped_front();
+
+            if(!out)
+            {
+                return;
+            }
+
+            saga::make_heap_fn{}(out, cmp);
+
+            auto const out_size = out.size();
+
+            for(; !!input; ++ input)
+            {
+                if(saga::invoke(cmp, *input, *out))
+                {
+                    saga::cursor_value_t<RandomAccessCursor> value = std::move(*input);
+                    *input = std::move(*out);
+
+                    saga::detail::adjust_heap(out, 0*out_size, out_size, std::move(value), cmp);
+                }
+            }
+
+            saga::sort_heap_fn{}(out, cmp);
         }
     };
 
@@ -1092,6 +1124,8 @@ namespace saga
         constexpr auto const & is_sorted = detail::static_empty_const<is_sorted_fn>::value;
         constexpr auto const & is_sorted_until
             = detail::static_empty_const<is_sorted_until_fn>::value;
+
+        constexpr auto const & partial_sort = detail::static_empty_const<partial_sort_fn>::value;
 
         constexpr auto const & merge = detail::static_empty_const<merge_fn>::value;
 
