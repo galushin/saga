@@ -1168,6 +1168,134 @@ TEST_CASE("generate - subrange")
     };
 }
 
+TEST_CASE("remove")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & src_old, Value const & value)
+    {
+        // saga
+        auto src_saga = [&]()
+        {
+            std::forward_list<saga_test::move_only<Value>> src_saga;
+            auto pos = src_saga.before_begin();
+
+            for(auto const & value : src_old)
+            {
+                pos = src_saga.emplace_after(pos, value);
+            }
+
+            return src_saga;
+        }();
+
+        auto const cur_saga = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
+
+        auto const result_saga = saga::remove(cur_saga, value);
+
+        // std
+        auto src_std = src_old;
+        auto const cur_std = saga::rebase_cursor(cur_saga, src_std);
+
+        auto const result_std = std::remove(cur_std.begin(), cur_std.end(), value);
+
+        // Проверка
+        REQUIRE(std::none_of(cur_saga.begin(), result_saga.begin(),
+                             [&](saga_test::move_only<Value>  const & arg)
+                                { return arg == value; }));
+
+        REQUIRE(std::distance(src_saga.begin(), result_saga.begin())
+                == std::distance(src_std.begin(), result_std));
+
+        REQUIRE(std::equal(src_saga.begin(), result_saga.begin()
+                           , src_std.begin(), result_std));
+        REQUIRE(std::equal(cur_saga.end(), src_saga.end()
+                           , cur_std.end(), src_std.end()));
+    };
+}
+
+TEST_CASE("remove: guaranteed")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::forward_list<Value> src_old, Value const & value)
+    {
+        src_old.push_front(value);
+
+        // saga
+        auto src_saga = src_old;
+
+        auto const cur_saga = saga::cursor::all(src_saga);
+
+        auto const result_saga = saga::remove(cur_saga, value);
+
+        // std
+        auto src_std = src_old;
+        auto const cur_std = saga::rebase_cursor(cur_saga, src_std);
+
+        auto const result_std = std::remove(cur_std.begin(), cur_std.end(), value);
+
+        // Проверка
+        REQUIRE(std::none_of(cur_saga.begin(), result_saga.begin(),
+                             [&](Value const & arg) { return arg == value; }));
+
+        REQUIRE(std::distance(src_saga.begin(), result_saga.begin())
+                == std::distance(src_std.begin(), result_std));
+
+        REQUIRE(std::equal(src_saga.begin(), result_saga.begin()
+                           , src_std.begin(), result_std));
+        REQUIRE(std::equal(cur_saga.end(), src_saga.end()
+                           , cur_std.end(), src_std.end()));
+    };
+}
+
+TEST_CASE("remove_if")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & src_old)
+    {
+        auto const pred_std = [](Value const & arg) { return arg % 3 == 2; };
+
+        // saga
+        auto src_saga = [&]()
+        {
+            std::forward_list<saga_test::move_only<Value>> src_saga;
+            auto pos = src_saga.before_begin();
+
+            for(auto const & value : src_old)
+            {
+                pos = src_saga.emplace_after(pos, value);
+            }
+
+            return src_saga;
+        }();
+
+        auto const cur_saga = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
+
+        auto const pred_saga = [&pred_std](saga_test::move_only<Value> const & arg)
+                                { return pred_std(arg.value); };
+
+        auto const result_saga = saga::remove_if(cur_saga, pred_saga);
+
+        // std
+        auto src_std = src_old;
+        auto const cur_std = saga::rebase_cursor(cur_saga, src_std);
+
+        auto const result_std = std::remove_if(cur_std.begin(), cur_std.end(), pred_std);
+
+        // Проверка
+        REQUIRE(std::none_of(cur_saga.begin(), result_saga.begin(), pred_saga));
+
+        REQUIRE(std::distance(src_saga.begin(), result_saga.begin())
+                == std::distance(src_std.begin(), result_std));
+
+        REQUIRE(std::equal(src_saga.begin(), result_saga.begin()
+                           , src_std.begin(), result_std));
+        REQUIRE(std::equal(cur_saga.end(), src_saga.end()
+                           , cur_std.end(), src_std.end()));
+    };
+}
+
 TEST_CASE("remove_copy: minimal")
 {
     using Value = long;

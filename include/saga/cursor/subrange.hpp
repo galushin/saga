@@ -197,27 +197,54 @@ namespace saga
         return std::next(dest.begin(), std::distance(src.begin(), pos));
     }
 
+    namespace detail
+    {
+        template <class ForwardCursor1, class ForwardCursor2>
+        ForwardCursor2
+        rebase_cursor(ForwardCursor1 src, ForwardCursor2 dest, std::forward_iterator_tag)
+        {
+            // Что если у src есть пройденная задняя часть?
+
+            auto const n_front = saga::cursor::size(src.dropped_front());
+
+            auto const n_result = saga::cursor::size(dest);
+
+            assert(n_front <= n_result);
+
+            saga::cursor::drop_front_n(dest, n_front);
+
+            return dest;
+        }
+
+        template <class ForwardCursor, class BidirectionalCursor>
+        BidirectionalCursor
+        rebase_cursor(ForwardCursor src, BidirectionalCursor dest, std::bidirectional_iterator_tag)
+        {
+            auto const n_front = saga::cursor::size(src.dropped_front());
+            auto const n_not_back = n_front + saga::cursor::size(src);
+
+            auto const n_result = saga::cursor::size(dest);
+
+            assert(n_not_back <= n_result);
+
+            auto const n_back = n_result - n_not_back;
+
+            saga::cursor::drop_front_n(dest, n_front);
+            saga::cursor::drop_back_n(dest, n_back);
+
+            return dest;
+        }
+    }
+
     /** @brief Перенос курсора на другой контейнер
     @pre dest содержит не меньше элементов, чем cur и cur.dropped_front()
     */
     template <class Cursor, class Container>
     auto rebase_cursor(Cursor cur, Container && dest)
     {
-        auto result = saga::cursor::all(dest);
-
-        auto const n_front = saga::cursor::size(cur.dropped_front());
-        auto const n_not_back = n_front + saga::cursor::size(cur);
-
-        auto const n_result = saga::cursor::size(result);
-
-        assert(n_not_back <= n_result);
-
-        auto const n_back = n_result - n_not_back;
-
-        saga::cursor::drop_front_n(result, n_front);
-        saga::cursor::drop_back_n(result, n_back);
-
-        return result;
+        auto cur_dest = saga::cursor::all(dest);
+        return saga::detail::rebase_cursor(std::move(cur), std::move(cur_dest)
+                                           , saga::cursor_category_t<decltype(cur_dest)>{});
     }
 }
 // namespace saga
