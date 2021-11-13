@@ -502,11 +502,17 @@ namespace saga_test
     template <class T>
     struct move_only
     {
-    template <class U>
-    friend bool operator==(move_only<T> const & lhs, move_only<U> const & rhs)
-    {
-        return lhs.value == rhs.value;
-    }
+        template <class U>
+        friend bool operator==(move_only<T> const & lhs, move_only<U> const & rhs)
+        {
+            return lhs.value == rhs.value;
+        }
+
+        template <class U>
+        friend bool operator==(move_only<T> const & lhs, U const & rhs)
+        {
+            return lhs.value == rhs;
+        }
 
     public:
         move_only() = default;

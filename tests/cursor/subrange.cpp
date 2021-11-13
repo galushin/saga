@@ -64,10 +64,7 @@ TEST_CASE("iterator rebase")
     saga_test::property_checker
     << [](Container1 const & src, Container2 dest)
     {
-        for(auto const & item : src)
-        {
-            dest.push_front(item);
-        }
+        dest.insert_after(dest.before_begin(), src.begin(), src.end());
 
         auto const pos = saga_test::random_iterator_of(src);
 
