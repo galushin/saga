@@ -1029,6 +1029,46 @@ namespace saga
         }
     };
 
+    struct is_permutation_fn
+    {
+        template <class ForwardCursor1, class ForwardCursor2
+                 , class BinaryPredicate = std::equal_to<>>
+        bool
+        operator()(ForwardCursor1 cur1, ForwardCursor2 cur2, BinaryPredicate bin_pred = {}) const
+        {
+            // Пропускаем общую часть последовательностей
+            auto rest = saga::mismatch_fn{}(std::move(cur1), std::move(cur2), bin_pred);
+
+            if(!rest.in1 || !rest.in2)
+            {
+                return !rest.in1 && !rest.in2;
+            }
+
+            // Проверяем, что длины совпадают
+            if(saga::cursor::size(rest.in1) != saga::cursor::size(rest.in2))
+            {
+                return false;
+            }
+
+            // Проверяем остальные элементы
+            for(cur1 = rest.in1; !!cur1; ++cur1)
+            {
+                auto pred
+                    = [&](auto && arg) { return bin_pred(*cur1, std::forward<decltype(arg)>(arg));};
+
+                auto const n1 = saga::count_if_fn{}(rest.in1, pred);
+                auto const n2 = saga::count_if_fn{}(rest.in2, pred);
+
+                if(n1 != n2)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    };
+
     struct starts_with_fn
     {
         template <typename InputRange1, typename InputRange2>
@@ -1186,6 +1226,9 @@ namespace saga
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
         constexpr auto const & lexicographical_compare
             = detail::static_empty_const<lexicographical_compare_fn>::value;
+
+        constexpr auto const & is_permutation
+            = detail::static_empty_const<is_permutation_fn>::value;
 
         constexpr auto const & starts_with = detail::static_empty_const<starts_with_fn>::value;
         constexpr auto const & ends_with = detail::static_empty_const<ends_with_fn>::value;
