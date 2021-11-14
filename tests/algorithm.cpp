@@ -3214,7 +3214,7 @@ TEST_CASE("is_permutation: custom predicate")
 
     saga_test::property_checker << [](Container1 const & src1, Container2 const & src2)
     {
-        auto const abs_eq = [](Value1 const & lhs, Value2 const & rhs)
+        auto const bin_pred = [](Value2 const & lhs, Value2 const & rhs)
         {
             return lhs % 10 == rhs % 10;
         };
@@ -3225,8 +3225,9 @@ TEST_CASE("is_permutation: custom predicate")
         CAPTURE(src1, src2, Container1(cur1.begin(), cur1.end())
                 , Container2(cur2.begin(), cur2.end()));
 
-        REQUIRE(saga::is_permutation(cur1, cur2, abs_eq)
-                == std::is_permutation(cur1.begin(), cur1.end(), cur2.begin(), cur2.end(), abs_eq));
+        REQUIRE(saga::is_permutation(cur1, cur2, bin_pred)
+                == std::is_permutation(cur1.begin(), cur1.end()
+                                       , cur2.begin(), cur2.end(), bin_pred));
     };
 }
 
@@ -3236,7 +3237,7 @@ TEST_CASE("is_permutation: custom predicate, always true")
 
     saga_test::property_checker << [](std::vector<Value> const & src1)
     {
-        auto const abs_eq = [](Value const & lhs, Value const & rhs)
+        auto const bin_pred = [](Value const & lhs, Value const & rhs)
         {
             return lhs % 10 == rhs % 10;
         };
@@ -3248,7 +3249,7 @@ TEST_CASE("is_permutation: custom predicate, always true")
 
         std::shuffle(cur2.begin(), cur2.end(), saga_test::random_engine());
 
-        REQUIRE(saga::is_permutation(cur1, cur2, abs_eq));
+        REQUIRE(saga::is_permutation(cur1, cur2, bin_pred));
     };
 }
 
