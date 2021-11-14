@@ -3166,6 +3166,93 @@ TEST_CASE("partial_sort - custom compare")
     };
 }
 
+TEST_CASE("is_permutation: default predicate")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    using Container1 = std::forward_list<Value1>;
+    using Container2 = std::forward_list<Value2>;
+
+    saga_test::property_checker << [](Container1 const & src1, Container2 const & src2)
+    {
+        auto const cur1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
+        auto const cur2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
+
+        CAPTURE(src1, src2, Container1(cur1.begin(), cur1.end())
+                , Container2(cur2.begin(), cur2.end()));
+
+        REQUIRE(saga::is_permutation(cur1, cur2)
+                == std::is_permutation(cur1.begin(), cur1.end(), cur2.begin(), cur2.end()));
+    };
+}
+
+TEST_CASE("is_permutation: default predicate, always true")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src1)
+    {
+        auto const cur1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
+
+        auto src2 = src1;
+        auto const cur2 = saga::rebase_cursor(cur1, src2);
+
+        std::shuffle(cur2.begin(), cur2.end(), saga_test::random_engine());
+
+        REQUIRE(saga::is_permutation(cur1, cur2));
+    };
+}
+
+TEST_CASE("is_permutation: custom predicate")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    using Container1 = std::forward_list<Value1>;
+    using Container2 = std::forward_list<Value2>;
+
+    saga_test::property_checker << [](Container1 const & src1, Container2 const & src2)
+    {
+        auto const bin_pred = [](Value2 const & lhs, Value2 const & rhs)
+        {
+            return lhs % 10 == rhs % 10;
+        };
+
+        auto const cur1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
+        auto const cur2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
+
+        CAPTURE(src1, src2, Container1(cur1.begin(), cur1.end())
+                , Container2(cur2.begin(), cur2.end()));
+
+        REQUIRE(saga::is_permutation(cur1, cur2, bin_pred)
+                == std::is_permutation(cur1.begin(), cur1.end()
+                                       , cur2.begin(), cur2.end(), bin_pred));
+    };
+}
+
+TEST_CASE("is_permutation: custom predicate, always true")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src1)
+    {
+        auto const bin_pred = [](Value const & lhs, Value const & rhs)
+        {
+            return lhs % 10 == rhs % 10;
+        };
+
+        auto const cur1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
+
+        auto src2 = src1;
+        auto const cur2 = saga::rebase_cursor(cur1, src2);
+
+        std::shuffle(cur2.begin(), cur2.end(), saga_test::random_engine());
+
+        REQUIRE(saga::is_permutation(cur1, cur2, bin_pred));
+    };
+}
+
 TEST_CASE("lexicographical_compare - minimal, default compare")
 {
     using Value1 = int;
