@@ -3216,7 +3216,7 @@ TEST_CASE("is_permutation: custom predicate")
     {
         auto const abs_eq = [](Value1 const & lhs, Value2 const & rhs)
         {
-            return std::abs(lhs) == std::abs(rhs);
+            return lhs % 10 == rhs % 10;
         };
 
         auto const cur1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
@@ -3238,7 +3238,7 @@ TEST_CASE("is_permutation: custom predicate, always true")
     {
         auto const abs_eq = [](Value const & lhs, Value const & rhs)
         {
-            return std::abs(lhs) == std::abs(rhs);
+            return lhs % 10 == rhs % 10;
         };
 
         auto const cur1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
