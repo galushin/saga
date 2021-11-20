@@ -170,6 +170,28 @@ namespace saga
         }
     };
 
+    struct find_first_of_fn
+    {
+        template <class InputCursor, class ForwardCursor, class BinaryPredicate = std::equal_to<>>
+        InputCursor
+        operator()(InputCursor cur, ForwardCursor s_cur, BinaryPredicate bin_pred = {}) const
+        {
+            auto const found_in_s_cur = [&](auto && lhs)
+            {
+                auto pred = [&](auto && rhs)
+                {
+                    return saga::invoke(bin_pred
+                                        , std::forward<decltype(lhs)>(lhs)
+                                        , std::forward<decltype(rhs)>(rhs));
+                };
+
+                return !!saga::find_if_fn{}(s_cur, std::move(pred));
+            };
+
+            return saga::find_if_fn{}(std::move(cur), found_in_s_cur);
+        }
+    };
+
     struct adjacent_find_fn
     {
         template <class ForwardCursor, class BinaryPredicate = std::equal_to<>>
@@ -1169,7 +1191,7 @@ namespace saga
         constexpr auto const & find = detail::static_empty_const<find_fn>::value;
         constexpr auto const & find_if = detail::static_empty_const<find_if_fn>::value;
         constexpr auto const & find_if_not = detail::static_empty_const<find_if_not_fn>::value;
-
+        constexpr auto const & find_first_of = detail::static_empty_const<find_first_of_fn>::value;
         constexpr auto const & adjacent_find = detail::static_empty_const<adjacent_find_fn>::value;
 
         constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;
