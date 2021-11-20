@@ -24,8 +24,10 @@ SAGA -- это свободной программное обеспечение:
 
 // Вспомогательные файлы
 #include <saga/type_traits.hpp>
-#include <string>
+
 #include <functional>
+#include <memory>
+#include <string>
 
 // Тесты
 namespace
