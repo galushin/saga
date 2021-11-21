@@ -29,6 +29,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/detail/static_empty_const.hpp>
 
+#include <cassert>
 #include <algorithm>
 #include <functional>
 
@@ -559,6 +560,47 @@ namespace saga
             }
 
             return {std::move(in), std::move(out_true), std::move(out_false)};
+        }
+    };
+
+    struct partition_point_fn
+    {
+        template <class ForwardCursor, class Predicate>
+        ForwardCursor operator()(ForwardCursor cur, Predicate pred) const
+        {
+            assert(saga::is_partitioned_fn{}(cur, pred));
+
+            if(!cur)
+            {
+                return cur;
+            }
+
+            auto num = saga::cursor::size(cur);
+
+            do
+            {
+                auto const n1 = num / 2;
+                auto const n2 = num - n1;
+
+                assert(n2 > 0);
+
+                auto middle = cur;
+                saga::cursor::drop_front_n(middle, n1);
+
+                if(saga::invoke(pred, *middle))
+                {
+                    cur = middle;
+                    ++ cur;
+                    num = n2 - 1;
+                }
+                else
+                {
+                    num = n1;
+                }
+            }
+            while(num > 0);
+
+            return cur;
         }
     };
 
@@ -1239,6 +1281,8 @@ namespace saga
             = detail::static_empty_const<is_partitioned_fn>::value;
         constexpr auto const & partition_copy
             = detail::static_empty_const<partition_copy_fn>::value;
+        constexpr auto const & partition_point
+            = detail::static_empty_const<partition_point_fn>::value;
 
         constexpr auto const & is_sorted = detail::static_empty_const<is_sorted_fn>::value;
         constexpr auto const & is_sorted_until
