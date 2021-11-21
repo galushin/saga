@@ -3273,6 +3273,52 @@ TEST_CASE("partial_sort - custom compare")
     };
 }
 
+TEST_CASE("min_element: default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & src)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const r_std = std::min_element(input.begin(), input.end());
+        auto const r_saga = saga::min_element(input);
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == input.end());
+
+        REQUIRE(r_saga.dropped_front().begin() == src.begin());
+        REQUIRE(r_saga.dropped_front().end() == r_std);
+
+        REQUIRE(r_saga.dropped_back().begin() == input.end());
+        REQUIRE(r_saga.dropped_back().end() == src.end());
+    };
+}
+
+TEST_CASE("min_element: custom compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & src)
+    {
+        auto const cmp = std::greater<>{};
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const r_std = std::min_element(input.begin(), input.end(), cmp);
+        auto const r_saga = saga::min_element(input, cmp);
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == input.end());
+
+        REQUIRE(r_saga.dropped_front().begin() == src.begin());
+        REQUIRE(r_saga.dropped_front().end() == r_std);
+
+        REQUIRE(r_saga.dropped_back().begin() == input.end());
+        REQUIRE(r_saga.dropped_back().end() == src.end());
+    };
+}
+
 TEST_CASE("is_permutation: default predicate")
 {
     using Value1 = int;

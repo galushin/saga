@@ -961,6 +961,25 @@ namespace saga
         }
     };
 
+    struct min_element_fn
+    {
+        template <class ForwardCursor, class Compare = std::less<>>
+        ForwardCursor operator()(ForwardCursor input, Compare cmp = {}) const
+        {
+            auto result = input;
+
+            for(; !!input; ++input)
+            {
+                if(saga::invoke(cmp, *input, *result))
+                {
+                    result = input;
+                }
+            }
+
+            return result;
+        }
+    };
+
     struct partial_sort_fn
     {
         template <class RandomAccessCursor, class Compare = std::less<>>
@@ -1244,6 +1263,8 @@ namespace saga
         constexpr auto const & push_heap = detail::static_empty_const<push_heap_fn>::value;
         constexpr auto const & pop_heap = detail::static_empty_const<pop_heap_fn>::value;
         constexpr auto const & sort_heap = detail::static_empty_const<sort_heap_fn>::value;
+
+        constexpr auto const & min_element = detail::static_empty_const<min_element_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
         constexpr auto const & lexicographical_compare
