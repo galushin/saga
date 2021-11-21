@@ -2106,6 +2106,38 @@ TEST_CASE("partition_copy: subcursor")
     };
 }
 
+TEST_CASE("partition_point")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & src_old)
+    {
+        // Подготовка
+        auto const pred = [](Value const & arg) { return arg % 2 == 0; };
+
+        auto const src = [&]()
+        {
+            auto src = src_old;
+            std::partition(src.begin(), src.end(), pred);
+            return src;
+        }();
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // Выполнение
+        auto const r_std = std::partition_point(input.begin(), input.end(), pred);
+
+        auto const r_saga = saga::partition_point(input, pred);
+
+        // Проверка
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == input.end());
+
+        REQUIRE(r_saga.dropped_front().begin() == src.begin());
+        REQUIRE(r_saga.dropped_back().end() == src.end());
+    };
+}
+
 TEST_CASE("is_sorted: default compare")
 {
     using Value = int;
