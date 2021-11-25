@@ -1008,7 +1008,13 @@ namespace saga
         template <class ForwardCursor, class Compare = std::less<>>
         ForwardCursor operator()(ForwardCursor input, Compare cmp = {}) const
         {
+            if(!input)
+            {
+                return input;
+            }
+
             auto result = input;
+            ++ input;
 
             for(; !!input; ++input)
             {
@@ -1019,6 +1025,16 @@ namespace saga
             }
 
             return result;
+        }
+    };
+
+    struct max_element_fn
+    {
+        template <class ForwardCursor, class Compare = std::less<>>
+        ForwardCursor operator()(ForwardCursor input, Compare cmp = {}) const
+        {
+            return saga::min_element_fn{}(std::move(input), saga::not_fn(std::move(cmp)));
+
         }
     };
 
@@ -1309,6 +1325,7 @@ namespace saga
         constexpr auto const & sort_heap = detail::static_empty_const<sort_heap_fn>::value;
 
         constexpr auto const & min_element = detail::static_empty_const<min_element_fn>::value;
+        constexpr auto const & max_element = detail::static_empty_const<max_element_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
         constexpr auto const & lexicographical_compare
