@@ -844,27 +844,19 @@ TEST_CASE("copy")
     {
         auto dest = dest_old;
 
-        // Взять подинтервалы контейнеров
         auto const src_cur = saga_test::random_subcursor_of(saga::cursor::all(src));
         auto const dest_cur = saga_test::random_subcursor_of(saga::cursor::all(dest));
-
-        auto const dest_prefix_size = (dest_cur.begin() - dest.begin());
-
-        assert(0 <= dest_prefix_size && static_cast<size_t>(dest_prefix_size) <= dest.size());
 
         auto const result = saga::copy(src_cur, dest_cur);
 
         // Проверка содержимого dest
         auto const n = std::min(src_cur.size(), dest_cur.size());
 
-        REQUIRE(std::equal(dest.begin(), dest.begin() + dest_prefix_size,
-                           dest_old.begin(), dest_old.begin() + dest_prefix_size));
+        auto dest_expected = dest_old;
+        std::copy(src_cur.begin(), result.in.begin()
+                  , saga::rebase_cursor(dest_cur, dest_expected).begin());
 
-        REQUIRE(std::equal(dest.begin() + dest_prefix_size, dest.begin() + dest_prefix_size + n,
-                           src_cur.begin(), src_cur.begin() + n));
-
-        REQUIRE(std::equal(dest.begin() + dest_prefix_size + n, dest.end(),
-                           dest_old.begin() + dest_prefix_size + n, dest_old.end()));
+        REQUIRE(dest == dest_expected);
 
         // Проверяем возвращаемое значение
         REQUIRE((!result.in || !result.out));
@@ -872,11 +864,13 @@ TEST_CASE("copy")
 
         REQUIRE(result.in.begin() == src_cur.begin() + n);
         REQUIRE(result.in.end() == src_cur.end());
+        REQUIRE(result.in.dropped_front().begin() == src.begin());
+        REQUIRE(result.in.dropped_back().end() == src.end());
 
         REQUIRE(result.out.begin() == dest_cur.begin() + n);
         REQUIRE(result.out.end() == dest_cur.end());
-
-        // @todo Проверить begin_orig и end_orig (имена предварительные)
+        REQUIRE(result.out.dropped_front().begin() == dest.begin());
+        REQUIRE(result.out.dropped_back().end() == dest.end());
     };
 }
 
@@ -957,25 +951,27 @@ TEST_CASE("copy_if: subcursor")
         auto const result = saga::copy_if(input, out_saga, pred);
 
         // std
-        std::vector<ValueOut> dest_std;
-        std::copy_if(input.begin(), result.in.begin(), std::back_inserter(dest_std), pred);
+        auto dest_std = dest_old;
+
+        std::copy_if(input.begin(), result.in.begin()
+                     , saga::rebase_cursor(out_saga, dest_std).begin(), pred);
 
         // Проверка
-        auto const n_front = (out_saga.begin() - dest_saga.begin());
-        auto const n_back = (dest_saga.end() - result.out.begin());
+        CHECK(dest_saga == dest_std);
 
-        REQUIRE(dest_saga.size() == dest_old.size());
-        REQUIRE(dest_saga.size() == n_front + (result.out.begin() - out_saga.begin()) + n_back);
-        REQUIRE((result.in.begin() - input.begin()) >= (result.out.begin() - out_saga.begin()));
+        auto const n_copied = std::min(saga::count_if(input, pred), out_saga.size());
 
-        REQUIRE(std::equal(dest_saga.begin(), dest_saga.begin() + n_front
-                           , dest_old.begin(), dest_old.begin() + n_front));
+        REQUIRE((!result.in || !result.out));
 
-        REQUIRE(std::equal(out_saga.begin(), result.out.begin(),
-                           dest_std.begin(), dest_std.end()));
+        REQUIRE(result.in.begin() - input.begin() >= n_copied);
+        REQUIRE(result.in.end() == input.end());
+        REQUIRE(result.in.dropped_front().begin() == src.begin());
+        REQUIRE(result.in.dropped_back().end() == src.end());
 
-        REQUIRE(std::equal(dest_saga.end() - n_back, dest_saga.end(),
-                           dest_old.end() - n_back, dest_old.end()));
+        REQUIRE(result.out.begin() == out_saga.begin() + n_copied);
+        REQUIRE(result.out.end() == out_saga.end());
+        REQUIRE(result.out.dropped_front().begin() == dest_saga.begin());
+        REQUIRE(result.out.dropped_back().end() == dest_saga.end());
     };
 }
 
@@ -1090,19 +1086,13 @@ TEST_CASE("fill - subrange")
         saga::fill(sub_saga, value);
 
         // Проверка
-        auto const n_front = std::distance(xs_saga.begin(), sub_saga.begin());
-        auto const n_back = std::distance(sub_saga.end(), xs_saga.end());
+        auto const sub_src = saga::rebase_cursor(sub_saga, src);
 
-        REQUIRE(std::equal(xs_saga.begin(), std::next(xs_saga.begin(), n_front),
-                           src.begin(), src.begin() + n_front));
+        CHECK(saga::equal(sub_saga.dropped_front(), sub_src.dropped_front()));
 
-        for(auto const & x : sub_saga)
-        {
-            REQUIRE(x == value);
-        }
+        CHECK(saga::all_of(sub_saga, [&](auto const & arg) { return arg == value; }));
 
-        REQUIRE(std::equal(std::next(xs_saga.begin(), src.size() - n_back), xs_saga.end(),
-                           src.end() - n_back, src.end()));
+        CHECK(saga::equal(sub_saga.dropped_back(), sub_src.dropped_back()));
     };
 }
 
@@ -1313,10 +1303,10 @@ TEST_CASE("remove")
         REQUIRE(std::distance(src_saga.begin(), result_saga.begin())
                 == std::distance(src_std.begin(), result_std));
 
-        REQUIRE(std::equal(src_saga.begin(), result_saga.begin()
-                           , src_std.begin(), result_std));
-        REQUIRE(std::equal(cur_saga.end(), src_saga.end()
-                           , cur_std.end(), src_std.end()));
+        REQUIRE(saga::equal(result_saga.dropped_front()
+                           , saga::rebase_cursor(result_saga, src_std).dropped_front()));
+
+        CHECK(saga::equal(cur_saga.dropped_back(), cur_std.dropped_back()));
     };
 }
 
@@ -1348,10 +1338,10 @@ TEST_CASE("remove: guaranteed")
         REQUIRE(std::distance(src_saga.begin(), result_saga.begin())
                 == std::distance(src_std.begin(), result_std));
 
-        REQUIRE(std::equal(src_saga.begin(), result_saga.begin()
-                           , src_std.begin(), result_std));
-        REQUIRE(std::equal(cur_saga.end(), src_saga.end()
-                           , cur_std.end(), src_std.end()));
+        REQUIRE(saga::equal(result_saga.dropped_front()
+                           , saga::rebase_cursor(result_saga, src_std).dropped_front()));
+
+        CHECK(saga::equal(cur_saga.dropped_back(), cur_std.dropped_back()));
     };
 }
 
@@ -1396,10 +1386,10 @@ TEST_CASE("remove_if")
         REQUIRE(std::distance(src_saga.begin(), result_saga.begin())
                 == std::distance(src_std.begin(), result_std));
 
-        REQUIRE(std::equal(src_saga.begin(), result_saga.begin()
-                           , src_std.begin(), result_std));
-        REQUIRE(std::equal(cur_saga.end(), src_saga.end()
-                           , cur_std.end(), src_std.end()));
+        REQUIRE(saga::equal(result_saga.dropped_front()
+                           , saga::rebase_cursor(result_saga, src_std).dropped_front()));
+
+        CHECK(saga::equal(cur_saga.dropped_back(), cur_std.dropped_back()));
     };
 }
 
@@ -2496,27 +2486,19 @@ TEST_CASE("set_difference - subcursor, custom compare")
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(in2_src));
 
         // saga
-        std::vector<Value> out_src(out_src_old);
-        auto const out = saga_test::random_subcursor_of(saga::cursor::all(out_src));
+        std::vector<Value> out_saga(out_src_old);
+        auto const out = saga_test::random_subcursor_of(saga::cursor::all(out_saga));
 
         auto const result = saga::set_difference(in1, in2, out, cmp);
 
         // std
-        std::vector<Value> out_std;
+        auto out_std = out_src_old;
+
         std::set_difference(in1.begin(), result.in.begin(), in2.begin(), in2.end()
-                            , std::back_inserter(out_std), cmp);
+                            , saga::rebase_cursor(out, out_std).begin(), cmp);
 
         // Проверка
-        auto const n_before = out.begin() - out_src.begin();
-        auto const n_after = out_src.end() - out.end();
-
-        REQUIRE(std::equal(out.begin(), result.out.begin(), out_std.begin(), out_std.end()));
-
-        REQUIRE(std::equal(out_src.begin(), out_src.begin() + n_before,
-                           out_src_old.begin(), out_src_old.begin() + n_before));
-
-        REQUIRE(std::equal(out_src.end() - n_after, out_src.end(),
-                           out_src_old.end() - n_after, out_src_old.end()));
+        REQUIRE(out_saga == out_std);
     };
 }
 
@@ -2604,27 +2586,18 @@ TEST_CASE("set_intersection - subcursor, custom compare")
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(in2_src));
 
         // saga
-        std::vector<Value> out_src(out_src_old);
-        auto const out = saga_test::random_subcursor_of(saga::cursor::all(out_src));
+        std::vector<Value> out_saga(out_src_old);
+        auto const out = saga_test::random_subcursor_of(saga::cursor::all(out_saga));
 
         auto const result = saga::set_intersection(in1, in2, out, cmp);
 
         // std
-        std::vector<Value> out_std;
+        auto out_std = out_src_old;
         std::set_intersection(in1.begin(), result.in1.begin(), in2.begin(), result.in2.begin()
-                              , std::back_inserter(out_std), cmp);
+                              , saga::rebase_cursor(out, out_std).begin(), cmp);
 
         // Проверка
-        auto const n_before = out.begin() - out_src.begin();
-        auto const n_after = out_src.end() - out.end();
-
-        REQUIRE(std::equal(out.begin(), result.out.begin(), out_std.begin(), out_std.end()));
-
-        REQUIRE(std::equal(out_src.begin(), out_src.begin() + n_before,
-                           out_src_old.begin(), out_src_old.begin() + n_before));
-
-        REQUIRE(std::equal(out_src.end() - n_after, out_src.end(),
-                           out_src_old.end() - n_after, out_src_old.end()));
+        REQUIRE(out_saga == out_std);
     };
 }
 
@@ -2712,28 +2685,19 @@ TEST_CASE("set_symmetric_difference - subcursor, custom compare")
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(in2_src));
 
         // saga
-        std::vector<Value> out_src(out_src_old);
-        auto const out = saga_test::random_subcursor_of(saga::cursor::all(out_src));
+        std::vector<Value> out_saga(out_src_old);
+        auto const out = saga_test::random_subcursor_of(saga::cursor::all(out_saga));
 
         auto const result = saga::set_symmetric_difference(in1, in2, out, cmp);
 
         // std
-        std::vector<Value> out_std;
+        auto out_std = out_src_old;
         std::set_symmetric_difference(in1.begin(), result.in1.begin()
                                       , in2.begin(), result.in2.begin()
-                                      , std::back_inserter(out_std), cmp);
+                                      , saga::rebase_cursor(out, out_std).begin(), cmp);
 
         // Проверка
-        auto const n_before = out.begin() - out_src.begin();
-        auto const n_after = out_src.end() - out.end();
-
-        REQUIRE(std::equal(out.begin(), result.out.begin(), out_std.begin(), out_std.end()));
-
-        REQUIRE(std::equal(out_src.begin(), out_src.begin() + n_before,
-                           out_src_old.begin(), out_src_old.begin() + n_before));
-
-        REQUIRE(std::equal(out_src.end() - n_after, out_src.end(),
-                           out_src_old.end() - n_after, out_src_old.end()));
+        REQUIRE(out_saga == out_std);
     };
 }
 
@@ -2821,27 +2785,18 @@ TEST_CASE("set_union - subcursor, custom compare")
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(in2_src));
 
         // saga
-        std::vector<Value> out_src(out_src_old);
-        auto const out = saga_test::random_subcursor_of(saga::cursor::all(out_src));
+        std::vector<Value> out_saga(out_src_old);
+        auto const out = saga_test::random_subcursor_of(saga::cursor::all(out_saga));
 
         auto const result = saga::set_union(in1, in2, out, cmp);
 
         // std
-        std::vector<Value> out_std;
+        auto out_std = out_src_old;
         std::set_union(in1.begin(), result.in1.begin(), in2.begin(), result.in2.begin()
-                       , std::back_inserter(out_std), cmp);
+                       , saga::rebase_cursor(out, out_std).begin(), cmp);
 
         // Проверка
-        auto const n_before = out.begin() - out_src.begin();
-        auto const n_after = out_src.end() - out.end();
-
-        REQUIRE(std::equal(out.begin(), result.out.begin(), out_std.begin(), out_std.end()));
-
-        REQUIRE(std::equal(out_src.begin(), out_src.begin() + n_before,
-                           out_src_old.begin(), out_src_old.begin() + n_before));
-
-        REQUIRE(std::equal(out_src.end() - n_after, out_src.end(),
-                           out_src_old.end() - n_after, out_src_old.end()));
+        REQUIRE(out_std == out_saga);
     };
 }
 
@@ -3017,13 +2972,16 @@ TEST_CASE("push_heap - default compare, subcursor")
 
             saga::push_heap(cur.dropped_front());
 
-            REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
-            REQUIRE(std::equal(cur.begin(), src.end(),
-                               src_old.begin() + (cur.begin() - src.begin())));
+            auto const input_src_old = saga::rebase_cursor(input, src_old);
+            auto const cur_src_old = saga::rebase_cursor(cur, src_old);
+
+            CHECK(saga::equal(input.dropped_front(), input_src_old.dropped_front()));
+            CHECK(saga::equal(cur, cur_src_old));
+            CHECK(saga::equal(cur.dropped_back(), cur_src_old.dropped_back()));
 
             REQUIRE(saga::is_heap(cur.dropped_front()));
-            REQUIRE(std::is_permutation(input.begin(), cur.begin(),
-                                        src_old.begin() + (input.begin() - src.begin())));
+
+            CHECK(saga::is_permutation(cur.dropped_front(), cur_src_old.dropped_front()));
         }
     };
 }
@@ -3050,13 +3008,16 @@ TEST_CASE("push_heap - custom compare, subcursor")
 
             saga::push_heap(cur.dropped_front(), cmp);
 
-            REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
-            REQUIRE(std::equal(cur.begin(), src.end(),
-                               src_old.begin() + (cur.begin() - src.begin())));
+            auto const input_src_old = saga::rebase_cursor(input, src_old);
+            auto const cur_src_old = saga::rebase_cursor(cur, src_old);
+
+            CHECK(saga::equal(input.dropped_front(), input_src_old.dropped_front()));
+            CHECK(saga::equal(cur, cur_src_old));
+            CHECK(saga::equal(cur.dropped_back(), cur_src_old.dropped_back()));
 
             REQUIRE(saga::is_heap(cur.dropped_front(), cmp));
-            REQUIRE(std::is_permutation(input.begin(), cur.begin(),
-                                        src_old.begin() + (input.begin() - src.begin())));
+
+            CHECK(saga::is_permutation(cur.dropped_front(), cur_src_old.dropped_front()));
         }
     };
 }
@@ -3074,13 +3035,13 @@ TEST_CASE("make_heap - default compare")
 
         CAPTURE(src_old, src);
 
-        REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
-        REQUIRE(std::equal(input.end(), src.end(),
-                           src_old.begin() + (input.end() - src.begin())));
+        auto const input_src_old = saga::rebase_cursor(input, src_old);
 
-        REQUIRE(saga::is_heap(input));
-        REQUIRE(std::is_permutation(input.begin(), input.end()
-                                    , src_old.begin() + input.dropped_front().size()));
+        CHECK(saga::equal(input.dropped_front(), input_src_old.dropped_front()));
+        CHECK(saga::is_permutation(input, input_src_old));
+        CHECK(saga::equal(input.dropped_back(), input_src_old.dropped_back()));
+
+        CHECK(saga::is_heap(input));
     };
 }
 
@@ -3099,13 +3060,13 @@ TEST_CASE("make_heap - custom compare")
 
         CAPTURE(src_old, src);
 
-        REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
-        REQUIRE(std::equal(input.end(), src.end(),
-                           src_old.begin() + (input.end() - src.begin())));
+        auto const input_src_old = saga::rebase_cursor(input, src_old);
 
-        REQUIRE(saga::is_heap(input, cmp));
-        REQUIRE(std::is_permutation(input.begin(), input.end()
-                                    , src_old.begin() + input.dropped_front().size()));
+        CHECK(saga::equal(input.dropped_front(), input_src_old.dropped_front()));
+        CHECK(saga::is_permutation(input, input_src_old));
+        CHECK(saga::equal(input.dropped_back(), input_src_old.dropped_back()));
+
+        CHECK(saga::is_heap(input, cmp));
     };
 }
 
@@ -3130,13 +3091,13 @@ TEST_CASE("pop_heap - default compare")
 
             CAPTURE(src_old, src);
 
-            REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
-            REQUIRE(std::equal(input.end(), src.end(),
-                               src_old.begin() + (input.end() - src.begin())));
+            auto const input_src_old = saga::rebase_cursor(input, src_old);
 
-            REQUIRE(std::is_permutation(input.begin(), input.end(),
-                                        src_old.begin() + (input.begin() - src.begin())));
-            REQUIRE(input.back() == src_old[input.begin() - src.begin()]);
+            CHECK(saga::equal(input.dropped_front(), input_src_old.dropped_front()));
+            CHECK(saga::is_permutation(input, input_src_old));
+            CHECK(saga::equal(input.dropped_back(), input_src_old.dropped_back()));
+
+            REQUIRE(input.back() == input_src_old.front());
 
             input.drop_back();
 
@@ -3168,13 +3129,13 @@ TEST_CASE("pop_heap - custom compare")
 
             CAPTURE(src_old, src);
 
-            REQUIRE(std::equal(src.begin(), input.begin(), src_old.begin()));
-            REQUIRE(std::equal(input.end(), src.end(),
-                              src_old.begin() + (input.end() - src.begin())));
+            auto const input_src_old = saga::rebase_cursor(input, src_old);
 
-            REQUIRE(std::is_permutation(input.begin(), input.end(),
-                                        src_old.begin() + (input.begin() - src.begin())));
-            REQUIRE(input.back() == src_old[input.begin() - src.begin()]);
+            CHECK(saga::equal(input.dropped_front(), input_src_old.dropped_front()));
+            CHECK(saga::is_permutation(input, input_src_old));
+            CHECK(saga::equal(input.dropped_back(), input_src_old.dropped_back()));
+
+            REQUIRE(input.back() == input_src_old.front());
 
             input.drop_back();
 
@@ -3262,7 +3223,8 @@ TEST_CASE("partial_sort - default compare")
         REQUIRE(saga::equal(subrange.dropped_front(), subrange_src_old.dropped_front()));
         REQUIRE(std::is_permutation(subrange.begin(), input.end(),
                                     subrange_src_old.begin(), input_src_old.end()));
-        REQUIRE(std::equal(input.end(), src.end(), input_src_old.end(), src_old.end()));
+        CHECK(saga::equal(input.dropped_back(), input_src_old.dropped_back()));
+        CHECK(saga::equal(subrange.dropped_back(), subrange_src_old.dropped_back()));
 
         if(!!input)
         {
@@ -3296,11 +3258,13 @@ TEST_CASE("partial_sort - custom compare")
         REQUIRE(saga::equal(subrange.dropped_front(), subrange_src_old.dropped_front()));
         REQUIRE(std::is_permutation(subrange.begin(), input.end(),
                                     subrange_src_old.begin(), input_src_old.end()));
-        REQUIRE(std::equal(input.end(), src.end(), input_src_old.end(), src_old.end()));
+
+        CHECK(saga::equal(input.dropped_back(), input_src_old.dropped_back()));
+        CHECK(saga::equal(subrange.dropped_back(), subrange_src_old.dropped_back()));
 
         if(!!input)
         {
-            REQUIRE(saga::none_of(input.dropped_front(), [&](auto const & x){return cmp(*input, x);}));
+            CHECK(saga::none_of(input.dropped_front(),[&](auto const & x){return cmp(*input, x);}));
         }
     };
 }
