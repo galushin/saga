@@ -836,6 +836,160 @@ TEST_CASE("adjacent_find - guaranty, custom predicate")
     };
 }
 
+TEST_CASE("search: default predicate, minimalistic")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    <<[](std::forward_list<Value> const & haystack, std::forward_list<Value> const & needle)
+    {
+        auto const haystack_cur = saga_test::random_subcursor_of(saga::cursor::all(haystack));
+        auto const needle_cur = saga_test::random_subcursor_of(saga::cursor::all(needle));
+
+        auto const r_saga = saga::search(haystack_cur, needle_cur);
+        auto const r_std = std::search(haystack_cur.begin(), haystack_cur.end()
+                                       , needle_cur.begin(), needle_cur.end());
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == haystack_cur.end());
+        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+    };
+}
+
+TEST_CASE("search: custom predicate, minimalistic")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    <<[](std::forward_list<Value> const & haystack, std::forward_list<Value> const & needle)
+    {
+        auto const pred = [](Value const & lhs, Value const & rhs)
+        {
+            return lhs % 2 == rhs % 2;
+        };
+
+        auto const haystack_cur = saga_test::random_subcursor_of(saga::cursor::all(haystack));
+        auto const needle_cur = saga_test::random_subcursor_of(saga::cursor::all(needle));
+
+        auto const r_saga = saga::search(haystack_cur, needle_cur, pred);
+        auto const r_std = std::search(haystack_cur.begin(), haystack_cur.end()
+                                       , needle_cur.begin(), needle_cur.end(), pred);
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == haystack_cur.end());
+        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+    };
+}
+
+TEST_CASE("search: default predicate, guaranty")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    <<[](std::list<Value> const & prefix, std::forward_list<Value> const & needle
+         , std::list<Value> const & suffix)
+    {
+        auto const haystack = [&]
+        {
+            auto tmp = prefix;
+            tmp.insert(tmp.end(), needle.begin(), needle.end());
+            tmp.insert(tmp.end(), suffix.begin(), suffix.end());
+            return tmp;
+        }();
+
+        auto const haystack_cur = saga::cursor::all(haystack);
+        auto const needle_cur = saga::cursor::all(needle);
+
+        auto const r_saga = saga::search(haystack_cur, needle_cur);
+        auto const r_std = std::search(haystack_cur.begin(), haystack_cur.end()
+                                       , needle_cur.begin(), needle_cur.end());
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == haystack_cur.end());
+        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+    };
+}
+
+TEST_CASE("search_n: default predicate, minimalistic")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    <<[](std::forward_list<Value> const & haystack
+         , saga_test::container_size<std::size_t> const & num, Value const & value)
+    {
+        auto const haystack_cur = saga_test::random_subcursor_of(saga::cursor::all(haystack));
+
+        auto const r_saga = saga::search_n(haystack_cur, num.value, value);
+        auto const r_std = std::search_n(haystack_cur.begin(), haystack_cur.end()
+                                         , num.value, value);
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == haystack_cur.end());
+        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+    };
+}
+
+TEST_CASE("search_n: custom predicate, minimalistic")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    <<[](std::forward_list<Value> const & haystack
+         , saga_test::container_size<std::size_t> const & num, Value const & value)
+    {
+        auto const pred = [](Value const & lhs, Value const & rhs)
+        {
+            return lhs % 2 == rhs % 2;
+        };
+
+        auto const haystack_cur = saga_test::random_subcursor_of(saga::cursor::all(haystack));
+
+        auto const r_saga = saga::search_n(haystack_cur, num.value, value, pred);
+        auto const r_std = std::search_n(haystack_cur.begin(), haystack_cur.end()
+                                         , num.value, value, pred);
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == haystack_cur.end());
+        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+    };
+}
+
+TEST_CASE("search_n: default predicate, guaranty")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    <<[](std::list<Value> const & prefix, std::list<Value> const & suffix
+         , saga_test::container_size<std::size_t> const & num, Value const & value)
+    {
+        auto const haystack = [&]
+        {
+            auto tmp = prefix;
+            std::fill_n(std::inserter(tmp, tmp.end()), num.value, value);
+            tmp.insert(tmp.end(), suffix.begin(), suffix.end());
+
+            return tmp;
+        }();
+
+        auto const haystack_cur = saga::cursor::all(haystack);
+
+        auto const r_saga = saga::search_n(haystack_cur, num.value, value);
+        auto const r_std = std::search_n(haystack_cur.begin(), haystack_cur.end()
+                                         , num.value, value);
+
+        REQUIRE(r_saga.begin() == r_std);
+        REQUIRE(r_saga.end() == haystack_cur.end());
+        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+    };
+}
+
 TEST_CASE("copy")
 {
     using Value = int;
