@@ -218,6 +218,44 @@ namespace saga
         }
     };
 
+    struct search_fn
+    {
+        template <class ForwardCursor1, class ForwardCursor2
+                 , class BinaryPredicate = std::equal_to<>>
+        ForwardCursor1 operator()(ForwardCursor1 cur, ForwardCursor2 s_cur
+                                  , BinaryPredicate bin_pred = {}) const
+        {
+            auto cur_rest = cur;
+            auto s_cur_rest = s_cur;
+
+            for(;;)
+            {
+                if(!s_cur_rest)
+                {
+                    return cur;
+                }
+
+                if(!cur_rest)
+                {
+                    return cur_rest;
+                }
+
+                if(saga::invoke(bin_pred, *cur_rest, *s_cur_rest))
+                {
+                    ++ cur_rest;
+                    ++ s_cur_rest;
+                }
+                else
+                {
+                    ++ cur;
+                    cur_rest = cur;
+
+                    s_cur_rest = s_cur;
+                }
+            }
+        }
+    };
+
     // Модифицирующие операции
     struct copy_fn
     {
@@ -1335,6 +1373,7 @@ namespace saga
         constexpr auto const & find_if_not = detail::static_empty_const<find_if_not_fn>::value;
         constexpr auto const & find_first_of = detail::static_empty_const<find_first_of_fn>::value;
         constexpr auto const & adjacent_find = detail::static_empty_const<adjacent_find_fn>::value;
+        constexpr auto const & search = detail::static_empty_const<search_fn>::value;
 
         constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;
         constexpr auto const & copy_if = detail::static_empty_const<copy_if_fn>::value;
