@@ -3356,6 +3356,57 @@ TEST_CASE("max_element: custom compare")
     };
 }
 
+TEST_CASE("minmax_element: default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & src)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const r_saga = saga::minmax_element(input);
+        auto const r_std = std::minmax_element(input.begin(), input.end());
+
+        // Проверка
+        REQUIRE(r_saga.min.begin() == r_std.first);
+        REQUIRE(r_saga.min.end() == input.end());
+        REQUIRE(r_saga.min.dropped_front().begin() == src.begin());
+        REQUIRE(r_saga.min.dropped_back().end() == src.end());
+
+        REQUIRE(r_saga.max.begin() == r_std.second);
+        REQUIRE(r_saga.max.end() == input.end());
+        REQUIRE(r_saga.max.dropped_front().begin() == src.begin());
+        REQUIRE(r_saga.max.dropped_back().end() == src.end());
+    };
+}
+
+TEST_CASE("minmax_element: custom compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & src)
+    {
+        auto const cmp = [](Value const & lhs, Value const & rhs)
+            { return lhs % 5 < rhs % 5; };
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const r_saga = saga::minmax_element(input, cmp);
+        auto const r_std = std::minmax_element(input.begin(), input.end(), cmp);
+
+        // Проверка
+        REQUIRE(r_saga.min.begin() == r_std.first);
+        REQUIRE(r_saga.min.end() == input.end());
+        REQUIRE(r_saga.min.dropped_front().begin() == src.begin());
+        REQUIRE(r_saga.min.dropped_back().end() == src.end());
+
+        REQUIRE(r_saga.max.begin() == r_std.second);
+        REQUIRE(r_saga.max.end() == input.end());
+        REQUIRE(r_saga.max.dropped_front().begin() == src.begin());
+        REQUIRE(r_saga.max.dropped_back().end() == src.end());
+    };
+}
+
 TEST_CASE("is_permutation: default predicate")
 {
     using Value1 = int;
