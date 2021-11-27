@@ -56,6 +56,13 @@ namespace saga
         Output1 out1;
         Output2 out2;
     };
+
+    template <class T>
+    struct min_max_result
+    {
+        T min;
+        T max;
+    };
 }
 // namespace saga
 

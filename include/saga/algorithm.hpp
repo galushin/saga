@@ -1038,6 +1038,71 @@ namespace saga
         }
     };
 
+    template <class ForwardCursor>
+    using minmax_element_result = min_max_result<ForwardCursor>;
+
+    struct minmax_element_fn
+    {
+        template <class ForwardCursor, class Compare = std::less<>>
+        minmax_element_result<ForwardCursor>
+        operator()(ForwardCursor input, Compare cmp = {}) const
+        {
+            minmax_element_result<ForwardCursor> result{input, input};
+
+            if(!input)
+            {
+                return result;
+            }
+            ++ input;
+
+            for(;!!input;)
+            {
+                auto pos1 = input;
+
+                auto pos2 = pos1;
+                ++ pos2;
+
+                if(!pos2)
+                {
+                    break;
+                }
+
+                if(saga::invoke(cmp, *pos2, *pos1))
+                {
+                    using std::swap;
+                    swap(pos1, pos2);
+                }
+
+                if(saga::invoke(cmp, *pos1, *result.min))
+                {
+                    result.min = pos1;
+                }
+
+                if(!saga::invoke(cmp, *pos2, *result.max))
+                {
+                    result.max = pos2;
+                }
+
+                input = pos2;
+                ++ input;
+            }
+
+            if(!!input)
+            {
+                if(saga::invoke(cmp, *input, *result.min))
+                {
+                    result.min = input;
+                }
+                else if(!saga::invoke(cmp, *input, *result.max))
+                {
+                    result.max = input;
+                }
+            }
+
+            return result;
+        }
+    };
+
     struct partial_sort_fn
     {
         template <class RandomAccessCursor, class Compare = std::less<>>
@@ -1326,6 +1391,8 @@ namespace saga
 
         constexpr auto const & min_element = detail::static_empty_const<min_element_fn>::value;
         constexpr auto const & max_element = detail::static_empty_const<max_element_fn>::value;
+        constexpr auto const & minmax_element
+            = detail::static_empty_const<minmax_element_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
         constexpr auto const & lexicographical_compare
