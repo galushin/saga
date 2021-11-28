@@ -742,6 +742,18 @@ namespace saga
         }
     };
 
+    struct lower_bound_fn
+    {
+        template <class ForwardCursor, class T, class Compare = std::less<>>
+        ForwardCursor operator()(ForwardCursor cur, T const & value, Compare cmp = {}) const
+        {
+            auto pred = [&](auto && arg)
+                { return saga::invoke(cmp, std::forward<decltype(arg)>(arg), value); };
+
+            return saga::partition_point_fn{}(std::move(cur), std::move(pred));
+        }
+    };
+
     template <class InputCursor1, class InputCursor2, class OutputCursor>
     using merge_result = in_in_out_result<InputCursor1, InputCursor2, OutputCursor>;
 
@@ -1481,6 +1493,8 @@ namespace saga
             = detail::static_empty_const<is_sorted_until_fn>::value;
 
         constexpr auto const & partial_sort = detail::static_empty_const<partial_sort_fn>::value;
+
+        constexpr auto const & lower_bound = detail::static_empty_const<lower_bound_fn>::value;
 
         constexpr auto const & merge = detail::static_empty_const<merge_fn>::value;
 
