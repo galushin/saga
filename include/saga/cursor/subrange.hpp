@@ -94,6 +94,11 @@ namespace saga
             return subrange_cursor(this->cur_old_, this->cur_, unsafe_tag_t{});
         }
 
+        void exhaust()
+        {
+            this->cur_ = this->last_;
+        }
+
         // Двунаправленный курсор
         constexpr void drop_back()
         {
