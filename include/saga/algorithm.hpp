@@ -256,6 +256,40 @@ namespace saga
         }
     };
 
+    struct find_end_fn
+    {
+        template <class ForwardCursor1, class ForwardCursor2
+                 , class BinaryPredicate = std::equal_to<>>
+        ForwardCursor1 operator()(ForwardCursor1 cur, ForwardCursor2 s_cur
+                                  , BinaryPredicate bin_pred = {}) const
+        {
+            if(!s_cur)
+            {
+                cur.exhaust();
+                return cur;
+            }
+
+            auto result = cur;
+            result.exhaust();
+
+            for(;;)
+            {
+                auto new_result = saga::search_fn{}(cur, s_cur, bin_pred);
+
+                if(!new_result)
+                {
+                    return result;
+                }
+                else
+                {
+                    result = new_result;
+                    cur = result;
+                    ++ cur;
+                }
+            }
+        }
+    };
+
     struct search_n_fn
     {
         template <class ForwardCursor, class Size, class T, class BinaryPredicate = std::equal_to<>>
@@ -1407,6 +1441,7 @@ namespace saga
         constexpr auto const & find = detail::static_empty_const<find_fn>::value;
         constexpr auto const & find_if = detail::static_empty_const<find_if_fn>::value;
         constexpr auto const & find_if_not = detail::static_empty_const<find_if_not_fn>::value;
+        constexpr auto const & find_end = detail::static_empty_const<find_end_fn>::value;
         constexpr auto const & find_first_of = detail::static_empty_const<find_first_of_fn>::value;
         constexpr auto const & adjacent_find = detail::static_empty_const<adjacent_find_fn>::value;
         constexpr auto const & search = detail::static_empty_const<search_fn>::value;
