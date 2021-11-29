@@ -766,6 +766,17 @@ namespace saga
         }
     };
 
+    struct binary_search_fn
+    {
+        template <class ForwardCursor, class T, class Compare = std::less<>>
+        bool operator()(ForwardCursor cur, T const & value, Compare cmp = {}) const
+        {
+            auto pos = saga::lower_bound_fn{}(std::move(cur), value, std::move(cmp));
+
+            return !!pos && !saga::invoke(cmp, value, *pos);
+        }
+    };
+
     template <class InputCursor1, class InputCursor2, class OutputCursor>
     using merge_result = in_in_out_result<InputCursor1, InputCursor2, OutputCursor>;
 
@@ -1508,6 +1519,7 @@ namespace saga
 
         constexpr auto const & lower_bound = detail::static_empty_const<lower_bound_fn>::value;
         constexpr auto const & upper_bound = detail::static_empty_const<upper_bound_fn>::value;
+        constexpr auto const & binary_search = detail::static_empty_const<binary_search_fn>::value;
 
         constexpr auto const & merge = detail::static_empty_const<merge_fn>::value;
 

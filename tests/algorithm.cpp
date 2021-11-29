@@ -3624,6 +3624,60 @@ TEST_CASE("upper_bound: custom compare")
     };
 }
 
+TEST_CASE("binary_search: default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & src_old, Value const & value)
+    {
+        // Подготовка
+        auto const src = [&]()
+        {
+            auto src = src_old;
+            src.sort();
+            return src;
+        }();
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // Выполнение
+        auto const r_std = std::binary_search(input.begin(), input.end(), value);
+
+        auto const r_saga = saga::binary_search(input, value);
+
+        // Проверка
+        REQUIRE(r_saga == r_std);
+    };
+}
+
+TEST_CASE("binary_search: custom compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & src_old, Value const & value)
+    {
+        // Подготовка
+        auto cmp = std::greater<>{};
+
+        auto const src = [&]()
+        {
+            auto src = src_old;
+            src.sort(cmp);
+            return src;
+        }();
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // Выполнение
+        auto const r_std = std::binary_search(input.begin(), input.end(), value, cmp);
+
+        auto const r_saga = saga::binary_search(input, value, cmp);
+
+        // Проверка
+        REQUIRE(r_saga == r_std);
+    };
+}
+
 TEST_CASE("min_element: default compare")
 {
     using Value = int;
