@@ -165,6 +165,24 @@ namespace saga
         }
     };
 
+    struct exclusive_scan_fn
+    {
+        template <class InputCursor, class OutputCursor, class T
+                 , class BinaryOperation = std::plus<>>
+        in_out_result<InputCursor, OutputCursor>
+        operator()(InputCursor in, OutputCursor out, T init, BinaryOperation bin_op = {}) const
+        {
+            for(; !!in && !!out; ++ in)
+            {
+                *out << init;
+
+                init = saga::invoke(bin_op, std::move(init), *in);
+            }
+
+            return {std::move(in), std::move(out)};
+        }
+    };
+
 namespace
 {
     constexpr auto const & iota          = detail::static_empty_const<iota_fn>::value;
@@ -175,6 +193,7 @@ namespace
     constexpr auto const & partial_sum   = detail::static_empty_const<partial_sum_fn>::value;
     constexpr auto const & reduce        = detail::static_empty_const<reduce_fn>::value;
     constexpr auto const & inclusive_scan = detail::static_empty_const<inclusive_scan_fn>::value;
+    constexpr auto const & exclusive_scan = detail::static_empty_const<exclusive_scan_fn>::value;
 }
 
 }
