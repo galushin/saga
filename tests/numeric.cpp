@@ -534,3 +534,278 @@ TEST_CASE("inner_product - constexpr, generic")
 
     static_assert(sum == 55, "");
 }
+
+// inclusive_scan
+TEST_CASE("inclusive_scan - minimalistic, default operation")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        // saga
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest_saga;
+        saga::inclusive_scan(saga::make_istream_cursor<Value>(src_in)
+                             , saga::back_inserter(dest_saga));
+
+        // std
+        std::vector<Value> dest_std;
+        std::partial_sum(src.begin(), src.end(), std::back_inserter(dest_std));
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_std);
+    };
+}
+
+TEST_CASE("inclusive_scan - subcursor, default operation")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_saga = dest_old;
+
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const result_saga = saga::inclusive_scan(input, out_saga);
+
+        // std
+        auto dest_std = dest_old;
+
+        auto const result_std
+            = std::partial_sum(input.begin(), result_saga.in.begin()
+                               , dest_std.begin() + (out_saga.begin() - dest_saga.begin()));
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_std);
+        REQUIRE((result_saga.out.begin() - dest_saga.begin()) == (result_std - dest_std.begin()));
+        REQUIRE(result_saga.out.end() == out_saga.end());
+    };
+}
+
+TEST_CASE("inclusive_scan - minimalistic, custom operation")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const op = std::multiplies<>{};
+
+        // std
+        std::vector<Value> dest_std;
+        std::partial_sum(src.begin(), src.end(), std::back_inserter(dest_std), op);
+
+        // saga
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest_saga;
+        saga::inclusive_scan(saga::make_istream_cursor<Value>(src_in)
+                             , saga::back_inserter(dest_saga), op);
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_std);
+    };
+}
+
+TEST_CASE("inclusive_scan - subcursor, custom operation")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
+    {
+        auto const op = std::multiplies<>{};
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_saga = dest_old;
+
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const result_saga = saga::inclusive_scan(input, out_saga, op);
+
+        // std
+        auto dest_std = dest_old;
+
+        auto const result_std
+            = std::partial_sum(input.begin(), result_saga.in.begin()
+                               , dest_std.begin() + (out_saga.begin() - dest_saga.begin()), op);
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_std);
+        REQUIRE((result_saga.out.begin() - dest_saga.begin()) == (result_std - dest_std.begin()));
+        REQUIRE(result_saga.out.end() == out_saga.end());
+    };
+}
+
+TEST_CASE("inclusive_scan - minimalistic, custom operation, init value")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::list<Value> const & src, Value const & init_value)
+    {
+        auto const op = std::multiplies<>{};
+
+        // Ожидаемое
+        auto const src_2 = [&]
+        {
+            auto tmp = src;
+
+            if(!tmp.empty())
+            {
+                tmp.front() = op(tmp.front(), init_value);
+            }
+
+            return tmp;
+        }();
+
+        std::vector<Value> dest_expected;
+        saga::inclusive_scan(saga::cursor::all(src_2), saga::back_inserter(dest_expected), op);
+
+        // saga
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest_saga;
+        saga::inclusive_scan(saga::make_istream_cursor<Value>(src_in)
+                             , saga::back_inserter(dest_saga), op, init_value);
+
+        // Сравнение
+        CAPTURE(src, init_value, src_2);
+
+        REQUIRE(dest_saga == dest_expected);
+    };
+}
+
+TEST_CASE("inclusive_scan - subcursor, custom operation, init_value")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker
+        << [](std::vector<Value> const & src
+              , std::vector<Value> const & dest_old
+              , Value const & init_value)
+    {
+        auto const op = std::multiplies<>{};
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // С начальным значением
+        auto dest_saga = dest_old;
+
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const result_saga = saga::inclusive_scan(input, out_saga, op, init_value);
+
+        // Без начального значения
+        auto const src_2 = [&]
+        {
+            std::list<Value> tmp(input.begin(), result_saga.in.begin());
+
+            if(!tmp.empty())
+            {
+                tmp.front() = op(tmp.front(), init_value);
+            }
+
+            return tmp;
+        }();
+
+        auto dest_expected = dest_old;
+        auto const out_2 = saga::rebase_cursor(out_saga, dest_expected);
+
+        auto const result_expected = saga::inclusive_scan(saga::cursor::all(src_2), out_2, op);
+
+        // Сравнение
+        CAPTURE(input, init_value, src_2);
+
+        REQUIRE(dest_saga == dest_expected);
+
+        REQUIRE((!result_saga.in || !result_saga.out));
+
+        REQUIRE((result_saga.in.begin() - input.begin())
+                == (result_saga.out.begin() - out_saga.begin()));
+        REQUIRE(result_saga.in.end() == input.end());
+
+        REQUIRE(result_saga.out.begin() - dest_saga.begin()
+                == result_expected.out.begin() - dest_expected.begin());
+        REQUIRE(result_saga.out.end() == out_saga.end());
+    };
+}
+
+// exclusive_scan
+TEST_CASE("exclusive_scan - minimalistic, default operation")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        // saga
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest_saga;
+        saga::exclusive_scan(saga::make_istream_cursor<Value>(src_in)
+                             , saga::back_inserter(dest_saga), init_value);
+
+        // Ожидаемое
+        auto const src_2 = [&]
+        {
+            std::list<Value> tmp;
+
+            if(!src.empty())
+            {
+                tmp.push_back(init_value);
+                tmp.insert(tmp.end(), src.begin(), src.end() - 1);
+            }
+
+            return tmp;
+        }();
+
+        std::vector<Value> dest_expected;
+        std::partial_sum(src_2.begin(), src_2.end(), std::back_inserter(dest_expected));
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_expected);
+    };
+}
+
+TEST_CASE("exclusive_scan - minimalistic, custom operation")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        auto const bin_op = std::multiplies<>{};
+
+        // saga
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest_saga;
+        saga::exclusive_scan(saga::make_istream_cursor<Value>(src_in)
+                             , saga::back_inserter(dest_saga), init_value, bin_op);
+
+        // Ожидаемое
+        auto const src_2 = [&]
+        {
+            std::list<Value> tmp;
+
+            if(!src.empty())
+            {
+                tmp.push_back(init_value);
+                tmp.insert(tmp.end(), src.begin(), src.end() - 1);
+            }
+
+            return tmp;
+        }();
+
+        std::vector<Value> dest_expected;
+        std::partial_sum(src_2.begin(), src_2.end(), std::back_inserter(dest_expected), bin_op);
+
+        // Сравнение
+        REQUIRE(dest_saga == dest_expected);
+    };
+}
