@@ -3500,6 +3500,172 @@ TEST_CASE("partial_sort - custom compare")
     };
 }
 
+TEST_CASE("partial_sort_copy : minimalistic, default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
+    {
+        // saga
+        auto dest_saga = dest_old;
+
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto src_saga = saga_test::make_istringstream_from_range(src);
+
+        auto const r_saga = saga::partial_sort_copy(saga::make_istream_cursor<Value>(src_saga)
+                                                    , out_saga);
+
+        // std
+        auto dest_std = dest_old;
+
+        auto const out_std = saga::rebase_cursor(out_saga, dest_std);
+
+        auto const r_std = std::partial_sort_copy(src.begin(), src.end()
+                                                  , out_std.begin(), out_std.end());
+
+        // Проверка
+        CAPTURE(src, dest_old, out_saga);
+
+        REQUIRE(dest_saga == dest_std);
+
+        if(!!out_saga)
+        {
+            REQUIRE(!r_saga.in);
+        }
+
+        REQUIRE(r_saga.out.size() == (out_std.end() - r_std));
+        REQUIRE(r_saga.out.end() == out_saga.end());
+        REQUIRE(r_saga.out.dropped_front().begin() == dest_saga.begin());
+        REQUIRE(r_saga.out.dropped_back().end() == dest_saga.end());
+    };
+}
+
+TEST_CASE("partial_sort_copy : minimalistic, custom compare")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
+    {
+        auto const cmp = std::greater<>{};
+
+        // saga
+        auto dest_saga = dest_old;
+
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto src_saga = saga_test::make_istringstream_from_range(src);
+
+        auto const r_saga = saga::partial_sort_copy(saga::make_istream_cursor<Value>(src_saga)
+                                                    , out_saga, cmp);
+
+        // std
+        auto dest_std = dest_old;
+
+        auto const out_std = saga::rebase_cursor(out_saga, dest_std);
+
+        auto const r_std = std::partial_sort_copy(src.begin(), src.end()
+                                                  , out_std.begin(), out_std.end(), cmp);
+
+        // Проверка
+        REQUIRE(dest_saga == dest_std);
+
+        if(!!out_saga)
+        {
+            REQUIRE(!r_saga.in);
+        }
+
+        REQUIRE(r_saga.out.size() == (out_std.end() - r_std));
+        REQUIRE(r_saga.out.end() == out_saga.end());
+        REQUIRE(r_saga.out.dropped_front().begin() == dest_saga.begin());
+        REQUIRE(r_saga.out.dropped_back().end() == dest_saga.end());
+    };
+}
+
+TEST_CASE("partial_sort_copy : input subrange, default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_saga = dest_old;
+
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const r_saga = saga::partial_sort_copy(input, out_saga);
+
+        // std
+        auto dest_std = dest_old;
+
+        auto const out_std = saga::rebase_cursor(out_saga, dest_std);
+
+        auto const r_std = std::partial_sort_copy(input.begin(), input.end()
+                                                  , out_std.begin(), out_std.end());
+
+        // Проверка
+        REQUIRE(dest_saga == dest_std);
+
+        REQUIRE(r_saga.in.begin() == (!!out_saga ? input.end() : input.begin()));
+
+        REQUIRE(r_saga.in.end() == input.end());
+        REQUIRE(r_saga.in.dropped_front().begin() == src.begin());
+        REQUIRE(r_saga.in.dropped_back().end() == src.end());
+
+        REQUIRE(r_saga.out.size() == (out_std.end() - r_std));
+        REQUIRE(r_saga.out.end() == out_saga.end());
+        REQUIRE(r_saga.out.dropped_front().begin() == dest_saga.begin());
+        REQUIRE(r_saga.out.dropped_back().end() == dest_saga.end());
+    };
+}
+
+TEST_CASE("partial_sort_copy : input subrage, custom compare")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
+    {
+        auto const cmp = std::greater<>{};
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_saga = dest_old;
+
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const r_saga = saga::partial_sort_copy(input, out_saga, cmp);
+
+        // std
+        auto dest_std = dest_old;
+
+        auto const out_std = saga::rebase_cursor(out_saga, dest_std);
+
+        auto const r_std = std::partial_sort_copy(input.begin(), input.end()
+                                                  , out_std.begin(), out_std.end(), cmp);
+
+        // Проверка
+        REQUIRE(dest_saga == dest_std);
+
+        REQUIRE(r_saga.in.begin() == (!!out_saga ? input.end() : input.begin()));
+
+        REQUIRE(r_saga.in.end() == input.end());
+        REQUIRE(r_saga.in.dropped_front().begin() == src.begin());
+        REQUIRE(r_saga.in.dropped_back().end() == src.end());
+
+        REQUIRE(r_saga.out.size() == (out_std.end() - r_std));
+        REQUIRE(r_saga.out.end() == out_saga.end());
+        REQUIRE(r_saga.out.dropped_front().begin() == dest_saga.begin());
+        REQUIRE(r_saga.out.dropped_back().end() == dest_saga.end());
+    };
+}
+
 TEST_CASE("lower_bound: default compare")
 {
     using Value = int;

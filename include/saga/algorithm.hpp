@@ -1277,6 +1277,47 @@ namespace saga
         }
     };
 
+    template <class InputCursor, class RandomAccessCursor>
+    using partial_sort_copy_result = in_out_result<InputCursor, RandomAccessCursor>;
+
+    struct partial_sort_copy_fn
+    {
+        template <class InputCursor, class RandomAccessCursor, class Compare = std::less<>>
+        partial_sort_copy_result<InputCursor, RandomAccessCursor>
+        operator()(InputCursor input, RandomAccessCursor out, Compare cmp = {}) const
+        {
+            if(!input || !out)
+            {
+                return {std::move(input), std::move(out)};
+            }
+
+            auto result = saga::copy_fn{}(std::move(input), out);
+
+            auto const num = out.size() - result.out.size();
+
+            auto heap = out;
+            saga::cursor::drop_back_n(heap, result.out.size());
+
+            saga::make_heap_fn{}(heap, cmp);
+
+            assert(heap.size() == num);
+
+            for(; !!result.in; ++ result.in)
+            {
+                assert(!!heap);
+
+                if(saga::invoke(cmp, *result.in, *heap))
+                {
+                    saga::detail::adjust_heap(heap, 0*num, num, *result.in, cmp);
+                }
+            }
+
+            saga::sort_heap_fn{}(std::move(heap), std::move(cmp));
+
+            return result;
+        }
+    };
+
     struct equal_fn
     {
     private:
@@ -1516,6 +1557,8 @@ namespace saga
             = detail::static_empty_const<is_sorted_until_fn>::value;
 
         constexpr auto const & partial_sort = detail::static_empty_const<partial_sort_fn>::value;
+        constexpr auto const & partial_sort_copy
+            = detail::static_empty_const<partial_sort_copy_fn>::value;
 
         constexpr auto const & lower_bound = detail::static_empty_const<lower_bound_fn>::value;
         constexpr auto const & upper_bound = detail::static_empty_const<upper_bound_fn>::value;
