@@ -1206,6 +1206,48 @@ TEST_CASE("copy_if: subcursor")
     };
 }
 
+TEST_CASE("copy_backward")
+{
+    using SrcValue = int;
+    using DestValue = long;
+
+    saga_test::property_checker
+    << [](std::list<SrcValue> const & src, std::list<DestValue> const & dest_old)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+        // saga
+        auto dest_saga = dest_old;
+
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const r_saga = saga::copy_backward(input, out_saga);
+
+        // std
+        auto dest_std = dest_old;
+
+        auto const out_std = saga::rebase_cursor(out_saga, dest_std);
+
+        auto const r_std = std::copy_backward(r_saga.in.end(), input.end(), out_std.end());
+
+        // Проверка
+        REQUIRE(dest_saga == dest_std);
+
+        auto const n_common = std::min(saga::cursor::size(input), saga::cursor::size(out_saga));
+
+        REQUIRE(r_saga.in.begin() == input.begin());
+        REQUIRE(std::distance(r_saga.in.end(), input.end()) == n_common);
+        REQUIRE(r_saga.in.dropped_front().begin() == src.begin());
+        REQUIRE(r_saga.in.dropped_back().end() == src.end());
+
+        REQUIRE(r_saga.out.begin() == out_saga.begin());
+        REQUIRE(std::distance(r_saga.out.end(), out_saga.end()) == n_common);
+        REQUIRE(std::distance(r_saga.out.end(), out_saga.end())
+                == std::distance(r_std, out_std.end()));
+        REQUIRE(r_saga.out.dropped_front().begin() == dest_saga.begin());
+        REQUIRE(r_saga.out.dropped_back().end() == dest_saga.end());
+    };
+}
+
 TEST_CASE("move: minimal with not moveable input")
 {
     using Value = int;
