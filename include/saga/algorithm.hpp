@@ -363,6 +363,26 @@ namespace saga
         }
     };
 
+    template <class BidirectionalCursor1, class BidirectionalCursor2>
+    using copy_backward_result = saga::in_out_result<BidirectionalCursor1, BidirectionalCursor2>;
+
+    struct copy_backward_fn
+    {
+        template <class BidirectionalCursor1, class BidirectionalCursor2>
+        copy_backward_result<BidirectionalCursor1, BidirectionalCursor2>
+        operator()(BidirectionalCursor1 input, BidirectionalCursor2 out) const
+        {
+            for(; !!input && !!out;)
+            {
+                out.back() = input.back();
+                input.drop_back();
+                out.drop_back();
+            }
+
+            return {std::move(input), std::move(out)};
+        }
+    };
+
     template <class InputCursor, class OutputCursor>
     using move_result = in_out_result<InputCursor, OutputCursor>;
 
@@ -1525,6 +1545,7 @@ namespace saga
 
         constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;
         constexpr auto const & copy_if = detail::static_empty_const<copy_if_fn>::value;
+        constexpr auto const & copy_backward = detail::static_empty_const<copy_backward_fn>::value;
         constexpr auto const & move = detail::static_empty_const<move_fn>::value;
 
         constexpr auto const & fill = detail::static_empty_const<fill_fn>::value;
