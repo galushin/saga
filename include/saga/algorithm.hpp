@@ -265,12 +265,12 @@ namespace saga
         {
             if(!s_cur)
             {
-                cur.exhaust();
+                cur.exhaust_front();
                 return cur;
             }
 
             auto result = cur;
-            result.exhaust();
+            result.exhaust_front();
 
             for(;;)
             {
@@ -662,6 +662,50 @@ namespace saga
             cur = find_if_fn{}(std::move(cur), std::move(pred));
 
             return !cur;
+        }
+    };
+
+    struct partition_fn
+    {
+        template <class BidirectionalCursor, class UnaryPredicate>
+        BidirectionalCursor operator()(BidirectionalCursor input, UnaryPredicate pred) const
+        {
+            input.forget_front();
+            input.forget_back();
+
+            for(;;)
+            {
+                if(!input)
+                {
+                    break;
+                }
+
+                if(saga::invoke(pred, input.front()))
+                {
+                    input.drop_front();
+                    continue;
+                }
+
+                if(!saga::invoke(pred, input.back()))
+                {
+                    input.drop_back();
+                    continue;
+                }
+
+                using std::swap;
+                swap(input.front(), input.back());
+
+                input.drop_front();
+
+                if(!!input)
+                {
+                    input.drop_back();
+                }
+            }
+
+            input.rewind_back();
+
+            return input;
         }
     };
 
@@ -1568,6 +1612,7 @@ namespace saga
 
         constexpr auto const & is_partitioned
             = detail::static_empty_const<is_partitioned_fn>::value;
+        constexpr auto const & partition = detail::static_empty_const<partition_fn>::value;
         constexpr auto const & partition_copy
             = detail::static_empty_const<partition_copy_fn>::value;
         constexpr auto const & partition_point
