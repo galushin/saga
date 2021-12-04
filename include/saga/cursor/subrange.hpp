@@ -94,9 +94,14 @@ namespace saga
             return subrange_cursor(this->cur_old_, this->cur_, unsafe_tag_t{});
         }
 
-        void exhaust()
+        void exhaust_front()
         {
             this->cur_ = this->last_;
+        }
+
+        void forget_front()
+        {
+            this->cur_old_ = this->cur_;
         }
 
         // Двунаправленный курсор
@@ -122,6 +127,18 @@ namespace saga
         subrange_cursor dropped_back() const
         {
             return subrange_cursor(this->last_, this->last_old_, saga::unsafe_tag_t{});
+        }
+
+        void rewind_back()
+        {
+            this->last_ = this->last_old_;
+            this->back_ = this->last_;
+            this->tweak_back(typename std::iterator_traits<Sentinel>::iterator_category{});
+        }
+
+        void forget_back()
+        {
+            this->last_old_ = this->last_;
         }
 
         // Курсор произвольного доступа

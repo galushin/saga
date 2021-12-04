@@ -2319,6 +2319,37 @@ TEST_CASE("partition_copy: minimal")
     };
 }
 
+TEST_CASE("partition")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::list<Value> const & src_old)
+    {
+        auto const pred = [](Value const & arg) { return arg % 2 == 1; };
+
+        // saga
+        auto src = src_old;
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+        auto const result = saga::partition(input, pred);
+
+        // Проверка
+        REQUIRE(saga::is_partitioned(input, pred));
+
+        REQUIRE(result.end() == input.end());
+        REQUIRE(result.dropped_front().begin() == input.begin());
+        REQUIRE(result.dropped_back().end() == input.end());
+
+        auto const input_old = saga::rebase_cursor(input, src_old);
+        REQUIRE(saga::is_permutation(input, input_old));
+
+        REQUIRE(saga::all_of(result.dropped_front(), pred));
+        REQUIRE(saga::none_of(result, pred));
+
+        REQUIRE(saga::equal(input.dropped_front(), input_old.dropped_front()));
+        REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
+    };
+}
+
 TEST_CASE("partition_copy: subcursor")
 {
     using Value = int;
