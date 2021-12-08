@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные возможности, используемые в тестах
+#include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/cursor/istream_cursor.hpp>
 
@@ -807,5 +808,255 @@ TEST_CASE("exclusive_scan - minimalistic, custom operation")
 
         // Сравнение
         REQUIRE(dest_saga == dest_expected);
+    };
+}
+
+TEST_CASE("exclusive_scan: inplace, default operation")
+{
+    using Value = unsigned;
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        // Копирование
+        std::vector<Value> expected;
+        saga::exclusive_scan(saga::cursor::all(src), saga::back_inserter(expected), init_value);
+
+        // На месте
+        std::vector<Value> actual = src;
+        saga::exclusive_scan(saga::cursor::all(actual), saga::cursor::all(actual), init_value);
+
+        // Проверка
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("exclusive_scan: inplace, custom operation")
+{
+    using Value = unsigned;
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        auto const bin_op = std::multiplies<>{};
+
+        // Копирование
+        std::vector<Value> expected;
+        saga::exclusive_scan(saga::cursor::all(src), saga::back_inserter(expected)
+                             , init_value, bin_op);
+
+        // На месте
+        std::vector<Value> actual = src;
+        saga::exclusive_scan(saga::cursor::all(actual), saga::cursor::all(actual)
+                             , init_value, bin_op);
+
+        // Проверка
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("exclusive_scan : subrange, default operation")
+{
+    using Value = unsigned;
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , std::vector<Value> const & dest_old
+                                      , Value const & init_value)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // exclusive_scan
+        auto dest_actual = dest_old;
+        auto const out_actual = saga_test::random_subcursor_of(saga::cursor::all(dest_actual));
+
+        auto const r_actual = saga::exclusive_scan(input, out_actual, init_value);
+
+        // inclusive_scan (с другим входом)
+        auto src_inclusive = src;
+
+        auto const input_inclusive = saga::rebase_cursor(input, src_inclusive);
+
+        if(!!input_inclusive)
+        {
+            std::rotate(input_inclusive.begin(), input_inclusive.end() - 1, input_inclusive.end());
+            input_inclusive.front() = init_value;
+        }
+
+        auto dest_expected = dest_old;
+
+        auto const out_expected = saga::rebase_cursor(out_actual, dest_expected);
+
+        auto const r_expected = saga::partial_sum(input_inclusive, out_expected);
+
+        // Сравнение
+        CAPTURE(src, dest_old, init_value, input, input_inclusive
+                , saga::rebase_cursor(out_actual, dest_old));
+
+        REQUIRE(dest_actual == dest_expected);
+
+        auto const r_expected_in = saga::rebase_cursor(r_expected.in, src);
+
+        REQUIRE(r_actual.in.begin() == r_expected_in.begin());
+        REQUIRE(r_actual.in.end() == r_expected_in.end());
+        REQUIRE(r_actual.in.dropped_front().begin() == r_expected_in.dropped_front().begin());
+        REQUIRE(r_actual.in.dropped_back().end() == r_expected_in.dropped_back().end());
+
+        auto const r_expected_out = saga::rebase_cursor(r_expected.out, dest_actual);
+
+        REQUIRE(r_actual.out.begin() == r_expected_out.begin());
+        REQUIRE(r_actual.out.end() == r_expected_out.end());
+        REQUIRE(r_actual.out.dropped_front().begin() == r_expected_out.dropped_front().begin());
+        REQUIRE(r_actual.out.dropped_back().end() == r_expected_out.dropped_back().end());
+    };
+}
+
+TEST_CASE("exclusive_scan : subrange, custom operation")
+{
+    using Value = unsigned;
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , std::vector<Value> const & dest_old
+                                      , Value const & init_value)
+    {
+        auto const bin_op = std::multiplies<>{};
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // exclusive_scan
+        auto dest_actual = dest_old;
+        auto const out_actual = saga_test::random_subcursor_of(saga::cursor::all(dest_actual));
+
+        auto const r_actual = saga::exclusive_scan(input, out_actual, init_value, bin_op);
+
+        // inclusive_scan (с другим входом)
+        auto src_inclusive = src;
+
+        auto const input_inclusive = saga::rebase_cursor(input, src_inclusive);
+
+        if(!!input_inclusive)
+        {
+            std::rotate(input_inclusive.begin(), input_inclusive.end() - 1, input_inclusive.end());
+            input_inclusive.front() = init_value;
+        }
+
+        auto dest_expected = dest_old;
+
+        auto const out_expected = saga::rebase_cursor(out_actual, dest_expected);
+
+        auto const r_expected = saga::inclusive_scan(input_inclusive, out_expected, bin_op);
+
+        // Сравнение
+        CAPTURE(src, dest_old, init_value, input, input_inclusive
+                , saga::rebase_cursor(out_actual, dest_old));
+
+        REQUIRE(dest_actual == dest_expected);
+
+        auto const r_expected_in = saga::rebase_cursor(r_expected.in, src);
+
+        REQUIRE(r_actual.in.begin() == r_expected_in.begin());
+        REQUIRE(r_actual.in.end() == r_expected_in.end());
+        REQUIRE(r_actual.in.dropped_front().begin() == r_expected_in.dropped_front().begin());
+        REQUIRE(r_actual.in.dropped_back().end() == r_expected_in.dropped_back().end());
+
+        auto const r_expected_out = saga::rebase_cursor(r_expected.out, dest_actual);
+
+        REQUIRE(r_actual.out.begin() == r_expected_out.begin());
+        REQUIRE(r_actual.out.end() == r_expected_out.end());
+        REQUIRE(r_actual.out.dropped_front().begin() == r_expected_out.dropped_front().begin());
+        REQUIRE(r_actual.out.dropped_back().end() == r_expected_out.dropped_back().end());
+    };
+}
+
+// transform_exclusive_scan
+TEST_CASE("transform_exclusive_scan: minimalistic")
+{
+    using Value = unsigned;
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        auto const unary_op = [](Value const & arg) { return arg % 10; };
+        auto const bin_op = std::multiplies<>{};
+
+        // transform + exclusive_scan
+        std::vector<Value> tmp;
+        saga::transform(saga::cursor::all(src), saga::back_inserter(tmp), unary_op);
+
+        std::vector<Value> expected;
+        saga::exclusive_scan(saga::cursor::all(tmp), saga::back_inserter(expected)
+                             , init_value, bin_op);
+
+        // transform_exclusive_scan
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> actual;
+        saga::transform_exclusive_scan(saga::make_istream_cursor<Value>(src_in)
+                                       , saga::back_inserter(actual)
+                                       , init_value, bin_op, unary_op);
+
+        // Проверка
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("transform_exclusive_scan: inplace")
+{
+    using Value = unsigned;
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        auto const unary_op = [](Value const & arg) { return arg % 10; };
+        auto const bin_op = std::multiplies<>{};
+
+        // Копирование
+        std::vector<Value> expected;
+        saga::transform_exclusive_scan(saga::cursor::all(src), saga::back_inserter(expected)
+                                       , init_value, bin_op, unary_op);
+
+        // На месте
+        std::vector<Value> actual = src;
+        saga::transform_exclusive_scan(saga::cursor::all(actual), saga::cursor::all(actual)
+                                       , init_value, bin_op, unary_op);
+
+        // Проверка
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("transform_exclusive_scan: subranges")
+{
+    using Value = unsigned;
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , std::vector<Value> const & dest_old
+                                      , Value const & init_value)
+    {
+        auto const unary_op = [](Value const & arg) { return arg % 10; };
+        auto const bin_op = std::multiplies<>{};
+
+        // Подготовка
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // transform_exclusive_scan
+        std::vector<Value> dest_actual = dest_old;
+
+        auto const out_actual = saga_test::random_subcursor_of(saga::cursor::all(dest_actual));
+        auto const r_actual
+            = saga::transform_exclusive_scan(input, out_actual, init_value, bin_op, unary_op);
+
+        // transform + exclusive_scan
+        std::vector<Value> dest_expected = dest_old;
+        auto out_expected = saga::rebase_cursor(out_actual, dest_expected);
+        out_expected.forget_front();
+        auto const r_expected = saga::transform(input, out_expected, unary_op);
+
+        saga::exclusive_scan(r_expected.out.dropped_front(), r_expected.out.dropped_front()
+                             , init_value, bin_op);
+
+        // Проверка
+        CAPTURE(src, dest_old, input, init_value, saga::rebase_cursor(out_actual, dest_old));
+
+        REQUIRE(dest_actual == dest_expected);
+
+        REQUIRE(r_actual.in.begin() == r_expected.in.begin());
+        REQUIRE(r_actual.in.end() == r_expected.in.end());
+        REQUIRE(r_actual.in.dropped_front().begin() == r_expected.in.dropped_front().begin());
+        REQUIRE(r_actual.in.dropped_back().end() == r_expected.in.dropped_back().end());
+
+        REQUIRE(r_actual.out.begin() - out_actual.begin()
+                == r_expected.out.begin() - out_expected.begin());
+        REQUIRE(r_actual.out.end() == out_actual.end());
+        REQUIRE(r_actual.out.dropped_front().begin() == dest_actual.begin());
+        REQUIRE(r_actual.out.dropped_back().end() == dest_actual.end());
     };
 }

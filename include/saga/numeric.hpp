@@ -174,12 +174,36 @@ namespace saga
         {
             for(; !!in && !!out; ++ in)
             {
-                *out << init;
+                auto next_init = saga::invoke(bin_op, std::move(init), *in);
 
-                init = saga::invoke(bin_op, std::move(init), *in);
+                out << init;
+
+                init = std::move(next_init);
             }
 
             return {std::move(in), std::move(out)};
+        }
+    };
+
+    struct transform_exclusive_scan_fn
+    {
+        template <class InputCursor, class OutputCursor, class T
+                 , class BinaryOperation, class UnaryOperation>
+        in_out_result<InputCursor, OutputCursor>
+        operator()(InputCursor input, OutputCursor out, T init, BinaryOperation bin_op
+                   , UnaryOperation unary_op) const
+        {
+            for(; !!input && !!out; ++input)
+            {
+                auto next_init
+                    = saga::invoke(bin_op, std::move(init), saga::invoke(unary_op, *input));
+
+                out << init;
+
+                init = std::move(next_init);
+            }
+
+            return {std::move(input), std::move(out)};
         }
     };
 
@@ -194,6 +218,8 @@ namespace
     constexpr auto const & reduce        = detail::static_empty_const<reduce_fn>::value;
     constexpr auto const & inclusive_scan = detail::static_empty_const<inclusive_scan_fn>::value;
     constexpr auto const & exclusive_scan = detail::static_empty_const<exclusive_scan_fn>::value;
+    constexpr auto const & transform_exclusive_scan
+        = detail::static_empty_const<transform_exclusive_scan_fn>::value;
 }
 
 }
