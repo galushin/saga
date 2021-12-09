@@ -56,6 +56,48 @@ TEST_CASE("equal: forward sequence")
     };
 }
 
+namespace
+{
+    template <class FI, class S>
+    void check_cursor_equal(saga::subrange_cursor<FI, S> const & lhs,
+                            saga::subrange_cursor<FI, S> const & rhs)
+    {
+        CHECK((lhs == rhs)
+              == (lhs.begin() == rhs.begin()
+                  && lhs.end() == rhs.end()
+                  && lhs.dropped_front().begin() == rhs.dropped_front().begin()
+                  && lhs.dropped_back().end() == rhs.dropped_back().end()));
+
+        CHECK((lhs != rhs) == !(lhs == rhs));
+    }
+}
+
+TEST_CASE("subrange_cursor: equality")
+{
+    saga_test::property_checker << [](std::forward_list<int> const & xs,
+                                      std::forward_list<int> const & ys)
+    {
+        auto const cur1 = saga_test::random_subcursor_of(saga::cursor::all(xs));
+        auto const cur2 = saga_test::random_subcursor_of(saga::cursor::all(xs));
+        auto const cur3 = saga_test::random_subcursor_of(saga::cursor::all(cur2));
+        auto const cur4 = saga_test::random_subcursor_of(saga::cursor::all(ys));
+
+        ::check_cursor_equal(cur1, cur1);
+        ::check_cursor_equal(cur1, cur2);
+        ::check_cursor_equal(cur1, cur3);
+        ::check_cursor_equal(cur1, cur4);
+
+        ::check_cursor_equal(cur2, cur2);
+        ::check_cursor_equal(cur2, cur3);
+        ::check_cursor_equal(cur2, cur4);
+
+        ::check_cursor_equal(cur3, cur3);
+        ::check_cursor_equal(cur3, cur4);
+
+        ::check_cursor_equal(cur4, cur4);
+    };
+}
+
 TEST_CASE("iterator rebase")
 {
     using Container1 = std::list<int>;

@@ -29,6 +29,11 @@ namespace saga
     template <class Cursor, class Reference>
     class forward_cursor_facade
     {
+        friend bool operator!=(Cursor const & lhs, Cursor const & rhs)
+        {
+            return !(lhs == rhs);
+        }
+
         friend constexpr Cursor & operator++(Cursor & cur)
         {
             cur.drop_front();

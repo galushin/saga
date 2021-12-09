@@ -38,6 +38,14 @@ namespace saga
      : saga::forward_cursor_facade<subrange_cursor<ForwardIterator, Sentinel>
                                   , typename std::iterator_traits<ForwardIterator>::reference>
     {
+    friend bool operator==(subrange_cursor const & lhs, subrange_cursor const & rhs)
+    {
+        return lhs.begin() == rhs.begin()
+                && lhs.end() == rhs.end()
+                && lhs.cur_old_ == rhs.cur_old_
+                && rhs.last_old_ == rhs.last_old_;
+    }
+
     public:
         // Типы
         using value_type = typename std::iterator_traits<ForwardIterator>::value_type;
