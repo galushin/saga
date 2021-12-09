@@ -46,9 +46,9 @@ TEST_CASE("iota")
         // std
         auto src_std = src;
 
-        std::iota(src_std.begin() + (cur.begin() - src_saga.begin())
-                  , src_std.begin() + (cur.end() - src_saga.begin())
-                  , init_value);
+        auto const cur_std = saga::rebase_cursor(cur, src_std);
+
+        std::iota(cur_std.begin(), cur_std.end(), init_value);
 
         // Сравнение
         REQUIRE(src_saga == src_std);
@@ -732,9 +732,7 @@ TEST_CASE("inclusive_scan - subcursor, custom operation, init_value")
                 == (result_saga.out.begin() - out_saga.begin()));
         REQUIRE(result_saga.in.end() == input.end());
 
-        REQUIRE(result_saga.out.begin() - dest_saga.begin()
-                == result_expected.out.begin() - dest_expected.begin());
-        REQUIRE(result_saga.out.end() == out_saga.end());
+        REQUIRE(result_saga.out == saga::rebase_cursor(result_expected.out, dest_saga));
     };
 }
 
@@ -889,19 +887,8 @@ TEST_CASE("exclusive_scan : subrange, default operation")
 
         REQUIRE(dest_actual == dest_expected);
 
-        auto const r_expected_in = saga::rebase_cursor(r_expected.in, src);
-
-        REQUIRE(r_actual.in.begin() == r_expected_in.begin());
-        REQUIRE(r_actual.in.end() == r_expected_in.end());
-        REQUIRE(r_actual.in.dropped_front().begin() == r_expected_in.dropped_front().begin());
-        REQUIRE(r_actual.in.dropped_back().end() == r_expected_in.dropped_back().end());
-
-        auto const r_expected_out = saga::rebase_cursor(r_expected.out, dest_actual);
-
-        REQUIRE(r_actual.out.begin() == r_expected_out.begin());
-        REQUIRE(r_actual.out.end() == r_expected_out.end());
-        REQUIRE(r_actual.out.dropped_front().begin() == r_expected_out.dropped_front().begin());
-        REQUIRE(r_actual.out.dropped_back().end() == r_expected_out.dropped_back().end());
+        REQUIRE(r_actual.in == saga::rebase_cursor(r_expected.in, src));
+        REQUIRE(r_actual.out == saga::rebase_cursor(r_expected.out, dest_actual));
     };
 }
 
@@ -945,19 +932,8 @@ TEST_CASE("exclusive_scan : subrange, custom operation")
 
         REQUIRE(dest_actual == dest_expected);
 
-        auto const r_expected_in = saga::rebase_cursor(r_expected.in, src);
-
-        REQUIRE(r_actual.in.begin() == r_expected_in.begin());
-        REQUIRE(r_actual.in.end() == r_expected_in.end());
-        REQUIRE(r_actual.in.dropped_front().begin() == r_expected_in.dropped_front().begin());
-        REQUIRE(r_actual.in.dropped_back().end() == r_expected_in.dropped_back().end());
-
-        auto const r_expected_out = saga::rebase_cursor(r_expected.out, dest_actual);
-
-        REQUIRE(r_actual.out.begin() == r_expected_out.begin());
-        REQUIRE(r_actual.out.end() == r_expected_out.end());
-        REQUIRE(r_actual.out.dropped_front().begin() == r_expected_out.dropped_front().begin());
-        REQUIRE(r_actual.out.dropped_back().end() == r_expected_out.dropped_back().end());
+        REQUIRE(r_actual.in == saga::rebase_cursor(r_expected.in, src));
+        REQUIRE(r_actual.out == saga::rebase_cursor(r_expected.out, dest_actual));
     };
 }
 
@@ -1048,10 +1024,7 @@ TEST_CASE("transform_exclusive_scan: subranges")
 
         REQUIRE(dest_actual == dest_expected);
 
-        REQUIRE(r_actual.in.begin() == r_expected.in.begin());
-        REQUIRE(r_actual.in.end() == r_expected.in.end());
-        REQUIRE(r_actual.in.dropped_front().begin() == r_expected.in.dropped_front().begin());
-        REQUIRE(r_actual.in.dropped_back().end() == r_expected.in.dropped_back().end());
+        REQUIRE(r_actual.in == r_expected.in);
 
         REQUIRE(r_actual.out.begin() - out_actual.begin()
                 == r_expected.out.begin() - out_expected.begin());
