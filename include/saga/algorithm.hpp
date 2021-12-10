@@ -557,6 +557,25 @@ namespace saga
         }
     };
 
+    template <class ForwardCursor1, class ForwardCursor2>
+    using swap_ranges_result = in_in_result<ForwardCursor1, ForwardCursor2>;
+
+    struct swap_ranges_fn
+    {
+        template <class ForwardCursor1, class ForwardCursor2>
+        swap_ranges_result<ForwardCursor1, ForwardCursor2>
+        operator()(ForwardCursor1 in1, ForwardCursor2 in2) const
+        {
+            for(; !!in1 && !!in2; ++in1, void(++in2))
+            {
+                using std::swap;
+                swap(*in1, *in2);
+            }
+
+            return {std::move(in1), std::move(in2)};
+        }
+    };
+
     struct reverse_fn
     {
     public:
@@ -1605,6 +1624,7 @@ namespace saga
         constexpr auto const & replace_copy = detail::static_empty_const<replace_copy_fn>::value;
         constexpr auto const & replace_copy_if
             = detail::static_empty_const<replace_copy_if_fn>::value;
+        constexpr auto const & swap_ranges = detail::static_empty_const<swap_ranges_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
         constexpr auto const & rotate_copy = detail::static_empty_const<rotate_copy_fn>::value;
