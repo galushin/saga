@@ -1033,3 +1033,194 @@ TEST_CASE("transform_exclusive_scan: subranges")
         REQUIRE(r_actual.out.dropped_back().end() == dest_actual.end());
     };
 }
+
+// transform_unclusive_scan
+TEST_CASE("transform_inclusive_scan: minimalistic")
+{
+    using Value = unsigned;
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const unary_op = [](Value const & arg) { return arg % 10; };
+        auto const bin_op = std::multiplies<>{};
+
+        // transform + inclusive_scan
+        std::vector<Value> tmp;
+        saga::transform(saga::cursor::all(src), saga::back_inserter(tmp), unary_op);
+
+        std::vector<Value> expected;
+        saga::inclusive_scan(saga::cursor::all(tmp), saga::back_inserter(expected), bin_op);
+
+        // transform_exclusive_scan
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> actual;
+        saga::transform_inclusive_scan(saga::make_istream_cursor<Value>(src_in)
+                                       , saga::back_inserter(actual)
+                                       , bin_op, unary_op);
+
+        // Проверка
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("transform_inclusive_scan: subranges")
+{
+    using Value = unsigned;
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , std::vector<Value> const & dest_old)
+    {
+        auto const unary_op = [](Value const & arg) { return arg % 10; };
+        auto const bin_op = std::multiplies<>{};
+
+        // Подготовка
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // transform_exclusive_scan
+        std::vector<Value> dest_actual = dest_old;
+
+        auto const out_actual = saga_test::random_subcursor_of(saga::cursor::all(dest_actual));
+        auto const r_actual
+            = saga::transform_inclusive_scan(input, out_actual, bin_op, unary_op);
+
+        // transform + exclusive_scan
+        std::vector<Value> dest_expected = dest_old;
+        auto out_expected = saga::rebase_cursor(out_actual, dest_expected);
+        out_expected.forget_front();
+        auto const r_expected = saga::transform(input, out_expected, unary_op);
+
+        saga::inclusive_scan(r_expected.out.dropped_front()
+                             , r_expected.out.dropped_front(), bin_op);
+
+        // Проверка
+        CAPTURE(src, dest_old, input, saga::rebase_cursor(out_actual, dest_old));
+
+        REQUIRE(dest_actual == dest_expected);
+
+        REQUIRE(r_actual.in == r_expected.in);
+
+        REQUIRE(r_actual.out.begin() - out_actual.begin()
+                == r_expected.out.begin() - out_expected.begin());
+        REQUIRE(r_actual.out.end() == out_actual.end());
+        REQUIRE(r_actual.out.dropped_front().begin() == dest_actual.begin());
+        REQUIRE(r_actual.out.dropped_back().end() == dest_actual.end());
+    };
+}
+
+TEST_CASE("transform_inclusive_scan: inplace")
+{
+    using Value = unsigned;
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const unary_op = [](Value const & arg) { return arg % 10; };
+        auto const bin_op = std::multiplies<>{};
+
+        // Копирование
+        std::vector<Value> expected;
+        saga::transform_inclusive_scan(saga::cursor::all(src), saga::back_inserter(expected)
+                                       , bin_op, unary_op);
+
+        // На месте
+        std::vector<Value> actual = src;
+        saga::transform_inclusive_scan(saga::cursor::all(actual), saga::cursor::all(actual)
+                                       , bin_op, unary_op);
+
+        // Проверка
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("transform_inclusive_scan: minimalistic, inital value")
+{
+    using Value = unsigned;
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        auto const unary_op = [](Value const & arg) { return arg % 10; };
+        auto const bin_op = std::multiplies<>{};
+
+        // transform + inclusive_scan
+        std::vector<Value> tmp;
+        saga::transform(saga::cursor::all(src), saga::back_inserter(tmp), unary_op);
+
+        std::vector<Value> expected;
+        saga::inclusive_scan(saga::cursor::all(tmp), saga::back_inserter(expected)
+                             , bin_op, init_value);
+
+        // transform_exclusive_scan
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> actual;
+        saga::transform_inclusive_scan(saga::make_istream_cursor<Value>(src_in)
+                                       , saga::back_inserter(actual)
+                                       , bin_op, unary_op, init_value);
+
+        // Проверка
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("transform_inclusive_scan: subranges, init_value")
+{
+    using Value = unsigned;
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , std::vector<Value> const & dest_old
+                                      , Value const & init_value)
+    {
+        auto const unary_op = [](Value const & arg) { return arg % 10; };
+        auto const bin_op = std::multiplies<>{};
+
+        // Подготовка
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // transform_exclusive_scan
+        std::vector<Value> dest_actual = dest_old;
+
+        auto const out_actual = saga_test::random_subcursor_of(saga::cursor::all(dest_actual));
+        auto const r_actual
+            = saga::transform_inclusive_scan(input, out_actual, bin_op, unary_op, init_value);
+
+        // transform + exclusive_scan
+        std::vector<Value> dest_expected = dest_old;
+        auto out_expected = saga::rebase_cursor(out_actual, dest_expected);
+        out_expected.forget_front();
+        auto const r_expected = saga::transform(input, out_expected, unary_op);
+
+        saga::inclusive_scan(r_expected.out.dropped_front(), r_expected.out.dropped_front()
+                             , bin_op, init_value);
+
+        // Проверка
+        CAPTURE(src, dest_old, input, init_value, saga::rebase_cursor(out_actual, dest_old));
+
+        REQUIRE(dest_actual == dest_expected);
+
+        REQUIRE(r_actual.in == r_expected.in);
+
+        REQUIRE(r_actual.out.begin() - out_actual.begin()
+                == r_expected.out.begin() - out_expected.begin());
+        REQUIRE(r_actual.out.end() == out_actual.end());
+        REQUIRE(r_actual.out.dropped_front().begin() == dest_actual.begin());
+        REQUIRE(r_actual.out.dropped_back().end() == dest_actual.end());
+    };
+}
+
+TEST_CASE("transform_inclusive_scan: inplace, init_value")
+{
+    using Value = unsigned;
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        auto const unary_op = [](Value const & arg) { return arg % 10; };
+        auto const bin_op = std::multiplies<>{};
+
+        // Копирование
+        std::vector<Value> expected;
+        saga::transform_inclusive_scan(saga::cursor::all(src), saga::back_inserter(expected)
+                                       , bin_op, unary_op, init_value);
+
+        // На месте
+        std::vector<Value> actual = src;
+        saga::transform_inclusive_scan(saga::cursor::all(actual), saga::cursor::all(actual)
+                                       , bin_op, unary_op, init_value);
+
+        // Проверка
+        REQUIRE(actual == expected);
+    };
+}
