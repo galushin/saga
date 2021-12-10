@@ -185,6 +185,41 @@ namespace saga
         }
     };
 
+    struct transform_reduce_fn
+    {
+        template <class InputCursor1, class InputCursor2, class T>
+        T operator()(InputCursor1 in1, InputCursor2 in2, T init) const
+        {
+            return (*this)(std::move(in1), std::move(in2), std::move(init)
+                           , std::plus<>{}, std::multiplies<>{});
+        }
+
+        template <class InputCursor1, class InputCursor2, class T
+                 , class ReductionOp, class BinaryOperation>
+        T operator()(InputCursor1 in1, InputCursor2 in2, T init
+                     , ReductionOp reducer, BinaryOperation transformer) const
+        {
+            for(;!!in1 && !!in2; ++in1, void(++in2))
+            {
+                init = saga::invoke(reducer, std::move(init)
+                                    , saga::invoke(transformer, *in1, *in2));
+            }
+
+            return init;
+        }
+
+        template <class InputCursor, class T, class ReductionOp, class UnaryOp>
+        T operator()(InputCursor input, T init, ReductionOp reducer, UnaryOp transformer) const
+        {
+            for(; !!input; ++input)
+            {
+                init = saga::invoke(reducer, std::move(init), saga::invoke(transformer, *input));
+            }
+
+            return init;
+        }
+    };
+
     struct transform_exclusive_scan_fn
     {
         template <class InputCursor, class OutputCursor, class T
@@ -257,6 +292,8 @@ namespace
     constexpr auto const & reduce        = detail::static_empty_const<reduce_fn>::value;
     constexpr auto const & inclusive_scan = detail::static_empty_const<inclusive_scan_fn>::value;
     constexpr auto const & exclusive_scan = detail::static_empty_const<exclusive_scan_fn>::value;
+    constexpr auto const & transform_reduce
+        = detail::static_empty_const<transform_reduce_fn>::value;
     constexpr auto const & transform_exclusive_scan
         = detail::static_empty_const<transform_exclusive_scan_fn>::value;
     constexpr auto const & transform_inclusive_scan
