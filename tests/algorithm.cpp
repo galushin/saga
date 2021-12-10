@@ -1962,6 +1962,59 @@ TEST_CASE("replace_copy_if: subcursors")
     };
 }
 
+namespace
+{
+    template <class Container1, class Container2>
+    void check_swap_ranges(Container1 const & lhs_old, Container2 const & rhs_old)
+    {
+        // saga
+        auto lhs_saga = lhs_old;
+        auto const lhs_saga_cur = saga_test::random_subcursor_of(saga::cursor::all(lhs_saga));
+
+        auto rhs_saga = rhs_old;
+        auto const rhs_saga_cur = saga_test::random_subcursor_of(saga::cursor::all(rhs_saga));
+
+        auto const r_saga = saga::swap_ranges(lhs_saga_cur, rhs_saga_cur);
+
+        // std
+        auto lhs_std = lhs_old;
+        auto const lhs_std_cur = saga::rebase_cursor(lhs_saga_cur, lhs_std);
+
+        auto rhs_std = rhs_old;
+        auto const rhs_std_cur = saga::rebase_cursor(rhs_saga_cur, rhs_std);
+
+        auto const n_common = std::min(saga::cursor::size(lhs_std_cur)
+                                       , saga::cursor::size(rhs_std_cur));
+
+        auto const r_std = std::swap_ranges(lhs_std_cur.begin()
+                                            , std::next(lhs_std_cur.begin(), n_common)
+                                            , rhs_std_cur.begin());
+        // Сравнение
+        REQUIRE(lhs_saga == lhs_std);
+        REQUIRE(rhs_saga == rhs_std);
+
+        auto in1_saga_expected = lhs_saga_cur;
+        saga::cursor::drop_front_n(in1_saga_expected, n_common);
+
+        auto in2_saga_expected = rhs_saga_cur;
+        saga::cursor::drop_front_n(in2_saga_expected, n_common);
+
+        REQUIRE(r_saga.in1 == in1_saga_expected);
+        REQUIRE(r_saga.in2 == in2_saga_expected);
+
+        REQUIRE(saga::rebase_cursor(r_saga.in2, rhs_std).begin() == r_std);
+    }
+}
+
+TEST_CASE("swap_ranges")
+{
+    using Value = int;
+
+    saga_test::property_checker
+        << ::check_swap_ranges<std::forward_list<Value>, std::forward_list<Value>>
+        << ::check_swap_ranges<std::list<Value>, std::vector<Value>>;
+}
+
 TEST_CASE("reverse : whole container")
 {
     using Container = std::list<int>;
