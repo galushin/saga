@@ -937,6 +937,195 @@ TEST_CASE("exclusive_scan : subrange, custom operation")
     };
 }
 
+// transform_reduce
+TEST_CASE("transform_reduce: two ranges, default operations, minimal")
+{
+    using Value1 = bool;
+    using Value2 = unsigned int;
+
+    saga_test::property_checker << [](std::vector<Value1> const & lhs
+                                      , std::vector<Value2> const & rhs
+                                      , unsigned long init_value)
+    {
+        // inner_product
+        auto const r_expected = saga::inner_product(saga::cursor::all(lhs)
+                                                    , saga::cursor::all(rhs), init_value);
+
+        // transform_reduce
+        auto lhs_is = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_is = saga_test::make_istringstream_from_range(rhs);
+
+        auto const r_actual = saga::transform_reduce(saga::make_istream_cursor<Value1>(lhs_is)
+                                                     , saga::make_istream_cursor<Value2>(rhs_is)
+                                                     , init_value);
+
+        // Сравнение
+        REQUIRE(r_actual == r_expected);
+    };
+}
+
+TEST_CASE("transform_reduce: two ranges, default operations, subcursors")
+{
+    using Value1 = bool;
+    using Value2 = unsigned int;
+
+    saga_test::property_checker << [](std::vector<Value1> const & lhs
+                                      , std::vector<Value2> const & rhs
+                                      , unsigned long init_value)
+    {
+        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(lhs));
+        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(rhs));
+
+        // inner_product
+        auto const r_expected = saga::inner_product(in1, in2, init_value);
+
+        // transform_reduce
+        auto const r_actual = saga::transform_reduce(in1, in2, init_value);
+
+        // Сравнение
+        REQUIRE(r_actual == r_expected);
+    };
+}
+
+TEST_CASE("transform_reduce: two ranges, custom operations, minimal")
+{
+    using Value1 = unsigned short;
+    using Value2 = unsigned int;
+    using Total = unsigned long;
+
+    saga_test::property_checker << [](std::vector<Value1> const & lhs
+                                      , std::vector<Value2> const & rhs
+                                      , Total init_value)
+    {
+        auto reducer = [](Total const & x, Total const & y)
+        {
+            return std::min(x, y);
+        };
+
+        auto combiner = [](Value1 const & x, Value2 const & y)
+        {
+            return x ^ y;
+        };
+
+        // inner_product
+        auto const r_expected = saga::inner_product(saga::cursor::all(lhs)
+                                                    , saga::cursor::all(rhs), init_value
+                                                    , reducer, combiner);
+
+        // transform_reduce
+        auto lhs_is = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_is = saga_test::make_istringstream_from_range(rhs);
+
+        auto const r_actual = saga::transform_reduce(saga::make_istream_cursor<Value1>(lhs_is)
+                                                     , saga::make_istream_cursor<Value2>(rhs_is)
+                                                     , init_value, reducer, combiner);
+
+        // Сравнение
+        REQUIRE(r_actual == r_expected);
+    };
+}
+
+TEST_CASE("transform_reduce: two ranges, custom operations, subcursors")
+{
+    using Value1 = unsigned short;
+    using Value2 = unsigned int;
+    using Total = unsigned long;
+
+    saga_test::property_checker << [](std::vector<Value1> const & lhs
+                                      , std::vector<Value2> const & rhs
+                                      , Total init_value)
+    {
+        auto reducer = [](Total const & x, Total const & y)
+        {
+            return std::min(x, y);
+        };
+
+        auto combiner = [](Value1 const & x, Value2 const & y)
+        {
+            return x ^ y;
+        };
+
+        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(lhs));
+        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(rhs));
+
+        // inner_product
+        auto const r_expected = saga::inner_product(in1, in2, init_value, reducer, combiner);
+
+        // transform_reduce
+        auto const r_actual = saga::transform_reduce(in1, in2, init_value, reducer, combiner);
+
+        // Сравнение
+        REQUIRE(r_actual == r_expected);
+    };
+}
+
+TEST_CASE("transform_reduce: one range, minimalistic")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker << [](std::vector<Value1> const & src, Value2 const & init_value)
+    {
+        auto const transformer = [](Value1 const & arg)
+        {
+            return arg % 101;
+        };
+
+        auto const reducer = [](Value2 const & lhs, Value2 const & rhs)
+        {
+            return lhs ^ rhs;
+        };
+
+        // transform + reduce
+        std::vector<Value2> tmp;
+        saga::transform(saga::cursor::all(src), saga::back_inserter(tmp), transformer);
+
+        auto const r_expected = saga::reduce(saga::cursor::all(tmp), init_value, reducer);
+
+        // transform_reduce
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        auto const r_actual = saga::transform_reduce(saga::make_istream_cursor<Value1>(src_in)
+                                                     , init_value, reducer, transformer);
+
+        // Сравнение
+        REQUIRE(r_actual == r_expected);
+    };
+}
+
+TEST_CASE("transform_reduce: one range, subcursors")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker << [](std::vector<Value1> const & src, Value2 const & init_value)
+    {
+        auto const transformer = [](Value1 const & arg)
+        {
+            return arg % 101;
+        };
+
+        auto const reducer = [](Value2 const & lhs, Value2 const & rhs)
+        {
+            return lhs ^ rhs;
+        };
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // transform + reduce
+        std::vector<Value2> tmp;
+        saga::transform(input, saga::back_inserter(tmp), transformer);
+
+        auto const r_expected = saga::reduce(saga::cursor::all(tmp), init_value, reducer);
+
+        // transform_reduce
+        auto const r_actual = saga::transform_reduce(input, init_value, reducer, transformer);
+
+        // Сравнение
+        REQUIRE(r_actual == r_expected);
+    };
+}
+
 // transform_exclusive_scan
 TEST_CASE("transform_exclusive_scan: minimalistic")
 {
@@ -1034,7 +1223,7 @@ TEST_CASE("transform_exclusive_scan: subranges")
     };
 }
 
-// transform_unclusive_scan
+// transform_inclusive_scan
 TEST_CASE("transform_inclusive_scan: minimalistic")
 {
     using Value = unsigned;
