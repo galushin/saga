@@ -964,7 +964,28 @@ TEST_CASE("transform_reduce: two ranges, default operations, minimal")
     };
 }
 
-// @todo transform_reduce - два интервала, операции по умолчанию, подинтервалы
+TEST_CASE("transform_reduce: two ranges, default operations, subcursors")
+{
+    using Value1 = bool;
+    using Value2 = unsigned int;
+
+    saga_test::property_checker << [](std::vector<Value1> const & lhs
+                                      , std::vector<Value2> const & rhs
+                                      , unsigned long init_value)
+    {
+        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(lhs));
+        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(rhs));
+
+        // inner_product
+        auto const r_expected = saga::inner_product(in1, in2, init_value);
+
+        // transform_reduce
+        auto const r_actual = saga::transform_reduce(in1, in2, init_value);
+
+        // Сравнение
+        REQUIRE(r_actual == r_expected);
+    };
+}
 
 TEST_CASE("transform_reduce: two ranges, custom operations, minimal")
 {
@@ -1004,9 +1025,40 @@ TEST_CASE("transform_reduce: two ranges, custom operations, minimal")
     };
 }
 
-// @todo transform_reduce - два интервала, явно заданные операции, подинтервалы
+TEST_CASE("transform_reduce: two ranges, custom operations, subcursors")
+{
+    using Value1 = unsigned short;
+    using Value2 = unsigned int;
+    using Total = unsigned long;
 
-// @todo transform_reduce - один интервал, минимальный
+    saga_test::property_checker << [](std::vector<Value1> const & lhs
+                                      , std::vector<Value2> const & rhs
+                                      , Total init_value)
+    {
+        auto reducer = [](Total const & x, Total const & y)
+        {
+            return std::min(x, y);
+        };
+
+        auto combiner = [](Value1 const & x, Value2 const & y)
+        {
+            return x ^ y;
+        };
+
+        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(lhs));
+        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(rhs));
+
+        // inner_product
+        auto const r_expected = saga::inner_product(in1, in2, init_value, reducer, combiner);
+
+        // transform_reduce
+        auto const r_actual = saga::transform_reduce(in1, in2, init_value, reducer, combiner);
+
+        // Сравнение
+        REQUIRE(r_actual == r_expected);
+    };
+}
+
 TEST_CASE("transform_reduce: one range, minimalistic")
 {
     using Value1 = int;
@@ -1041,7 +1093,38 @@ TEST_CASE("transform_reduce: one range, minimalistic")
     };
 }
 
-// @todo transform_reduce - один интервал, подинтервалы
+TEST_CASE("transform_reduce: one range, subcursors")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker << [](std::vector<Value1> const & src, Value2 const & init_value)
+    {
+        auto const transformer = [](Value1 const & arg)
+        {
+            return arg % 101;
+        };
+
+        auto const reducer = [](Value2 const & lhs, Value2 const & rhs)
+        {
+            return lhs ^ rhs;
+        };
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // transform + reduce
+        std::vector<Value2> tmp;
+        saga::transform(input, saga::back_inserter(tmp), transformer);
+
+        auto const r_expected = saga::reduce(saga::cursor::all(tmp), init_value, reducer);
+
+        // transform_reduce
+        auto const r_actual = saga::transform_reduce(input, init_value, reducer, transformer);
+
+        // Сравнение
+        REQUIRE(r_actual == r_expected);
+    };
+}
 
 // transform_exclusive_scan
 TEST_CASE("transform_exclusive_scan: minimalistic")
