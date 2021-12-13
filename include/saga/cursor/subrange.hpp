@@ -107,9 +107,24 @@ namespace saga
             this->cur_ = this->last_;
         }
 
+        void exhaust_back()
+        {
+            this->last_ = this->cur_;
+            this->back_ = this->cur_;
+        }
+
         void forget_front()
         {
             this->cur_old_ = this->cur_;
+        }
+
+        void splice(subrange_cursor const & other)
+        {
+            assert(this->end() == other.begin());
+
+            this->back_ = other.back_;
+            this->last_ = other.last_;
+            this->last_old_ = other.last_old_;
         }
 
         // Двунаправленный курсор
