@@ -849,6 +849,32 @@ namespace saga
         }
     };
 
+    struct equal_range_fn
+    {
+        template <class ForwardCursor, class T, class Compare = std::less<>>
+        ForwardCursor operator()(ForwardCursor cur, T const & value, Compare cmp = {}) const
+        {
+            cur.forget_front();
+            cur.forget_back();
+
+            if(!cur)
+            {
+                return cur;
+            }
+
+            cur = saga::upper_bound_fn{}(std::move(cur), value, cmp);
+
+            auto part1 = saga::lower_bound_fn{}(cur.dropped_front(), value, std::move(cmp));
+
+            cur.forget_front();
+            cur.exhaust_back();
+
+            part1.splice(cur);
+
+            return part1;
+        }
+    };
+
     struct binary_search_fn
     {
         template <class ForwardCursor, class T, class Compare = std::less<>>
@@ -1648,6 +1674,7 @@ namespace saga
 
         constexpr auto const & lower_bound = detail::static_empty_const<lower_bound_fn>::value;
         constexpr auto const & upper_bound = detail::static_empty_const<upper_bound_fn>::value;
+        constexpr auto const & equal_range = detail::static_empty_const<equal_range_fn>::value;
         constexpr auto const & binary_search = detail::static_empty_const<binary_search_fn>::value;
 
         constexpr auto const & merge = detail::static_empty_const<merge_fn>::value;

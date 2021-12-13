@@ -3916,6 +3916,73 @@ TEST_CASE("upper_bound: custom compare")
     };
 }
 
+// equal_range
+TEST_CASE("equal_range: defaul compare")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & src_old, Value const & value)
+    {
+        // Подготовка
+        auto const src = [&]()
+        {
+            auto src = src_old;
+            src.sort();
+            return src;
+        }();
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // std
+        auto const r_std = std::equal_range(input.begin(), input.end(), value);
+
+        // saga
+        auto const r_saga = saga::equal_range(input, value);
+
+        // Проверки
+        CAPTURE(src, input);
+
+        CHECK(r_saga.begin() == r_std.first);
+        CHECK(r_saga.end() == r_std.second);
+
+        CHECK(r_saga.dropped_front().begin() == input.begin());
+        CHECK(r_saga.dropped_back().end() == input.end());
+    };
+}
+
+TEST_CASE("equal_range: custom compare")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & src_old, Value const & value)
+    {
+        // Подготовка
+        auto const cmp = std::greater<>{};
+
+        auto const src = [&]()
+        {
+            auto src = src_old;
+            src.sort(cmp);
+            return src;
+        }();
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // std
+        auto const r_std = std::equal_range(input.begin(), input.end(), value, cmp);
+
+        // saga
+        auto const r_saga = saga::equal_range(input, value, cmp);
+
+        // Проверки
+        REQUIRE(r_saga.begin() == r_std.first);
+        REQUIRE(r_saga.end() == r_std.second);
+
+        REQUIRE(r_saga.dropped_front().begin() == input.begin());
+        REQUIRE(r_saga.dropped_back().end() == input.end());
+    };
+}
+
 TEST_CASE("binary_search: default compare")
 {
     using Value = int;
