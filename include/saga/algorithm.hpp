@@ -118,6 +118,24 @@ namespace saga
         }
     };
 
+    template <class InputCursor, class UnaryFunction>
+    using for_each_n_result = in_fun_result<InputCursor, UnaryFunction>;
+
+    struct for_each_n_fn
+    {
+        template <class InputCursor, class Size, class UnaryFunction>
+        for_each_n_result<InputCursor, UnaryFunction>
+        operator()(InputCursor input, Size num, UnaryFunction fun) const
+        {
+            for(; !!input && num > 0; ++ input, void(--num))
+            {
+                saga::invoke(fun, *input);
+            }
+
+            return {std::move(input), std::move(fun)};
+        }
+    };
+
     struct count_if_fn
     {
         template <class InputCursor, class UnaryPredicate>
@@ -1645,6 +1663,7 @@ namespace saga
         constexpr auto const & none_of = detail::static_empty_const<none_of_fn>::value;
 
         constexpr auto const & for_each = detail::static_empty_const<for_each_fn>::value;
+        constexpr auto const & for_each_n = detail::static_empty_const<for_each_n_fn>::value;
 
         constexpr auto const & count = detail::static_empty_const<count_fn>::value;
         constexpr auto const & count_if = detail::static_empty_const<count_if_fn>::value;

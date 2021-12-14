@@ -345,6 +345,91 @@ TEST_CASE("for_each - subcursor, mutable")
     };
 }
 
+TEST_CASE("for_each_n - minimal")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        // saga
+        auto const num = saga_test::random_uniform(0*src.size(), src.size());
+
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        auto const result_saga = saga::for_each_n(saga::make_istream_cursor<Value>(src_in)
+                                                  , num, ::sum_accumulator<Value>{});
+
+        // std
+        auto const result_std = std::for_each(src.begin(), src.begin() + num
+                                              , ::sum_accumulator<Value>{});
+
+        // Сравение
+        REQUIRE(result_saga.fun.sum == result_std.sum);
+        REQUIRE(result_saga.fun.sum == result_std.sum);
+    };
+}
+
+TEST_CASE("for_each_n - subcursor, const")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , saga_test::container_size<std::ptrdiff_t> num)
+    {
+        auto const sub = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto const result_saga = saga::for_each_n(sub, num.value, ::sum_accumulator<Value>{});
+
+        // std
+        auto const n_common = std::min(sub.size(), num.value);
+
+        auto const result_std = std::for_each(sub.begin(), sub.begin() + n_common
+                                              , ::sum_accumulator<Value>{});
+
+        // Сравение
+        auto result_expected = sub;
+        result_expected.drop_front(n_common);
+
+        REQUIRE(result_saga.in == result_expected);
+
+        REQUIRE(result_saga.fun.sum == result_std.sum);
+    };
+}
+
+TEST_CASE("for_each_n - subcursor, mutable")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , saga_test::container_size<std::ptrdiff_t> num)
+    {
+        auto const fun = [](Value & x) { x %= 2; };
+
+        // saga
+        auto src_saga = src;
+        auto const cur_saga = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
+
+        auto const result_saga = saga::for_each_n(cur_saga, num.value, fun);
+
+        auto const n_common = std::min(cur_saga.size(), num.value);
+
+        // std
+        auto src_std = src;
+        auto const range_std = saga::rebase_cursor(cur_saga, src_std);
+
+        std::for_each(range_std.begin(), range_std.begin() + n_common, fun);
+
+        // Сравение
+        auto result_in_expected = cur_saga;
+        result_in_expected.drop_front(n_common);
+
+        REQUIRE(result_saga.in == result_in_expected);
+
+        REQUIRE(src_saga == src_std);
+    };
+}
+
 TEST_CASE("count - minimal")
 {
     using Value = int;
