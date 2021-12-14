@@ -413,6 +413,20 @@ namespace saga
         }
     };
 
+    struct fill_n_fn
+    {
+        template <class OutputCursor, class Size, class T>
+        OutputCursor operator()(OutputCursor out, Size num, T const & value) const
+        {
+            for(; !!out && num > 0; -- num)
+            {
+                out << value;
+            }
+
+            return out;
+        }
+    };
+
     struct generate_fn
     {
         template <class OutputCursor, class Generator>
@@ -422,6 +436,20 @@ namespace saga
             {
                 *cur = saga::invoke(gen);
             }
+        }
+    };
+
+    struct generate_n_fn
+    {
+        template <class OutputCursor, class Size, class Generator>
+        OutputCursor operator()(OutputCursor out, Size num, Generator gen) const
+        {
+            for(; !!out && num > 0; -- num)
+            {
+                out << gen();
+            }
+
+            return out;
         }
     };
 
@@ -1638,8 +1666,10 @@ namespace saga
         constexpr auto const & move = detail::static_empty_const<move_fn>::value;
 
         constexpr auto const & fill = detail::static_empty_const<fill_fn>::value;
+        constexpr auto const & fill_n = detail::static_empty_const<fill_n_fn>::value;
         constexpr auto const & transform = detail::static_empty_const<transform_fn>::value;
         constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
+        constexpr auto const & generate_n = detail::static_empty_const<generate_n_fn>::value;
         constexpr auto const & remove = detail::static_empty_const<remove_fn>::value;
         constexpr auto const & remove_if = detail::static_empty_const<remove_if_fn>::value;
         constexpr auto const & remove_copy = detail::static_empty_const<remove_copy_fn>::value;
