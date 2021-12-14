@@ -360,8 +360,8 @@ TEST_CASE("for_each_n - minimal")
                                                   , num, ::sum_accumulator<Value>{});
 
         // std
-        auto const result_std = std::for_each(src.begin(), src.begin() + num
-                                              , ::sum_accumulator<Value>{});
+        auto const result_std
+            = std::for_each(src.begin(), src.begin() + num, ::sum_accumulator<Value>{});
 
         // Сравение
         REQUIRE(result_saga.fun.sum == result_std.sum);
@@ -384,8 +384,8 @@ TEST_CASE("for_each_n - subcursor, const")
         // std
         auto const n_common = std::min(sub.size(), num.value);
 
-        auto const result_std = std::for_each(sub.begin(), sub.begin() + n_common
-                                              , ::sum_accumulator<Value>{});
+        auto const result_std
+            = std::for_each(sub.begin(), sub.begin() + n_common, ::sum_accumulator<Value>{});
 
         // Сравение
         auto result_expected = sub;
