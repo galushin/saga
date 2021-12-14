@@ -1344,7 +1344,6 @@ TEST_CASE("move - subcursors")
     };
 }
 
-// @todo минимальный тест fill, нужно придумать конечный курсор вывода (take_n от back_inserter)
 TEST_CASE("fill - subrange")
 {
     using Value = int;
@@ -1366,6 +1365,56 @@ TEST_CASE("fill - subrange")
         CHECK(saga::all_of(sub_saga, [&](auto const & arg) { return arg == value; }));
 
         CHECK(saga::equal(sub_saga.dropped_back(), sub_src.dropped_back()));
+    };
+}
+
+TEST_CASE("fill_n: mimimal")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    << [](saga_test::container_size<std::size_t> num, Value const & value)
+    {
+        std::vector<Value> dest;
+        saga::fill_n(saga::back_inserter(dest), num.value, value);
+
+        REQUIRE(dest.size() == num.value);
+
+        CHECK(saga::all_of(saga::cursor::all(dest), [&](auto const & arg) {return arg == value;}));
+    };
+}
+
+TEST_CASE("fill_n - subrange")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::list<Value> const & src
+                                      , saga_test::container_size<std::ptrdiff_t> num
+                                      , Value const & value)
+    {
+        // saga
+        std::vector<Value> xs_saga(src.begin(), src.end());
+
+        auto const sub_saga = saga_test::random_subcursor_of(saga::cursor::all(xs_saga));
+
+        auto const result = saga::fill_n(sub_saga, num.value, value);
+
+        // std
+        std::vector<Value> xs_std(src.begin(), src.end());
+
+        auto const n_common = std::min(sub_saga.size(), num.value);
+
+        auto const sub_std = saga::rebase_cursor(sub_saga, xs_std);
+
+        std::fill_n(sub_std.begin(), n_common, value);
+
+        // Проверка
+        auto result_expected = sub_saga;
+        saga::cursor::drop_front_n(result_expected, n_common);
+
+        CHECK(result == result_expected);
+
+        CHECK(xs_saga == xs_std);
     };
 }
 
@@ -1498,7 +1547,6 @@ TEST_CASE("transform binary")
     };
 }
 
-// @todo минимальный тест generate, нужно придумать конечный курсор вывода (take_n от back_inserter)
 TEST_CASE("generate - subrange")
 {
     using Value = int;
@@ -1535,6 +1583,82 @@ TEST_CASE("generate - subrange")
 
         // Проверка
         REQUIRE(xs_saga == xs_std);
+    };
+}
+
+TEST_CASE("generate_n - minimal")
+{
+    using Value = int;
+
+    struct Iota
+    {
+        Value operator()()
+        {
+            return ++value_;
+        }
+
+    private:
+        Value value_ = 0;
+    };
+
+    saga_test::property_checker << [](saga_test::container_size<std::ptrdiff_t> num)
+    {
+        // saga
+        std::vector<Value> dest_saga;
+        saga::generate_n(saga::back_inserter(dest_saga), num.value, Iota{});
+
+        REQUIRE(dest_saga.size() == num.value);
+
+        // std
+        std::vector<Value> dest_std;
+        std::generate_n(saga::back_inserter(dest_std), num.value, Iota{});
+
+        // Проверка
+        REQUIRE(dest_saga == dest_std);
+    };
+}
+
+TEST_CASE("generate_n - subrange")
+{
+    using Value = int;
+
+    struct Iota
+    {
+        Value operator()()
+        {
+            return ++value_;
+        }
+
+    private:
+        Value value_ = 0;
+    };
+
+    saga_test::property_checker << [](std::list<Value> const & src
+                                      , saga_test::container_size<std::ptrdiff_t> num)
+    {
+        // saga
+        std::vector<Value> xs_saga(src.begin(), src.end());
+
+        auto const sub_saga = saga_test::random_subcursor_of(saga::cursor::all(xs_saga));
+
+        auto const result = saga::generate_n(sub_saga, num.value, Iota{});
+
+        // std
+        std::vector<Value> xs_std(src.begin(), src.end());
+
+        auto const n_common = std::min(sub_saga.size(), num.value);
+
+        auto const sub_std = saga::rebase_cursor(sub_saga, xs_std);
+
+        std::generate_n(sub_std.begin(), n_common, Iota{});
+
+        // Проверка
+        auto result_expected = sub_saga;
+        saga::cursor::drop_front_n(result_expected, n_common);
+
+        CHECK(result == result_expected);
+
+        CHECK(xs_saga == xs_std);
     };
 }
 
