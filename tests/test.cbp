@@ -100,6 +100,7 @@
 		<Unit filename="iterator/reverse.cpp" />
 		<Unit filename="main.cpp" />
 		<Unit filename="makefile.gcc" />
+		<Unit filename="math.cpp" />
 		<Unit filename="math/probability.cpp" />
 		<Unit filename="numeric.cpp" />
 		<Unit filename="numeric/digits_of.cpp" />

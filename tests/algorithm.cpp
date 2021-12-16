@@ -26,6 +26,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/subrange.hpp>
 #include <saga/cursor/istream_cursor.hpp>
 #include <saga/iterator/reverse.hpp>
+#include <saga/math.hpp>
 #include <saga/view/indices.hpp>
 
 #include <forward_list>
@@ -1553,14 +1554,6 @@ TEST_CASE("transform")
 
 namespace
 {
-    struct square_fn
-    {
-        constexpr int operator()(int x) const
-        {
-            return x*x;
-        }
-    };
-
     struct multiplies
     {
         constexpr int operator()(int x, int y) const
@@ -1574,7 +1567,7 @@ namespace
         int arr[] = {1, 2, 3, 4, 5};
         const int expected[] = {1, 4, 9, 16, 25};
 
-        saga::transform(saga::cursor::all(arr), saga::cursor::all(arr), ::square_fn{});
+        saga::transform(saga::cursor::all(arr), saga::cursor::all(arr), saga::square);
 
         return saga::equal(saga::cursor::all(arr), saga::cursor::all(expected));
     }
