@@ -15,59 +15,36 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_MATH_HPP_INCLUDED
-#define Z_SAGA_MATH_HPP_INCLUDED
+// Тестируемый файл
+#include <saga/math.hpp>
 
-#include <saga/detail/static_empty_const.hpp>
+// Тестовая инфраструктура
+#include "./saga_test.hpp"
+#include <catch/catch.hpp>
 
-/** @file saga/math.hpp
- @brief Функциональность, связанная с математикой, общего назначения
-*/
-
-#include <cmath>
-
-#include <functional>
-
-namespace saga
+// Тесты
+TEST_CASE("square, default operation")
 {
-    namespace detail
+    using Value = unsigned;
+
+    static_assert(saga::square(-2) == 4, "");
+    static_assert(saga::square(2) == 4, "");
+
+    saga_test::property_checker << [](Value const & value)
     {
-        namespace abs_adl_ns
-        {
-            void abs() = delete;
-
-            struct absolute_value
-            {
-                template <class Arg>
-                auto operator()(Arg const & arg) const
-                {
-                    using std::abs;
-                    return abs(arg);
-                }
-            };
-        }
-        // namespace abs_adl_ns
-    }
-    // namespace detail
-
-    using detail::abs_adl_ns::absolute_value;
-
-    struct square_fn
-    {
-        template <class T, class BinaryOperation = std::multiplies<>>
-        constexpr T operator()(T const & arg, BinaryOperation bin_op = {}) const
-        {
-            return bin_op(arg, arg);
-        }
+        REQUIRE(saga::square(value) == value * value);
     };
-
-    namespace
-    {
-        constexpr auto const & abs = detail::static_empty_const<saga::absolute_value>::value;
-        constexpr auto const & square = detail::static_empty_const<saga::square_fn>::value;
-    }
 }
-//namespace saga
 
-#endif
-// Z_SAGA_MATH_HPP_INCLUDED
+TEST_CASE("square, custom operation")
+{
+    using Value = unsigned;
+
+    static_assert(saga::square(-2, std::plus<>{}) == -4, "");
+    static_assert(saga::square(2, std::plus<>{}) == 4, "");
+
+    saga_test::property_checker << [](Value const & value)
+    {
+        REQUIRE(saga::square(value, std::plus<>{}) == value + value);
+    };
+}
