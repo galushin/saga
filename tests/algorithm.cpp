@@ -1342,14 +1342,8 @@ TEST_CASE("copy_n: subcursor")
         // Проверка
         REQUIRE(dest_saga == dest_std);
 
-        auto r_saga_in_expected = input;
-        saga::cursor::drop_front_n(r_saga_in_expected, n_common);
-
-        auto r_saga_out_expected = out_saga;
-        saga::cursor::drop_front_n(r_saga_out_expected, n_common);
-
-        REQUIRE(r_saga.in == r_saga_in_expected);
-        REQUIRE(r_saga.out == r_saga_out_expected);
+        REQUIRE(r_saga.in == saga::cursor::drop_front_n(input, n_common));
+        REQUIRE(r_saga.out == saga::cursor::drop_front_n(out_saga, n_common));
     };
 }
 
@@ -1556,10 +1550,7 @@ TEST_CASE("fill_n - subrange")
         std::fill_n(sub_std.begin(), n_common, value);
 
         // Проверка
-        auto result_expected = sub_saga;
-        saga::cursor::drop_front_n(result_expected, n_common);
-
-        CHECK(result == result_expected);
+        CHECK(result == saga::cursor::drop_front_n(sub_saga, n_common));
 
         CHECK(xs_saga == xs_std);
     };
@@ -1792,10 +1783,7 @@ TEST_CASE("generate_n - subrange")
         std::generate_n(sub_std.begin(), n_common, Iota{});
 
         // Проверка
-        auto result_expected = sub_saga;
-        saga::cursor::drop_front_n(result_expected, n_common);
-
-        CHECK(result == result_expected);
+        CHECK(result == saga::cursor::drop_front_n(sub_saga, n_common));
 
         CHECK(xs_saga == xs_std);
     };
@@ -2256,14 +2244,8 @@ namespace
         REQUIRE(lhs_saga == lhs_std);
         REQUIRE(rhs_saga == rhs_std);
 
-        auto in1_saga_expected = lhs_saga_cur;
-        saga::cursor::drop_front_n(in1_saga_expected, n_common);
-
-        auto in2_saga_expected = rhs_saga_cur;
-        saga::cursor::drop_front_n(in2_saga_expected, n_common);
-
-        REQUIRE(r_saga.in1 == in1_saga_expected);
-        REQUIRE(r_saga.in2 == in2_saga_expected);
+        REQUIRE(r_saga.in1 == saga::cursor::drop_front_n(lhs_saga_cur, n_common));
+        REQUIRE(r_saga.in2 == saga::cursor::drop_front_n(rhs_saga_cur, n_common));
 
         REQUIRE(saga::rebase_cursor(r_saga.in2, rhs_std).begin() == r_std);
     }
