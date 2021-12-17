@@ -78,29 +78,33 @@ namespace saga
             {
             private:
                 template <class Cursor>
-                void operator()(Cursor & cur, cursor_difference_t<Cursor> num
-                                , std::forward_iterator_tag) const
+                Cursor operator()(Cursor cur, cursor_difference_t<Cursor> num
+                                  , std::forward_iterator_tag) const
                 {
                     for(; num > 0; -- num)
                     {
                         cur.drop_front();
                     }
+
+                    return cur;
                 }
 
                 template <class Cursor>
-                void operator()(Cursor & cur, cursor_difference_t<Cursor> num
-                                , std::random_access_iterator_tag) const
+                Cursor operator()(Cursor cur, cursor_difference_t<Cursor> num
+                                  , std::random_access_iterator_tag) const
                 {
                     cur.drop_front(num);
+
+                    return cur;
                 }
 
             public:
                 template <class Cursor>
-                void operator()(Cursor & cur, cursor_difference_t<Cursor> num) const
+                Cursor operator()(Cursor cur, cursor_difference_t<Cursor> num) const
                 {
                     assert(num >= 0);
 
-                    return (*this)(cur, num, cursor_category_t<Cursor>{});
+                    return (*this)(std::move(cur), std::move(num), cursor_category_t<Cursor>{});
                 }
             };
 
@@ -108,29 +112,33 @@ namespace saga
             {
             private:
                 template <class Cursor>
-                void operator()(Cursor & cur, cursor_difference_t<Cursor> num
+                Cursor operator()(Cursor cur, cursor_difference_t<Cursor> num
                                 , std::bidirectional_iterator_tag) const
                 {
                     for(; num > 0; -- num)
                     {
                         cur.drop_back();
                     }
+
+                    return cur;
                 }
 
                 template <class Cursor>
-                void operator()(Cursor & cur, cursor_difference_t<Cursor> num
+                Cursor operator()(Cursor cur, cursor_difference_t<Cursor> num
                                 , std::random_access_iterator_tag) const
                 {
                     cur.drop_back(num);
+
+                    return cur;
                 }
 
             public:
                 template <class Cursor>
-                void operator()(Cursor & cur, cursor_difference_t<Cursor> num) const
+                Cursor operator()(Cursor cur, cursor_difference_t<Cursor> num) const
                 {
                     assert(num >= 0);
 
-                    return (*this)(cur, num, cursor_category_t<Cursor>{});
+                    return (*this)(std::move(cur), std::move(num), cursor_category_t<Cursor>{});
                 }
             };
         }

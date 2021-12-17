@@ -97,11 +97,8 @@ namespace saga_test
         {
             auto const num = saga::cursor::size(cur);
 
-            auto const n_front = saga_test::random_uniform(0*num, num);
-
-            saga::cursor::drop_front_n(cur, n_front);
-
-            return cur;
+            return saga::cursor::drop_front_n(std::move(cur)
+                                              , saga_test::random_uniform(0*num, num));
         }
 
         template <class Cursor>
@@ -112,13 +109,8 @@ namespace saga_test
             auto const pos1 = saga_test::random_uniform(0*num, num);
             auto const pos2 = saga_test::random_uniform(0*num, num);
 
-            auto const n_front = std::min(pos1, pos2);
-            auto const n_back  = num - std::max(pos1, pos2);
-
-            saga::cursor::drop_front_n(cur, n_front);
-            saga::cursor::drop_back_n(cur, n_back);
-
-            return cur;
+            cur = saga::cursor::drop_front_n(std::move(cur), std::min(pos1, pos2));
+            return saga::cursor::drop_back_n(std::move(cur), num - std::max(pos1, pos2));
         }
     }
     // namespace detail

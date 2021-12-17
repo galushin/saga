@@ -256,9 +256,7 @@ namespace saga
 
             assert(n_front <= n_result);
 
-            saga::cursor::drop_front_n(dest, n_front);
-
-            return dest;
+            return saga::cursor::drop_front_n(std::move(dest), n_front);
         }
 
         template <class ForwardCursor, class BidirectionalCursor>
@@ -274,8 +272,8 @@ namespace saga
 
             auto const n_back = n_result - n_not_back;
 
-            saga::cursor::drop_front_n(dest, n_front);
-            saga::cursor::drop_back_n(dest, n_back);
+            dest = saga::cursor::drop_front_n(std::move(dest), n_front);
+            dest = saga::cursor::drop_back_n(std::move(dest), n_back);
 
             return dest;
         }

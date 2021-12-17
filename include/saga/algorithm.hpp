@@ -839,8 +839,7 @@ namespace saga
 
                 assert(n2 > 0);
 
-                auto middle = cur;
-                saga::cursor::drop_front_n(middle, n1);
+                auto const middle = saga::cursor::drop_front_n(cur, n1);
 
                 if(saga::invoke(pred, *middle))
                 {
@@ -1468,8 +1467,7 @@ namespace saga
 
             auto const num = out.size() - result.out.size();
 
-            auto heap = out;
-            saga::cursor::drop_back_n(heap, result.out.size());
+            auto const heap = saga::cursor::drop_back_n(std::move(out), result.out.size());
 
             saga::make_heap_fn{}(heap, cmp);
 
