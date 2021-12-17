@@ -1292,6 +1292,67 @@ TEST_CASE("copy_if: subcursor")
     };
 }
 
+TEST_CASE("copy_n: minimal")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , saga_test::container_size<std::size_t> num)
+    {
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        std::vector<Value> dest;
+        saga::copy_n(saga::make_istream_cursor<Value>(src_in), num.value
+                     , saga::back_inserter(dest));
+
+        auto const n_common = std::min(src.size(), num.value);
+
+        REQUIRE(dest.size() == n_common);
+        REQUIRE(std::equal(dest.begin(), dest.end(), src.begin(), src.begin() + n_common));
+    };
+}
+
+TEST_CASE("copy_n: subcursor")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::list<Value> const & src
+                                      , saga_test::container_size<std::ptrdiff_t> num
+                                      , std::vector<Value> const & dest_old)
+    {
+        // Подготовка
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        // saga
+        auto dest_saga = dest_old;
+
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const r_saga = saga::copy_n(input, num.value, out_saga);
+
+        // std
+        auto const n_common = std::min({num.value, saga::cursor::size(input)
+                                       , saga::cursor::size(out_saga)});
+
+        auto dest_std = dest_old;
+        auto const out_std = saga::rebase_cursor(out_saga, dest_std);
+
+        std::copy_n(input.begin(), n_common, out_std.begin());
+
+        // Проверка
+        REQUIRE(dest_saga == dest_std);
+
+        auto r_saga_in_expected = input;
+        saga::cursor::drop_front_n(r_saga_in_expected, n_common);
+
+        auto r_saga_out_expected = out_saga;
+        saga::cursor::drop_front_n(r_saga_out_expected, n_common);
+
+        REQUIRE(r_saga.in == r_saga_in_expected);
+        REQUIRE(r_saga.out == r_saga_out_expected);
+    };
+}
+
 TEST_CASE("copy_backward")
 {
     using SrcValue = int;
