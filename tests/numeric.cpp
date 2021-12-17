@@ -559,6 +559,25 @@ TEST_CASE("inclusive_scan - minimalistic, default operation")
     };
 }
 
+TEST_CASE("inclusive_scan - inplace, default operation")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        // saga
+        std::vector<Value> dest_expected;
+        saga::inclusive_scan(saga::cursor::all(src), saga::back_inserter(dest_expected));
+
+        // std
+        std::vector<Value> dest = src;
+        saga::inclusive_scan(saga::cursor::all(dest), saga::cursor::all(dest));
+
+        // Сравнение
+        REQUIRE(dest == dest_expected);
+    };
+}
+
 TEST_CASE("inclusive_scan - subcursor, default operation")
 {
     using Value = unsigned;
@@ -595,21 +614,42 @@ TEST_CASE("inclusive_scan - minimalistic, custom operation")
 
     saga_test::property_checker << [](std::vector<Value> const & src)
     {
-        auto const op = std::multiplies<>{};
+        auto const bin_op = std::multiplies<>{};
 
         // std
         std::vector<Value> dest_std;
-        std::partial_sum(src.begin(), src.end(), std::back_inserter(dest_std), op);
+        std::partial_sum(src.begin(), src.end(), std::back_inserter(dest_std), bin_op);
 
         // saga
         auto src_in = saga_test::make_istringstream_from_range(src);
 
         std::vector<Value> dest_saga;
         saga::inclusive_scan(saga::make_istream_cursor<Value>(src_in)
-                             , saga::back_inserter(dest_saga), op);
+                             , saga::back_inserter(dest_saga), bin_op);
 
         // Сравнение
         REQUIRE(dest_saga == dest_std);
+    };
+}
+
+TEST_CASE("inclusive_scan - inplace, custom operation")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const bin_op = std::multiplies<>{};
+
+        // saga
+        std::vector<Value> dest_expected;
+        saga::inclusive_scan(saga::cursor::all(src), saga::back_inserter(dest_expected), bin_op);
+
+        // std
+        std::vector<Value> dest = src;
+        saga::inclusive_scan(saga::cursor::all(dest), saga::cursor::all(dest), bin_op);
+
+        // Сравнение
+        REQUIRE(dest == dest_expected);
     };
 }
 
@@ -680,6 +720,28 @@ TEST_CASE("inclusive_scan - minimalistic, custom operation, init value")
         CAPTURE(src, init_value, src_2);
 
         REQUIRE(dest_saga == dest_expected);
+    };
+}
+
+TEST_CASE("inclusive_scan - inplace, custom operation, init value")
+{
+    using Value = unsigned;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    {
+        auto const bin_op = std::multiplies<>{};
+
+        // saga
+        std::vector<Value> dest_expected;
+        saga::inclusive_scan(saga::cursor::all(src), saga::back_inserter(dest_expected)
+                             , bin_op, init_value);
+
+        // std
+        std::vector<Value> dest = src;
+        saga::inclusive_scan(saga::cursor::all(dest), saga::cursor::all(dest), bin_op, init_value);
+
+        // Сравнение
+        REQUIRE(dest == dest_expected);
     };
 }
 
