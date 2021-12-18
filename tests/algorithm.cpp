@@ -2427,6 +2427,28 @@ TEST_CASE("rotate_copy: subcursors")
     };
 }
 
+TEST_CASE("shuffle")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & values_old)
+    {
+        auto values = values_old;
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        saga::shuffle(input, saga_test::random_engine());
+
+        // Проверки
+        auto const input_old = saga::rebase_cursor(input, values_old);
+
+        REQUIRE(saga::is_permutation(input, input_old));
+
+        REQUIRE(saga::equal(input.dropped_front(), input_old.dropped_front()));
+        REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
+    };
+}
+
 TEST_CASE("unique_copy: minimal, default predicate")
 {
     using Value = long;

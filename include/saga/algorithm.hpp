@@ -32,6 +32,7 @@ SAGA -- это свободной программное обеспечение:
 #include <cassert>
 #include <algorithm>
 #include <functional>
+#include <random>
 
 namespace saga
 {
@@ -702,6 +703,34 @@ namespace saga
             auto result2 = saga::copy_fn{}(std::move(part2), std::move(result1.out));
 
             return {std::move(result2.in), std::move(result1.in), std::move(result2.out)};
+        }
+    };
+
+    struct shuffle_fn
+    {
+        template <class RandomAccessCursor, class URBG>
+        void operator()(RandomAccessCursor cur, URBG && gen) const
+        {
+            auto num = cur.size();
+
+            if(num == 0)
+            {
+                return;
+            }
+
+            -- num;
+
+            using Diff = saga::cursor_difference_t<RandomAccessCursor>;
+            using Distr = std::uniform_int_distribution<Diff>;
+            using Param = typename Distr::param_type;
+
+            Distr distr;
+
+            for(; num > 0; -- num)
+            {
+                using std::swap;
+                swap(cur[num], cur[distr(gen, Param(0, num))]);
+            }
         }
     };
 
@@ -1753,6 +1782,7 @@ namespace saga
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
         constexpr auto const & rotate_copy = detail::static_empty_const<rotate_copy_fn>::value;
+        constexpr auto const & shuffle = detail::static_empty_const<shuffle_fn>::value;
         constexpr auto const & unique = detail::static_empty_const<unique_fn>::value;
         constexpr auto const & unique_copy = detail::static_empty_const<unique_copy_fn>::value;
 
