@@ -224,12 +224,14 @@ namespace saga
             auto next = cur;
             ++ next;
 
-            for(; !!next; ++ next, void(++cur))
+            for(; !!next; ++ next)
             {
                 if(saga::invoke(bin_pred, *cur, *next))
                 {
                     return cur;
                 }
+
+                cur = next;
             }
 
             return next;
@@ -703,6 +705,37 @@ namespace saga
         }
     };
 
+    struct unique_fn
+    {
+        template <class ForwardCursor, class BinaryPredicate = std::equal_to<>>
+        ForwardCursor operator()(ForwardCursor cur, BinaryPredicate bin_pred = {}) const
+        {
+            cur = saga::adjacent_find_fn{}(std::move(cur), bin_pred);
+
+            if(!cur)
+            {
+                return cur;
+            }
+
+            auto out = cur;
+
+            ++ cur;
+            assert(!!cur);
+            ++ cur;
+
+            for(; !!cur; ++ cur)
+            {
+                if(!saga::invoke(bin_pred, *out, *cur))
+                {
+                    ++ out;
+                    *out = std::move(*cur);
+                }
+            }
+
+            ++ out;
+            return out;
+        }
+    };
 
     template <class InputCursor, class OutputCursor>
     using unique_copy_result = in_out_result<InputCursor, OutputCursor>;
@@ -1720,6 +1753,7 @@ namespace saga
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
         constexpr auto const & rotate_copy = detail::static_empty_const<rotate_copy_fn>::value;
+        constexpr auto const & unique = detail::static_empty_const<unique_fn>::value;
         constexpr auto const & unique_copy = detail::static_empty_const<unique_copy_fn>::value;
 
         constexpr auto const & is_partitioned

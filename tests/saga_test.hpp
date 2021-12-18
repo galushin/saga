@@ -541,6 +541,8 @@ namespace saga_test
         move_only & operator=(move_only const &) = delete;
         move_only & operator=(move_only &&) = default;
 
+        operator T const &() const { return this->value; };
+
         T value;
     };
 
