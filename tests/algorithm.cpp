@@ -2473,7 +2473,7 @@ TEST_CASE("unique_copy: minimal, custom predicate")
     };
 }
 
-TEST_CASE("unique - subcursors")
+TEST_CASE("unique_copy - subcursors, custom predicate")
 {
     using Value = char;
 
@@ -2481,6 +2481,7 @@ TEST_CASE("unique - subcursors")
                                       , std::vector<Value> const & dest_old)
     {
         auto const bin_pred = [](char x, char y) { return x == ' ' && y == ' '; };
+
         // Подготовка
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
@@ -2507,7 +2508,7 @@ TEST_CASE("unique - subcursors")
     };
 }
 
-TEST_CASE("unique - subcursors, custom predicate")
+TEST_CASE("unique_copy - subcursors, default predicate")
 {
     using Value = int;
 
@@ -2536,6 +2537,79 @@ TEST_CASE("unique - subcursors, custom predicate")
 
         REQUIRE((result_saga.out.begin() - out_saga.begin()) == (result_std - out_std));
         REQUIRE(result_saga.out.end() == out_saga.end());
+    };
+}
+
+TEST_CASE("unique: default predicate")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & src_old)
+    {
+        // unique
+        auto src_saga = [&]()
+        {
+            std::forward_list<saga_test::move_only<Value>> src_saga;
+            auto pos = src_saga.before_begin();
+
+            for(auto const & value : src_old)
+            {
+                pos = src_saga.emplace_after(pos, value);
+            }
+
+            return src_saga;
+        }();
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
+
+        auto const result = saga::unique(input);
+
+        // unique_copy
+        std::vector<Value> expected;
+        saga::unique_copy(saga::rebase_cursor(input, src_old), saga::back_inserter(expected));
+
+        // Проверка
+        REQUIRE(std::equal(input.begin(), result.begin(), expected.begin(), expected.end()));
+
+        REQUIRE(result == saga::cursor::drop_front_n(input, expected.size()));
+    };
+}
+
+TEST_CASE("unique: custom predicate")
+{
+    using Value = char;
+
+    saga_test::property_checker << [](std::vector<Value> const & src_old)
+    {
+        auto const bin_pred = [](char x, char y) { return x == ' ' && y == ' '; };
+
+        // unique
+        auto src_saga = [&]()
+        {
+            std::forward_list<saga_test::move_only<Value>> src_saga;
+            auto pos = src_saga.before_begin();
+
+            for(auto const & value : src_old)
+            {
+                pos = src_saga.emplace_after(pos, value);
+            }
+
+            return src_saga;
+        }();
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
+
+        auto const result = saga::unique(input, bin_pred);
+
+        // unique_copy
+        std::vector<Value> expected;
+        saga::unique_copy(saga::rebase_cursor(input, src_old)
+                          , saga::back_inserter(expected), bin_pred);
+
+        // Проверка
+        REQUIRE(std::equal(input.begin(), result.begin(), expected.begin(), expected.end()));
+
+        REQUIRE(result == saga::cursor::drop_front_n(input, expected.size()));
     };
 }
 
