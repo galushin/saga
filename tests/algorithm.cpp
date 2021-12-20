@@ -2449,6 +2449,95 @@ TEST_CASE("shuffle")
     };
 }
 
+TEST_CASE("sample: Input -> RandomAccess")
+{
+    using Value = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
+    {
+        auto dest = dest_old;
+
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        auto const out = saga_test::random_subcursor_of(saga::cursor::all(dest));
+
+        auto const num
+            = static_cast<std::size_t>(saga_test::random_uniform(0*out.size(), out.size()));
+
+        auto const result = saga::sample(saga::make_istream_cursor<Value>(src_in)
+                                         , out, num, saga_test::random_engine());
+
+        // Проверки
+        REQUIRE(result == saga::cursor::drop_front_n(out, std::min(num, src.size())));
+
+        for(auto iter = out.begin(); iter != result.begin(); ++iter)
+        {
+            REQUIRE(!!saga::find(saga::cursor::all(src), *iter));
+        }
+    };
+}
+
+TEST_CASE("sample: Forward -> RandomAccess")
+{
+    using Value = long;
+
+    saga_test::property_checker
+    << [](std::forward_list<Value> const & src, std::vector<Value> const & dest_old)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto dest = dest_old;
+        auto const out = saga_test::random_subcursor_of(saga::cursor::all(dest));
+
+        auto const num = saga_test::random_uniform(0*out.size(), out.size());
+
+        auto const result = saga::sample(input, out, num, saga_test::random_engine());
+
+        // Проверки
+        REQUIRE(result == saga::cursor::drop_front_n(out, std::min(num, saga::cursor::size(input))));
+
+        {
+            auto pos = input;
+
+            for(auto iter = out.begin(); iter != result.begin(); ++iter)
+            {
+                pos = saga::find(pos, *iter);
+
+                REQUIRE(!!pos);
+            }
+        }
+    };
+}
+
+TEST_CASE("sample: Forward -> Output")
+{
+    using Value = long;
+
+    saga_test::property_checker
+    << [](std::forward_list<Value> const & src, saga_test::container_size<std::ptrdiff_t> num)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        std::vector<Value> dest;
+        saga::sample(input, saga::back_inserter(dest), num.value, saga_test::random_engine());
+
+        // Проверки
+        REQUIRE(dest.size() == std::min(num.value, saga::cursor::size(input)));
+
+        {
+            auto pos = input;
+
+            for(auto const & item : dest)
+            {
+                pos = saga::find(pos, item);
+
+                REQUIRE(!!pos);
+            }
+        }
+    };
+}
+
 TEST_CASE("unique_copy: minimal, default predicate")
 {
     using Value = long;

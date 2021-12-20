@@ -219,6 +219,7 @@ namespace detail
     public:
         // Типы
         using iterator_category = std::output_iterator_tag;
+        using cursor_category = iterator_category;
         using value_type = void;
         using difference_type = void;
         using pointer = void;

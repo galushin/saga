@@ -734,6 +734,79 @@ namespace saga
         }
     };
 
+    struct sample_fn
+    {
+    private:
+
+        template <class InputCursor, class RandomAccessCursor, class URBG>
+        RandomAccessCursor impl(InputCursor input, RandomAccessCursor out
+                                , cursor_difference_t<InputCursor> const num, URBG && gen
+                                , std::input_iterator_tag) const
+        {
+            assert(num <= out.size());
+
+            // Инициализация
+            auto result = out;
+
+            for(auto rest = num; rest > 0 && !!input; ++input, void(--rest))
+            {
+                result << *input;
+            }
+
+            // Просмотр остальных элементов
+            using Distr = std::uniform_int_distribution<cursor_difference_t<InputCursor>>;
+            using Param = typename Distr::param_type;
+
+            Distr distr;
+
+            auto n_visited = num;
+
+            for(; !!input; ++input, void(++n_visited))
+            {
+                auto pos = distr(gen, Param(0, n_visited));
+
+                if(pos < num)
+                {
+                    out[pos] = *input;
+                }
+            }
+
+            return result;
+        }
+
+        template <class ForwardCursor, class OutputCursor, class URBG>
+        OutputCursor impl(ForwardCursor input, OutputCursor out
+                          , cursor_difference_t<ForwardCursor> num, URBG && gen
+                          , std::forward_iterator_tag) const
+        {
+            assert(num >= 0);
+
+            auto input_n = saga::cursor::size(input);
+
+            std::uniform_real_distribution<double> distr(0.0, 1.0);
+
+            for(; !!input; ++input, void(--input_n))
+            {
+                if(distr(gen) * input_n < num)
+                {
+                    out << *input;
+                    -- num;
+                }
+            }
+
+            return out;
+        }
+
+    public:
+        template <class PopulationCursor, class SampleCursor, class URBG>
+        SampleCursor operator()(PopulationCursor input, SampleCursor out
+                                , cursor_difference_t<PopulationCursor> num, URBG && gen) const
+        {
+            return sample_fn::impl(std::move(input), std::move(out), std::move(num), gen
+                                   , saga::cursor_category_t<PopulationCursor>{});
+        }
+    };
+
     struct unique_fn
     {
         template <class ForwardCursor, class BinaryPredicate = std::equal_to<>>
@@ -1783,6 +1856,7 @@ namespace saga
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
         constexpr auto const & rotate_copy = detail::static_empty_const<rotate_copy_fn>::value;
         constexpr auto const & shuffle = detail::static_empty_const<shuffle_fn>::value;
+        constexpr auto const & sample = detail::static_empty_const<sample_fn>::value;
         constexpr auto const & unique = detail::static_empty_const<unique_fn>::value;
         constexpr auto const & unique_copy = detail::static_empty_const<unique_copy_fn>::value;
 
