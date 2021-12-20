@@ -32,6 +32,7 @@ SAGA -- это свободной программное обеспечение:
 #include <cassert>
 #include <algorithm>
 #include <functional>
+#include <random>
 
 namespace saga
 {
@@ -702,6 +703,107 @@ namespace saga
             auto result2 = saga::copy_fn{}(std::move(part2), std::move(result1.out));
 
             return {std::move(result2.in), std::move(result1.in), std::move(result2.out)};
+        }
+    };
+
+    struct shuffle_fn
+    {
+        template <class RandomAccessCursor, class URBG>
+        void operator()(RandomAccessCursor cur, URBG && gen) const
+        {
+            auto num = cur.size();
+
+            if(num == 0)
+            {
+                return;
+            }
+
+            -- num;
+
+            using Diff = saga::cursor_difference_t<RandomAccessCursor>;
+            using Distr = std::uniform_int_distribution<Diff>;
+            using Param = typename Distr::param_type;
+
+            Distr distr;
+
+            for(; num > 0; -- num)
+            {
+                using std::swap;
+                swap(cur[num], cur[distr(gen, Param(0, num))]);
+            }
+        }
+    };
+
+    struct sample_fn
+    {
+    private:
+
+        template <class InputCursor, class RandomAccessCursor, class URBG>
+        RandomAccessCursor impl(InputCursor input, RandomAccessCursor out
+                                , cursor_difference_t<InputCursor> const num, URBG && gen
+                                , std::input_iterator_tag) const
+        {
+            assert(num <= out.size());
+
+            // Инициализация
+            auto result = out;
+
+            for(auto rest = num; rest > 0 && !!input; ++input, void(--rest))
+            {
+                result << *input;
+            }
+
+            // Просмотр остальных элементов
+            using Distr = std::uniform_int_distribution<cursor_difference_t<InputCursor>>;
+            using Param = typename Distr::param_type;
+
+            Distr distr;
+
+            auto n_visited = num;
+
+            for(; !!input; ++input, void(++n_visited))
+            {
+                auto pos = distr(gen, Param(0, n_visited));
+
+                if(pos < num)
+                {
+                    out[pos] = *input;
+                }
+            }
+
+            return result;
+        }
+
+        template <class ForwardCursor, class OutputCursor, class URBG>
+        OutputCursor impl(ForwardCursor input, OutputCursor out
+                          , cursor_difference_t<ForwardCursor> num, URBG && gen
+                          , std::forward_iterator_tag) const
+        {
+            assert(num >= 0);
+
+            auto input_n = saga::cursor::size(input);
+
+            std::uniform_real_distribution<double> distr(0.0, 1.0);
+
+            for(; !!input; ++input, void(--input_n))
+            {
+                if(distr(gen) * input_n < num)
+                {
+                    out << *input;
+                    -- num;
+                }
+            }
+
+            return out;
+        }
+
+    public:
+        template <class PopulationCursor, class SampleCursor, class URBG>
+        SampleCursor operator()(PopulationCursor input, SampleCursor out
+                                , cursor_difference_t<PopulationCursor> num, URBG && gen) const
+        {
+            return sample_fn::impl(std::move(input), std::move(out), std::move(num), gen
+                                   , saga::cursor_category_t<PopulationCursor>{});
         }
     };
 
@@ -1753,6 +1855,8 @@ namespace saga
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
         constexpr auto const & rotate_copy = detail::static_empty_const<rotate_copy_fn>::value;
+        constexpr auto const & shuffle = detail::static_empty_const<shuffle_fn>::value;
+        constexpr auto const & sample = detail::static_empty_const<sample_fn>::value;
         constexpr auto const & unique = detail::static_empty_const<unique_fn>::value;
         constexpr auto const & unique_copy = detail::static_empty_const<unique_copy_fn>::value;
 
