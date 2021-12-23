@@ -1559,10 +1559,7 @@ namespace saga
         constexpr T const &
         operator()(T const & value, T const & low, T const & high, Compare cmp = {}) const
         {
-            if(cmp(high, low))
-            {
-                assert(!cmp(high, low));
-            }
+            void(!cmp(low, high) ? void(0) : assert(!cmp(high, low)));
 
             if(saga::invoke(cmp, value, low))
             {
