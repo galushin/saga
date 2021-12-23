@@ -472,7 +472,25 @@ TEST_CASE("count - subcursor")
     };
 }
 
-TEST_CASE("cout_if - minimal")
+TEST_CASE("count - subcursor, custom binary predicate")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & values, Value const & value)
+    {
+        auto const bin_pred = [](Value const & lhs, Value const & rhs)
+            { return lhs % 2 == rhs % 2; };
+
+        auto const pred = [&](Value const & arg) { return bin_pred(arg, value); };
+
+        auto const src = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        REQUIRE(saga::count(saga::cursor::all(src), value, bin_pred)
+                == std::count_if(src.begin(), src.end(), pred));
+    };
+}
+
+TEST_CASE("count_if - minimal")
 {
     using Value = int;
 
@@ -487,7 +505,7 @@ TEST_CASE("cout_if - minimal")
     };
 }
 
-TEST_CASE("cout_if - subcursor")
+TEST_CASE("count_if - subcursor")
 {
     using Value = int;
 
@@ -651,6 +669,28 @@ TEST_CASE("find - invented, true")
 
         REQUIRE(!!r_saga);
         REQUIRE(*r_saga == value);
+    };
+}
+
+TEST_CASE("find - subcursor, custom binary predicate")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & value)
+    {
+        auto const bin_pred = [](Value const & lhs, Value const & rhs)
+        {
+            return lhs % 5 == rhs % 5;
+        };
+
+        auto const pred = [&](Value const & arg) { return bin_pred(arg, value); };
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const r_bin_pred = saga::find(input, value, bin_pred);
+        auto const r_unary_pred = saga::find_if(input, pred);
+
+        REQUIRE(r_bin_pred == r_unary_pred);
     };
 }
 
@@ -1869,6 +1909,25 @@ TEST_CASE("remove: guaranteed")
     };
 }
 
+TEST_CASE("remove: subcursor, custom binary predicate")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> src_old, Value const & value)
+    {
+        auto const bin_pred = std::less<>{};
+        auto const pred = [&](Value const & arg) { return bin_pred(arg, value); };
+
+        auto src_bin = src_old;
+        saga::remove(saga::cursor::all(src_bin), value, bin_pred);
+
+        auto src_if = src_old;
+        saga::remove_if(saga::cursor::all(src_if), pred);
+
+        REQUIRE(src_bin == src_if);
+    };
+}
+
 TEST_CASE("remove_if")
 {
     using Value = int;
@@ -2031,6 +2090,28 @@ TEST_CASE("remove_copy_if: subcursors")
     };
 }
 
+TEST_CASE("remove_copy: custom binary predicate")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & src, Value const & value)
+    {
+        auto const bin_pred = [&](Value const & lhs, Value const & rhs)
+        {   return lhs % 7 == rhs % 7;  };
+
+        auto const pred = [&](Value const & arg) {   return bin_pred(arg, value); };
+
+        std::vector<Value> dest_bin;
+        saga::remove_copy(saga::cursor::all(src), saga::back_inserter(dest_bin), value, bin_pred);
+
+        std::vector<Value> dest_if;
+        saga::remove_copy_if(saga::cursor::all(src), saga::back_inserter(dest_if), pred);
+
+        // Сравнение
+        REQUIRE(dest_bin == dest_if);
+    };
+}
+
 TEST_CASE("replace")
 {
     using Value = int;
@@ -2089,6 +2170,26 @@ TEST_CASE("replace_if")
 
         // Сравнение
         REQUIRE(src_saga == src_std);
+    };
+}
+
+TEST_CASE("replace: subcursor, custom binary predicate")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> src_old
+                                      , Value const & old_value, Value const & new_value)
+    {
+        auto const bin_pred = std::less<>{};
+        auto const pred = [&](Value const & arg) { return bin_pred(arg, old_value); };
+
+        auto src_bin = src_old;
+        saga::replace(saga::cursor::all(src_bin), old_value, new_value, bin_pred);
+
+        auto src_if = src_old;
+        saga::replace_if(saga::cursor::all(src_if), pred, new_value);
+
+        REQUIRE(src_bin == src_if);
     };
 }
 
@@ -2210,6 +2311,31 @@ TEST_CASE("replace_copy_if: subcursors")
 
         REQUIRE((result_saga.out.begin() - out_saga.begin()) == (result_std - out_std));
         REQUIRE(result_saga.out.end() == out_saga.end());
+    };
+}
+
+TEST_CASE("replace_copy: custom binary predicate")
+{
+    using Value = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, Value const & old_value, Value const & new_value)
+    {
+        auto const bin_pred = [&](Value const & lhs, Value const & rhs)
+        {   return lhs % 7 == rhs % 7;  };
+
+        auto const pred = [&](Value const & arg) {   return bin_pred(arg, old_value); };
+
+        std::vector<Value> dest_bin;
+        saga::replace_copy(saga::cursor::all(src), saga::back_inserter(dest_bin)
+                           , old_value, new_value, bin_pred);
+
+        std::vector<Value> dest_if;
+        saga::replace_copy_if(saga::cursor::all(src), saga::back_inserter(dest_if)
+                              , pred, new_value);
+
+        // Сравнение
+        REQUIRE(dest_bin == dest_if);
     };
 }
 
