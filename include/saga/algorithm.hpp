@@ -65,12 +65,14 @@ namespace saga
 
     struct find_fn
     {
-        template <class InputCursor, class T>
-        InputCursor operator()(InputCursor cur, T const & value) const
+        template <class InputCursor, class T, class BinaryPredicate = std::equal_to<>>
+        InputCursor
+        operator()(InputCursor cur, T const & value, BinaryPredicate bin_pred = {}) const
         {
-            return find_if_fn{}(std::move(cur)
-                                , [&](auto && arg)
-                                    { return std::forward<decltype(arg)>(arg) == value; });
+            auto pred = [&](auto && arg)
+                        { return saga::invoke(bin_pred, std::forward<decltype(arg)>(arg), value); };
+
+            return find_if_fn{}(std::move(cur), std::move(pred));
         }
     };
 
@@ -159,11 +161,12 @@ namespace saga
 
     struct count_fn
     {
-        template <class InputCursor, class T>
+        template <class InputCursor, class T, class BinaryPredicate = std::equal_to<>>
         cursor_difference_t<InputCursor>
-        operator()(InputCursor cur, T const & value) const
+        operator()(InputCursor cur, T const & value, BinaryPredicate bin_pred = {}) const
         {
-            auto pred = [&value](auto && arg) { return std::forward<decltype(arg)>(arg) == value; };
+            auto pred = [&](auto && arg)
+                { return saga::invoke(bin_pred, std::forward<decltype(arg)>(arg), value); };
 
             return count_if_fn{}(std::move(cur), std::move(pred));
         }
@@ -198,14 +201,7 @@ namespace saga
         {
             auto const found_in_s_cur = [&](auto && lhs)
             {
-                auto pred = [&](auto && rhs)
-                {
-                    return saga::invoke(bin_pred
-                                        , std::forward<decltype(lhs)>(lhs)
-                                        , std::forward<decltype(rhs)>(rhs));
-                };
-
-                return !!saga::find_if_fn{}(s_cur, std::move(pred));
+                return !!saga::find_fn{}(s_cur,  std::forward<decltype(lhs)>(lhs), bin_pred);
             };
 
             return saga::find_if_fn{}(std::move(cur), found_in_s_cur);
@@ -521,10 +517,14 @@ namespace saga
 
     struct remove_fn
     {
-        template <class ForwardCursor, class T>
-        ForwardCursor operator()(ForwardCursor cur, T const & value) const
+        template <class ForwardCursor, class T, class BinaryPredicate = std::equal_to<>>
+        ForwardCursor
+        operator()(ForwardCursor cur, T const & value, BinaryPredicate bin_pred = {}) const
         {
-            return remove_if_fn{}(std::move(cur), [&](auto && arg){ return arg == value; });
+            auto pred = [&](auto && arg)
+                { return saga::invoke(bin_pred, std::forward<decltype(arg)>(arg), value); };
+
+            return remove_if_fn{}(std::move(cur), std::move(pred));
         }
     };
 
@@ -546,13 +546,16 @@ namespace saga
 
     struct remove_copy_fn
     {
-        template <class InputCursor, class OutputCursor, class T>
+        template <class InputCursor, class OutputCursor, class T
+                  , class BinaryPredicate = std::equal_to<>>
         remove_copy_result<InputCursor, OutputCursor>
-        operator()(InputCursor in, OutputCursor out, T const & value) const
+        operator()(InputCursor in, OutputCursor out
+                   , T const & value, BinaryPredicate bin_pred = {}) const
         {
-            return remove_copy_if_fn{}(std::move(in), std::move(out)
-                                       , [&value](auto && x)
-                                            { return std::forward<decltype(x)>(x) == value; });
+            auto pred = [&](auto && x)
+                { return saga::invoke(bin_pred, std::forward<decltype(x)>(x), value); };
+
+            return remove_copy_if_fn{}(std::move(in), std::move(out), std::move(pred));
         }
     };
 
@@ -573,12 +576,14 @@ namespace saga
 
     struct replace_fn
     {
-        template <class ForwardCursor, class T>
-        void operator()(ForwardCursor cur, T const & old_value, T const & new_value) const
+        template <class ForwardCursor, class T, class BinaryPredicate = std::equal_to<>>
+        void operator()(ForwardCursor cur, T const & old_value
+                        , T const & new_value, BinaryPredicate bin_pred = {}) const
         {
-            return replace_if_fn{}(std::move(cur)
-                                   , [&](auto const & arg) { return arg == old_value; }
-                                   , new_value);
+            auto pred = [&](auto && arg)
+                { return saga::invoke(bin_pred, std::forward<decltype(arg)>(arg), old_value); };
+
+            return replace_if_fn{}(std::move(cur), std::move(pred), new_value);
         }
     };
 
@@ -612,15 +617,16 @@ namespace saga
 
     struct replace_copy_fn
     {
-        template <class InputCursor, class OutputCursor, class T1, class T2>
+        template <class InputCursor, class OutputCursor, class T1, class T2
+                 , class BinaryPredicate = std::equal_to<>>
         replace_copy_result<InputCursor, OutputCursor>
-        operator()(InputCursor in, OutputCursor out
-                   , T1 const & old_value, T2 const & new_value) const
+        operator()(InputCursor in, OutputCursor out, T1 const & old_value
+                   , T2 const & new_value, BinaryPredicate bin_pred = {}) const
         {
-            return replace_copy_if_fn{}(std::move(in), std::move(out)
-                                        , [&old_value](auto && x)
-                                            { return std::forward<decltype(x)>(x) == old_value;}
-                                        , new_value);
+            auto pred = [&](auto && x)
+                { return saga::invoke(bin_pred, std::forward<decltype(x)>(x), old_value); };
+
+            return replace_copy_if_fn{}(std::move(in), std::move(out), std::move(pred), new_value);
         }
     };
 
