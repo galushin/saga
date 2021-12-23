@@ -4605,6 +4605,72 @@ TEST_CASE("minmax_element: custom compare")
     };
 }
 
+TEST_CASE("clamp: default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    <<[](Value const & value, Value const & border1, Value const & border2)
+    {
+        auto const borders = std::minmax(border1, border2);
+
+        Value const & result = saga::clamp(value, borders.first, borders.second);
+
+        REQUIRE((borders.first <= result && result <= borders.second));
+
+        if(value < borders.first)
+        {
+            REQUIRE(std::addressof(result) == std::addressof(borders.first));
+        }
+        else if(borders.second < value)
+        {
+            REQUIRE(std::addressof(result) == std::addressof(borders.second));
+        }
+        else
+        {
+            REQUIRE(std::addressof(result) == std::addressof(value));
+        }
+    };
+
+    static_assert(saga::clamp(1, 3, 5) == 3, "");
+    static_assert(saga::clamp(4, 3, 5) == 4, "");
+    static_assert(saga::clamp(7, 3, 5) == 5, "");
+}
+
+TEST_CASE("clamp: custom compare")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    <<[](Value const & value, Value const & border1, Value const & border2)
+    {
+        auto const cmp = std::greater<>{};
+
+        auto const borders = std::minmax(border1, border2, cmp);
+
+        Value const & result = saga::clamp(value, borders.first, borders.second, cmp);
+
+        REQUIRE((!cmp(result, borders.first) && !cmp(borders.second, result)));
+
+        if(cmp(value, borders.first))
+        {
+            REQUIRE(std::addressof(result) == std::addressof(borders.first));
+        }
+        else if(cmp(borders.second, value))
+        {
+            REQUIRE(std::addressof(result) == std::addressof(borders.second));
+        }
+        else
+        {
+            REQUIRE(std::addressof(result) == std::addressof(value));
+        }
+    };
+
+    static_assert(saga::clamp(1, 5, 3, std::greater<>{}) == 3, "");
+    static_assert(saga::clamp(4, 5, 3, std::greater<>{}) == 4, "");
+    static_assert(saga::clamp(7, 5, 3, std::greater<>{}) == 5, "");
+}
+
 TEST_CASE("is_permutation: default predicate")
 {
     using Value1 = int;
