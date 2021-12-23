@@ -1553,6 +1553,32 @@ namespace saga
         }
     };
 
+    struct clamp_fn
+    {
+        template <class T, class Compare = std::less<>>
+        constexpr T const &
+        operator()(T const & value, T const & low, T const & high, Compare cmp = {}) const
+        {
+            if(cmp(high, low))
+            {
+                assert(!cmp(high, low));
+            }
+
+            if(saga::invoke(cmp, value, low))
+            {
+                return low;
+            }
+            else if(saga::invoke(cmp, high, value))
+            {
+                return high;
+            }
+            else
+            {
+                return value;
+            }
+        }
+    };
+
     struct partial_sort_fn
     {
         template <class RandomAccessCursor, class Compare = std::less<>>
@@ -1903,6 +1929,7 @@ namespace saga
         constexpr auto const & max_element = detail::static_empty_const<max_element_fn>::value;
         constexpr auto const & minmax_element
             = detail::static_empty_const<minmax_element_fn>::value;
+        constexpr auto const & clamp = detail::static_empty_const<clamp_fn>::value;
 
         constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
         constexpr auto const & lexicographical_compare
