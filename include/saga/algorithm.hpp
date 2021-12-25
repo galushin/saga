@@ -694,6 +694,77 @@ namespace saga
         }
     };
 
+    struct rotate_fn
+    {
+    private:
+        template <class ForwardCursor>
+        void impl_void(ForwardCursor cur1, ForwardCursor cur2) const
+        {
+            assert(!cur2.dropped_front());
+
+            for(; !!cur1 && !!cur2; )
+            {
+                auto result = saga::swap_ranges_fn{}(std::move(cur1), cur2);
+
+                if(!result.in1)
+                {
+                    cur1 = result.in2.dropped_front();
+                    cur2 = std::move(result.in2);
+                    cur2.forget_front();
+                }
+                else
+                {
+                    cur1 = std::move(result.in1);
+                    cur1.forget_front();
+                }
+            }
+
+            return;
+        }
+
+    public:
+        template <class ForwardCursor>
+        ForwardCursor operator()(ForwardCursor input) const
+        {
+            auto write = input.dropped_front();
+            if(!write)
+            {
+                input.exhaust_front();
+                return input;
+            }
+
+            auto read = std::move(input);
+            read.forget_front();
+
+            if(!read)
+            {
+                write.splice(read);
+                return write;
+            }
+
+            auto next_read = read;
+
+            for(; !!read; ++ read, void(++write))
+            {
+                if(!write)
+                {
+                    write.splice(read.dropped_front());
+                    read.forget_front();
+                    next_read = read;
+                }
+
+                using std::swap;
+                swap(*write, *read);
+            }
+
+            this->impl_void(write, next_read);
+
+            write.splice(next_read);
+
+            return write;
+        }
+    };
+
     template <class ForwardCursor, class OutputCursor>
     using rotate_copy_result = in_in_out_result<ForwardCursor, ForwardCursor, OutputCursor>;
 
@@ -1883,6 +1954,7 @@ namespace saga
         constexpr auto const & swap_ranges = detail::static_empty_const<swap_ranges_fn>::value;
         constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
         constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
+        constexpr auto const & rotate = detail::static_empty_const<rotate_fn>::value;
         constexpr auto const & rotate_copy = detail::static_empty_const<rotate_copy_fn>::value;
         constexpr auto const & shuffle = detail::static_empty_const<shuffle_fn>::value;
         constexpr auto const & sample = detail::static_empty_const<sample_fn>::value;
