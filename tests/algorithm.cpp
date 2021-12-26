@@ -2502,6 +2502,37 @@ TEST_CASE("reverse_copy : constexpr")
     static_assert(::check_reverse_copy_constexpr(values), "");
 }
 
+TEST_CASE("rotate: forward")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & values_old)
+    {
+        // saga
+        auto values_saga = values_old;
+
+        auto const input_saga = saga_test::random_subcursor_of(saga::cursor::all(values_saga));
+        auto const r_saga = saga::rotate(input_saga);
+
+        // std
+        auto values_std = values_old;
+
+        auto const input_std = saga::rebase_cursor(input_saga, values_std);
+        auto const r_std
+            = std::rotate(input_std.dropped_front().begin(), input_std.begin(), input_std.end());
+
+        // Сравнение
+        CAPTURE(values_old, input_saga.dropped_front(), input_saga, input_saga.dropped_back());
+
+        REQUIRE(values_saga == values_std);
+
+        REQUIRE(saga::rebase_cursor(r_saga, values_std).begin() == r_std);
+        REQUIRE(r_saga.end() == input_saga.end());
+        REQUIRE(r_saga.dropped_front().begin() == input_saga.dropped_front().begin());
+        REQUIRE(r_saga.dropped_back().end() == input_saga.dropped_back().end());
+    };
+}
+
 TEMPLATE_LIST_TEST_CASE("rotate_copy: minimal", "rotate_copy", Containers)
 {
     using Container = TestType;
