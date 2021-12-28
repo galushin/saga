@@ -1192,6 +1192,72 @@ namespace saga
         }
     };
 
+    struct inplace_merge_fn
+    {
+    private:
+        template <class Cursor>
+        static Cursor make_partition(Cursor cur1, Cursor cur2)
+        {
+            cur1.forget_front();
+            cur1.exhaust_front();
+            cur1.splice(cur2);
+
+            return cur1;
+        }
+
+        template <class BidirectionalCursor, class Distance, class Compare>
+        void impl(BidirectionalCursor cur1, Distance num1
+                  , BidirectionalCursor cur2, Compare cmp) const
+        {
+            for(;;)
+            {
+                if(num1 == 0 || !cur2)
+                {
+                    return;
+                }
+
+                auto const num11 = num1 / 2;
+                auto const num12 = num1 - num11;
+
+                cur1 = saga::cursor::drop_front_n(std::move(cur1), num11);
+
+                cur2 = lower_bound_fn{}(std::move(cur2), *cur1, cmp);
+
+                auto cur_mid = rotate_fn{}(this->make_partition(cur1, cur2.dropped_front()));
+
+                if(num1 == 1)
+                {
+                    return;
+                }
+
+                this->impl(cur1.dropped_front(), num11, cur_mid.dropped_front(), cmp);
+
+                num1 = num12;
+                cur1 = std::move(cur_mid);
+                cur1.forget_front();
+                cur2.forget_front();
+            }
+        }
+
+    public:
+        template <class BidirectionalCursor, class Compare = std::less<>>
+        void operator()(BidirectionalCursor input, Compare cmp = {}) const
+        {
+            auto cur1 = input.dropped_front();
+            auto cur2 = input;
+            cur2.forget_front();
+
+            if(!cur1 || !cur2)
+            {
+                return;
+            }
+
+            auto num1 = saga::cursor::size(cur1);
+
+            this->impl(std::move(cur1), std::move(num1), std::move(cur2), std::move(cmp));
+        }
+    };
+
     struct includes_fn
     {
         template <class InputCursor1, class InputCursor2, class Compare = std::less<>>
@@ -1983,6 +2049,7 @@ namespace saga
         constexpr auto const & binary_search = detail::static_empty_const<binary_search_fn>::value;
 
         constexpr auto const & merge = detail::static_empty_const<merge_fn>::value;
+        constexpr auto const & inplace_merge = detail::static_empty_const<inplace_merge_fn>::value;
 
         constexpr auto const & includes = detail::static_empty_const<includes_fn>::value;
         constexpr auto const & set_difference
