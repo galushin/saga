@@ -3250,6 +3250,74 @@ TEST_CASE("merge : minimal, custom compare")
     };
 }
 
+TEST_CASE("inplace_merge: default predicate")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & values_old)
+    {
+        // Подготовка
+        auto src = values_old;
+
+        auto const input_src = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        std::sort(input_src.dropped_front().begin(), input_src.begin());
+        std::sort(input_src.begin(), input_src.end());
+
+        std::list<Value> values(src.begin(), src.end());
+
+        auto const input = saga::rebase_cursor(input_src, values);
+
+        // Выполняем
+        saga::inplace_merge(input);
+
+        // Проверка
+        CAPTURE(src, values, input.dropped_front(), input);
+
+        REQUIRE(saga::is_permutation(saga::cursor::all(values)
+                                     , saga::cursor::all(values_old)));
+
+        REQUIRE(saga::equal(input.dropped_back()
+                            , saga::rebase_cursor(input, values_old).dropped_back()));
+
+        REQUIRE(std::is_sorted(input.dropped_front().begin(), input.end()));
+    };
+}
+
+TEST_CASE("inplace_merge: custom predicate")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & values_old)
+    {
+        auto const cmp = std::greater<>{};
+
+        // Подготовка
+        auto src = values_old;
+
+        auto const input_src = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        std::sort(input_src.dropped_front().begin(), input_src.begin(), cmp);
+        std::sort(input_src.begin(), input_src.end(), cmp);
+
+        std::list<Value> values(src.begin(), src.end());
+
+        auto const input = saga::rebase_cursor(input_src, values);
+
+        // Выполняем
+        saga::inplace_merge(input, cmp);
+
+        // Проверка
+        REQUIRE(saga::is_permutation(saga::cursor::all(values)
+                                     , saga::cursor::all(values_old)));
+
+        REQUIRE(saga::equal(input.dropped_back()
+                            , saga::rebase_cursor(input, values_old).dropped_back()));
+
+        REQUIRE(std::is_sorted(input.dropped_front().begin(), input.end(), cmp));
+    };
+}
+
 TEST_CASE("includes - minimal")
 {
     using Value = int;
