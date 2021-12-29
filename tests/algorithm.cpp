@@ -1396,6 +1396,7 @@ TEST_CASE("copy_backward")
     << [](std::list<SrcValue> const & src, std::list<DestValue> const & dest_old)
     {
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+
         // saga
         auto dest_saga = dest_old;
 
@@ -1515,6 +1516,137 @@ TEST_CASE("move - subcursors")
         for(auto index : saga::view::indices(dest_prefix_size + n_common, dest.size()))
         {
             REQUIRE(dest_saga[index] == dest[index]);
+        }
+
+        // Проверить адреса
+        for(auto index : saga::view::indices_of(dest))
+        {
+            REQUIRE(dest_saga[index].data() == addresses[index]);
+        }
+    };
+}
+
+TEST_CASE("move_backward: move_only")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    << [](std::list<Value> const & src, std::list<Value> const & dest_old)
+    {
+        // saga
+        std::list<saga_test::move_only<Value>> src_saga(src.begin(), src.end());
+
+        std::list<saga_test::move_only<Value>> dest_saga(dest_old.begin(), dest_old.end());
+
+        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+        auto const input_saga = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
+
+        auto const r_saga = saga::move_backward(input_saga, out_saga);
+
+        // std
+        auto dest_std = dest_old;
+
+        auto const out_std = saga::rebase_cursor(out_saga, dest_std);
+
+        auto const r_std = std::move_backward(saga::rebase_cursor(r_saga.in, src).end()
+                                              , saga::rebase_cursor(input_saga, src).end()
+                                              , out_std.end());
+
+        // Проверка
+        auto const n_common
+            = std::min(saga::cursor::size(input_saga), saga::cursor::size(out_saga));
+
+        REQUIRE(r_saga.in.begin() == input_saga.begin());
+        REQUIRE(std::distance(r_saga.in.end(), input_saga.end()) == n_common);
+        REQUIRE(r_saga.in.dropped_front().begin() == src_saga.begin());
+        REQUIRE(r_saga.in.dropped_back().end() == src_saga.end());
+
+        REQUIRE(r_saga.out.begin() == out_saga.begin());
+        REQUIRE(std::distance(r_saga.out.end(), out_saga.end()) == n_common);
+        REQUIRE(std::distance(r_saga.out.end(), out_saga.end())
+                == std::distance(r_std, out_std.end()));
+        REQUIRE(r_saga.out.dropped_front().begin() == dest_saga.begin());
+        REQUIRE(r_saga.out.dropped_back().end() == dest_saga.end());
+
+        REQUIRE(saga::equal(saga::cursor::all(dest_saga), saga::cursor::all(dest_std)));
+    };
+}
+
+TEST_CASE("move_backward - vectors")
+{
+    using Value = std::vector<int>;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](Container const & src, Container const & dest)
+    {
+        // saga
+        auto src_saga = src;
+        auto dest_saga = dest;
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
+        auto const output = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
+
+        auto const n_common = std::min(saga::cursor::size(input), saga::cursor::size(output));
+
+        std::size_t const dest_prefix_size
+            = dest.size() - output.dropped_back().size() - n_common;
+        auto const src_prefix_size = src.size() - input.dropped_back().size() - n_common;
+
+        std::vector<Value::const_pointer> addresses;
+
+        for(auto index : saga::view::indices(dest_prefix_size))
+        {
+            addresses.push_back(dest_saga[index].data());
+        }
+
+        for(auto index : saga::view::indices(n_common))
+        {
+            addresses.push_back(src_saga.at(src_prefix_size + index).data());
+        }
+
+        for(auto index : saga::view::indices(dest_saga.size() - output.dropped_back().size()
+                                             , dest_saga.size()))
+        {
+            addresses.push_back(dest_saga[index].data());
+        }
+
+        REQUIRE(addresses.size() == dest.size());
+
+        auto const result_saga = saga::move_backward(input, output);
+
+        // std
+        auto src_std = src;
+
+        auto const last_std = src_std.end() - input.dropped_back().size();
+        auto const first_std = last_std - n_common;
+
+        std::vector<Value> dest_std(n_common);
+        std::move_backward(first_std, last_std, dest_std.end());
+
+        // Проверить возвращаемое значение
+        REQUIRE(result_saga.in.begin() == input.begin());
+        REQUIRE(result_saga.in.end() == input.end() - n_common);
+        REQUIRE(result_saga.out.begin() == output.begin());
+        REQUIRE(result_saga.out.end() == output.end() - n_common);
+
+        // Проверить значения
+        REQUIRE(src_saga == src_std);
+
+        for(auto index : saga::view::indices(dest_prefix_size))
+        {
+            REQUIRE(dest_saga.at(index) == dest.at(index));
+        }
+
+        for(auto index : saga::view::indices(n_common))
+        {
+            REQUIRE(dest_saga.at(dest_prefix_size + index)
+                    == src.at(src_prefix_size + index));
+        }
+
+        for(auto index : saga::view::indices(dest_saga.size() - output.dropped_back().size()
+                                             , dest_saga.size()))
+        {
+            REQUIRE(dest_saga.at(index) == dest.at(index));
         }
 
         // Проверить адреса
