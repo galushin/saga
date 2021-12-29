@@ -1810,6 +1810,30 @@ namespace saga
         }
     };
 
+    struct stable_sort_fn
+    {
+        template <class RandomAccessCursor, class Compare = std::less<>>
+        void operator()(RandomAccessCursor cur, Compare cmp = {}) const
+        {
+            auto const num = cur.size();
+
+            if(num <= 1)
+            {
+                return;
+            }
+
+            cur.forget_front();
+            cur.forget_back();
+
+            cur.drop_front(num / 2);
+
+            (*this)(cur.dropped_front(), cmp);
+            (*this)(cur, cmp);
+
+            saga::inplace_merge_fn{}(cur, cmp);
+        }
+    };
+
     struct equal_fn
     {
     private:
@@ -2062,6 +2086,7 @@ namespace saga
         constexpr auto const & partial_sort = detail::static_empty_const<partial_sort_fn>::value;
         constexpr auto const & partial_sort_copy
             = detail::static_empty_const<partial_sort_copy_fn>::value;
+        constexpr auto const & stable_sort = detail::static_empty_const<stable_sort_fn>::value;
 
         constexpr auto const & lower_bound = detail::static_empty_const<lower_bound_fn>::value;
         constexpr auto const & upper_bound = detail::static_empty_const<upper_bound_fn>::value;
