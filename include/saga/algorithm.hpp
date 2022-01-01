@@ -36,6 +36,19 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    namespace detail
+    {
+        template <class Cursor>
+        Cursor make_partition(Cursor cur1, Cursor cur2)
+        {
+            cur1.forget_front();
+            cur1.exhaust_front();
+            cur1.splice(cur2);
+
+            return cur1;
+        }
+    }
+
     // Немодифицирующие операции
     struct find_if_fn
     {
@@ -1050,6 +1063,62 @@ namespace saga
         }
     };
 
+    struct stable_partition_fn
+    {
+    private:
+        template <class BidirectionalCursor, class Predicate>
+        BidirectionalCursor impl(BidirectionalCursor input, Predicate pred
+                                 , saga::cursor_difference_t<BidirectionalCursor> num) const
+        {
+            input.forget_front();
+            input.forget_back();
+
+            if(num == 0)
+            {
+                return input;
+            }
+
+            if(num == 1)
+            {
+                if(saga::invoke(pred, *input))
+                {
+                    ++ input;
+                }
+
+                return input;
+            }
+
+            auto const num1 = num / 2;
+
+            input = saga::cursor::drop_front_n(std::move(input), num1);
+
+            auto const result1 = this->impl(input.dropped_front(), pred, num1);
+
+            input.forget_front();
+            auto const result2 = this->impl(input, pred, num - num1);
+
+            auto r_rotation
+                = saga::rotate_fn{}(detail::make_partition(result1, result2.dropped_front()));
+
+            auto r_true = result1.dropped_front();
+            r_true.splice(r_rotation.dropped_front());
+
+            r_rotation.forget_front();
+            r_rotation.splice(result2);
+
+            return detail::make_partition(r_true, r_rotation);
+        }
+
+    public:
+        template <class BidirectionalCursor, class Predicate>
+        BidirectionalCursor operator()(BidirectionalCursor input, Predicate pred) const
+        {
+            auto const num = saga::cursor::size(input);
+
+            return this->impl(std::move(input), pred, num);
+        }
+    };
+
     struct partition_point_fn
     {
         template <class ForwardCursor, class Predicate>
@@ -1215,16 +1284,6 @@ namespace saga
     struct inplace_merge_fn
     {
     private:
-        template <class Cursor>
-        static Cursor make_partition(Cursor cur1, Cursor cur2)
-        {
-            cur1.forget_front();
-            cur1.exhaust_front();
-            cur1.splice(cur2);
-
-            return cur1;
-        }
-
         template <class BidirectionalCursor, class Distance, class Compare>
         void impl(BidirectionalCursor cur1, Distance num1
                   , BidirectionalCursor cur2, Compare cmp) const
@@ -1243,7 +1302,7 @@ namespace saga
 
                 cur2 = lower_bound_fn{}(std::move(cur2), *cur1, cmp);
 
-                auto cur_mid = rotate_fn{}(this->make_partition(cur1, cur2.dropped_front()));
+                auto cur_mid = rotate_fn{}(detail::make_partition(cur1, cur2.dropped_front()));
 
                 if(num1 == 1)
                 {
@@ -2076,6 +2135,8 @@ namespace saga
         constexpr auto const & partition = detail::static_empty_const<partition_fn>::value;
         constexpr auto const & partition_copy
             = detail::static_empty_const<partition_copy_fn>::value;
+        constexpr auto const & stable_partition
+            = detail::static_empty_const<stable_partition_fn>::value;
         constexpr auto const & partition_point
             = detail::static_empty_const<partition_point_fn>::value;
 
