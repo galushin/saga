@@ -3199,6 +3199,39 @@ TEST_CASE("partition_copy: subcursor")
     };
 }
 
+TEST_CASE("stable_partition")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::list<Value> const & src_old)
+    {
+        auto const pred = [](Value const & arg) { return arg % 2 == 1; };
+
+        // saga
+        auto src_saga = src_old;
+        auto const input_saga = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
+
+        auto const result_saga = saga::stable_partition(input_saga, pred);
+
+        // std
+        auto src_std = src_old;
+        auto const input_std = saga::rebase_cursor(input_saga, src_std);
+
+        auto const result_std = std::stable_partition(input_std.begin(), input_std.end(), pred);
+
+        // Проверка
+        REQUIRE(src_saga == src_std);
+
+        CAPTURE(src_saga, input_saga, result_saga);
+
+        REQUIRE(std::distance(input_std.begin(), result_std)
+                 == std::distance(input_saga.begin(), result_saga.begin()));
+        REQUIRE(result_saga.end() == input_saga.end());
+        REQUIRE(result_saga.dropped_front().begin() == input_saga.begin());
+        REQUIRE(result_saga.dropped_back().end() == input_saga.end());
+    };
+}
+
 TEST_CASE("partition_point")
 {
     using Value = int;
