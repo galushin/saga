@@ -3013,6 +3013,33 @@ TEST_CASE("unique: custom predicate")
     };
 }
 
+TEST_CASE("unique: custom predicate - compare mod 2")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & values_old)
+    {
+        auto const pred = [](Value const & lhs, Value const & rhs)
+        {
+            return lhs % 2 == rhs % 2;
+        };
+
+        // saga
+        auto values_saga = values_old;
+        auto const r_saga = saga::unique(saga::cursor::all(values_saga), pred);
+
+        // std
+        auto values_std = values_old;
+        auto const r_std = std::unique(values_std.begin(), values_std.end(), pred);
+
+        // Проверка
+        REQUIRE(values_saga == values_std);
+
+        REQUIRE(r_saga == saga::cursor::drop_front_n(saga::cursor::all(values_saga)
+                                                     , std::distance(values_std.begin(), r_std)));
+    };
+}
+
 TEST_CASE("is_partitioned: minimal")
 {
     using Value = int;
@@ -3422,7 +3449,10 @@ TEST_CASE("inplace_merge: custom predicate")
 
     saga_test::property_checker << [](std::vector<Value> const & values_old)
     {
-        auto const cmp = std::greater<>{};
+        auto const cmp = [](Value const & lhs, Value const & rhs)
+        {
+            return lhs % 2017 < rhs % 2017;
+        };
 
         // Подготовка
         auto src = values_old;
@@ -4576,6 +4606,57 @@ TEST_CASE("partial_sort_copy : input subrage, custom compare")
         REQUIRE(r_saga.out.end() == out_saga.end());
         REQUIRE(r_saga.out.dropped_front().begin() == dest_saga.begin());
         REQUIRE(r_saga.out.dropped_back().end() == dest_saga.end());
+    };
+}
+
+TEST_CASE("stable_sort: default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & values_old)
+    {
+        auto values = values_old;
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        saga::stable_sort(input);
+
+        // Проверки
+        auto const input_old = saga::rebase_cursor(input, values_old);
+
+        REQUIRE(saga::is_sorted(input));
+        REQUIRE(saga::is_permutation(input, input_old));
+        REQUIRE(saga::equal(input.dropped_front(), input_old.dropped_front()));
+        REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
+    };
+}
+
+TEST_CASE("stable_sort: custom compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & values_old)
+    {
+        auto const cmp = [](Value const & lhs, Value const & rhs)
+        {
+            return lhs % 2017 < rhs % 2017;
+        };
+
+        // saga
+        auto values = values_old;
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        saga::stable_sort(input, cmp);
+
+        // std
+        auto values_std = values_old;
+        auto const input_std = saga::rebase_cursor(input, values_std);
+
+        std::stable_sort(input_std.begin(), input_std.end(), cmp);
+
+        // Проверки
+        REQUIRE(values == values_std);
     };
 }
 
