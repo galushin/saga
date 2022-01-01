@@ -3013,6 +3013,33 @@ TEST_CASE("unique: custom predicate")
     };
 }
 
+TEST_CASE("unique: custom predicate - compare mod 2")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::forward_list<Value> const & values_old)
+    {
+        auto const pred = [](Value const & lhs, Value const & rhs)
+        {
+            return lhs % 2 == rhs % 2;
+        };
+
+        // saga
+        auto values_saga = values_old;
+        auto const r_saga = saga::unique(saga::cursor::all(values_saga), pred);
+
+        // std
+        auto values_std = values_old;
+        auto const r_std = std::unique(values_std.begin(), values_std.end(), pred);
+
+        // Проверка
+        REQUIRE(values_saga == values_std);
+
+        REQUIRE(r_saga == saga::cursor::drop_front_n(saga::cursor::all(values_saga)
+                                                     , std::distance(values_std.begin(), r_std)));
+    };
+}
+
 TEST_CASE("is_partitioned: minimal")
 {
     using Value = int;
