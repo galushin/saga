@@ -1189,6 +1189,55 @@ namespace saga
         }
     };
 
+    struct insertion_sort_fn
+    {
+    private:
+        template <class BidirectionalCursor, class Compare>
+        void sink(BidirectionalCursor write, Compare & cmp) const
+        {
+            if(!write)
+            {
+                return;
+            }
+
+            auto read = write;
+            read.drop_back();
+
+            if(!read || !saga::invoke(cmp, write.back(), read.back()))
+            {
+                return;
+            }
+
+            saga::cursor_value_t<BidirectionalCursor> temp(std::move(write.back()));
+            write.back() = std::move(read.back());
+            write = read;
+            read.drop_back();
+
+            for(; !!read && saga::invoke(cmp, temp, read.back());)
+            {
+                write.back() = std::move(read.back());
+                write = read;
+                read.drop_back();
+            }
+
+            write.back() = std::move(temp);
+        }
+
+    public:
+        template <class BidirectionalCursor, class Compare = std::less<>>
+        void operator()(BidirectionalCursor input, Compare cmp = {}) const
+        {
+            input.forget_front();
+
+            for(; !!input; ++ input)
+            {
+                this->sink(input.dropped_front(), cmp);
+            }
+
+            this->sink(input.dropped_front(), cmp);
+        }
+    };
+
     struct lower_bound_fn
     {
         template <class ForwardCursor, class T, class Compare = std::less<>>
@@ -2143,7 +2192,8 @@ namespace saga
         constexpr auto const & is_sorted = detail::static_empty_const<is_sorted_fn>::value;
         constexpr auto const & is_sorted_until
             = detail::static_empty_const<is_sorted_until_fn>::value;
-
+        constexpr auto const & insertion_sort
+            = detail::static_empty_const<insertion_sort_fn>::value;
         constexpr auto const & partial_sort = detail::static_empty_const<partial_sort_fn>::value;
         constexpr auto const & partial_sort_copy
             = detail::static_empty_const<partial_sort_copy_fn>::value;

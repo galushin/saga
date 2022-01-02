@@ -4407,6 +4407,59 @@ TEST_CASE("sort_heap - custom compare")
     };
 }
 
+TEST_CASE("insertion_sort - default compare")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & values_old)
+    {
+        // Подготовка
+        auto values = values_old;
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        // Выполнение
+        saga::insertion_sort(input);
+
+        // Проверка
+        auto const input_old = saga::rebase_cursor(input, values_old);
+        CAPTURE(values_old, values, input_old, input);
+
+        REQUIRE(saga::is_sorted(input));
+
+        REQUIRE(saga::is_permutation(input, input_old));
+        REQUIRE(saga::equal(input.dropped_front(), input_old.dropped_front()));
+        REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
+    };
+}
+
+TEST_CASE("insertion_sort - custom compare")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & values_old)
+    {
+        auto const pred = std::greater<>{};
+
+        // Подготовка
+        auto values = values_old;
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        // Выполнение
+        saga::insertion_sort(input, pred);
+
+        // Проверка
+        REQUIRE(saga::is_sorted(input, pred));
+
+        auto const input_old = saga::rebase_cursor(input, values_old);
+
+        REQUIRE(saga::is_permutation(input, input_old));
+        REQUIRE(saga::equal(input.dropped_front(), input_old.dropped_front()));
+        REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
+    };
+}
+
 TEST_CASE("partial_sort - default compare")
 {
     using Value = int;
