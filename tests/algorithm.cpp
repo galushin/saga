@@ -4492,7 +4492,10 @@ TEST_CASE("sort - custom compare")
 
     saga_test::property_checker << [](std::vector<Value> const & values_old)
     {
-        auto const pred = std::greater<>{};
+        auto const pred = [](Value const & lhs, Value const & rhs)
+        {
+            return rhs % 17 < lhs % 17;
+        };
 
         // Подготовка
         auto values = values_old;
