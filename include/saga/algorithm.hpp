@@ -1189,6 +1189,159 @@ namespace saga
         }
     };
 
+    struct insertion_sort_fn
+    {
+    private:
+        template <class BidirectionalCursor, class Compare>
+        void sink(BidirectionalCursor write, Compare & cmp) const
+        {
+            if(!write)
+            {
+                return;
+            }
+
+            auto read = write;
+            read.drop_back();
+
+            if(!read || !saga::invoke(cmp, write.back(), read.back()))
+            {
+                return;
+            }
+
+            saga::cursor_value_t<BidirectionalCursor> temp(std::move(write.back()));
+            write.back() = std::move(read.back());
+            write = read;
+            read.drop_back();
+
+            for(; !!read && saga::invoke(cmp, temp, read.back());)
+            {
+                write.back() = std::move(read.back());
+                write = read;
+                read.drop_back();
+            }
+
+            write.back() = std::move(temp);
+        }
+
+    public:
+        template <class BidirectionalCursor, class Compare = std::less<>>
+        void operator()(BidirectionalCursor input, Compare cmp = {}) const
+        {
+            input.forget_front();
+
+            for(; !!input; ++ input)
+            {
+                this->sink(input.dropped_front(), cmp);
+            }
+
+            this->sink(input.dropped_front(), cmp);
+        }
+    };
+
+    struct sort_fn
+    {
+    private:
+        template <class RandomAccessCursor, class Compare>
+        saga::cursor_difference_t<RandomAccessCursor>
+        median3_index(RandomAccessCursor cur, Compare & cmp) const
+        {
+            using Distance = saga::cursor_difference_t<RandomAccessCursor>;
+
+            Distance pos0{0};
+            Distance pos1{1};
+
+            if(saga::invoke(cmp, cur[pos1], cur[pos0]))
+            {
+                using std::swap;
+                swap(pos0, pos1);
+            }
+
+            constexpr Distance pos2{2};
+
+            if(saga::invoke(cmp, cur[pos2], cur[pos0]))
+            {
+                return pos0;
+            }
+            else if(saga::invoke(cmp, cur[pos1], cur[pos2]))
+            {
+                return pos1;
+            }
+            else
+            {
+                return pos2;
+            }
+        }
+
+        template <class RandomAccessCursor, class Compare, class Distance>
+        std::pair<Distance, Distance>
+        partition_3way(RandomAccessCursor cur, Compare & cmp, Distance num) const
+        {
+            auto equiv_begin = Distance{0};
+            auto equiv_end = Distance{1};
+
+            assert(num >= 3);
+            auto const pivot = this->median3_index(cur, cmp);
+
+            if(pivot != Distance{0})
+            {
+                using std::swap;
+                swap(cur[equiv_begin], cur[pivot]);
+            }
+
+            for(auto index = equiv_end; index < num; ++ index)
+            {
+                if(saga::invoke(cmp, cur[equiv_begin], cur[index]))
+                {}
+                else if(saga::invoke(cmp, cur[index], cur[equiv_begin]))
+                {
+                    saga::cursor_value_t<RandomAccessCursor> tmp(std::move(cur[index]));
+                    cur[index]       = std::move(cur[equiv_end]);
+                    cur[equiv_end]   = std::move(cur[equiv_begin]);
+                    cur[equiv_begin] = std::move(tmp);
+
+                    ++ equiv_begin;
+                    ++ equiv_end;
+                }
+                else
+                {
+                    using std::swap;
+                    swap(cur[index], cur[equiv_end]);
+                    ++equiv_end;
+                }
+            }
+
+            return {std::move(equiv_begin), std::move(equiv_end)};
+        }
+
+        template <class RandomAccessCursor, class Compare>
+        void impl(RandomAccessCursor cur, Compare & cmp
+                  , saga::cursor_difference_t<RandomAccessCursor> num) const
+        {
+            using Distance = saga::cursor_difference_t<RandomAccessCursor>;
+
+            constexpr auto min_size = Distance{10};
+
+            for(; num > min_size;)
+            {
+                auto partition_result = this->partition_3way(cur, cmp, num);
+
+                this->impl(cur, cmp, partition_result.first);
+
+                cur.drop_front(partition_result.second);
+                num -= partition_result.second;
+            }
+        }
+
+    public:
+        template <class RandomAccessCursor, class Compare = std::less<>>
+        void operator()(RandomAccessCursor input, Compare cmp = {}) const
+        {
+            this->impl(input, cmp, saga::cursor::size(input));
+
+            return insertion_sort_fn{}(std::move(input), std::move(cmp));
+        }
+    };
+
     struct lower_bound_fn
     {
         template <class ForwardCursor, class T, class Compare = std::less<>>
@@ -2143,7 +2296,9 @@ namespace saga
         constexpr auto const & is_sorted = detail::static_empty_const<is_sorted_fn>::value;
         constexpr auto const & is_sorted_until
             = detail::static_empty_const<is_sorted_until_fn>::value;
-
+        constexpr auto const & sort = detail::static_empty_const<sort_fn>::value;
+        constexpr auto const & insertion_sort
+            = detail::static_empty_const<insertion_sort_fn>::value;
         constexpr auto const & partial_sort = detail::static_empty_const<partial_sort_fn>::value;
         constexpr auto const & partial_sort_copy
             = detail::static_empty_const<partial_sort_copy_fn>::value;
