@@ -110,7 +110,7 @@ TEST_CASE("equal - minimal, custom predicate")
     {
         CAPTURE(src1, src2);
 
-        auto const bin_pred = [](auto const & x, auto const & y) { return x % 2 == y % 2; };
+        auto const bin_pred = saga::equivalent_up_to([](auto const & arg) { return arg % 2; });
 
         auto src1_in = saga_test::make_istringstream_from_range(src1);
         auto src2_in = saga_test::make_istringstream_from_range(src2);
@@ -130,14 +130,14 @@ TEST_CASE("equal - custom predicate, invented true")
 
     saga_test::property_checker << [](std::vector<Value> const & src1)
     {
+        auto const fun = [](Value const & arg) { return arg % 2; };
+
         std::vector<Value> src2;
-        saga::transform(saga::cursor::all(src1), saga::back_inserter(src2),
-                        [](Value const & x) { return x % 2; });
+        saga::transform(saga::cursor::all(src1), saga::back_inserter(src2), fun);
 
         CAPTURE(src1, src2);
 
-        auto const bin_pred
-            = [](Value const & x, Value const & y) { return x % 2 == y % 2; };
+        auto const bin_pred = saga::equivalent_up_to(fun);
 
         REQUIRE(saga::equal(saga::cursor::all(src1), saga::cursor::all(src2), bin_pred));
     };
@@ -189,7 +189,7 @@ TEST_CASE("equal: subcursor, custom predicate")
     saga_test::property_checker
     << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
     {
-        auto const bin_pred = [](auto const & x, auto const & y) { return x % 2 == y % 2; };
+        auto const bin_pred = saga::equivalent_up_to([](auto const & arg) { return arg % 2; });
 
         auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
@@ -208,13 +208,14 @@ TEST_CASE("equal - subcursor, custom predicate, invented")
 
     saga_test::property_checker << [](std::vector<Value> const & src1)
     {
+        auto const fun = [](Value const & arg) { return arg % 2; };
+
         std::vector<Value> src2;
-        saga::transform(saga::cursor::all(src1), saga::back_inserter(src2),
-                        [](Value const & x) { return x % 2; });
+        saga::transform(saga::cursor::all(src1), saga::back_inserter(src2), fun);
 
         CAPTURE(src1, src2);
 
-        auto const bin_pred = [](auto const & x, auto const & y) { return x % 2 == y % 2; };
+        auto const bin_pred = saga::equivalent_up_to(fun);
 
         auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
@@ -555,7 +556,7 @@ TEST_CASE("mismatch - minimal, custom predicate")
     saga_test::property_checker
     << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
     {
-        auto const pred = [](Value1 const & x, Value2 const & y) { return x % 7 == y % 7; };
+        auto const pred = saga::equivalent_up_to([](auto const & arg) { return arg % 7; });
 
         auto src1_in = saga_test::make_istringstream_from_range(src1);
         auto src2_in = saga_test::make_istringstream_from_range(src2);
@@ -598,7 +599,7 @@ TEST_CASE("mismatch - subcursors, custom predicate")
 {
     saga_test::property_checker <<[](std::vector<int> const & src1, std::list<long> const & src2)
     {
-        auto const bin_pred = [](auto const & x, auto const & y) { return x % 7 == y % 7; };
+        auto const bin_pred = saga::equivalent_up_to([](auto const & arg) { return arg % 7; });
 
         auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
@@ -806,10 +807,7 @@ TEST_CASE("find_end: custom predicate, minimalistic")
     saga_test::property_checker
     <<[](std::forward_list<Value> const & haystack, std::forward_list<Value> const & needle)
     {
-        auto const pred = [](Value const & lhs, Value const & rhs)
-        {
-            return lhs % 2 == rhs % 2;
-        };
+        auto const pred = saga::equivalent_up_to([](Value const & arg) { return arg % 2;});
 
         auto const haystack_cur = saga_test::random_subcursor_of(saga::cursor::all(haystack));
         auto const needle_cur = saga_test::random_subcursor_of(saga::cursor::all(needle));
@@ -891,10 +889,7 @@ TEST_CASE("find_first_of - minimalistic, custom predicate")
 
         auto const needle_cur = saga_test::random_subcursor_of(saga::cursor::all(needle));
 
-        auto const pred = [](Value const & lhs, Value const & rhs)
-        {
-            return lhs % 5 == rhs % 5;
-        };
+        auto const pred = saga::equivalent_up_to([](Value const & arg) { return arg % 5; });
 
         auto const r_std = std::find_first_of(haystack_src.begin(), haystack_src.end()
                                               , needle_cur.begin(), needle_cur.end(), pred);
@@ -944,10 +939,7 @@ TEST_CASE("find_first_of - subcursors, custom predicate")
         auto const needle_cur = saga_test::random_subcursor_of(saga::cursor::all(needle));
         auto const haystack_cur = saga_test::random_subcursor_of(saga::cursor::all(haystack));
 
-        auto const pred = [](Value const & lhs, Value const & rhs)
-        {
-            return lhs % 5 == rhs % 5;
-        };
+        auto const pred = saga::equivalent_up_to([](Value const & arg) { return arg % 5; });
 
         auto const r_std = std::find_first_of(haystack_cur.begin(), haystack_cur.end()
                                               , needle_cur.begin(), needle_cur.end(), pred);
@@ -1067,10 +1059,7 @@ TEST_CASE("search: custom predicate, minimalistic")
     saga_test::property_checker
     <<[](std::forward_list<Value> const & haystack, std::forward_list<Value> const & needle)
     {
-        auto const pred = [](Value const & lhs, Value const & rhs)
-        {
-            return lhs % 2 == rhs % 2;
-        };
+        auto const pred = saga::equivalent_up_to([](Value const & arg) { return arg % 2; });
 
         auto const haystack_cur = saga_test::random_subcursor_of(saga::cursor::all(haystack));
         auto const needle_cur = saga_test::random_subcursor_of(saga::cursor::all(needle));
@@ -1145,10 +1134,7 @@ TEST_CASE("search_n: custom predicate, minimalistic")
     <<[](std::forward_list<Value> const & haystack
          , saga_test::container_size<std::size_t> const & num, Value const & value)
     {
-        auto const pred = [](Value const & lhs, Value const & rhs)
-        {
-            return lhs % 2 == rhs % 2;
-        };
+        auto const pred = saga::equivalent_up_to([](Value const & arg) { return arg % 2; });
 
         auto const haystack_cur = saga_test::random_subcursor_of(saga::cursor::all(haystack));
 
@@ -2228,8 +2214,7 @@ TEST_CASE("remove_copy: custom binary predicate")
 
     saga_test::property_checker << [](std::vector<Value> const & src, Value const & value)
     {
-        auto const bin_pred = [&](Value const & lhs, Value const & rhs)
-        {   return lhs % 7 == rhs % 7;  };
+        auto const bin_pred = saga::equivalent_up_to([](Value const & arg) { return arg % 7;});
 
         auto const pred = [&](Value const & arg) {   return bin_pred(arg, value); };
 
@@ -2453,8 +2438,7 @@ TEST_CASE("replace_copy: custom binary predicate")
     saga_test::property_checker
     << [](std::vector<Value> const & src, Value const & old_value, Value const & new_value)
     {
-        auto const bin_pred = [&](Value const & lhs, Value const & rhs)
-        {   return lhs % 7 == rhs % 7;  };
+        auto const bin_pred = saga::equivalent_up_to([](Value const & arg) { return arg % 7;});
 
         auto const pred = [&](Value const & arg) {   return bin_pred(arg, old_value); };
 
@@ -3019,10 +3003,7 @@ TEST_CASE("unique: custom predicate - compare mod 2")
 
     saga_test::property_checker << [](std::forward_list<Value> const & values_old)
     {
-        auto const pred = [](Value const & lhs, Value const & rhs)
-        {
-            return lhs % 2 == rhs % 2;
-        };
+        auto const pred = saga::equivalent_up_to([](Value const & arg) { return arg % 2; });
 
         // saga
         auto values_saga = values_old;
@@ -3482,10 +3463,7 @@ TEST_CASE("inplace_merge: custom predicate")
 
     saga_test::property_checker << [](std::vector<Value> const & values_old)
     {
-        auto const cmp = [](Value const & lhs, Value const & rhs)
-        {
-            return lhs % 2017 < rhs % 2017;
-        };
+        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 2017; });
 
         // Подготовка
         auto src = values_old;
@@ -4492,10 +4470,8 @@ TEST_CASE("sort - custom compare")
 
     saga_test::property_checker << [](std::vector<Value> const & values_old)
     {
-        auto const pred = [](Value const & lhs, Value const & rhs)
-        {
-            return rhs % 17 < lhs % 17;
-        };
+        auto const pred
+            = saga::compare_by([](Value const & arg) { return arg % 17; }, std::greater<>{});
 
         // Подготовка
         auto values = values_old;
@@ -4779,10 +4755,7 @@ TEST_CASE("stable_sort: custom compare")
 
     saga_test::property_checker << [](std::vector<Value> const & values_old)
     {
-        auto const cmp = [](Value const & lhs, Value const & rhs)
-        {
-            return lhs % 2017 < rhs % 2017;
-        };
+        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 2017; });
 
         // saga
         auto values = values_old;
@@ -5118,8 +5091,7 @@ TEST_CASE("max_element: custom compare")
 
     saga_test::property_checker << [](std::forward_list<Value> const & src)
     {
-        auto const cmp = [](Value const & lhs, Value const & rhs)
-            { return lhs % 5 < rhs % 5; };
+        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 5; });
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
@@ -5164,8 +5136,7 @@ TEST_CASE("minmax_element: custom compare")
 
     saga_test::property_checker << [](std::forward_list<Value> const & src)
     {
-        auto const cmp = [](Value const & lhs, Value const & rhs)
-            { return lhs % 5 < rhs % 5; };
+        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 5; });
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
@@ -5299,10 +5270,7 @@ TEST_CASE("is_permutation: custom predicate")
 
     saga_test::property_checker << [](Container1 const & src1, Container2 const & src2)
     {
-        auto const bin_pred = [](Value2 const & lhs, Value2 const & rhs)
-        {
-            return lhs % 10 == rhs % 10;
-        };
+        auto const bin_pred = saga::equivalent_up_to([](Value2 const & arg) { return arg % 10; });
 
         auto const cur1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
         auto const cur2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
@@ -5322,10 +5290,7 @@ TEST_CASE("is_permutation: custom predicate, always true")
 
     saga_test::property_checker << [](std::vector<Value> const & src1)
     {
-        auto const bin_pred = [](Value const & lhs, Value const & rhs)
-        {
-            return lhs % 10 == rhs % 10;
-        };
+        auto const bin_pred = saga::equivalent_up_to([](Value const & arg) { return arg % 10; });
 
         auto const cur1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
 
@@ -5445,13 +5410,12 @@ TEST_CASE("lexicographical_compare - prefix, custom compare")
 {
     saga_test::property_checker << [](std::string const & str)
     {
-        auto sub = std::string(str.begin(), saga_test::random_iterator_of(str));
-        for(auto & c : sub)
-        {
-            c = std::tolower(c);
-        }
+        auto const fun = [](char x) { return std::tolower(x); };
 
-        auto const cmp = [](char x, char y) { return std::tolower(x) < std::tolower(y); };
+        auto sub = std::string(str.begin(), saga_test::random_iterator_of(str));
+        saga::transform(saga::cursor::all(sub), saga::cursor::all(sub), fun);
+
+        auto const cmp = saga::compare_by(fun);
 
         REQUIRE(saga::lexicographical_compare(saga::cursor::all(sub), saga::cursor::all(str), cmp)
                 == (sub.size() < str.size()));

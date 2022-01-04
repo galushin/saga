@@ -176,3 +176,70 @@ TEST_CASE("invoke: functional object, noexcept")
     };
 }
 
+namespace
+{
+    struct Mod_2017
+    {
+        template <class T>
+        constexpr T operator()(T const & arg) const
+        {
+            return arg % 2017;
+        }
+    };
+}
+
+TEST_CASE("compare_by: default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](Value const & mask, Value const & lhs, Value const & rhs)
+    {
+        auto const proj = [=](Value const & arg) { return arg ^ mask; };
+
+        auto const cmp_by = saga::compare_by(proj);
+
+        REQUIRE(cmp_by(lhs, rhs) == (proj(lhs) < proj(rhs)));
+    };
+
+    static_assert(saga::compare_by(Mod_2017{})(5, 7), "");
+    static_assert(!saga::compare_by(Mod_2017{})(7, 5), "");
+    static_assert(saga::compare_by(Mod_2017{})(2018, 2016), "");
+}
+
+TEST_CASE("compare_by: custom compare")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](Value const & mask, Value const & lhs, Value const & rhs)
+    {
+        auto const proj = [=](Value const & arg) { return arg ^ mask; };
+        auto const cmp = std::greater<>{};
+
+        auto const cmp_by = saga::compare_by(proj, cmp);
+
+        REQUIRE(cmp_by(lhs, rhs) == cmp(proj(lhs), proj(rhs)));
+    };
+
+    static_assert(saga::compare_by(Mod_2017{}, std::greater<>{})(7, 5), "");
+    static_assert(!saga::compare_by(Mod_2017{}, std::greater<>{})(5, 7), "");
+    static_assert(!saga::compare_by(Mod_2017{}, std::greater<>{})(2018, 2016), "");
+}
+
+TEST_CASE("equivalent_up_to: default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](Value const & mask, Value const & lhs, Value const & rhs)
+    {
+        auto const proj = [=](Value const & arg) { return arg ^ mask; };
+
+        auto const equiv = saga::equivalent_up_to(proj);
+
+        REQUIRE(equiv(lhs, rhs) == (proj(lhs) == proj(rhs)));
+    };
+
+    static_assert(saga::equivalent_up_to(Mod_2017{})(5, 5), "");
+    static_assert(saga::equivalent_up_to(Mod_2017{})(5, 2022), "");
+    static_assert(!saga::equivalent_up_to(Mod_2017{})(5, 7), "");
+    static_assert(!saga::equivalent_up_to(Mod_2017{})(2018, 2016), "");
+}

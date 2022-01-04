@@ -24,8 +24,9 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/type_traits.hpp>
 
-#include <utility>
+#include <functional>
 #include <type_traits>
+#include <utility>
 
 namespace saga
 {
@@ -103,6 +104,50 @@ namespace saga
     auto not_fn(F && f) -> detail::not_fn_t<std::decay_t<F>>
     {
         return { std::forward<F>(f)};
+    }
+
+    // compare_by
+    template <class Projection, class Compare>
+    class comparer_by
+    {
+    public:
+        constexpr explicit comparer_by(Projection proj, Compare cmp)
+         : data_(std::move(proj), std::move(cmp))
+        {}
+
+        template <class Arg1, class Arg2>
+        constexpr bool operator()(Arg1 && arg1, Arg2 && arg2) const
+        {
+            return saga::invoke(this->compare()
+                                , saga::invoke(this->projection(), std::forward<Arg1>(arg1))
+                                , saga::invoke(this->projection(), std::forward<Arg2>(arg2)));
+        }
+
+    private:
+        constexpr Projection const & projection() const
+        {
+            return std::get<0>(this->data_);
+        }
+
+        constexpr Compare const & compare() const
+        {
+            return std::get<1>(this->data_);
+        }
+
+        std::tuple<Projection, Compare> data_;
+    };
+
+    template <class Projection, class Compare = std::less<>>
+    constexpr comparer_by<Projection, Compare>
+    compare_by(Projection proj, Compare cmp = {})
+    {
+        return comparer_by<Projection, Compare>{std::move(proj), std::move(cmp)};
+    }
+
+    template <class Projection>
+    constexpr auto equivalent_up_to(Projection proj)
+    {
+        return saga::compare_by(std::move(proj), std::equal_to<>{});
     }
 }
 
