@@ -127,6 +127,11 @@ namespace saga
             this->last_old_ = other.last_old_;
         }
 
+        void rewind_front()
+        {
+            this->cur_ = this->cur_old_;
+        }
+
         // Двунаправленный курсор
         constexpr void drop_back()
         {
