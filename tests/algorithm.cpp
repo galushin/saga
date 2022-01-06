@@ -4775,6 +4775,82 @@ TEST_CASE("stable_sort: custom compare")
     };
 }
 
+TEST_CASE("nth_element: default compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & values_old)
+    {
+        // Подготовка
+        auto values = values_old;
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        // Выполнение
+        saga::nth_element(input);
+
+        // Проверка
+        auto const input_old = saga::rebase_cursor(input, values_old);
+        CAPTURE(values_old, values, input_old, input);
+
+        if(!input)
+        {
+            REQUIRE(values == values_old);
+        }
+        else
+        {
+            REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
+            REQUIRE(saga::is_permutation(saga::cursor::all(values)
+                                         , saga::cursor::all(values_old)));
+
+            auto const border = *input;
+
+            REQUIRE(saga::none_of(input
+                                  , [&](Value const & arg) { return arg < border; }));
+            REQUIRE(saga::none_of(input.dropped_front()
+                                  , [&](Value const & arg) { return border < arg; }));
+        }
+    };
+}
+
+TEST_CASE("nth_element: custom compare")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::vector<Value> const & values_old)
+    {
+        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 101; });
+
+        // Подготовка
+        auto values = values_old;
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        // Выполнение
+        saga::nth_element(input, cmp);
+
+        // Проверка
+        auto const input_old = saga::rebase_cursor(input, values_old);
+        CAPTURE(values_old, values, input, input_old);
+
+        if(!input)
+        {
+            REQUIRE(values == values_old);
+        }
+        else
+        {
+            REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
+            REQUIRE(saga::is_permutation(saga::cursor::all(values)
+                                         , saga::cursor::all(values_old)));
+
+            auto const border = *input;
+
+            REQUIRE(saga::none_of(input
+                                  , [&](Value const & arg) { return cmp(arg, border); }));
+            REQUIRE(saga::none_of(input.dropped_front()
+                                  , [&](Value const & arg) { return cmp(border, arg); }));
+        }
+    };
+}
+
 TEST_CASE("lower_bound: default compare")
 {
     using Value = int;

@@ -1238,13 +1238,12 @@ namespace saga
         }
     };
 
-    struct sort_fn
+    namespace detail
     {
-    private:
         template <class RandomAccessCursor, class Compare>
         saga::cursor_difference_t<RandomAccessCursor>
         median3_index(RandomAccessCursor cur, Compare & cmp
-                      , saga::cursor_difference_t<RandomAccessCursor> num) const
+                      , saga::cursor_difference_t<RandomAccessCursor> num)
         {
             assert(num >= 3);
 
@@ -1277,13 +1276,13 @@ namespace saga
 
         template <class RandomAccessCursor, class Compare, class Distance>
         std::pair<Distance, Distance>
-        partition_3way(RandomAccessCursor cur, Compare & cmp, Distance num) const
+        partition_3way(RandomAccessCursor cur, Compare & cmp, Distance num)
         {
             auto equiv_begin = Distance{0};
             auto equiv_end = Distance{1};
 
             assert(num >= 3);
-            auto const pivot = this->median3_index(cur, cmp, num);
+            auto const pivot = detail::median3_index(cur, cmp, num);
 
             if(pivot != Distance{0})
             {
@@ -1315,18 +1314,22 @@ namespace saga
 
             return {std::move(equiv_begin), std::move(equiv_end)};
         }
+    }
 
+    struct sort_fn
+    {
+    private:
         template <class RandomAccessCursor, class Compare>
         void impl(RandomAccessCursor cur, Compare & cmp
                   , saga::cursor_difference_t<RandomAccessCursor> num) const
         {
             using Distance = saga::cursor_difference_t<RandomAccessCursor>;
 
-            constexpr auto min_size = Distance{10};
+            constexpr auto min_size = Distance{16};
 
             for(; num > min_size;)
             {
-                auto partition_result = this->partition_3way(cur, cmp, num);
+                auto partition_result = detail::partition_3way(cur, cmp, num);
 
                 this->impl(cur, cmp, partition_result.first);
 
@@ -1342,6 +1345,63 @@ namespace saga
             this->impl(input, cmp, saga::cursor::size(input));
 
             return insertion_sort_fn{}(std::move(input), std::move(cmp));
+        }
+    };
+
+    struct nth_element_fn
+    {
+    private:
+        template <class RandomAccessCursor, class Compare>
+        void impl(RandomAccessCursor input, Compare cmp
+                  , cursor_difference_t<RandomAccessCursor> nth
+                  , cursor_difference_t<RandomAccessCursor> total) const
+        {
+            for(; total >= 2;)
+            {
+                if(total == 2)
+                {
+                    if(saga::invoke(cmp, input[1], input[0]))
+                    {
+                        using std::swap;
+                        swap(input[0], input[1]);
+                    }
+
+                    return;
+                }
+
+                auto part = detail::partition_3way(input, cmp, total);
+
+                if(nth < part.first)
+                {
+                    total = part.first;
+                }
+                else if(nth >= part.second)
+                {
+                    input.drop_front(part.second);
+                    nth -= part.second;
+                    total -= part.second;
+                }
+                else
+                {
+                    return;
+                }
+            }
+        }
+
+
+    public:
+        template <class RandomAccessCursor, class Compare = std::less<>>
+        void operator()(RandomAccessCursor input, Compare cmp = {}) const
+        {
+            if(!input)
+            {
+                return;
+            }
+
+            auto const nth = input.dropped_front().size();
+            input.rewind_front();
+
+            return this->impl(std::move(input), std::move(cmp), std::move(nth), input.size());
         }
     };
 
@@ -2306,6 +2366,7 @@ namespace saga
         constexpr auto const & partial_sort_copy
             = detail::static_empty_const<partial_sort_copy_fn>::value;
         constexpr auto const & stable_sort = detail::static_empty_const<stable_sort_fn>::value;
+        constexpr auto const & nth_element = detail::static_empty_const<nth_element_fn>::value;
 
         constexpr auto const & lower_bound = detail::static_empty_const<lower_bound_fn>::value;
         constexpr auto const & upper_bound = detail::static_empty_const<upper_bound_fn>::value;
