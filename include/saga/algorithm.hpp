@@ -1243,12 +1243,15 @@ namespace saga
     private:
         template <class RandomAccessCursor, class Compare>
         saga::cursor_difference_t<RandomAccessCursor>
-        median3_index(RandomAccessCursor cur, Compare & cmp) const
+        median3_index(RandomAccessCursor cur, Compare & cmp
+                      , saga::cursor_difference_t<RandomAccessCursor> num) const
         {
+            assert(num >= 3);
+
             using Distance = saga::cursor_difference_t<RandomAccessCursor>;
 
-            Distance pos0{0};
-            Distance pos1{1};
+            auto pos0 = Distance{0};
+            auto pos1 = Distance{num - 1};
 
             if(saga::invoke(cmp, cur[pos1], cur[pos0]))
             {
@@ -1256,7 +1259,7 @@ namespace saga
                 swap(pos0, pos1);
             }
 
-            constexpr Distance pos2{2};
+            auto const pos2 = num / 2;
 
             if(saga::invoke(cmp, cur[pos2], cur[pos0]))
             {
@@ -1280,7 +1283,7 @@ namespace saga
             auto equiv_end = Distance{1};
 
             assert(num >= 3);
-            auto const pivot = this->median3_index(cur, cmp);
+            auto const pivot = this->median3_index(cur, cmp, num);
 
             if(pivot != Distance{0})
             {
