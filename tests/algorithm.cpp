@@ -5379,6 +5379,120 @@ TEST_CASE("is_permutation: custom predicate, always true")
     };
 }
 
+TEST_CASE("next_permutation: default predicate")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::list<Value> const & values_old)
+    {
+        // saga
+        auto values_saga = values_old;
+
+        auto const input_saga = saga_test::random_subcursor_of(saga::cursor::all(values_saga));
+
+        auto const result_saga = saga::next_permutation(input_saga);
+
+        // std
+        auto values_std = values_old;
+
+        auto const input_std = saga::rebase_cursor(input_saga, values_std);
+
+        auto const result_std = std::next_permutation(input_std.begin(), input_std.end());
+
+        // Сравнение
+        CAPTURE(saga::rebase_cursor(input_saga, values_old), input_std, input_saga);
+        REQUIRE(saga::equal(input_saga, input_std));
+
+        REQUIRE(values_saga == values_std);
+        REQUIRE(result_saga == result_std);
+    };
+}
+
+TEST_CASE("next_permutation: custom predicate")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::list<Value> const & values_old)
+    {
+        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 100; });
+
+        // saga
+        auto values_saga = values_old;
+
+        auto const input_saga = saga_test::random_subcursor_of(saga::cursor::all(values_saga));
+
+        auto const result_saga = saga::next_permutation(input_saga, cmp);
+
+        // std
+        auto values_std = values_old;
+
+        auto const input_std = saga::rebase_cursor(input_saga, values_std);
+
+        auto const result_std = std::next_permutation(input_std.begin(), input_std.end(), cmp);
+
+        // Сравнение
+        REQUIRE(values_saga == values_std);
+        REQUIRE(result_saga == result_std);
+    };
+}
+
+TEST_CASE("prev_permutation: default predicate")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::list<Value> const & values_old)
+    {
+        // saga
+        auto values_saga = values_old;
+
+        auto const input_saga = saga_test::random_subcursor_of(saga::cursor::all(values_saga));
+
+        auto const result_saga = saga::prev_permutation(input_saga);
+
+        // std
+        auto values_std = values_old;
+
+        auto const input_std = saga::rebase_cursor(input_saga, values_std);
+
+        auto const result_std = std::prev_permutation(input_std.begin(), input_std.end());
+
+        // Сравнение
+        CAPTURE(saga::rebase_cursor(input_saga, values_old), input_std, input_saga);
+        REQUIRE(saga::equal(input_saga, input_std));
+
+        REQUIRE(values_saga == values_std);
+        REQUIRE(result_saga == result_std);
+    };
+}
+
+TEST_CASE("prev_permutation: custom predicate")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](std::list<Value> const & values_old)
+    {
+        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 100; });
+
+        // saga
+        auto values_saga = values_old;
+
+        auto const input_saga = saga_test::random_subcursor_of(saga::cursor::all(values_saga));
+
+        auto const result_saga = saga::prev_permutation(input_saga, cmp);
+
+        // std
+        auto values_std = values_old;
+
+        auto const input_std = saga::rebase_cursor(input_saga, values_std);
+
+        auto const result_std = std::prev_permutation(input_std.begin(), input_std.end(), cmp);
+
+        // Сравнение
+        REQUIRE(values_saga == values_std);
+        REQUIRE(result_saga == result_std);
+    };
+}
+
 TEST_CASE("lexicographical_compare - minimal, default compare")
 {
     using Value1 = int;
