@@ -2208,6 +2208,73 @@ namespace saga
         }
     };
 
+    struct next_permutation_fn
+    {
+        template <class BidirectionalCursor, class Compare = std::less<>>
+        bool operator()(BidirectionalCursor cur, Compare cmp = {}) const
+        {
+            if(!cur)
+            {
+                return false;
+            }
+
+            cur.forget_back();
+
+            // Какой элемент нужно увеличить? Ищем неубывающую последовательность с конца
+            auto prev = cur;
+            prev.drop_back();
+
+            if(!prev)
+            {
+                return false;
+            }
+
+            for(; !!prev && !saga::invoke(cmp, prev.back(), cur.back());)
+            {
+                cur = prev;
+                prev.drop_back();
+            }
+
+            // Если последовательность упорядочена по невозрастанию, то это последняя перестановка
+            if(!prev)
+            {
+                saga::reverse_fn{}(prev.dropped_back());
+
+                return false;
+            }
+
+            // Ищем, на какой элемент можно заменить - первый больше prev.back(), такой точно есть!
+            // Можно не проверять исчерпание cur
+            cur = prev.dropped_back();
+
+            for(; !saga::invoke(cmp, prev.back(), cur.back()); cur.drop_back())
+            {}
+
+            using std::swap;
+            swap(prev.back(), cur.back());
+
+            saga::reverse_fn{}(prev.dropped_back());
+
+            return true;
+        }
+    };
+
+    struct prev_permutation_fn
+    {
+        template <class BidirectionalCursor, class Compare = std::less<>>
+        bool operator()(BidirectionalCursor cur, Compare cmp = {}) const
+        {
+            auto cmp_transposed = [&](auto && lhs, auto && rhs)
+            {
+                return saga::invoke(cmp
+                                    , std::forward<decltype(rhs)>(rhs)
+                                    , std::forward<decltype(lhs)>(lhs));
+            };
+
+            return saga::next_permutation_fn{}(std::move(cur), std::move(cmp_transposed));
+        }
+    };
+
     struct starts_with_fn
     {
         template <typename InputRange1, typename InputRange2>
@@ -2404,6 +2471,10 @@ namespace saga
 
         constexpr auto const & is_permutation
             = detail::static_empty_const<is_permutation_fn>::value;
+        constexpr auto const & next_permutation
+            = detail::static_empty_const<next_permutation_fn>::value;
+        constexpr auto const & prev_permutation
+            = detail::static_empty_const<prev_permutation_fn>::value;
 
         constexpr auto const & starts_with = detail::static_empty_const<starts_with_fn>::value;
         constexpr auto const & ends_with = detail::static_empty_const<ends_with_fn>::value;
