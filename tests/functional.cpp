@@ -243,3 +243,19 @@ TEST_CASE("equivalent_up_to: default compare")
     static_assert(!saga::equivalent_up_to(Mod_2017{})(5, 7), "");
     static_assert(!saga::equivalent_up_to(Mod_2017{})(2018, 2016), "");
 }
+
+TEST_CASE("reverse_args")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](Value const & lhs, Value const & rhs)
+    {
+        auto const cmp = std::greater<>{};
+        auto const cmp_converse = saga::f_transpose(cmp);
+
+        REQUIRE(cmp_converse(lhs, rhs) == cmp(rhs, lhs));
+    };
+
+    constexpr auto cmp = std::greater<>{};
+    static_assert(saga::f_transpose(cmp)(5, 7) == cmp(7, 5), "");
+}

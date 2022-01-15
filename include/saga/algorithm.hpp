@@ -1164,19 +1164,14 @@ namespace saga
         template <class ForwardCursor, class Compare = std::less<>>
         ForwardCursor operator()(ForwardCursor cur, Compare cmp = {}) const
         {
-            auto pred = [cmp = std::move(cmp)](auto && lhs, auto && rhs)
-            {
-                return cmp(rhs, lhs);
-            };
+            cur = saga::adjacent_find_fn{}(std::move(cur), saga::f_transpose(std::move(cmp)));
 
-            auto result = saga::adjacent_find_fn{}(std::move(cur), std::move(pred));
-
-            if(!!result)
+            if(!!cur)
             {
-                ++ result;
+                ++ cur;
             }
 
-            return result;
+            return cur;
         }
     };
 
@@ -2264,14 +2259,7 @@ namespace saga
         template <class BidirectionalCursor, class Compare = std::less<>>
         bool operator()(BidirectionalCursor cur, Compare cmp = {}) const
         {
-            auto cmp_transposed = [&](auto && lhs, auto && rhs)
-            {
-                return saga::invoke(cmp
-                                    , std::forward<decltype(rhs)>(rhs)
-                                    , std::forward<decltype(lhs)>(lhs));
-            };
-
-            return saga::next_permutation_fn{}(std::move(cur), std::move(cmp_transposed));
+            return saga::next_permutation_fn{}(std::move(cur), saga::f_transpose(std::move(cmp)));
         }
     };
 
