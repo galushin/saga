@@ -149,6 +149,36 @@ namespace saga
     {
         return saga::compare_by(std::move(proj), std::equal_to<>{});
     }
+
+    // argument_reverser
+    template <class Function>
+    class argument_reverser
+    {
+    public:
+        constexpr
+        explicit argument_reverser(Function fun)
+         : fun_(std::move(fun))
+        {}
+
+        template <class Arg1, class Arg2>
+        constexpr
+        saga::invoke_result_t<Function const, Arg2, Arg1>
+        operator()(Arg1 && arg1, Arg2 && arg2) const
+        {
+            return this->fun_(std::forward<Arg2>(arg2), std::forward<Arg1>(arg1));
+        }
+
+    private:
+        Function fun_;
+    };
+
+    template <class Function>
+    constexpr
+    argument_reverser<std::decay_t<Function>>
+    f_transpose(Function fun)
+    {
+        return saga::argument_reverser<std::decay_t<Function>>(std::move(fun));
+    }
 }
 
 #endif
