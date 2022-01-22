@@ -32,9 +32,9 @@ OBJDIR_RELEASE = ./obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = ./bin/Release/test
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/any.o $(OBJDIR_DEBUG)/container/reserve_if_supported.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/cursor/istream_cursor.o $(OBJDIR_DEBUG)/cursor/subrange.o $(OBJDIR_DEBUG)/expected.o $(OBJDIR_DEBUG)/expected/unexpected.o $(OBJDIR_DEBUG)/functional.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/numeric.o $(OBJDIR_DEBUG)/numeric/digits_of.o $(OBJDIR_DEBUG)/numeric/polynomial.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/saga_test.o $(OBJDIR_DEBUG)/string_view.o $(OBJDIR_DEBUG)/test/invocable_tracer.o $(OBJDIR_DEBUG)/test/regular_tracer.o $(OBJDIR_DEBUG)/type_traits.o $(OBJDIR_DEBUG)/utility/as_const.o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o $(OBJDIR_DEBUG)/utility/operators.o $(OBJDIR_DEBUG)/view/indices.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/ProjectEuler/projectEuler.o $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/any.o $(OBJDIR_DEBUG)/container/reserve_if_supported.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/cursor/istream_cursor.o $(OBJDIR_DEBUG)/cursor/subrange.o $(OBJDIR_DEBUG)/expected.o $(OBJDIR_DEBUG)/expected/unexpected.o $(OBJDIR_DEBUG)/functional.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/numeric.o $(OBJDIR_DEBUG)/numeric/digits_of.o $(OBJDIR_DEBUG)/numeric/polynomial.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/saga_test.o $(OBJDIR_DEBUG)/string_view.o $(OBJDIR_DEBUG)/test/invocable_tracer.o $(OBJDIR_DEBUG)/test/regular_tracer.o $(OBJDIR_DEBUG)/type_traits.o $(OBJDIR_DEBUG)/utility/as_const.o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o $(OBJDIR_DEBUG)/utility/operators.o $(OBJDIR_DEBUG)/view/indices.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/any.o $(OBJDIR_RELEASE)/container/reserve_if_supported.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/cursor/istream_cursor.o $(OBJDIR_RELEASE)/cursor/subrange.o $(OBJDIR_RELEASE)/expected.o $(OBJDIR_RELEASE)/expected/unexpected.o $(OBJDIR_RELEASE)/functional.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/numeric.o $(OBJDIR_RELEASE)/numeric/digits_of.o $(OBJDIR_RELEASE)/numeric/polynomial.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/saga_test.o $(OBJDIR_RELEASE)/string_view.o $(OBJDIR_RELEASE)/test/invocable_tracer.o $(OBJDIR_RELEASE)/test/regular_tracer.o $(OBJDIR_RELEASE)/type_traits.o $(OBJDIR_RELEASE)/utility/as_const.o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o $(OBJDIR_RELEASE)/utility/operators.o $(OBJDIR_RELEASE)/view/indices.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/ProjectEuler/projectEuler.o $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/any.o $(OBJDIR_RELEASE)/container/reserve_if_supported.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/cursor/istream_cursor.o $(OBJDIR_RELEASE)/cursor/subrange.o $(OBJDIR_RELEASE)/expected.o $(OBJDIR_RELEASE)/expected/unexpected.o $(OBJDIR_RELEASE)/functional.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/numeric.o $(OBJDIR_RELEASE)/numeric/digits_of.o $(OBJDIR_RELEASE)/numeric/polynomial.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/saga_test.o $(OBJDIR_RELEASE)/string_view.o $(OBJDIR_RELEASE)/test/invocable_tracer.o $(OBJDIR_RELEASE)/test/regular_tracer.o $(OBJDIR_RELEASE)/type_traits.o $(OBJDIR_RELEASE)/utility/as_const.o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o $(OBJDIR_RELEASE)/utility/operators.o $(OBJDIR_RELEASE)/view/indices.o
 
 all: debug release
 
@@ -42,6 +42,7 @@ clean: clean_debug clean_release
 
 before_debug: 
 	test -d ./bin/Debug || mkdir -p ./bin/Debug
+	test -d $(OBJDIR_DEBUG)/ProjectEuler || mkdir -p $(OBJDIR_DEBUG)/ProjectEuler
 	test -d $(OBJDIR_DEBUG) || mkdir -p $(OBJDIR_DEBUG)
 	test -d $(OBJDIR_DEBUG)/container || mkdir -p $(OBJDIR_DEBUG)/container
 	test -d $(OBJDIR_DEBUG)/cpp20 || mkdir -p $(OBJDIR_DEBUG)/cpp20
@@ -62,6 +63,9 @@ debug: before_debug out_debug after_debug
 
 out_debug: before_debug $(OBJ_DEBUG) $(DEP_DEBUG)
 	$(LD) $(LIBDIR_DEBUG) -o $(OUT_DEBUG) $(OBJ_DEBUG)  $(LDFLAGS_DEBUG) $(LIB_DEBUG)
+
+$(OBJDIR_DEBUG)/ProjectEuler/projectEuler.o: ProjectEuler/projectEuler.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c ProjectEuler/projectEuler.cpp -o $(OBJDIR_DEBUG)/ProjectEuler/projectEuler.o
 
 $(OBJDIR_DEBUG)/algorithm.o: algorithm.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c algorithm.cpp -o $(OBJDIR_DEBUG)/algorithm.o
@@ -159,6 +163,7 @@ $(OBJDIR_DEBUG)/view/indices.o: view/indices.cpp
 clean_debug: 
 	rm -f $(OBJ_DEBUG) $(OUT_DEBUG)
 	rm -rf ./bin/Debug
+	rm -rf $(OBJDIR_DEBUG)/ProjectEuler
 	rm -rf $(OBJDIR_DEBUG)
 	rm -rf $(OBJDIR_DEBUG)/container
 	rm -rf $(OBJDIR_DEBUG)/cpp20
@@ -175,6 +180,7 @@ clean_debug:
 
 before_release: 
 	test -d ./bin/Release || mkdir -p ./bin/Release
+	test -d $(OBJDIR_RELEASE)/ProjectEuler || mkdir -p $(OBJDIR_RELEASE)/ProjectEuler
 	test -d $(OBJDIR_RELEASE) || mkdir -p $(OBJDIR_RELEASE)
 	test -d $(OBJDIR_RELEASE)/container || mkdir -p $(OBJDIR_RELEASE)/container
 	test -d $(OBJDIR_RELEASE)/cpp20 || mkdir -p $(OBJDIR_RELEASE)/cpp20
@@ -195,6 +201,9 @@ release: before_release out_release after_release
 
 out_release: before_release $(OBJ_RELEASE) $(DEP_RELEASE)
 	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE)
+
+$(OBJDIR_RELEASE)/ProjectEuler/projectEuler.o: ProjectEuler/projectEuler.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c ProjectEuler/projectEuler.cpp -o $(OBJDIR_RELEASE)/ProjectEuler/projectEuler.o
 
 $(OBJDIR_RELEASE)/algorithm.o: algorithm.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c algorithm.cpp -o $(OBJDIR_RELEASE)/algorithm.o
@@ -292,6 +301,7 @@ $(OBJDIR_RELEASE)/view/indices.o: view/indices.cpp
 clean_release: 
 	rm -f $(OBJ_RELEASE) $(OUT_RELEASE)
 	rm -rf ./bin/Release
+	rm -rf $(OBJDIR_RELEASE)/ProjectEuler
 	rm -rf $(OBJDIR_RELEASE)
 	rm -rf $(OBJDIR_RELEASE)/container
 	rm -rf $(OBJDIR_RELEASE)/cpp20

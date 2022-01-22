@@ -1,4 +1,4 @@
-/* (c) 2020-2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2020-2022 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/algorithm/result_types.hpp>
+#include <saga/algorithm/find_if.hpp>
 #include <saga/functional.hpp>
 #include <saga/iterator.hpp>
 #include <saga/cursor/cursor_traits.hpp>
@@ -50,23 +51,6 @@ namespace saga
     }
 
     // Немодифицирующие операции
-    struct find_if_fn
-    {
-        template <class InputCursor, class UnaryPredicate>
-        InputCursor operator()(InputCursor cur, UnaryPredicate pred) const
-        {
-            for(; !!cur; ++cur)
-            {
-                if(saga::invoke(pred, *cur))
-                {
-                    break;
-                }
-            }
-
-            return cur;
-        }
-    };
-
     struct find_if_not_fn
     {
         template <class InputCursor, class UnaryPredicate>
@@ -2362,7 +2346,6 @@ namespace saga
         constexpr auto const & mismatch = detail::static_empty_const<mismatch_fn>::value;
 
         constexpr auto const & find = detail::static_empty_const<find_fn>::value;
-        constexpr auto const & find_if = detail::static_empty_const<find_if_fn>::value;
         constexpr auto const & find_if_not = detail::static_empty_const<find_if_not_fn>::value;
         constexpr auto const & find_end = detail::static_empty_const<find_end_fn>::value;
         constexpr auto const & find_first_of = detail::static_empty_const<find_first_of_fn>::value;

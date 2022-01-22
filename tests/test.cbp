@@ -35,6 +35,7 @@
 			<Add directory="../include" />
 		</Compiler>
 		<Unit filename="../include/saga/algorithm.hpp" />
+		<Unit filename="../include/saga/algorithm/find_if.hpp" />
 		<Unit filename="../include/saga/algorithm/result_types.hpp" />
 		<Unit filename="../include/saga/any.hpp" />
 		<Unit filename="../include/saga/container/reserve_if_supported.hpp" />
@@ -42,6 +43,7 @@
 		<Unit filename="../include/saga/cpp20/span.hpp" />
 		<Unit filename="../include/saga/cursor/cursor_traits.hpp" />
 		<Unit filename="../include/saga/cursor/cycle.hpp" />
+		<Unit filename="../include/saga/cursor/filter.hpp" />
 		<Unit filename="../include/saga/cursor/forward_cursor_facade.hpp" />
 		<Unit filename="../include/saga/cursor/istream_cursor.hpp" />
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
@@ -73,6 +75,8 @@
 		<Unit filename="../include/saga/optimization/local_search.hpp" />
 		<Unit filename="../include/saga/optimization/optimization_problem.hpp" />
 		<Unit filename="../include/saga/optimization/test_objectives.hpp" />
+		<Unit filename="../include/saga/pipes/filter.hpp" />
+		<Unit filename="../include/saga/pipes/for_each.hpp" />
 		<Unit filename="../include/saga/random/any_distribution.hpp" />
 		<Unit filename="../include/saga/random/iid_distribution.hpp" />
 		<Unit filename="../include/saga/ranges.hpp" />
@@ -86,6 +90,7 @@
 		<Unit filename="../include/saga/utility/in_place.hpp" />
 		<Unit filename="../include/saga/utility/operators.hpp" />
 		<Unit filename="../include/saga/view/indices.hpp" />
+		<Unit filename="ProjectEuler/projectEuler.cpp" />
 		<Unit filename="algorithm.cpp" />
 		<Unit filename="any.cpp" />
 		<Unit filename="container/reserve_if_supported.cpp" />

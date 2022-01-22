@@ -1,4 +1,4 @@
-/* (c) 2020-2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2020-2022 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -174,18 +174,18 @@ namespace saga
             using iterator = saga::iota_iterator<Incrementable>;
 
             // Создание, копирование, уничтожение
-            iota_view(Incrementable from, Incrementable to)
+            constexpr iota_view(Incrementable from, Incrementable to)
              : from_(std::move(from))
              , to_(std::move(to))
             {}
 
             // Итераторы
-            iterator begin() const
+            constexpr iterator begin() const
             {
                 return iterator{this->from_};
             }
 
-            iterator end() const
+            constexpr iterator end() const
             {
                 return iterator{this->to_};
             }
@@ -208,14 +208,14 @@ namespace saga
         {
         public:
             template <class Incrementable>
-            auto operator()(Incrementable from, Incrementable to) const
+            constexpr auto operator()(Incrementable from, Incrementable to) const
             -> saga::detail::iota_view<Incrementable>
             {
                 return {std::move(from), std::move(to)};
             }
 
             template <class Incrementable>
-            auto operator()(Incrementable num) const
+            constexpr auto operator()(Incrementable num) const
             -> saga::detail::iota_view<Incrementable>
             {
                 return (*this)(Incrementable(), num);
