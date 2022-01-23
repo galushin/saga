@@ -23,8 +23,9 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
-#include <saga/cursor/subrange.hpp>
 #include <saga/cursor/istream_cursor.hpp>
+#include <saga/cursor/subrange.hpp>
+#include <saga/cursor/take.hpp>
 #include <saga/iterator/reverse.hpp>
 #include <saga/math.hpp>
 #include <saga/view/indices.hpp>
@@ -1643,6 +1644,25 @@ TEST_CASE("move_backward - vectors")
     };
 }
 
+TEST_CASE("fill: minimal")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    << [](Value const & value, saga_test::container_size<std::size_t> count)
+    {
+        std::vector<Value> dest;
+
+        auto const output = saga::cursor::take(saga::back_inserter(dest), count.value);
+
+        saga::fill(output, value);
+
+        REQUIRE(dest.size() == count.value);
+
+        REQUIRE(dest == std::vector<Value>(count.value, value));
+    };
+}
+
 TEST_CASE("fill - subrange")
 {
     using Value = int;
@@ -1832,6 +1852,36 @@ TEST_CASE("transform binary")
 
         REQUIRE(result_saga.out.begin() == dest_saga.begin() + n_common);
         REQUIRE(result_saga.out.end() == dest_saga.end());
+    };
+}
+
+TEST_CASE("generate - minimal")
+{
+    using Value = int;
+
+    struct Iota
+    {
+        Value operator()()
+        {
+            return ++value_;
+        }
+
+    private:
+        Value value_ = 0;
+    };
+
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> const & count)
+    {
+        // generate + take
+        std::vector<Value> dest;
+        saga::generate(saga::cursor::take(saga::back_inserter(dest), count.value), Iota{});
+
+        // generete_n
+        std::vector<Value> dest_expected;
+        saga::generate_n(saga::back_inserter(dest_expected), count.value, Iota{});
+
+        // Проверка
+        REQUIRE(dest == dest_expected);
     };
 }
 

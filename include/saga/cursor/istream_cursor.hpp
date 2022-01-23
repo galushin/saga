@@ -29,6 +29,7 @@ namespace saga
     public:
         // Типы
         using value_type = Value;
+        using reference = Value const &;
         using difference_type = Distance;
         using cursor_category = std::input_iterator_tag;
 
@@ -52,7 +53,14 @@ namespace saga
             return this->stream_ == nullptr;
         }
 
-        istream_cursor & operator++()
+        reference front() const
+        {
+            assert(!!*this);
+
+            return this->value_;
+        }
+
+        void drop_front()
         {
             assert(!!*this);
 
@@ -60,15 +68,18 @@ namespace saga
             {
                 this->stream_ = nullptr;
             }
-
-            return *this;
         }
 
-        Value const & operator*() const
+        reference operator*() const
         {
-            assert(!!*this);
+            return this->front();
+        }
 
-            return this->value_;
+        istream_cursor & operator++()
+        {
+            this->drop_front();
+
+            return *this;
         }
 
     private:

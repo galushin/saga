@@ -47,6 +47,7 @@
 		<Unit filename="../include/saga/cursor/forward_cursor_facade.hpp" />
 		<Unit filename="../include/saga/cursor/istream_cursor.hpp" />
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
+		<Unit filename="../include/saga/cursor/take.hpp" />
 		<Unit filename="../include/saga/defs.hpp" />
 		<Unit filename="../include/saga/detail/default_ctor_enabler.hpp" />
 		<Unit filename="../include/saga/detail/static_empty_const.hpp" />
@@ -98,6 +99,7 @@
 		<Unit filename="cpp20/span.cpp" />
 		<Unit filename="cursor/istream_cursor.cpp" />
 		<Unit filename="cursor/subrange.cpp" />
+		<Unit filename="cursor/take.cpp" />
 		<Unit filename="expected.cpp" />
 		<Unit filename="expected/unexpected.cpp" />
 		<Unit filename="functional.cpp" />
