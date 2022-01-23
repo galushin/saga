@@ -9,6 +9,7 @@
 #include <saga/cursor/forward_cursor_facade.hpp>
 
 #include <cassert>
+#include <algorithm>
 
 namespace saga
 {
