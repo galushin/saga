@@ -35,7 +35,7 @@ namespace saga
          , count_(std::move(count))
         {}
 
-        // Курсор ввода/вывода
+        // Курсор ввода
         bool operator!() const
         {
             return !this->base_ || !(this->count_ > 0);
@@ -54,6 +54,16 @@ namespace saga
 
             this->base_.drop_front();
             -- this->count_;
+        }
+
+        // Курсор вывода
+        template <class Arg, class = decltype(std::declval<Cursor>() << std::declval<Arg>())>
+        take_cursor & operator<<(Arg && arg)
+        {
+            this->base_ << std::forward<Arg>(arg);
+            -- this->count_;
+
+            return *this;
         }
 
         // Курсор произвольного доступа

@@ -458,9 +458,9 @@ namespace saga
         template <class OutputCursor, class T>
         void operator()(OutputCursor cur, T const & value) const
         {
-            for(; !!cur; ++ cur)
+            for(; !!cur;)
             {
-                *cur = value;
+                cur << value;
             }
         }
     };
@@ -484,9 +484,9 @@ namespace saga
         template <class OutputCursor, class Generator>
         void operator()(OutputCursor cur, Generator gen) const
         {
-            for(; !!cur; ++ cur)
+            for(; !!cur;)
             {
-                *cur = saga::invoke(gen);
+                cur << saga::invoke(gen);
             }
         }
     };
