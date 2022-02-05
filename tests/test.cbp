@@ -48,6 +48,7 @@
 		<Unit filename="../include/saga/cursor/istream_cursor.hpp" />
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
 		<Unit filename="../include/saga/cursor/take.hpp" />
+		<Unit filename="../include/saga/cursor/take_while.hpp" />
 		<Unit filename="../include/saga/defs.hpp" />
 		<Unit filename="../include/saga/detail/default_ctor_enabler.hpp" />
 		<Unit filename="../include/saga/detail/static_empty_const.hpp" />

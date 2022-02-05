@@ -15,88 +15,70 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_CURSOR_FILTER_HPP_INCLUDED
-#define Z_SAGA_CURSOR_FILTER_HPP_INCLUDED
+#ifndef Z_SAGA_CURSOR_TAKE_WHILE_HPP_INCLUDED
+#define Z_SAGA_CURSOR_TAKE_WHILE_HPP_INCLUDED
 
-#include <saga/algorithm/find_if.hpp>
-#include <saga/cursor/cursor_facade.hpp>
+/** @brief saga/cursor/take_while.hpp
+ @brief Адаптер курсора, останавливающийся, когда элементы исходной последовательности
+ перестают удовлевторять заданному предикату
+*/
 
 namespace saga
 {
-    template <class InputCursor, class UnaryPredicate>
-    class filter_cursor
-     : cursor_facade<filter_cursor<InputCursor, UnaryPredicate>
-                    , cursor_reference_t<InputCursor>>
+    template <class Cursor, class UnaryPredicate>
+    class take_while_cursor
+     : saga::cursor_facade<take_while_cursor<Cursor, UnaryPredicate>
+                           , cursor_reference_t<Cursor>>
     {
     public:
         // Типы
-        using reference = cursor_reference_t<InputCursor>;
+        using reference = cursor_reference_t<Cursor>;
 
         // Создание, копирование, уничтожение
-        explicit filter_cursor(InputCursor cur, UnaryPredicate pred)
-         : data_(std::move(cur), std::move(pred))
-        {
-            this->seek_front();
-        }
+        explicit take_while_cursor(Cursor cur, UnaryPredicate pred)
+         : base_(std::move(cur))
+         , pred_(std::move(pred))
+        {}
 
         // Курсор ввода
         bool operator!() const
         {
-            return !this->base();
-        }
-
-        void drop_front()
-        {
-            this->base_ref().drop_front();
-            this->seek_front();
+            return !this->base() || !this->pred_(this->base().front());
         }
 
         reference front() const
         {
-            return this->base().front();
+            return this->base_.front();
         }
 
-        // Прямой курсор
+        void drop_front()
+        {
+            this->base_.drop_front();
+        }
 
         // Адаптер курсора
-        InputCursor const & base() const
+        Cursor const & base() const
         {
-            return std::get<0>(this->data_);
-        }
-
-        UnaryPredicate const & predicate() const
-        {
-            return std::get<1>(this->data_);
+            return this->base_;
         }
 
     private:
-        void seek_front()
-        {
-            for(; !!this->base() && !this->predicate()(this->base().front());)
-            {
-                this->base_ref().drop_front();
-            }
-        }
-
-        InputCursor & base_ref()
-        {
-            return std::get<0>(this->data_);
-        }
-
-        std::tuple<InputCursor, UnaryPredicate> data_;
+        Cursor base_;
+        UnaryPredicate pred_;
     };
 
     namespace cursor
     {
         template <class Cursor, class UnaryPredicate>
-        filter_cursor<Cursor, UnaryPredicate>
-        filter(Cursor cur, UnaryPredicate pred)
+        take_while_cursor<Cursor, UnaryPredicate>
+        take_while(Cursor cur, UnaryPredicate pred)
         {
-            return filter_cursor<Cursor, UnaryPredicate>(std::move(cur), std::move(pred));
+            return take_while_cursor<Cursor, UnaryPredicate>(std::move(cur), std::move(pred));
         }
     }
     // namespace cursor
 }
 // namespace saga
 
-#endif // Z_SAGA_CURSOR_FILTER_HPP_INCLUDED
+#endif
+// Z_SAGA_CURSOR_TAKE_WHILE_HPP_INCLUDED
