@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/algorithm.hpp>
 #include <saga/cursor/filter.hpp>
 #include <saga/cursor/subrange.hpp>
+#include <saga/cursor/take_while.hpp>
 #include <saga/pipes/filter.hpp>
 #include <saga/pipes/for_each.hpp>
 #include <saga/numeric.hpp>
@@ -128,4 +129,92 @@ TEST_CASE("ProjectEuler 001")
 
     CHECK(projectEuler_001_smart_output_cursor(10) == 23);
     CHECK(projectEuler_001_smart_output_cursor(1000) == 233168);
+}
+
+// PE 002 : Чётные числа Фибоначчи
+namespace
+{
+    template <class IntType>
+    class fibonacci_sequence
+     : saga::cursor_facade<fibonacci_sequence<IntType>, IntType const &>
+    {
+    public:
+        // Типы
+        using reference = IntType const &;
+
+        // Создание, копирование, уничтожение
+        fibonacci_sequence(IntType num1, IntType num2)
+         : prev_(num1)
+         , cur_(num2)
+        {}
+
+        // Однопроходная последовательность
+        bool operator!() const
+        {
+            return false;
+        }
+
+        reference front() const
+        {
+            return this->cur_;
+        }
+
+        void drop_front()
+        {
+            this->prev_ = std::exchange(this->cur_, this->cur_ + this->prev_);
+        }
+
+    private:
+        IntType prev_;
+        IntType cur_;
+    };
+
+    template <class IntType>
+    IntType projectEuler_002_take_while_after_filter_input(IntType n_max)
+    {
+        auto const fib_even
+            = saga::cursor::filter(::fibonacci_sequence<IntType>(1, 2)
+                                   , [](IntType const & arg) { return arg % 2 == 0; });
+
+        auto input
+            = saga::cursor::take_while(fib_even, [&](IntType const & arg) { return arg <= n_max; });
+
+        return saga::accumulate(std::move(input), IntType{0});
+    }
+
+    template <class IntType>
+    IntType projectEuler_002_filter_after_take_while_input(IntType n_max)
+    {
+        auto fib_below_n_max
+            = saga::cursor::take_while(::fibonacci_sequence<IntType>(1, 2)
+                                       , [=](IntType const & arg) { return arg <= n_max; });
+
+        auto input = saga::cursor::filter(std::move(fib_below_n_max)
+                                          , [](IntType const & arg) { return arg % 2 == 0; });
+
+        return saga::accumulate(std::move(input), IntType{0});
+    }
+
+    template <class IntType>
+    IntType projectEuler_002_filter_output(IntType n_max)
+    {
+        auto input = saga::cursor::take_while(::fibonacci_sequence<IntType>(1, 2)
+                                              , [&](IntType const & arg) { return arg <= n_max; });
+
+        auto result = IntType{0};
+        auto accumulator = [&result](IntType const & arg) { result += arg; };
+        auto output = saga::pipes::filter(saga::pipes::for_each(accumulator)
+                                          , [](IntType const & arg) { return arg % 2 == 0; });
+
+        saga::copy(std::move(input), std::move(output));
+
+        return result;
+    }
+}
+
+TEST_CASE("ProjectEuler 002")
+{
+    CHECK(projectEuler_002_take_while_after_filter_input(4'000'000) == 4'613'732);
+    CHECK(projectEuler_002_filter_after_take_while_input(4'000'000) == 4'613'732);
+    CHECK(projectEuler_002_filter_output(4'000'000) == 4'613'732);
 }
