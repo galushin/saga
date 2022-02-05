@@ -23,7 +23,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/cursor/cursor_traits.hpp>
-#include <saga/cursor/forward_cursor_facade.hpp>
+#include <saga/cursor/cursor_facade.hpp>
 #include <saga/defs.hpp>
 #include <saga/iterator.hpp>
 #include <saga/ranges.hpp>
@@ -35,8 +35,8 @@ namespace saga
 {
     template <class ForwardIterator, class Sentinel = ForwardIterator>
     class subrange_cursor
-     : saga::forward_cursor_facade<subrange_cursor<ForwardIterator, Sentinel>
-                                  , typename std::iterator_traits<ForwardIterator>::reference>
+     : saga::cursor_facade<subrange_cursor<ForwardIterator, Sentinel>
+                          , typename std::iterator_traits<ForwardIterator>::reference>
     {
     friend bool operator==(subrange_cursor const & lhs, subrange_cursor const & rhs)
     {

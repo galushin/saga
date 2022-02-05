@@ -15,8 +15,8 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_CURSOR_FORWARD_CURSOR_FACADE_HPP_INCLUDED
-#define Z_SAGA_CURSOR_FORWARD_CURSOR_FACADE_HPP_INCLUDED
+#ifndef Z_SAGA_CURSOR_CURSOR_FACADE_HPP_INCLUDED
+#define Z_SAGA_CURSOR_CURSOR_FACADE_HPP_INCLUDED
 
 /** @file saga/cursor/forward_cursor_facade.hpp
  @brief Определение операторов *, ++ и << для прямых курсоров
@@ -27,7 +27,7 @@ SAGA -- это свободной программное обеспечение:
 namespace saga
 {
     template <class Cursor, class Reference>
-    class forward_cursor_facade
+    class cursor_facade
     {
         friend bool operator!=(Cursor const & lhs, Cursor const & rhs)
         {
@@ -57,4 +57,4 @@ namespace saga
 // namespace saga
 
 #endif
-// Z_SAGA_CURSOR_FORWARD_CURSOR_FACADE_HPP_INCLUDED
+// Z_SAGA_CURSOR_CURSOR_FACADE_HPP_INCLUDED

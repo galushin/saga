@@ -19,14 +19,14 @@ SAGA -- это свободной программное обеспечение:
 #define Z_SAGA_CURSOR_FILTER_HPP_INCLUDED
 
 #include <saga/algorithm/find_if.hpp>
-#include <saga/cursor/forward_cursor_facade.hpp>
+#include <saga/cursor/cursor_facade.hpp>
 
 namespace saga
 {
     template <class InputCursor, class UnaryPredicate>
     class filter_cursor
-     : forward_cursor_facade<filter_cursor<InputCursor, UnaryPredicate>
-                            , cursor_reference_t<InputCursor>>
+     : cursor_facade<filter_cursor<InputCursor, UnaryPredicate>
+                    , cursor_reference_t<InputCursor>>
     {
     public:
         // Типы
@@ -36,7 +36,7 @@ namespace saga
         explicit filter_cursor(InputCursor cur, UnaryPredicate pred)
          : data_(std::move(cur), std::move(pred))
         {
-            this->base_ref() = saga::find_if(this->base(), this->predicate());
+            this->seek_front();
         }
 
         // Курсор ввода
@@ -48,8 +48,7 @@ namespace saga
         void drop_front()
         {
             this->base_ref().drop_front();
-
-            this->base_ref() = saga::find_if(this->base(), this->predicate());
+            this->seek_front();
         }
 
         reference front() const
@@ -71,6 +70,14 @@ namespace saga
         }
 
     private:
+        void seek_front()
+        {
+            for(; !!this->base() && !this->predicate()(this->base().front());)
+            {
+                this->base_ref().drop_front();
+            }
+        }
+
         InputCursor & base_ref()
         {
             return std::get<0>(this->data_);
