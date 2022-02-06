@@ -218,3 +218,37 @@ TEST_CASE("ProjectEuler 002")
     CHECK(projectEuler_002_filter_after_take_while_input(4'000'000) == 4'613'732);
     CHECK(projectEuler_002_filter_output(4'000'000) == 4'613'732);
 }
+
+// PE 003: Наибольший простой делитель
+namespace
+{
+    template <class IntType>
+    constexpr
+    IntType projectEuler_003(IntType num)
+    {
+        assert(num > 0);
+
+        auto max_divisor = IntType{1};
+
+        while(num % 2 == 0)
+        {
+            max_divisor = 2;
+            num /= 2;
+        }
+
+        for(auto divisor = 3; divisor*divisor <= num; divisor += 2)
+        {
+            while(num % divisor == 0)
+            {
+                max_divisor = divisor;
+
+                num /= divisor;
+            }
+        }
+
+        return num == 1 ? max_divisor : num;
+    }
+
+    static_assert(projectEuler_003(13195) == 29, "");
+    static_assert(projectEuler_003(600851475143) == 6857, "");
+}
