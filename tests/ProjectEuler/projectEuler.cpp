@@ -252,3 +252,21 @@ namespace
     static_assert(projectEuler_003(13195) == 29, "");
     static_assert(projectEuler_003(600851475143) == 6857, "");
 }
+
+// PE 005: Наименьшее кратное
+namespace
+{
+    template <class IntType>
+    constexpr
+    IntType projectEuler_005(IntType num)
+    {
+        using Iterator = saga::iota_iterator<IntType>;
+        using Cursor = saga::subrange_cursor<Iterator>;
+
+        return saga::accumulate(Cursor(Iterator(2), Iterator(num), saga::unsafe_tag_t{})
+                                , IntType{1}, saga::lcm);
+    }
+
+    static_assert(projectEuler_005(10) == 2520, "");
+    static_assert(projectEuler_005(20) == 232792560, "");
+}
