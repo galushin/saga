@@ -281,6 +281,31 @@ namespace saga
         }
     };
 
+    struct gcd_fn
+    {
+        template <class IntType>
+        constexpr IntType operator()(IntType lhs, IntType rhs) const
+        {
+            if(lhs == 0)
+            {
+                return rhs;
+            }
+
+            return gcd_fn{}(rhs % lhs, lhs);
+        }
+    };
+
+    struct lcm_fn
+    {
+        template <class IntType>
+        constexpr IntType operator()(IntType lhs, IntType rhs) const
+        {
+            auto g = gcd_fn{}(lhs, rhs);
+
+            return (lhs / g) * rhs;
+        }
+    };
+
 namespace
 {
     constexpr auto const & iota          = detail::static_empty_const<iota_fn>::value;
@@ -298,6 +323,8 @@ namespace
         = detail::static_empty_const<transform_exclusive_scan_fn>::value;
     constexpr auto const & transform_inclusive_scan
         = detail::static_empty_const<transform_inclusive_scan_fn>::value;
+
+    constexpr auto const & lcm = detail::static_empty_const<lcm_fn>::value;
 }
 
 }

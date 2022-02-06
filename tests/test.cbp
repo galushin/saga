@@ -41,10 +41,10 @@
 		<Unit filename="../include/saga/container/reserve_if_supported.hpp" />
 		<Unit filename="../include/saga/cpp17/launder.hpp" />
 		<Unit filename="../include/saga/cpp20/span.hpp" />
+		<Unit filename="../include/saga/cursor/cursor_facade.hpp" />
 		<Unit filename="../include/saga/cursor/cursor_traits.hpp" />
 		<Unit filename="../include/saga/cursor/cycle.hpp" />
 		<Unit filename="../include/saga/cursor/filter.hpp" />
-		<Unit filename="../include/saga/cursor/forward_cursor_facade.hpp" />
 		<Unit filename="../include/saga/cursor/istream_cursor.hpp" />
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
 		<Unit filename="../include/saga/cursor/take.hpp" />
