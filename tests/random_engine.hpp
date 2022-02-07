@@ -51,6 +51,15 @@ namespace saga_test
     }
 
     template <class Container>
+    auto random_index_of(Container const & container)
+    {
+        assert(!container.empty());
+
+        auto num = std::distance(container.begin(), container.end());
+        return ::saga_test::random_uniform(0, std::move(num) - 1);
+    }
+
+    template <class Container>
     auto random_position_of(Container const & container)
     {
         return ::saga_test::random_uniform(0, std::distance(container.begin(), container.end()));

@@ -297,8 +297,7 @@ namespace
         {
             using Difference = typename Container::difference_type;
 
-            auto const n = Difference(pos) - 1
-                         - saga_test::random_uniform<Difference>(0, container.size() - 1);
+            auto const n = Difference(pos) - 1 - saga_test::random_index_of(container);
             REQUIRE(std::addressof(r_iter[n]) == std::addressof(iter[-n-1]));
         }
 
