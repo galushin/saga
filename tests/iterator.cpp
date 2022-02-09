@@ -23,6 +23,8 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
+#include <saga/algorithm.hpp>
+#include <saga/cursor/subrange.hpp>
 #include <saga/view/indices.hpp>
 
 #include <list>
@@ -222,5 +224,69 @@ TEST_CASE("back_insterter: rvalue")
           REQUIRE(static_cast<bool>(dest.front()));
           REQUIRE(*dest.front() == value);
           REQUIRE(dest.front().get() == addr);
+    };
+}
+
+TEST_CASE("front_inserter")
+{
+    using Value = int;
+    using Container = std::list<Value>;
+
+    // Конструктор по умолчанию
+    saga::front_insert_iterator<Container> it_0;
+    REQUIRE(it_0.container() == nullptr);
+
+    using Iterator = decltype(it_0);
+
+    check_emplace_iterators_typedefs<Iterator, Container>();
+
+    // Основной функционал
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::list<Value> const & dest_old)
+    {
+        auto dest = dest_old;
+
+        auto it = saga::copy(saga::cursor::all(src), saga::front_inserter(dest)).out;
+
+        REQUIRE(it.container() == std::addressof(dest));
+
+        std::list<Value> dest_expected;
+        saga::reverse_copy(saga::cursor::all(src), saga::back_emplacer(dest_expected));
+        saga::copy(saga::cursor::all(dest_old), saga::back_emplacer(dest_expected));
+
+        REQUIRE(dest == dest_expected);
+    };
+}
+
+TEST_CASE("front_insterter: rvalue")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](Value value1, Value value2)
+    {
+          auto ptr1 = std::make_unique<Value>(value1);
+          auto * const addr1 = ptr1.get();
+
+          auto ptr2 = std::make_unique<Value>(value2);
+          auto * const addr2 = ptr2.get();
+
+          std::list<std::unique_ptr<Value>> dest;
+          auto out = saga::front_inserter(dest);
+
+          *out = std::move(ptr1);
+          ++ out;
+
+          *out = std::move(ptr2);
+          ++ out;
+
+          REQUIRE(dest.size() == 2);
+          REQUIRE(static_cast<bool>(dest.front()));
+          REQUIRE(static_cast<bool>(dest.back()));
+
+          REQUIRE(*dest.front() == value2);
+          REQUIRE(dest.front().get() == addr2);
+
+          REQUIRE(*dest.back() == value1);
+          REQUIRE(dest.back().get() == addr1);
     };
 }

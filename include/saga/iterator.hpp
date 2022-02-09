@@ -173,6 +173,21 @@ namespace detail
         }
     };
 
+    struct front_insert_fn
+    {
+        template <class Container>
+        void operator()(Container & container, typename Container::value_type const & value) const
+        {
+            container.push_front(value);
+        }
+
+        template <class Container>
+        void operator()(Container & container, typename Container::value_type && value) const
+        {
+            container.push_front(std::move(value));
+        }
+    };
+
     struct front_emplace_fn
     {
     public:
@@ -289,6 +304,9 @@ namespace detail
     using back_insert_iterator = generic_container_output_iterator<Container, back_insert_fn>;
 
     template <class Container>
+    using front_insert_iterator = generic_container_output_iterator<Container, front_insert_fn>;
+
+    template <class Container>
     using back_emplace_iterator = generic_container_output_iterator<Container, back_emplace_fn>;
 
     template <class Container>
@@ -320,6 +338,12 @@ namespace detail
     auto back_inserter(Container & container)
     {
         return back_insert_iterator<Container>(container);
+    }
+
+    template <class Container>
+    auto front_inserter(Container & container)
+    {
+        return front_insert_iterator<Container>(container);
     }
 
     namespace
