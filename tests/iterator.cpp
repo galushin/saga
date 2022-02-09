@@ -23,6 +23,8 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
+#include <saga/algorithm.hpp>
+#include <saga/cursor/subrange.hpp>
 #include <saga/view/indices.hpp>
 
 #include <list>
@@ -101,12 +103,10 @@ TEST_CASE("back_emplacer")
     static_assert(std::is_constructible<Container, Size>{}, "");
     static_assert(!std::is_convertible<Size, Container>{}, "");
 
-    // Конструктор по умолчанию
-    saga::back_emplace_iterator<Container> it_0;
-    REQUIRE(it_0.container() == nullptr);
+    // Требования к типам
+    using Iterator = saga::back_emplace_iterator<Container>;
 
-    using Iterator = decltype(it_0);
-
+    static_assert(!std::is_default_constructible<Iterator>{}, "");
     check_emplace_iterators_typedefs<Iterator, Container>();
 
     // Основной функционал
@@ -136,12 +136,10 @@ TEST_CASE("front_emplacer")
     static_assert(std::is_constructible<Container, Size>{}, "");
     static_assert(!std::is_convertible<Size, Container>{}, "");
 
-    // Конструктор по умолчанию
-    saga::front_emplace_iterator<Container> it_0;
-    REQUIRE(it_0.container() == nullptr);
+    // Требования к типам
+    using Iterator = saga::front_emplace_iterator<Container>;
 
-    using Iterator = decltype(it_0);
-
+    static_assert(!std::is_default_constructible<Iterator>{}, "");
     check_emplace_iterators_typedefs<Iterator, Container>();
 
     // Основной функционал
@@ -174,12 +172,10 @@ TEST_CASE("emplacer")
     static_assert(std::is_constructible<Container, Size>{}, "");
     static_assert(!std::is_convertible<Size, Container>{}, "");
 
-    // Конструктор по умолчанию
-    saga::front_emplace_iterator<Container> it_0;
-    REQUIRE(it_0.container() == nullptr);
+    // Требования к типам
+    using Iterator = saga::emplace_iterator<Container>;
 
-    using Iterator = decltype(it_0);
-
+    static_assert(!std::is_default_constructible<Iterator>{}, "");
     check_emplace_iterators_typedefs<Iterator, Container>();
 
     // Основной функционал
@@ -207,7 +203,7 @@ TEST_CASE("back_insterter: rvalue")
 {
     using Value = int;
 
-    saga_test::property_checker << [](Value value)
+    saga_test::property_checker << [](Value const & value)
     {
           auto ptr = std::make_unique<Value>(value);
           auto * const addr = ptr.get();
@@ -222,5 +218,138 @@ TEST_CASE("back_insterter: rvalue")
           REQUIRE(static_cast<bool>(dest.front()));
           REQUIRE(*dest.front() == value);
           REQUIRE(dest.front().get() == addr);
+    };
+}
+
+TEST_CASE("front_inserter")
+{
+    using Value = int;
+    using Container = std::list<Value>;
+
+    // Требования к типам
+    using Iterator = saga::front_insert_iterator<Container>;
+
+    static_assert(!std::is_default_constructible<Iterator>{}, "");
+    check_emplace_iterators_typedefs<Iterator, Container>();
+
+    // Основной функционал
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::list<Value> const & dest_old)
+    {
+        auto dest = dest_old;
+
+        auto it = saga::copy(saga::cursor::all(src), saga::front_inserter(dest)).out;
+
+        REQUIRE(it.container() == std::addressof(dest));
+
+        std::list<Value> dest_expected;
+        saga::reverse_copy(saga::cursor::all(src), saga::back_emplacer(dest_expected));
+        saga::copy(saga::cursor::all(dest_old), saga::back_emplacer(dest_expected));
+
+        REQUIRE(dest == dest_expected);
+    };
+}
+
+TEST_CASE("front_insterter: rvalue")
+{
+    using Value = int;
+
+    saga_test::property_checker << [](Value const & value1, Value const & value2)
+    {
+          auto ptr1 = std::make_unique<Value>(value1);
+          auto * const addr1 = ptr1.get();
+
+          auto ptr2 = std::make_unique<Value>(value2);
+          auto * const addr2 = ptr2.get();
+
+          std::list<std::unique_ptr<Value>> dest;
+          auto out = saga::front_inserter(dest);
+
+          *out = std::move(ptr1);
+          ++ out;
+
+          *out = std::move(ptr2);
+          ++ out;
+
+          REQUIRE(dest.size() == 2);
+          REQUIRE(static_cast<bool>(dest.front()));
+          REQUIRE(static_cast<bool>(dest.back()));
+
+          REQUIRE(*dest.front() == value2);
+          REQUIRE(dest.front().get() == addr2);
+
+          REQUIRE(*dest.back() == value1);
+          REQUIRE(dest.back().get() == addr1);
+    };
+}
+
+TEST_CASE("inserter")
+{
+    using Value = long;
+    using Container = std::vector<Value>;
+
+    // Требования к типам
+    using Iterator = saga::insert_iterator<Container>;
+
+    static_assert(!std::is_default_constructible<Iterator>{}, "");
+    check_emplace_iterators_typedefs<Iterator, Container>();
+
+    // Основной функционал
+    saga_test::property_checker
+    << [](Container dest, std::list<Value> const & values)
+    {
+        auto const pos = saga_test::random_iterator_of(dest);
+
+        // Ожидаемое
+        Container dest_expected;
+        std::copy(dest.begin(), pos, saga::back_inserter(dest_expected));
+        saga::copy(saga::cursor::all(values), saga::back_inserter(dest_expected));
+        std::copy(pos, dest.end(), saga::back_inserter(dest_expected));
+
+        // inserter
+        auto cur = saga::copy(saga::cursor::all(values), saga::inserter(dest, pos)).out;
+
+        REQUIRE(cur.container() == std::addressof(dest));
+        REQUIRE(dest == dest_expected);
+    };
+}
+
+TEST_CASE("insterter: rvalue")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    << [](Value const & value1, Value const & value2, Value const & value3, Value const & value4)
+    {
+          auto ptr1 = std::make_unique<Value>(value1);
+          auto * const addr1 = ptr1.get();
+
+          auto ptr2 = std::make_unique<Value>(value2);
+          auto * const addr2 = ptr2.get();
+
+          std::vector<std::unique_ptr<Value>> dest;
+          dest.push_back(std::make_unique<Value>(value3));
+          dest.push_back(std::make_unique<Value>(value4));
+
+          auto out = saga::inserter(dest, dest.begin() + 1);
+
+          *out = std::move(ptr1);
+          ++ out;
+
+          *out = std::move(ptr2);
+          ++ out;
+
+          REQUIRE(dest.size() == 4);
+
+          for(auto const & item : dest)
+          {
+              REQUIRE(static_cast<bool>(item));
+          }
+
+          REQUIRE(*dest.at(1) == value1);
+          REQUIRE(dest.at(1).get() == addr1);
+
+          REQUIRE(*dest.at(2) == value2);
+          REQUIRE(dest.at(2).get() == addr2);
     };
 }

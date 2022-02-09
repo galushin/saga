@@ -1,5 +1,5 @@
-#ifndef Z_SAGA_TEST_INVOKABLE_TRACER_HPP_INCLUDED
-#define Z_SAGA_TEST_INVOKABLE_TRACER_HPP_INCLUDED
+#ifndef Z_SAGA_TEST_INVOCABLE_TRACER_HPP_INCLUDED
+#define Z_SAGA_TEST_INVOCABLE_TRACER_HPP_INCLUDED
 
 #include <saga/type_traits.hpp>
 #include <saga/functional.hpp>
@@ -23,7 +23,7 @@ namespace saga
         }
 
         // Создание, копирование и уничтожение
-        invocable_tracer(Invocable fun)
+        explicit invocable_tracer(Invocable fun)
          : fun_(std::move(fun))
         {}
 
@@ -90,4 +90,4 @@ namespace saga
 // namespace saga
 
 #endif
-// Z_SAGA_TEST_INVOKABLE_TRACER_HPP_INCLUDED
+// Z_SAGA_TEST_INVOCABLE_TRACER_HPP_INCLUDED

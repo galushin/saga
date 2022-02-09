@@ -173,6 +173,46 @@ namespace detail
         }
     };
 
+    struct front_insert_fn
+    {
+        template <class Container>
+        void operator()(Container & container, typename Container::value_type const & value) const
+        {
+            container.push_front(value);
+        }
+
+        template <class Container>
+        void operator()(Container & container, typename Container::value_type && value) const
+        {
+            container.push_front(std::move(value));
+        }
+    };
+
+    template <class Iterator>
+    struct insert_fn
+    {
+    public:
+        explicit insert_fn(Iterator it)
+         : position(std::move(it))
+        {}
+
+        template <class Container>
+        void operator()(Container & container, typename Container::value_type const & value)
+        {
+            position = container.insert(this->position, value);
+            ++ position;
+        }
+
+        template <class Container>
+        void operator()(Container & container, typename Container::value_type && value)
+        {
+            position = container.insert(this->position, std::move(value));
+            ++ position;
+        }
+
+        Iterator position;
+    };
+
     struct front_emplace_fn
     {
     public:
@@ -227,7 +267,7 @@ namespace detail
         using container_type = Container;
 
         // Создание, копирование, уничтожение
-        generic_container_output_iterator() = default;
+        generic_container_output_iterator() = delete;
 
         template <class... Args>
         explicit generic_container_output_iterator(Container & container, Args &&... args)
@@ -289,6 +329,14 @@ namespace detail
     using back_insert_iterator = generic_container_output_iterator<Container, back_insert_fn>;
 
     template <class Container>
+    using front_insert_iterator = generic_container_output_iterator<Container, front_insert_fn>;
+
+    template <class Container>
+    using insert_iterator
+        = generic_container_output_iterator<Container
+                                           , insert_fn<typename Container::const_iterator>>;
+
+    template <class Container>
     using back_emplace_iterator = generic_container_output_iterator<Container, back_emplace_fn>;
 
     template <class Container>
@@ -296,7 +344,8 @@ namespace detail
 
     template <class Container>
     using emplace_iterator
-        = generic_container_output_iterator<Container, emplace_fn<typename Container::iterator>>;
+        = generic_container_output_iterator<Container
+                                           , emplace_fn<typename Container::const_iterator>>;
 
     template <class Container>
     auto back_emplacer(Container & container)
@@ -311,7 +360,7 @@ namespace detail
     }
 
     template <class Container>
-    auto emplacer(Container & container, typename Container::iterator pos)
+    auto emplacer(Container & container, typename Container::const_iterator pos)
     {
         return emplace_iterator<Container>(container, std::move(pos));
     }
@@ -320,6 +369,18 @@ namespace detail
     auto back_inserter(Container & container)
     {
         return back_insert_iterator<Container>(container);
+    }
+
+    template <class Container>
+    auto front_inserter(Container & container)
+    {
+        return front_insert_iterator<Container>(container);
+    }
+
+    template <class Container>
+    auto inserter(Container & container, typename Container::const_iterator pos)
+    {
+        return insert_iterator<Container>(container, std::move(pos));
     }
 
     namespace
