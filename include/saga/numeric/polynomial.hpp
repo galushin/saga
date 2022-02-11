@@ -22,8 +22,6 @@ SAGA -- это свободной программное обеспечение:
  @brief Многочлены и алгоритмы для них
 */
 
-#include <saga/detail/static_empty_const.hpp>
-
 #include <iterator>
 
 namespace saga
@@ -45,11 +43,7 @@ namespace saga
         }
     };
 
-    namespace
-    {
-        constexpr auto const & polynomial_horner
-            = saga::detail::static_empty_const<polynomial_horner_fn>::value;
-    }
+    inline constexpr auto const polynomial_horner = polynomial_horner_fn{};
 }
 // namespace saga
 

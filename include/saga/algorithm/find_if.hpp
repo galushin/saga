@@ -22,7 +22,6 @@ SAGA -- это свободной программное обеспечение:
  @brief Алгоритм поиска элемента, удовлетворяющего унарному предикату
 */
 
-#include <saga/detail/static_empty_const.hpp>
 #include <saga/functional.hpp>
 
 namespace saga
@@ -44,10 +43,7 @@ namespace saga
         }
     };
 
-    namespace
-    {
-        constexpr auto const & find_if = detail::static_empty_const<find_if_fn>::value;
-    }
+    inline constexpr auto const find_if = find_if_fn{};
 }
 // namespace saga
 

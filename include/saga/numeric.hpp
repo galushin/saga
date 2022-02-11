@@ -21,7 +21,6 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/algorithm/result_types.hpp>
 #include <saga/cursor/cursor_traits.hpp>
 #include <saga/functional.hpp>
-#include <saga/detail/static_empty_const.hpp>
 
 #include <functional>
 #include <utility>
@@ -306,27 +305,19 @@ namespace saga
         }
     };
 
-namespace
-{
-    constexpr auto const & iota          = detail::static_empty_const<iota_fn>::value;
-    constexpr auto const & accumulate    = detail::static_empty_const<accumulate_fn>::value;
-    constexpr auto const & inner_product = detail::static_empty_const<inner_product_fn>::value;
-    constexpr auto const & adjacent_difference
-        = detail::static_empty_const<adjacent_difference_fn>::value;
-    constexpr auto const & partial_sum   = detail::static_empty_const<partial_sum_fn>::value;
-    constexpr auto const & reduce        = detail::static_empty_const<reduce_fn>::value;
-    constexpr auto const & inclusive_scan = detail::static_empty_const<inclusive_scan_fn>::value;
-    constexpr auto const & exclusive_scan = detail::static_empty_const<exclusive_scan_fn>::value;
-    constexpr auto const & transform_reduce
-        = detail::static_empty_const<transform_reduce_fn>::value;
-    constexpr auto const & transform_exclusive_scan
-        = detail::static_empty_const<transform_exclusive_scan_fn>::value;
-    constexpr auto const & transform_inclusive_scan
-        = detail::static_empty_const<transform_inclusive_scan_fn>::value;
+    inline constexpr auto const iota          = iota_fn{};
+    inline constexpr auto const accumulate    = accumulate_fn{};
+    inline constexpr auto const inner_product = inner_product_fn{};
+    inline constexpr auto const adjacent_difference = adjacent_difference_fn{};
+    inline constexpr auto const partial_sum   = partial_sum_fn{};
+    inline constexpr auto const reduce        = reduce_fn{};
+    inline constexpr auto const inclusive_scan = inclusive_scan_fn{};
+    inline constexpr auto const exclusive_scan = exclusive_scan_fn{};
+    inline constexpr auto const transform_reduce = transform_reduce_fn{};
+    inline constexpr auto const transform_exclusive_scan = transform_exclusive_scan_fn{};
+    inline constexpr auto const transform_inclusive_scan = transform_inclusive_scan_fn{};
 
-    constexpr auto const & lcm = detail::static_empty_const<lcm_fn>::value;
-}
-
+    inline constexpr auto const lcm = lcm_fn{};
 }
 // namespace saga
 

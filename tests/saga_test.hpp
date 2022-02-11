@@ -20,7 +20,6 @@ SAGA -- это свободной программное обеспечение:
 
 #include "random_engine.hpp"
 
-#include <saga/detail/static_empty_const.hpp>
 #include <saga/type_traits.hpp>
 #include <saga/test/regular_tracer.hpp>
 #include <saga/utility/operators.hpp>
@@ -482,8 +481,7 @@ namespace saga_test
 
     namespace
     {
-        constexpr auto const & property_checker
-            = saga::detail::static_empty_const<detail::property_checker_t>::value;
+        inline constexpr auto const & property_checker = detail::property_checker_t{};
     }
 
     // Классы с типовыми особенностями

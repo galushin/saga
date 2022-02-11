@@ -18,8 +18,6 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_MATH_HPP_INCLUDED
 #define Z_SAGA_MATH_HPP_INCLUDED
 
-#include <saga/detail/static_empty_const.hpp>
-
 /** @file saga/math.hpp
  @brief Функциональность, связанная с математикой, общего назначения
 */
@@ -61,11 +59,8 @@ namespace saga
         }
     };
 
-    namespace
-    {
-        constexpr auto const & abs = detail::static_empty_const<saga::absolute_value>::value;
-        constexpr auto const & square = detail::static_empty_const<saga::square_fn>::value;
-    }
+    inline constexpr auto const abs = saga::absolute_value{};
+    inline constexpr auto const square = saga::square_fn{};
 }
 //namespace saga
 

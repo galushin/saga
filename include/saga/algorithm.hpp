@@ -28,8 +28,6 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/iterator.hpp>
 #include <saga/cursor/cursor_traits.hpp>
 
-#include <saga/detail/static_empty_const.hpp>
-
 #include <cassert>
 #include <algorithm>
 #include <functional>
@@ -2331,127 +2329,106 @@ namespace saga
     };
 
     // Функциональные объекты
-    namespace
-    {
-        constexpr auto const & all_of = detail::static_empty_const<all_of_fn>::value;
-        constexpr auto const & any_of = detail::static_empty_const<any_of_fn>::value;
-        constexpr auto const & none_of = detail::static_empty_const<none_of_fn>::value;
+    inline constexpr auto const all_of = all_of_fn{};
+    inline constexpr auto const any_of = any_of_fn{};
+    inline constexpr auto const none_of = none_of_fn{};
 
-        constexpr auto const & for_each = detail::static_empty_const<for_each_fn>::value;
-        constexpr auto const & for_each_n = detail::static_empty_const<for_each_n_fn>::value;
+    inline constexpr auto const for_each = for_each_fn{};
+    inline constexpr auto const for_each_n = for_each_n_fn{};
 
-        constexpr auto const & count = detail::static_empty_const<count_fn>::value;
-        constexpr auto const & count_if = detail::static_empty_const<count_if_fn>::value;
+    inline constexpr auto const count = count_fn{};
+    inline constexpr auto const count_if = count_if_fn{};
 
-        constexpr auto const & mismatch = detail::static_empty_const<mismatch_fn>::value;
+    inline constexpr auto const mismatch = mismatch_fn{};
 
-        constexpr auto const & find = detail::static_empty_const<find_fn>::value;
-        constexpr auto const & find_if_not = detail::static_empty_const<find_if_not_fn>::value;
-        constexpr auto const & find_end = detail::static_empty_const<find_end_fn>::value;
-        constexpr auto const & find_first_of = detail::static_empty_const<find_first_of_fn>::value;
-        constexpr auto const & adjacent_find = detail::static_empty_const<adjacent_find_fn>::value;
-        constexpr auto const & search = detail::static_empty_const<search_fn>::value;
-        constexpr auto const & search_n = detail::static_empty_const<search_n_fn>::value;
+    inline constexpr auto const find = find_fn{};
+    inline constexpr auto const find_if_not = find_if_not_fn{};
+    inline constexpr auto const find_end = find_end_fn{};
+    inline constexpr auto const find_first_of = find_first_of_fn{};
+    inline constexpr auto const adjacent_find = adjacent_find_fn{};
+    inline constexpr auto const search = search_fn{};
+    inline constexpr auto const search_n = search_n_fn{};
 
-        constexpr auto const & copy = detail::static_empty_const<copy_fn>::value;
-        constexpr auto const & copy_if = detail::static_empty_const<copy_if_fn>::value;
-        constexpr auto const & copy_n = detail::static_empty_const<copy_n_fn>::value;
-        constexpr auto const & copy_backward = detail::static_empty_const<copy_backward_fn>::value;
-        constexpr auto const & move = detail::static_empty_const<move_fn>::value;
-        constexpr auto const & move_backward = detail::static_empty_const<move_backward_fn>::value;
-        constexpr auto const & fill = detail::static_empty_const<fill_fn>::value;
-        constexpr auto const & fill_n = detail::static_empty_const<fill_n_fn>::value;
-        constexpr auto const & transform = detail::static_empty_const<transform_fn>::value;
-        constexpr auto const & generate = detail::static_empty_const<generate_fn>::value;
-        constexpr auto const & generate_n = detail::static_empty_const<generate_n_fn>::value;
-        constexpr auto const & remove = detail::static_empty_const<remove_fn>::value;
-        constexpr auto const & remove_if = detail::static_empty_const<remove_if_fn>::value;
-        constexpr auto const & remove_copy = detail::static_empty_const<remove_copy_fn>::value;
-        constexpr auto const & remove_copy_if
-            = detail::static_empty_const<remove_copy_if_fn>::value;
-        constexpr auto const & replace = detail::static_empty_const<replace_fn>::value;
-        constexpr auto const & replace_if = detail::static_empty_const<replace_if_fn>::value;
-        constexpr auto const & replace_copy = detail::static_empty_const<replace_copy_fn>::value;
-        constexpr auto const & replace_copy_if
-            = detail::static_empty_const<replace_copy_if_fn>::value;
-        constexpr auto const & swap_ranges = detail::static_empty_const<swap_ranges_fn>::value;
-        constexpr auto const & reverse = detail::static_empty_const<reverse_fn>::value;
-        constexpr auto const & reverse_copy = detail::static_empty_const<reverse_copy_fn>::value;
-        constexpr auto const & rotate = detail::static_empty_const<rotate_fn>::value;
-        constexpr auto const & rotate_copy = detail::static_empty_const<rotate_copy_fn>::value;
-        constexpr auto const & shuffle = detail::static_empty_const<shuffle_fn>::value;
-        constexpr auto const & sample = detail::static_empty_const<sample_fn>::value;
-        constexpr auto const & unique = detail::static_empty_const<unique_fn>::value;
-        constexpr auto const & unique_copy = detail::static_empty_const<unique_copy_fn>::value;
+    inline constexpr auto const copy = copy_fn{};
+    inline constexpr auto const copy_if = copy_if_fn{};
+    inline constexpr auto const copy_n = copy_n_fn{};
+    inline constexpr auto const copy_backward = copy_backward_fn{};
+    inline constexpr auto const move = move_fn{};
+    inline constexpr auto const move_backward = move_backward_fn{};
+    inline constexpr auto const fill = fill_fn{};
+    inline constexpr auto const fill_n = fill_n_fn{};
+    inline constexpr auto const transform = transform_fn{};
+    inline constexpr auto const generate = generate_fn{};
+    inline constexpr auto const generate_n = generate_n_fn{};
+    inline constexpr auto const remove = remove_fn{};
+    inline constexpr auto const remove_if = remove_if_fn{};
+    inline constexpr auto const remove_copy = remove_copy_fn{};
+    inline constexpr auto const remove_copy_if = remove_copy_if_fn{};
+    inline constexpr auto const replace = replace_fn{};
+    inline constexpr auto const replace_if = replace_if_fn{};
+    inline constexpr auto const replace_copy = replace_copy_fn{};
+    inline constexpr auto const replace_copy_if = replace_copy_if_fn{};
+    inline constexpr auto const swap_ranges = swap_ranges_fn{};
+    inline constexpr auto const reverse = reverse_fn{};
+    inline constexpr auto const reverse_copy = reverse_copy_fn{};
+    inline constexpr auto const rotate = rotate_fn{};
+    inline constexpr auto const rotate_copy = rotate_copy_fn{};
+    inline constexpr auto const shuffle = shuffle_fn{};
+    inline constexpr auto const sample = sample_fn{};
+    inline constexpr auto const unique = unique_fn{};
+    inline constexpr auto const unique_copy = unique_copy_fn{};
 
-        constexpr auto const & is_partitioned
-            = detail::static_empty_const<is_partitioned_fn>::value;
-        constexpr auto const & partition = detail::static_empty_const<partition_fn>::value;
-        constexpr auto const & partition_copy
-            = detail::static_empty_const<partition_copy_fn>::value;
-        constexpr auto const & stable_partition
-            = detail::static_empty_const<stable_partition_fn>::value;
-        constexpr auto const & partition_point
-            = detail::static_empty_const<partition_point_fn>::value;
+    inline constexpr auto const is_partitioned = is_partitioned_fn{};
+    inline constexpr auto const partition = partition_fn{};
+    inline constexpr auto const partition_copy = partition_copy_fn{};
+    inline constexpr auto const stable_partition = stable_partition_fn{};
+    inline constexpr auto const partition_point = partition_point_fn{};
 
-        constexpr auto const & is_sorted = detail::static_empty_const<is_sorted_fn>::value;
-        constexpr auto const & is_sorted_until
-            = detail::static_empty_const<is_sorted_until_fn>::value;
-        constexpr auto const & sort = detail::static_empty_const<sort_fn>::value;
-        constexpr auto const & insertion_sort
-            = detail::static_empty_const<insertion_sort_fn>::value;
-        constexpr auto const & partial_sort = detail::static_empty_const<partial_sort_fn>::value;
-        constexpr auto const & partial_sort_copy
-            = detail::static_empty_const<partial_sort_copy_fn>::value;
-        constexpr auto const & stable_sort = detail::static_empty_const<stable_sort_fn>::value;
-        constexpr auto const & nth_element = detail::static_empty_const<nth_element_fn>::value;
+    inline constexpr auto const is_sorted = is_sorted_fn{};
+    inline constexpr auto const is_sorted_until = is_sorted_until_fn{};
+    inline constexpr auto const sort = sort_fn{};
+    inline constexpr auto const insertion_sort = insertion_sort_fn{};
+    inline constexpr auto const partial_sort = partial_sort_fn{};
+    inline constexpr auto const partial_sort_copy = partial_sort_copy_fn{};
+    inline constexpr auto const stable_sort = stable_sort_fn{};
+    inline constexpr auto const nth_element = nth_element_fn{};
 
-        constexpr auto const & lower_bound = detail::static_empty_const<lower_bound_fn>::value;
-        constexpr auto const & upper_bound = detail::static_empty_const<upper_bound_fn>::value;
-        constexpr auto const & equal_range = detail::static_empty_const<equal_range_fn>::value;
-        constexpr auto const & binary_search = detail::static_empty_const<binary_search_fn>::value;
+    inline constexpr auto const lower_bound = lower_bound_fn{};
+    inline constexpr auto const upper_bound = upper_bound_fn{};
+    inline constexpr auto const equal_range = equal_range_fn{};
+    inline constexpr auto const binary_search = binary_search_fn{};
+    inline constexpr auto const merge = merge_fn{};
+    inline constexpr auto const inplace_merge = inplace_merge_fn{};
 
-        constexpr auto const & merge = detail::static_empty_const<merge_fn>::value;
-        constexpr auto const & inplace_merge = detail::static_empty_const<inplace_merge_fn>::value;
+    inline constexpr auto const includes = includes_fn{};
+    inline constexpr auto const set_difference = set_difference_fn{};
+    inline constexpr auto const set_intersection = set_intersection_fn{};
+    inline constexpr auto const set_symmetric_difference = set_symmetric_difference_fn{};
+    inline constexpr auto const set_union = set_union_fn{};
 
-        constexpr auto const & includes = detail::static_empty_const<includes_fn>::value;
-        constexpr auto const & set_difference
-            = detail::static_empty_const<set_difference_fn>::value;
-        constexpr auto const & set_intersection
-            = detail::static_empty_const<set_intersection_fn>::value;
-        constexpr auto const & set_symmetric_difference
-            = detail::static_empty_const<set_symmetric_difference_fn>::value;
-        constexpr auto const & set_union = detail::static_empty_const<set_union_fn>::value;
+    inline constexpr auto const is_heap = is_heap_fn{};
+    inline constexpr auto const is_heap_until = is_heap_until_fn{};
+    inline constexpr auto const make_heap = make_heap_fn{};
+    inline constexpr auto const push_heap = push_heap_fn{};
+    inline constexpr auto const pop_heap = pop_heap_fn{};
+    inline constexpr auto const sort_heap = sort_heap_fn{};
 
-        constexpr auto const & is_heap = detail::static_empty_const<is_heap_fn>::value;
-        constexpr auto const & is_heap_until = detail::static_empty_const<is_heap_until_fn>::value;
-        constexpr auto const & make_heap = detail::static_empty_const<make_heap_fn>::value;
-        constexpr auto const & push_heap = detail::static_empty_const<push_heap_fn>::value;
-        constexpr auto const & pop_heap = detail::static_empty_const<pop_heap_fn>::value;
-        constexpr auto const & sort_heap = detail::static_empty_const<sort_heap_fn>::value;
+    inline constexpr auto const min_element = min_element_fn{};
+    inline constexpr auto const max_element = max_element_fn{};
+    inline constexpr auto const minmax_element = minmax_element_fn{};
+    inline constexpr auto const clamp = clamp_fn{};
 
-        constexpr auto const & min_element = detail::static_empty_const<min_element_fn>::value;
-        constexpr auto const & max_element = detail::static_empty_const<max_element_fn>::value;
-        constexpr auto const & minmax_element
-            = detail::static_empty_const<minmax_element_fn>::value;
-        constexpr auto const & clamp = detail::static_empty_const<clamp_fn>::value;
+    inline constexpr auto const equal = equal_fn{};
+    inline constexpr auto const lexicographical_compare = lexicographical_compare_fn{};
 
-        constexpr auto const & equal = detail::static_empty_const<equal_fn>::value;
-        constexpr auto const & lexicographical_compare
-            = detail::static_empty_const<lexicographical_compare_fn>::value;
+    inline constexpr auto const is_permutation = is_permutation_fn{};
+    inline constexpr auto const next_permutation = next_permutation_fn{};
+    inline constexpr auto const prev_permutation = prev_permutation_fn{};
 
-        constexpr auto const & is_permutation
-            = detail::static_empty_const<is_permutation_fn>::value;
-        constexpr auto const & next_permutation
-            = detail::static_empty_const<next_permutation_fn>::value;
-        constexpr auto const & prev_permutation
-            = detail::static_empty_const<prev_permutation_fn>::value;
+    inline constexpr auto const starts_with = starts_with_fn{};
+    inline constexpr auto const ends_with = ends_with_fn{};
 
-        constexpr auto const & starts_with = detail::static_empty_const<starts_with_fn>::value;
-        constexpr auto const & ends_with = detail::static_empty_const<ends_with_fn>::value;
-
-        constexpr auto const & for_n = detail::static_empty_const<for_n_fn>::value;
-    }
+    inline constexpr auto const for_n = for_n_fn{};
 }
 // namespace saga
 

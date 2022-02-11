@@ -22,7 +22,6 @@ SAGA -- это свободной программное обеспечение:
  @brief Функциональность, связанная с итераторома
 */
 
-#include <saga/detail/static_empty_const.hpp>
 #include <saga/type_traits.hpp>
 
 #include <cassert>
@@ -383,15 +382,11 @@ namespace detail
         return insert_iterator<Container>(container, std::move(pos));
     }
 
-    namespace
-    {
-        constexpr auto const & begin = detail::static_empty_const<detail::begin_fn>::value;
-        constexpr auto const & end = detail::static_empty_const<detail::end_fn>::value;
-        constexpr auto const & rbegin = detail::static_empty_const<detail::rbegin_fn>::value;
-        constexpr auto const & rend = detail::static_empty_const<detail::rend_fn>::value;
-
-        constexpr auto const & size = detail::static_empty_const<detail::size_fn>::value;
-    }
+    inline constexpr auto const begin = detail::begin_fn{};
+    inline constexpr auto const end = detail::end_fn{};
+    inline constexpr auto const rbegin = detail::rbegin_fn{};
+    inline constexpr auto const rend = detail::rend_fn{};
+    inline constexpr auto const size = detail::size_fn{};
 }
 // namespace saga
 
