@@ -631,8 +631,8 @@ TEST_CASE("unexpected : swap - noexcept(true)")
         static_assert(noexcept(err1.swap(err2)), "");
         static_assert(noexcept(swap(err1, err2)), "");
 
-        static_assert(saga::is_swappable<saga::unexpected<Value>>{}, "");
-        static_assert(saga::is_nothrow_swappable<saga::unexpected<Value>>{}, "");
+        static_assert(std::is_swappable<saga::unexpected<Value>>{}, "");
+        static_assert(std::is_nothrow_swappable<saga::unexpected<Value>>{}, "");
     };
 }
 
@@ -689,8 +689,8 @@ TEST_CASE("unexpected : swap - noexcept(false)")
         static_assert(!noexcept(err1.swap(err2)), "");
         static_assert(!noexcept(swap(err1, err2)), "");
 
-        static_assert(saga::is_swappable<saga::unexpected<Value>>{}, "");
-        static_assert(!saga::is_nothrow_swappable<saga::unexpected<Value>>{}, "");
+        static_assert(std::is_swappable<saga::unexpected<Value>>{}, "");
+        static_assert(!std::is_nothrow_swappable<saga::unexpected<Value>>{}, "");
     };
 }
 
@@ -708,10 +708,10 @@ namespace
         friend void swap(deleted_swap &, deleted_swap &) noexcept = delete;
     };
 
-    static_assert(!saga::is_swappable<deleted_swap>{}, "");
-    static_assert(!saga::is_swappable<saga::unexpected<deleted_swap>>{}, "");
-    static_assert(!saga::is_nothrow_swappable<deleted_swap>{}, "");
-    static_assert(!saga::is_nothrow_swappable<saga::unexpected<deleted_swap>>{}, "");
+    static_assert(!std::is_swappable<deleted_swap>{}, "");
+    static_assert(!std::is_swappable<saga::unexpected<deleted_swap>>{}, "");
+    static_assert(!std::is_nothrow_swappable<deleted_swap>{}, "");
+    static_assert(!std::is_nothrow_swappable<saga::unexpected<deleted_swap>>{}, "");
 }
 
 TEST_CASE("unexpected : operators == and !=")

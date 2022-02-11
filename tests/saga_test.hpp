@@ -230,8 +230,7 @@ namespace saga_test
         {};
 
         template <typename T>
-        struct is_sequence_container<T, saga::void_t<typename T::value_type
-                                                    , typename T::iterator>>
+        struct is_sequence_container<T, std::void_t<typename T::value_type, typename T::iterator>>
          : std::is_constructible<T, typename T::value_type const *, typename T::value_type const *>
         {};
     }

@@ -2356,9 +2356,9 @@ namespace
 
         static_assert(noexcept(lhs.value.swap(rhs.value))
                       == ((std::is_void<Value>{} || (std::is_nothrow_move_constructible<Value>{}
-                         && saga::is_nothrow_swappable<Value>{}))
+                         && std::is_nothrow_swappable<Value>{}))
                          && std::is_nothrow_move_constructible<Error>{}
-                         && saga::is_nothrow_swappable<Error>{}), "");
+                         && std::is_nothrow_swappable<Error>{}), "");
 
         REQUIRE(lhs == rhs_old);
         REQUIRE(rhs == lhs_old);
@@ -2485,23 +2485,23 @@ TEST_CASE("expected::swap")
     static_assert(std::is_nothrow_move_constructible<std::string>{}, "");
     static_assert(!std::is_nothrow_move_constructible<::throwing_move_int>{}, "");
 
-    static_assert(saga::is_swappable<int>{}, "");
-    static_assert(saga::is_swappable<std::string>{}, "");
-    static_assert(saga::is_swappable<std::vector<int>>{}, "");
-    static_assert(saga::is_swappable<::throwing_move_ctor>{}, "");
+    static_assert(std::is_swappable<int>{}, "");
+    static_assert(std::is_swappable<std::string>{}, "");
+    static_assert(std::is_swappable<std::vector<int>>{}, "");
+    static_assert(std::is_swappable<::throwing_move_ctor>{}, "");
 
-    static_assert(!saga::is_swappable<saga_test::not_swapable>{}, "");
+    static_assert(!std::is_swappable<saga_test::not_swapable>{}, "");
 
 
     // Swappable
-    static_assert(!saga::is_swappable<saga::expected<void, saga_test::not_swapable>>{}, "");
-    static_assert(!saga::is_swappable<saga::expected<void const, saga_test::not_swapable>>{}, "");
-    static_assert(!saga::is_swappable<saga::expected<void volatile, saga_test::not_swapable>>{}, "");
-    static_assert(!saga::is_swappable<saga::expected<void const volatile, saga_test::not_swapable>>{}, "");
+    static_assert(!std::is_swappable<saga::expected<void, saga_test::not_swapable>>{}, "");
+    static_assert(!std::is_swappable<saga::expected<void const, saga_test::not_swapable>>{}, "");
+    static_assert(!std::is_swappable<saga::expected<void volatile, saga_test::not_swapable>>{}, "");
+    static_assert(!std::is_swappable<saga::expected<void const volatile, saga_test::not_swapable>>{}, "");
 
-    static_assert(!saga::is_swappable<saga::expected<int, saga_test::not_swapable>>{}, "");
-    static_assert(!saga::is_swappable<saga::expected<saga_test::not_swapable, int>>{}, "");
-    static_assert(!saga::is_swappable<saga::expected<::throwing_move_ctor, ::throwing_move_ctor>>{}, "");
+    static_assert(!std::is_swappable<saga::expected<int, saga_test::not_swapable>>{}, "");
+    static_assert(!std::is_swappable<saga::expected<saga_test::not_swapable, int>>{}, "");
+    static_assert(!std::is_swappable<saga::expected<::throwing_move_ctor, ::throwing_move_ctor>>{}, "");
 
     static_assert(::has_swap_member<saga::expected<int, std::string>>{}, "");
 
@@ -2690,7 +2690,7 @@ namespace
     {};
 
     template <class T>
-    struct has_dereference_op<T, saga::void_t<decltype(*std::declval<T>())>>
+    struct has_dereference_op<T, std::void_t<decltype(*std::declval<T>())>>
      : std::true_type
     {};
 }

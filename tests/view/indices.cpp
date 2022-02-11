@@ -55,7 +55,7 @@ namespace
     {};
 
     template <class T>
-    struct has_type_typedef<T, saga::void_t<typename T::type>>
+    struct has_type_typedef<T, std::void_t<typename T::type>>
      : std::true_type
     {};
 }

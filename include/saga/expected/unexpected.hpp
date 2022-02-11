@@ -46,7 +46,7 @@ namespace saga
 
     template <class Error>
     class unexpected
-     : detail::swap_adl_enabler<unexpected<Error>, saga::is_swappable<Error>{}>
+     : detail::swap_adl_enabler<unexpected<Error>, std::is_swappable<Error>{}>
     {
     public:
         // Конструкторы
@@ -148,7 +148,7 @@ namespace saga
             return std::move(this->value_);
         }
 
-        void swap(unexpected & that) noexcept(saga::is_nothrow_swappable<Error>::value)
+        void swap(unexpected & that) noexcept(std::is_nothrow_swappable<Error>::value)
         {
             using std::swap;
             swap(this->value_, that.value_);

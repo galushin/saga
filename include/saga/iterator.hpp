@@ -48,7 +48,7 @@ namespace saga
         {};
 
         template <class T>
-        struct has_difference_type<T, saga::void_t<typename T::difference_type>>
+        struct has_difference_type<T, std::void_t<typename T::difference_type>>
          : std::true_type
         {};
 
@@ -68,7 +68,7 @@ namespace saga
         {};
 
         template <class T>
-        struct has_integral_difference<T, saga::void_t<decltype(std::declval<T const&>() - std::declval<T const&>())>>
+        struct has_integral_difference<T, std::void_t<decltype(std::declval<T const&>() - std::declval<T const&>())>>
          : std::is_integral<decltype(std::declval<T const&>() - std::declval<T const&>())>
         {};
 

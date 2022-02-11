@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Характеристики-типов
 */
 
+#include <type_traits>
 #include <utility>
 
 namespace saga
@@ -62,16 +63,6 @@ namespace saga
     struct priority_tag<0>
     {};
 
-    // void_t
-    template <typename... Types>
-    struct declare_void
-    {
-        using type = void;
-    };
-
-    template <typename... Types>
-    using void_t = typename declare_void<Types...>::type;
-
     // Идиома детектирования
     struct nonesuch
     {
@@ -91,7 +82,7 @@ namespace saga
         };
 
         template <class Default, template <class...> class Op, class... Args>
-        struct detector<saga::void_t<Op<Args...>>, Default, Op, Args...>
+        struct detector<std::void_t<Op<Args...>>, Default, Op, Args...>
         {
             using value_t = std::true_type;
 
@@ -130,10 +121,6 @@ namespace saga
 #endif
 // __cpp_variable_templates
 
-    // bool_constant
-    template <bool B>
-    using bool_constant = std::integral_constant<bool, B>;
-
     /** @brief Определение типа для предсставления размера, используемого данным типом, например,
     контейнером
 
@@ -165,77 +152,6 @@ namespace saga
 
     template <class T>
     using remove_cvref_t = typename remove_cvref<T>::type;
-
-    // is_swappable
-    namespace detail
-    {
-        namespace swap_adl_ns
-        {
-            using std::swap;
-
-            template <class T, class U>
-            using swap_void_t = void_t<decltype(swap(std::declval<T>(), std::declval<U>())),
-                                        decltype(swap(std::declval<U>(), std::declval<T>()))>;
-
-            template <class T, class U>
-            struct is_swappable_with
-             : saga::is_detected<swap_void_t, T, U>
-            {};
-
-            template <class T, class U, class SFINAE = void>
-            struct is_nothrow_swappable_with
-             : std::false_type
-            {};
-
-            template <class T, class U>
-            struct is_nothrow_swappable_with<T, U, std::enable_if_t<is_swappable_with<T, U>::value>>
-             : saga::bool_constant<noexcept(swap(std::declval<T>(), std::declval<U>()))
-                                   && noexcept(swap(std::declval<U>(), std::declval<T>()))>
-            {};
-        }
-
-        template <class T, class SFINAE = void>
-        struct is_swappable
-         : std::false_type
-        {};
-
-        template <class T>
-        struct is_swappable<T, void_t<T&>>
-         : detail::swap_adl_ns::is_swappable_with<T &, T &>
-        {};
-
-        template <class T, class SFINAE = void>
-        struct is_nothrow_swappable
-         : std::false_type
-        {};
-
-        template <class T>
-        struct is_nothrow_swappable<T, void_t<T&>>
-         : detail::swap_adl_ns::is_nothrow_swappable_with<T &, T &>
-        {};
-
-    }
-    // namespace detail
-
-    template <class T, class U>
-    struct is_swappable_with
-     : detail::swap_adl_ns::is_swappable_with<T, U>
-    {};
-
-    template <class T>
-    struct is_swappable
-     : detail::is_swappable<T>
-    {};
-
-    template <class T, class U>
-    struct is_nothrow_swappable_with
-     : detail::swap_adl_ns::is_nothrow_swappable_with<T, U>
-    {};
-
-    template <class T>
-    struct is_nothrow_swappable
-     : detail::is_nothrow_swappable<T>
-    {};
 
     // is_equality_comparable
     namespace detail
@@ -359,9 +275,9 @@ namespace saga
         {};
 
         template <class Fun, class... Args>
-        struct is_nothrow_invocable<std::enable_if_t<saga::is_invocable<Fun, Args...>{}>, Fun, Args...>
-         : bool_constant<noexcept(invoke_impl<std::decay_t<Fun>>::call(std::declval<Fun>()
-                                                                       , std::declval<Args>()...))>
+        struct is_nothrow_invocable<std::enable_if_t<is_invocable<Fun, Args...>{}>, Fun, Args...>
+         : std::bool_constant<noexcept(invoke_impl<std::decay_t<Fun>>::call(std::declval<Fun>()
+                                                                            , std::declval<Args>()...))>
         {};
     }
     // namespace detail

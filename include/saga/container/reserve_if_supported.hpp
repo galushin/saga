@@ -38,7 +38,7 @@ namespace saga
         auto reserve_if_supported(Container & container
                                   , typename Container::size_type new_capacity
                                   , saga::priority_tag<1>)
-        -> saga::void_t<decltype(container.reserve(new_capacity))>
+        -> std::void_t<decltype(container.reserve(new_capacity))>
         {
             container.reserve(new_capacity);
         }

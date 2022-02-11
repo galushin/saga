@@ -30,6 +30,7 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add option="-std=c++17" />
 			<Add option="-fexceptions" />
 			<Add directory="./contrib/catch2/include" />
 			<Add directory="../include" />
@@ -39,7 +40,6 @@
 		<Unit filename="../include/saga/algorithm/result_types.hpp" />
 		<Unit filename="../include/saga/any.hpp" />
 		<Unit filename="../include/saga/container/reserve_if_supported.hpp" />
-		<Unit filename="../include/saga/cpp17/launder.hpp" />
 		<Unit filename="../include/saga/cpp20/span.hpp" />
 		<Unit filename="../include/saga/cursor/cursor_facade.hpp" />
 		<Unit filename="../include/saga/cursor/cursor_traits.hpp" />
@@ -82,7 +82,6 @@
 		<Unit filename="../include/saga/random/any_distribution.hpp" />
 		<Unit filename="../include/saga/random/iid_distribution.hpp" />
 		<Unit filename="../include/saga/ranges.hpp" />
-		<Unit filename="../include/saga/string_view.hpp" />
 		<Unit filename="../include/saga/test/invocable_tracer.hpp" />
 		<Unit filename="../include/saga/test/regular_tracer.hpp" />
 		<Unit filename="../include/saga/type_traits.hpp" />
@@ -121,7 +120,6 @@
 		<Unit filename="random_engine.hpp" />
 		<Unit filename="saga_test.cpp" />
 		<Unit filename="saga_test.hpp" />
-		<Unit filename="string_view.cpp" />
 		<Unit filename="test/invocable_tracer.cpp" />
 		<Unit filename="test/regular_tracer.cpp" />
 		<Unit filename="type_traits.cpp" />

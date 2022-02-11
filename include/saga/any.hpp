@@ -22,11 +22,11 @@ SAGA -- это свободной программное обеспечение:
  @brief Объект, который позволяет хранить значение любого типа и получать к нему доступ.
 */
 
-#include <saga/cpp17/launder.hpp>
 #include <saga/type_traits.hpp>
 #include <saga/utility/in_place.hpp>
 
 #include <cassert>
+#include <new>
 #include <typeinfo>
 #include <type_traits>
 #include <utility>
@@ -361,7 +361,7 @@ namespace saga
 
             static void * access(Storage const & storage) noexcept
             {
-                return saga::launder(const_cast<T *>(reinterpret_cast<const T*>(&storage.buffer)));
+                return std::launder(const_cast<T *>(reinterpret_cast<const T*>(&storage.buffer)));
             }
 
             static VTable const * get_pvtable()
@@ -375,7 +375,7 @@ namespace saga
             template <class... Args>
             static T & create(Storage & storage, Args &&... args)
             {
-                auto ptr = ::new(saga::launder(&storage.buffer)) T(std::forward<Args>(args)...);
+                auto ptr = ::new(std::launder(&storage.buffer)) T(std::forward<Args>(args)...);
                 return *ptr;
             }
         };

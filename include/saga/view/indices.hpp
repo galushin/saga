@@ -44,8 +44,7 @@ namespace saga
         };
 
         template <class T>
-        struct iota_iterator_category<T,
-            saga::void_t<typename std::iterator_traits<T>::iterator_category>>
+        struct iota_iterator_category<T, std::void_t<typename std::iterator_traits<T>::iterator_category>>
         {
             using type = typename std::iterator_traits<T>::iterator_category;
         };
