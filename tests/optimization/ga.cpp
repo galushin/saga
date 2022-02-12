@@ -218,6 +218,8 @@ TEST_CASE("tournament_selection_distribution : equal to copy")
 
         bool(*cmp)(double x, double y) = [](double x, double y) { return x < y; };
 
+        REQUIRE(!cmp(0, 0));
+
         auto const tournament_size = saga_test::random_uniform(1, obj_values.size());
 
         saga::selection_tournament selection(tournament_size, repeat);
