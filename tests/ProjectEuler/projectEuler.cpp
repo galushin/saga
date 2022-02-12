@@ -27,6 +27,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/pipes/filter.hpp>
 #include <saga/pipes/for_each.hpp>
 #include <saga/numeric.hpp>
+#include <saga/utility/exchange.hpp>
 #include <saga/view/indices.hpp>
 
 // Тесты
@@ -89,7 +90,7 @@ namespace
     }
 
     template <class IntType>
-    IntType projectEuler_001_cursor_algorithms_filter(IntType n_max)
+    constexpr IntType projectEuler_001_cursor_algorithms_filter(IntType n_max)
     {
         auto pred = [](IntType const & num) { return num % 3 == 0 || num % 5 == 0; };
 
@@ -99,7 +100,7 @@ namespace
     }
 
     template <class IntType>
-    IntType projectEuler_001_smart_output_cursor(IntType n_max)
+    constexpr IntType projectEuler_001_smart_output_cursor(IntType n_max)
     {
         auto pred = [](IntType const & num) { return num % 3 == 0 || num % 5 == 0; };
 
@@ -119,16 +120,16 @@ static_assert(projectEuler_001_range_for_loop_indices(1000) == 233168, "");
 static_assert(projectEuler_001_closed_form(10) == 23, "");
 static_assert(projectEuler_001_closed_form(1000) == 233168, "");
 
+static_assert(projectEuler_001_cursor_algorithms_filter(10) == 23, "");
+static_assert(projectEuler_001_cursor_algorithms_filter(1000) == 233168, "");
+
+static_assert(projectEuler_001_smart_output_cursor(10) == 23, "");
+static_assert(projectEuler_001_smart_output_cursor(1000) == 233168, "");
+
 TEST_CASE("ProjectEuler 001")
 {
     CHECK(projectEuler_001_cursor_algorithms(10) == 23);
     CHECK(projectEuler_001_cursor_algorithms(1000) == 233168);
-
-    CHECK(projectEuler_001_cursor_algorithms_filter(10) == 23);
-    CHECK(projectEuler_001_cursor_algorithms_filter(1000) == 233168);
-
-    CHECK(projectEuler_001_smart_output_cursor(10) == 23);
-    CHECK(projectEuler_001_smart_output_cursor(1000) == 233168);
 }
 
 // PE 002 : Чётные числа Фибоначчи
@@ -143,25 +144,25 @@ namespace
         using reference = IntType const &;
 
         // Создание, копирование, уничтожение
-        fibonacci_sequence(IntType num1, IntType num2)
+        constexpr fibonacci_sequence(IntType num1, IntType num2)
          : prev_(num1)
          , cur_(num2)
         {}
 
         // Однопроходная последовательность
-        bool operator!() const
+        constexpr bool operator!() const
         {
             return false;
         }
 
-        reference front() const
+        constexpr reference front() const
         {
             return this->cur_;
         }
 
-        void drop_front()
+        constexpr void drop_front()
         {
-            this->prev_ = std::exchange(this->cur_, this->cur_ + this->prev_);
+            this->prev_ = saga::exchange(this->cur_, this->cur_ + this->prev_);
         }
 
     private:
@@ -170,7 +171,7 @@ namespace
     };
 
     template <class IntType>
-    IntType projectEuler_002_take_while_after_filter_input(IntType n_max)
+    constexpr IntType projectEuler_002_take_while_after_filter_input(IntType n_max)
     {
         auto const fib_even
             = saga::cursor::filter(::fibonacci_sequence<IntType>(1, 2)
@@ -183,7 +184,7 @@ namespace
     }
 
     template <class IntType>
-    IntType projectEuler_002_filter_after_take_while_input(IntType n_max)
+    constexpr IntType projectEuler_002_filter_after_take_while_input(IntType n_max)
     {
         auto fib_below_n_max
             = saga::cursor::take_while(::fibonacci_sequence<IntType>(1, 2)
@@ -196,7 +197,7 @@ namespace
     }
 
     template <class IntType>
-    IntType projectEuler_002_filter_output(IntType n_max)
+    constexpr IntType projectEuler_002_filter_output(IntType n_max)
     {
         auto input = saga::cursor::take_while(::fibonacci_sequence<IntType>(1, 2)
                                               , [&](IntType const & arg) { return arg <= n_max; });
@@ -212,12 +213,9 @@ namespace
     }
 }
 
-TEST_CASE("ProjectEuler 002")
-{
-    CHECK(projectEuler_002_take_while_after_filter_input(4'000'000) == 4'613'732);
-    CHECK(projectEuler_002_filter_after_take_while_input(4'000'000) == 4'613'732);
-    CHECK(projectEuler_002_filter_output(4'000'000) == 4'613'732);
-}
+static_assert(projectEuler_002_take_while_after_filter_input(4'000'000) == 4'613'732, "");
+static_assert(projectEuler_002_filter_after_take_while_input(4'000'000) == 4'613'732, "");
+static_assert(projectEuler_002_filter_output(4'000'000) == 4'613'732, "");
 
 // PE 003: Наибольший простой делитель
 namespace

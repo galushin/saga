@@ -33,25 +33,25 @@ namespace saga
         using reference = cursor_reference_t<InputCursor>;
 
         // Создание, копирование, уничтожение
-        explicit filter_cursor(InputCursor cur, UnaryPredicate pred)
+        constexpr explicit filter_cursor(InputCursor cur, UnaryPredicate pred)
          : data_(std::move(cur), std::move(pred))
         {
             this->seek_front();
         }
 
         // Курсор ввода
-        bool operator!() const
+        constexpr bool operator!() const
         {
             return !this->base();
         }
 
-        void drop_front()
+        constexpr void drop_front()
         {
             this->base_ref().drop_front();
             this->seek_front();
         }
 
-        reference front() const
+        constexpr reference front() const
         {
             return this->base().front();
         }
@@ -59,18 +59,18 @@ namespace saga
         // Прямой курсор
 
         // Адаптер курсора
-        InputCursor const & base() const
+        constexpr InputCursor const & base() const
         {
             return std::get<0>(this->data_);
         }
 
-        UnaryPredicate const & predicate() const
+        constexpr UnaryPredicate const & predicate() const
         {
             return std::get<1>(this->data_);
         }
 
     private:
-        void seek_front()
+        constexpr void seek_front()
         {
             for(; !!this->base() && !this->predicate()(this->base().front());)
             {
@@ -78,7 +78,7 @@ namespace saga
             }
         }
 
-        InputCursor & base_ref()
+        constexpr InputCursor & base_ref()
         {
             return std::get<0>(this->data_);
         }
@@ -89,7 +89,7 @@ namespace saga
     namespace cursor
     {
         template <class Cursor, class UnaryPredicate>
-        filter_cursor<Cursor, UnaryPredicate>
+        constexpr filter_cursor<Cursor, UnaryPredicate>
         filter(Cursor cur, UnaryPredicate pred)
         {
             return filter_cursor<Cursor, UnaryPredicate>(std::move(cur), std::move(pred));

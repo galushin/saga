@@ -35,29 +35,29 @@ namespace saga
         using reference = cursor_reference_t<Cursor>;
 
         // Создание, копирование, уничтожение
-        explicit take_while_cursor(Cursor cur, UnaryPredicate pred)
+        constexpr explicit take_while_cursor(Cursor cur, UnaryPredicate pred)
          : base_(std::move(cur))
          , pred_(std::move(pred))
         {}
 
         // Курсор ввода
-        bool operator!() const
+        constexpr bool operator!() const
         {
             return !this->base() || !this->pred_(this->base().front());
         }
 
-        reference front() const
+        constexpr reference front() const
         {
             return this->base_.front();
         }
 
-        void drop_front()
+        constexpr void drop_front()
         {
             this->base_.drop_front();
         }
 
         // Адаптер курсора
-        Cursor const & base() const
+        constexpr Cursor const & base() const
         {
             return this->base_;
         }
@@ -70,7 +70,7 @@ namespace saga
     namespace cursor
     {
         template <class Cursor, class UnaryPredicate>
-        take_while_cursor<Cursor, UnaryPredicate>
+        constexpr take_while_cursor<Cursor, UnaryPredicate>
         take_while(Cursor cur, UnaryPredicate pred)
         {
             return take_while_cursor<Cursor, UnaryPredicate>(std::move(cur), std::move(pred));
