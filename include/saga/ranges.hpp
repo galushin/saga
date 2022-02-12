@@ -26,7 +26,7 @@ namespace saga
     namespace detail
     {
         template <class T>
-        using detect_begin_end = saga::void_t<decltype(saga::begin(std::declval<T&>()))
+        using detect_begin_end = std::void_t<decltype(saga::begin(std::declval<T&>()))
                                              , decltype(saga::end(std::declval<T&>()))>;
     }
 
@@ -42,7 +42,7 @@ namespace saga
 
     template <class R>
     struct is_borrowed_range
-     : saga::bool_constant<saga::is_range<R>{} && (std::is_lvalue_reference<R>{}
+     : std::bool_constant<saga::is_range<R>{} && (std::is_lvalue_reference<R>{}
                                                    || saga::enable_borrowed_range_t<R>{})>
     {};
 }

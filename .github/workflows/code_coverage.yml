@@ -24,7 +24,7 @@ jobs:
         env:
           CC: "gcc"
           CXX: "g++"
-          CFLAGS: "-g -fprofile-arcs -ftest-coverage -O0"
+          CFLAGS: "-std=gnu++17 -g -fprofile-arcs -ftest-coverage -O0"
           LDFLAGS: "-lgcov"
           
         run: |

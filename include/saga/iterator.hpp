@@ -22,7 +22,6 @@ SAGA -- это свободной программное обеспечение:
  @brief Функциональность, связанная с итераторома
 */
 
-#include <saga/detail/static_empty_const.hpp>
 #include <saga/type_traits.hpp>
 
 #include <cassert>
@@ -48,7 +47,7 @@ namespace saga
         {};
 
         template <class T>
-        struct has_difference_type<T, saga::void_t<typename T::difference_type>>
+        struct has_difference_type<T, std::void_t<typename T::difference_type>>
          : std::true_type
         {};
 
@@ -68,7 +67,7 @@ namespace saga
         {};
 
         template <class T>
-        struct has_integral_difference<T, saga::void_t<decltype(std::declval<T const&>() - std::declval<T const&>())>>
+        struct has_integral_difference<T, std::void_t<decltype(std::declval<T const&>() - std::declval<T const&>())>>
          : std::is_integral<decltype(std::declval<T const&>() - std::declval<T const&>())>
         {};
 
@@ -383,15 +382,11 @@ namespace detail
         return insert_iterator<Container>(container, std::move(pos));
     }
 
-    namespace
-    {
-        constexpr auto const & begin = detail::static_empty_const<detail::begin_fn>::value;
-        constexpr auto const & end = detail::static_empty_const<detail::end_fn>::value;
-        constexpr auto const & rbegin = detail::static_empty_const<detail::rbegin_fn>::value;
-        constexpr auto const & rend = detail::static_empty_const<detail::rend_fn>::value;
-
-        constexpr auto const & size = detail::static_empty_const<detail::size_fn>::value;
-    }
+    inline constexpr auto const begin = detail::begin_fn{};
+    inline constexpr auto const end = detail::end_fn{};
+    inline constexpr auto const rbegin = detail::rbegin_fn{};
+    inline constexpr auto const rend = detail::rend_fn{};
+    inline constexpr auto const size = detail::size_fn{};
 }
 // namespace saga
 

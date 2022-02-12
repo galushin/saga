@@ -950,9 +950,9 @@ namespace saga
         {
             return (std::is_void<Value>{}
                     || (std::is_nothrow_move_constructible<Value>{}
-                        && saga::is_nothrow_swappable<Value>{})                    )
+                        && std::is_nothrow_swappable<Value>{})                    )
                     && std::is_nothrow_move_constructible<Error>{}
-                    && saga::is_nothrow_swappable<Error>{};
+                    && std::is_nothrow_swappable<Error>{};
         }
 
         template <class Value, class Error>
@@ -963,8 +963,8 @@ namespace saga
             если же Value - не void, то либо Value, либо Error должен быть is_nothrow_move_constructible.
             Иначе невозможно определить безопасный при исключениях обмен
             */
-            return (std::is_void<Value>{} || saga::is_swappable<Value>{})
-                   && saga::is_swappable<Error>{}
+            return (std::is_void<Value>{} || std::is_swappable<Value>{})
+                   && std::is_swappable<Error>{}
                    && ((std::is_void<Value>{} && std::is_move_constructible<Error>{})
                        || std::is_nothrow_move_constructible<Value>{}
                        || std::is_nothrow_move_constructible<Error>{});

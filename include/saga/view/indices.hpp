@@ -18,7 +18,6 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_VIEW_INDICES_HPP_INCLUDED
 #define Z_SAGA_VIEW_INDICES_HPP_INCLUDED
 
-#include <saga/detail/static_empty_const.hpp>
 #include <saga/iterator.hpp>
 #include <saga/ranges.hpp>
 #include <saga/utility/operators.hpp>
@@ -44,8 +43,7 @@ namespace saga
         };
 
         template <class T>
-        struct iota_iterator_category<T,
-            saga::void_t<typename std::iterator_traits<T>::iterator_category>>
+        struct iota_iterator_category<T, std::void_t<typename std::iterator_traits<T>::iterator_category>>
         {
             using type = typename std::iterator_traits<T>::iterator_category;
         };
@@ -232,11 +230,8 @@ namespace saga
             }
         };
 
-        namespace
-        {
-            constexpr auto const & indices = detail::static_empty_const<indices_fn>::value;
-            constexpr auto const & indices_of = detail::static_empty_const<indices_of_fn>::value;
-        }
+        inline constexpr auto const indices = indices_fn{};
+        inline constexpr auto const indices_of = indices_of_fn{};
     }
     // namespace view
 }

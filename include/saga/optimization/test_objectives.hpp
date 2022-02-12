@@ -105,20 +105,10 @@ namespace saga
         }
     };
 
-    namespace
-    {
-        constexpr auto const & boolean_manhattan_norm
-            = detail::static_empty_const<boolean_manhattan_norm_fn>::value;
-
-        constexpr auto const & boolean_manhattan_distance
-            = detail::static_empty_const<boolean_manhattan_distance_fn>::value;
-
-        constexpr auto const & count_adjacent_unequal
-            = detail::static_empty_const<count_adjacent_unequal_fn>::value;
-
-        constexpr auto const & manhattan_norm
-            = detail::static_empty_const<manhattan_norm_fn>::value;
-    }
+    inline constexpr auto const boolean_manhattan_norm = boolean_manhattan_norm_fn{};
+    inline constexpr auto const boolean_manhattan_distance = boolean_manhattan_distance_fn{};
+    inline constexpr auto const count_adjacent_unequal = count_adjacent_unequal_fn{};
+    inline constexpr auto const manhattan_norm = manhattan_norm_fn{};
 }
 // namespace saga
 

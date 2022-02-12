@@ -18,8 +18,6 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_CURSOR_CURSOR_TRAITS_HPP_INCLUDED
 #define Z_SAGA_CURSOR_CURSOR_TRAITS_HPP_INCLUDED
 
-#include <saga/detail/static_empty_const.hpp>
-
 #include <cassert>
 #include <iterator>
 
@@ -144,17 +142,9 @@ namespace saga
         }
         // namespace detail
 
-        namespace
-        {
-            constexpr auto const & drop_front_n
-                = saga::detail::static_empty_const<detail::drop_front_n_fn>::value;
-
-            constexpr auto const & drop_back_n
-                = saga::detail::static_empty_const<detail::drop_back_n_fn>::value;
-
-            constexpr auto const & size
-                = saga::detail::static_empty_const<detail::size_fn>::value;
-        }
+        inline constexpr auto const drop_front_n = detail::drop_front_n_fn{};
+        inline constexpr auto const drop_back_n = detail::drop_back_n_fn{};
+        inline constexpr auto const size = detail::size_fn{};
     }
     //namespace cursor
 }

@@ -60,7 +60,7 @@ namespace
     {};
 
     template <class T>
-    struct as_const_is_applicable<T, saga::void_t<decltype(::saga::as_const(std::declval<T>()))>>
+    struct as_const_is_applicable<T, std::void_t<decltype(::saga::as_const(std::declval<T>()))>>
      : std::true_type
     {};
 }

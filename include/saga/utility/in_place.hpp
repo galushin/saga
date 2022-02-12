@@ -23,8 +23,6 @@ SAGA -- это свободной программное обеспечение:
  на месте из представленных аргументов
 */
 
-#include <saga/detail/static_empty_const.hpp>
-
 namespace saga
 {
     struct in_place_t
@@ -40,13 +38,10 @@ namespace saga
         explicit in_place_type_t() = default;
     };
 
-    namespace
-    {
-        constexpr auto const in_place = detail::static_empty_const<in_place_t>::value;
+    inline constexpr auto const in_place = in_place_t{};
 
-        template <class T>
-        constexpr auto const in_place_type = detail::static_empty_const<in_place_type_t<T>>::value;
-    }
+    template <class T>
+    inline constexpr auto const in_place_type = in_place_type_t<T>{};
 }
 // namespace saga
 
