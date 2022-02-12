@@ -342,6 +342,7 @@ namespace saga
     struct copy_fn
     {
         template <class InputCursor, class OutputCursor>
+        constexpr
         in_out_result<InputCursor, OutputCursor>
         operator()(InputCursor in, OutputCursor out) const
         {

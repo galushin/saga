@@ -87,6 +87,7 @@
 		<Unit filename="../include/saga/utility/as_const.hpp" />
 		<Unit filename="../include/saga/utility/copy_and_swap.hpp" />
 		<Unit filename="../include/saga/utility/equality_comparable_box.hpp" />
+		<Unit filename="../include/saga/utility/exchange.hpp" />
 		<Unit filename="../include/saga/utility/in_place.hpp" />
 		<Unit filename="../include/saga/utility/operators.hpp" />
 		<Unit filename="../include/saga/view/indices.hpp" />

@@ -15,55 +15,20 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_PIPES_FOR_EACH_HPP_INCLUDED
-#define Z_SAGA_PIPES_FOR_EACH_HPP_INCLUDED
-
-/** @file saga/pipes/for_each.hpp
- @brief Умный курсор вывода, передающий элементы функциональному объекту
-*/
+#ifndef Z_SAGA_UTILITY_EXCHANGE_HPP_INCLUDED
+#define Z_SAGA_UTILITY_EXCHANGE_HPP_INCLUDED
 
 namespace saga
 {
-    namespace pipes
+    template <class T, class U = T>
+    constexpr T exchange(T & obj, U && new_value)
     {
-        template <class UnaryFunction>
-        class output_function_cursor
-        {
-        public:
-            // Создание, копирование, уничтожение
-            constexpr explicit output_function_cursor(UnaryFunction fun)
-             : data_(std::move(fun))
-            {}
-
-            // Курсор вывода
-            constexpr bool operator!() const
-            {
-                return false;
-            }
-
-            template <class Arg, class = std::enable_if_t<saga::is_invocable<UnaryFunction, Arg>{}>>
-            constexpr output_function_cursor &
-            operator<<(Arg && arg)
-            {
-                static_cast<void>(saga::invoke(std::get<0>(this->data_), std::forward<Arg>(arg)));
-
-                return *this;
-            }
-
-        private:
-            std::tuple<UnaryFunction> data_;
-        };
-
-        template <class UnaryFunction>
-        constexpr output_function_cursor<UnaryFunction>
-        for_each(UnaryFunction fun)
-        {
-            return output_function_cursor<UnaryFunction>(std::move(fun));
-        }
+        T old_value = std::move(obj);
+        obj = std::forward<U>(new_value);
+        return old_value;
     }
-    // namespace pipes
 }
 // namespace saga
 
 #endif
-// Z_SAGA_PIPES_FOR_EACH_HPP_INCLUDED
+// Z_SAGA_UTILITY_EXCHANGE_HPP_INCLUDED

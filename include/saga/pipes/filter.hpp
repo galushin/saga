@@ -31,19 +31,19 @@ namespace saga
         {
         public:
             // Создание, копирование, уничтожение
-            explicit filter_output_cursor(OutputCursor cur, UnaryPredicate pred)
+            constexpr explicit filter_output_cursor(OutputCursor cur, UnaryPredicate pred)
              : data_(std::move(cur), std::move(pred))
             {}
 
             // Курсор вывода
-            bool operator!() const
+            constexpr bool operator!() const
             {
                 return !std::get<0>(this->data_);
             }
 
             template <class Arg
                      , class = decltype(std::declval<OutputCursor>() << std::declval<Arg>())>
-            filter_output_cursor &
+            constexpr filter_output_cursor &
             operator<<(Arg && arg)
             {
                 if(saga::invoke(std::get<1>(this->data_), arg))
@@ -61,7 +61,7 @@ namespace saga
         };
 
         template <class OutputCursor, class UnaryPredicate>
-        filter_output_cursor<OutputCursor, UnaryPredicate>
+        constexpr filter_output_cursor<OutputCursor, UnaryPredicate>
         filter(OutputCursor cur, UnaryPredicate pred)
         {
             using Result = filter_output_cursor<OutputCursor, UnaryPredicate>;
