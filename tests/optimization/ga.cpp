@@ -216,8 +216,7 @@ TEST_CASE("tournament_selection_distribution : equal to copy")
             return;
         }
 
-        bool(*cmp)(double const & x, double const & y)
-            = [](double const & x, double const & y) { return x < y; };
+        bool(*cmp)(double x, double y) = [](double x, double y) { return x < y; };
 
         auto const tournament_size = saga_test::random_uniform(1, obj_values.size());
 
