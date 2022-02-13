@@ -1,4 +1,4 @@
-/* (c) 2020-2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2020-2022 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Функциональность, связанная с итераторома
 */
 
+#include <saga/iterator/ostream_joiner.hpp>
 #include <saga/type_traits.hpp>
 
 #include <cassert>

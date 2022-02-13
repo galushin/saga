@@ -1,4 +1,4 @@
-/* (c) 2020-2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2020-2022 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -351,5 +351,71 @@ TEST_CASE("insterter: rvalue")
 
           REQUIRE(*dest.at(2) == value2);
           REQUIRE(dest.at(2).get() == addr2);
+    };
+}
+
+// ostream_joiner
+// Проверки типов
+namespace
+{
+    using OStream = std::ostringstream;
+    using Delim = char[3];
+
+    using OSJoiner = saga::ostream_joiner<Delim, OStream>;
+
+    static_assert(std::is_same<OSJoiner::char_type, OStream::char_type>{}, "");
+    static_assert(std::is_same<OSJoiner::traits_type, OStream::traits_type>{}, "");
+    static_assert(std::is_same<OSJoiner::ostream_type, OStream>{}, "");
+    static_assert(std::is_same<OSJoiner::iterator_category, std::output_iterator_tag>{}, "");
+    static_assert(std::is_same<OSJoiner::value_type, void>{}, "");
+    static_assert(std::is_same<OSJoiner::difference_type, std::ptrdiff_t>{}, "");
+    static_assert(std::is_same<OSJoiner::pointer, void>{}, "");
+    static_assert(std::is_same<OSJoiner::reference, void>{}, "");
+
+    static_assert(noexcept(*std::declval<OSJoiner>()), "");
+    static_assert(noexcept(!std::declval<OSJoiner>()), "");
+    static_assert(noexcept(++std::declval<OSJoiner>()), "");
+    static_assert(noexcept(std::declval<OSJoiner>()++), "");
+}
+
+TEST_CASE("ostream_joiner")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & values)
+    {
+        auto const delim = std::string(", ");
+
+        // Явное
+        std::ostringstream os_for;
+
+        if(!values.empty())
+        {
+            auto first = values.begin();
+            auto const last = values.end();
+
+            os_for << *first;
+            ++ first;
+
+            for(; first != last; ++ first)
+            {
+                os_for << delim << *first;
+            }
+        }
+
+        // Как итератор
+        std::ostringstream os_iter;
+        std::copy(values.begin(), values.end(), saga::ostream_joiner(os_iter, delim));
+
+        REQUIRE(os_iter.str() == os_for.str());
+
+        // Как курсор
+        std::ostringstream os_cur;
+        auto cur = saga::copy(saga::cursor::all(values), saga::ostream_joiner(os_cur, delim)).out;
+
+        REQUIRE(os_cur.str() == os_for.str());
+
+        static_assert(std::is_same<decltype(cur++), decltype(++cur)>{}, "");
+        REQUIRE(std::addressof(cur++) == std::addressof(cur));
     };
 }
