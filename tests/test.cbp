@@ -58,6 +58,7 @@
 		<Unit filename="../include/saga/expected/unexpected.hpp" />
 		<Unit filename="../include/saga/functional.hpp" />
 		<Unit filename="../include/saga/iterator.hpp" />
+		<Unit filename="../include/saga/iterator/ostream_joiner.hpp" />
 		<Unit filename="../include/saga/iterator/reverse.hpp" />
 		<Unit filename="../include/saga/math.hpp" />
 		<Unit filename="../include/saga/math/probability.hpp" />
