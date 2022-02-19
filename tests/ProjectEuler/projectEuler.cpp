@@ -268,3 +268,50 @@ namespace
     static_assert(projectEuler_005(10) == 2520, "");
     static_assert(projectEuler_005(20) == 232792560, "");
 }
+
+// PE 007: 10001 Простое число
+namespace
+{
+    template <class IntType>
+    bool is_coprime_with_sorted(IntType const num, std::vector<IntType> const & values)
+    {
+        for(auto const & value : values)
+        {
+            if(value * value > num)
+            {
+                break;
+            }
+
+            if(num % value == 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    template <class IntType>
+    IntType projectEuler_007(IntType const count)
+    {
+        assert(count > 0);
+
+        std::vector<IntType> primes{2};
+
+        for(auto num = IntType{3}; primes.size() < static_cast<std::size_t>(count); num += 2)
+        {
+            if(::is_coprime_with_sorted(num, primes))
+            {
+                primes.push_back(num);
+            }
+        }
+
+        return primes.back();
+    }
+}
+
+TEST_CASE("ProjectEuler: 007")
+{
+    REQUIRE(projectEuler_007(6) == 13);
+    REQUIRE(projectEuler_007(10001) == 104743);
+}
