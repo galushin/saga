@@ -32,7 +32,6 @@ SAGA -- это свободной программное обеспечение:
 #include <algorithm>
 #include <iterator>
 #include <sstream>
-#include <tuple>
 #include <type_traits>
 
 // @todo Разбить на более мелкие файлы (в духе: один класс -- один файл)
@@ -232,6 +231,44 @@ namespace saga_test
         struct is_sequence_container<T, std::void_t<typename T::value_type, typename T::iterator>>
          : std::is_constructible<T, typename T::value_type const *, typename T::value_type const *>
         {};
+
+        template <class T>
+        struct arbitrary_tuple_like_constructible
+        {
+            using value_type = T;
+
+            template <class UniformRandomBitGenerator, std::size_t... Ints>
+            static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg
+                                       , std::index_sequence<Ints...>)
+            {
+                return value_type(arbitrary<std::tuple_element_t<Ints, value_type>>::generate(generation, urbg)...);
+            }
+
+            template <class UniformRandomBitGenerator>
+            static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+            {
+                return generate(generation, urbg
+                               , std::make_index_sequence<std::tuple_size<T>::value>{});
+            }
+        };
+
+        template <class T, class Seq>
+        struct is_tuple_like_constructible_n;
+
+        template <class T, std::size_t... Ints>
+        struct is_tuple_like_constructible_n<T, std::index_sequence<Ints...>>
+         : std::is_constructible<T, std::tuple_element_t<Ints, T>...>
+        {};
+
+        template <class T, class SFINAE = void>
+        struct is_tuple_like_constructible
+         : std::false_type
+        {};
+
+        template <class T>
+        struct is_tuple_like_constructible<T, std::void_t<decltype(std::tuple_size<T>::value)>>
+         : is_tuple_like_constructible_n<T, std::make_index_sequence<std::tuple_size<T>::value>>
+        {};
     }
     // namespace detail
 
@@ -302,31 +339,10 @@ namespace saga_test
         }
     };
 
-    template <class... Types>
-    struct arbitrary<std::tuple<Types...>>
-    {
-    public:
-        using value_type = std::tuple<Types...>;
-
-        template <class UniformRandomBitGenerator>
-        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
-        {
-            return std::make_tuple(arbitrary<Types>::generate(std::move(generation), urbg)...);
-        }
-    };
-
-    template <class T1, class T2>
-    struct arbitrary<std::pair<T1, T2>>
-    {
-        using value_type = std::pair<T1, T2>;
-
-        template <class UniformRandomBitGenerator>
-        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
-        {
-            return std::make_pair(arbitrary<T1>::generate(generation, urbg)
-                                  , arbitrary<T2>::generate(generation, urbg));
-        }
-    };
+    template <class T>
+    struct arbitrary<T, std::enable_if_t<detail::is_tuple_like_constructible<T>{}>>
+     : detail::arbitrary_tuple_like_constructible<T>
+    {};
 
     template <class IntType>
     struct arbitrary<container_size<IntType>>
@@ -345,19 +361,6 @@ namespace saga_test
             std::uniform_int_distribution<IntType> distr(0, generation);
 
             return {distr(urbg)};
-        }
-    };
-
-    template <class T, class Tag>
-    struct arbitrary<saga::regular_tracer<T, Tag>>
-    {
-    public:
-        using value_type = saga::regular_tracer<T, Tag>;
-
-        template <class UniformRandomBitGenerator>
-        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
-        {
-            return value_type(saga_test::arbitrary<T>::generate(generation, urbg));
         }
     };
 
