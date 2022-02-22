@@ -196,5 +196,16 @@ namespace saga
 }
 // namespace saga
 
+template <class T, class Tag>
+struct std::tuple_size<saga::regular_tracer<T, Tag>>
+ : std::integral_constant<std::size_t, 1>
+{};
+
+template <class T, class Tag>
+struct std::tuple_element<0, saga::regular_tracer<T, Tag>>
+{
+    using type = T;
+};
+
 #endif
 // Z_SAGA_TEST_REGULAR_TRACER_HPP_INCLUDED
