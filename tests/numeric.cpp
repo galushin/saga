@@ -33,7 +33,7 @@ SAGA -- это свободной программное обеспечение:
 // Тесты
 TEST_CASE("iota")
 {
-    using Value = int;
+    using Value = unsigned int;
 
     saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
     {
