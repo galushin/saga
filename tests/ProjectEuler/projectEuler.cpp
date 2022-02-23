@@ -24,8 +24,10 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/filter.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/cursor/take_while.hpp>
+#include <saga/cursor/transform.hpp>
 #include <saga/pipes/filter.hpp>
 #include <saga/pipes/for_each.hpp>
+#include <saga/pipes/transform.hpp>
 #include <saga/numeric.hpp>
 #include <saga/utility/exchange.hpp>
 #include <saga/view/indices.hpp>
@@ -51,10 +53,8 @@ namespace
     }
 
     template <class IntType>
-    constexpr IntType sum_of_multiples_below(IntType d, IntType n_max)
+    constexpr IntType sum_of_first_natural_numbers(IntType num)
     {
-        auto const num = (n_max - 1) / d;
-
         if(num <= 0)
         {
             return 0;
@@ -62,12 +62,18 @@ namespace
 
         if(num % 2 == 0)
         {
-            return num / 2 * (num + 1) * d;
+            return num / 2 * (num + 1);
         }
         else
         {
-            return (num + 1) / 2 * num * d;
+            return (num + 1) / 2 * num;
         }
+    }
+
+    template <class IntType>
+    constexpr IntType sum_of_multiples_below(IntType d, IntType n_max)
+    {
+        return ::sum_of_first_natural_numbers((n_max - 1) / d) * d;
     }
 
     template <class IntType>
@@ -268,6 +274,107 @@ namespace
     static_assert(projectEuler_005(10) == 2520, "");
     static_assert(projectEuler_005(20) == 232792560, "");
 }
+
+// PE 006: Разность сумм квадратов
+#include <saga/math.hpp>
+
+namespace
+{
+    template <class IntType>
+    constexpr IntType projectEuler_006_sum_cursor(IntType num)
+    {
+        return saga::accumulate(saga::cursor::all(saga::view::indices(1, num+1)), IntType{0});
+    }
+
+    template <class IntType>
+    constexpr IntType projectEuler_006_sum_pipes(IntType num)
+    {
+        auto result = IntType{0};
+        auto accumulator = [&result](IntType const & arg) { result += arg; };
+
+        saga::copy(saga::cursor::all(saga::view::indices(1, num+1))
+                   , saga::pipes::for_each(accumulator));
+
+        return result;
+    }
+
+    template <class IntType>
+    constexpr IntType projectEuler_006_sum_squares_cursor(IntType num)
+    {
+        auto values = saga::cursor::all(saga::view::indices(1, num+1));
+
+        return saga::accumulate(saga::cursor::transform(values, saga::square), IntType{0});
+    }
+
+    template <class IntType>
+    constexpr IntType projectEuler_006_sum_squares_pipes(IntType num)
+    {
+        auto result = IntType{0};
+        auto accumulator = [&result](IntType const & arg) { result += arg; };
+
+        saga::copy(saga::cursor::all(saga::view::indices(1, num+1))
+                   , saga::pipes::transform(saga::pipes::for_each(accumulator), saga::square));
+
+        return result;
+    }
+
+    template <class IntType>
+    constexpr IntType projectEuler_006_sum_squares_formula(IntType num)
+    {
+        auto P = ::sum_of_first_natural_numbers(num);
+
+        if(P % 3 == 0)
+        {
+            return P / 3 * (2 * num + 1);
+        }
+        else
+        {
+            return (2 * num + 1) / 3 * P;
+        }
+    }
+
+    template <class IntType>
+    constexpr IntType projectEuler_006_cursor(IntType num)
+    {
+        return saga::square(::projectEuler_006_sum_cursor(num))
+                - ::projectEuler_006_sum_squares_cursor(num);
+    }
+
+    template <class IntType>
+    constexpr IntType projectEuler_006_pipes(IntType num)
+    {
+        return saga::square(::projectEuler_006_sum_pipes(num))
+                - ::projectEuler_006_sum_squares_pipes(num);
+    }
+
+    template <class IntType>
+    constexpr IntType projectEuler_006_formula(IntType num)
+    {
+        return saga::square(::sum_of_first_natural_numbers(num))
+                - ::projectEuler_006_sum_squares_formula(num);
+    }
+}
+
+static_assert(::projectEuler_006_sum_cursor(10) == 55, "");
+static_assert(::projectEuler_006_sum_pipes(10) == 55, "");
+static_assert(::sum_of_first_natural_numbers(10) == 55, "");
+
+static_assert(saga::square(::projectEuler_006_sum_cursor(10)) == 3025, "");
+static_assert(saga::square(::projectEuler_006_sum_pipes(10)) == 3025, "");
+static_assert(saga::square(::sum_of_first_natural_numbers(10)) == 3025, "");
+
+static_assert(::projectEuler_006_sum_squares_cursor(10) == 385, "");
+static_assert(::projectEuler_006_sum_squares_pipes(10) == 385, "");
+static_assert(::projectEuler_006_sum_squares_formula(10) == 385, "");
+
+static_assert(::projectEuler_006_cursor(10) == 2640, "");
+static_assert(::projectEuler_006_cursor(100) == 25164150, "");
+
+static_assert(::projectEuler_006_formula(10) == 2640, "");
+static_assert(::projectEuler_006_formula(100) == 25164150, "");
+
+static_assert(::projectEuler_006_pipes(10) == 2640, "");
+static_assert(::projectEuler_006_pipes(100) == 25164150, "");
 
 // PE 007: 10001 Простое число
 namespace

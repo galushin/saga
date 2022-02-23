@@ -38,8 +38,7 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
-    // @todo Должно быть inline
-    constexpr std::ptrdiff_t dynamic_extent = -1;
+    inline constexpr std::ptrdiff_t dynamic_extent = -1;
 
     namespace detail
     {
