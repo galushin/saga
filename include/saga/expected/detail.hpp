@@ -694,8 +694,7 @@ namespace saga
             }
 
             // Немодифицирующие операции
-            // @todo constexpr - требуется constexpr для std::addressof
-            const Value * operator->() const
+            constexpr const Value * operator->() const
             {
                 assert(this->has_value());
 
