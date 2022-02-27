@@ -19,6 +19,7 @@ SAGA -- это свободной программное обеспечение:
 #define Z_SAGA_NUMERIC_HPP_INCLUDED
 
 #include <saga/algorithm/result_types.hpp>
+#include <saga/algorithm.hpp>
 #include <saga/cursor/cursor_traits.hpp>
 #include <saga/functional.hpp>
 
@@ -305,6 +306,54 @@ namespace saga
         }
     };
 
+    struct mark_eratosthenes_seive_fn
+    {
+        template <class RandomAccessCursor, class Size>
+        void operator()(RandomAccessCursor cur, Size factor) const
+        {
+            assert(!!cur);
+
+            *cur = false;
+
+            for(; cur.size() > factor;)
+            {
+                cur.drop_front(factor);
+                *cur = false;
+            }
+        }
+    };
+
+    struct eratosthenes_seive_fn
+    {
+        template <class RandomAccessCursor>
+        void operator()(RandomAccessCursor const cur) const
+        {
+            using Size = typename RandomAccessCursor::difference_type;
+
+            auto const num = cur.size();
+
+            saga::fill_fn{}(cur, true);
+
+            auto index = Size(0);
+            auto index_square = Size(3);
+            auto factor = Size(3);
+
+            for(; index_square < num;)
+            {
+                if(cur[index])
+                {
+                    saga::mark_eratosthenes_seive_fn{}(saga::cursor::drop_front_n(cur, index_square)
+                                                      , factor);
+                }
+                ++ index;
+
+                index_square += factor;
+                factor += Size(2);
+                index_square += factor;
+            }
+        }
+    };
+
     inline constexpr auto const iota          = iota_fn{};
     inline constexpr auto const accumulate    = accumulate_fn{};
     inline constexpr auto const inner_product = inner_product_fn{};
@@ -318,6 +367,9 @@ namespace saga
     inline constexpr auto const transform_inclusive_scan = transform_inclusive_scan_fn{};
 
     inline constexpr auto const lcm = lcm_fn{};
+
+    inline constexpr auto const mark_eratosthenes_seive = mark_eratosthenes_seive_fn{};
+    inline constexpr auto const eratosthenes_seive = eratosthenes_seive_fn{};
 }
 // namespace saga
 

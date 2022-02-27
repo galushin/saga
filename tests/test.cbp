@@ -49,6 +49,7 @@
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
 		<Unit filename="../include/saga/cursor/take.hpp" />
 		<Unit filename="../include/saga/cursor/take_while.hpp" />
+		<Unit filename="../include/saga/cursor/transform.hpp" />
 		<Unit filename="../include/saga/defs.hpp" />
 		<Unit filename="../include/saga/detail/default_ctor_enabler.hpp" />
 		<Unit filename="../include/saga/detail/swap_adl_enabler.hpp" />
@@ -79,6 +80,7 @@
 		<Unit filename="../include/saga/optimization/test_objectives.hpp" />
 		<Unit filename="../include/saga/pipes/filter.hpp" />
 		<Unit filename="../include/saga/pipes/for_each.hpp" />
+		<Unit filename="../include/saga/pipes/transform.hpp" />
 		<Unit filename="../include/saga/random/any_distribution.hpp" />
 		<Unit filename="../include/saga/random/iid_distribution.hpp" />
 		<Unit filename="../include/saga/ranges.hpp" />

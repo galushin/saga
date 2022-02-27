@@ -32,6 +32,8 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/utility/exchange.hpp>
 #include <saga/view/indices.hpp>
 
+#include <vector>
+
 // Тесты
 // PE 001 : сумма кратных 3 или 5
 namespace
@@ -421,4 +423,72 @@ TEST_CASE("ProjectEuler: 007")
 {
     REQUIRE(projectEuler_007(6) == 13);
     REQUIRE(projectEuler_007(10001) == 104743);
+}
+
+// PE 010: Суммирование простых чисел
+namespace
+{
+    template <class IntType, class OutputCursor, class Seive = std::vector<unsigned short>>
+    OutputCursor
+    copy_primes_below(IntType n_max, OutputCursor out)
+    {
+        if(n_max < IntType(3))
+        {
+            return out;
+        }
+
+        out << IntType(2);
+
+        if(n_max == IntType(3))
+        {
+            return out;
+        }
+
+        auto const N_seive = (n_max - 3)/2;
+
+        Seive seive(N_seive, true);
+
+        saga::eratosthenes_seive(saga::cursor::all(seive));
+
+        for(auto index = IntType(0); index < N_seive; ++ index)
+        {
+            if(seive[index])
+            {
+                out << 2*index + 3;
+            }
+        }
+
+        return out;
+    }
+
+    template <class IntType>
+    std::vector<IntType>
+    primes_below(IntType n_max)
+    {
+        std::vector<IntType> primes;
+
+        ::copy_primes_below(std::move(n_max), saga::back_inserter(primes));
+
+        return primes;
+    }
+
+    template <class IntType>
+    IntType projectEuler_010(IntType n_max)
+    {
+        auto primes = ::primes_below(n_max);
+
+        return saga::reduce(saga::cursor::all(primes));
+    }
+}
+
+TEST_CASE("ProjectEuler: 010")
+{
+    CHECK(::primes_below(1).empty());
+    CHECK(::primes_below(2).empty());
+
+    CHECK(::primes_below(3).size() == 1);
+    CHECK(::primes_below(3).front() == 2);
+
+    REQUIRE(::projectEuler_010(10) == 17);
+    REQUIRE(::projectEuler_010(2'000'000LL) == 142913828922);
 }
