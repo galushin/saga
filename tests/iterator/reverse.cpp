@@ -470,7 +470,7 @@ TEST_CASE("reverse_iterator : dereference")
 
         static_assert(::check_reverse_iterator_dereference_constexpr(arr), "");
 
-        constexpr auto const r_iter = saga::make_reverse_iterator(saga::begin(arr));
+        constexpr auto const r_iter = saga::make_reverse_iterator(saga::end(arr));
 
         static_assert(r_iter.operator->() == &(*r_iter), "");
     }
