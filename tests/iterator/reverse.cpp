@@ -460,17 +460,19 @@ namespace
         auto const r_iter = saga::make_reverse_iterator(iter);
 
         return (*r_iter == *iter - 1);
-
-        // Нужен constexpr для std::addressof: static_assert(r_iter.operator->() == &(*r_iter), "");
     }
 }
 
 TEST_CASE("reverse_iterator : dereference")
 {
     {
-        constexpr int arr[] = {1, 2, 3, 4, 5};
+        static constexpr int arr[] = {1, 2, 3, 4, 5};
 
         static_assert(::check_reverse_iterator_dereference_constexpr(arr), "");
+
+        constexpr auto const r_iter = saga::make_reverse_iterator(saga::end(arr));
+
+        static_assert(r_iter.operator->() == &(*r_iter), "");
     }
 
     saga_test::property_checker

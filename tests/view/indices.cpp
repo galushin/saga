@@ -125,10 +125,19 @@ TEST_CASE("iota_iterator : postfix ++ and --")
     };
 }
 
+namespace
+{
+    using Value = int;
+
+    static constexpr auto value = Value(17);
+
+    static constexpr auto iter = saga::iota_iterator<Value>(value);
+
+    static_assert(iter.operator->() == std::addressof(*iter), "");
+}
+
 TEST_CASE("iota_iterator : operator->")
 {
-    // @todo constexpr, требует constexpr для std::addressof
-
     using Value = int;
     saga_test::property_checker << [](Value value)
     {

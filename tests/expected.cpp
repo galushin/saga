@@ -2536,6 +2536,9 @@ TEST_CASE("expected::swap")
 // 4.5 Свойства
 namespace
 {
+    constexpr static saga::expected<int, bool> obj(42);
+    static_assert(obj.operator->() == std::addressof(*obj), "");
+
     template <class Expected>
     void check_expected_with_error_value_throws(Expected && obj)
     {
