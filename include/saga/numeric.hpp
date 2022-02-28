@@ -135,7 +135,7 @@ namespace saga
         template <class InputCursor
                   , class Value = cursor_value_t<InputCursor>
                   , class BinaryOperation = std::plus<>>
-        Value
+        constexpr Value
         operator()(InputCursor cur, Value init_value = {}, BinaryOperation bin_op = {}) const
         {
             return accumulate_fn{}(std::move(cur), std::move(init_value), std::move(bin_op));

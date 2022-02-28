@@ -28,6 +28,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/pipes/filter.hpp>
 #include <saga/pipes/for_each.hpp>
 #include <saga/pipes/transform.hpp>
+#include <saga/math.hpp>
 #include <saga/numeric.hpp>
 #include <saga/utility/exchange.hpp>
 #include <saga/view/indices.hpp>
@@ -55,27 +56,9 @@ namespace
     }
 
     template <class IntType>
-    constexpr IntType sum_of_first_natural_numbers(IntType num)
-    {
-        if(num <= 0)
-        {
-            return 0;
-        }
-
-        if(num % 2 == 0)
-        {
-            return num / 2 * (num + 1);
-        }
-        else
-        {
-            return (num + 1) / 2 * num;
-        }
-    }
-
-    template <class IntType>
     constexpr IntType sum_of_multiples_below(IntType d, IntType n_max)
     {
-        return ::sum_of_first_natural_numbers((n_max - 1) / d) * d;
+        return saga::triangular_number((n_max - 1) / d) * d;
     }
 
     template <class IntType>
@@ -94,7 +77,7 @@ namespace
                       , saga::back_inserter(tmp)
                       , [](IntType const & num) { return num % 3 == 0 || num % 5 == 0; });
 
-        return saga::accumulate(saga::cursor::all(tmp), IntType(0));
+        return saga::reduce(saga::cursor::all(tmp));
     }
 
     template <class IntType>
@@ -104,7 +87,7 @@ namespace
 
         auto input = saga::cursor::filter(saga::cursor::all(saga::view::indices(n_max)), pred);
 
-        return saga::accumulate(std::move(input), IntType(0));
+        return saga::reduce(std::move(input));
     }
 
     template <class IntType>
@@ -149,7 +132,8 @@ namespace
     {
     public:
         // Типы
-        using reference = IntType const &;
+        using value_type = IntType;
+        using reference = value_type const &;
 
         // Создание, копирование, уничтожение
         constexpr fibonacci_sequence(IntType num1, IntType num2)
@@ -188,7 +172,7 @@ namespace
         auto input
             = saga::cursor::take_while(fib_even, [&](IntType const & arg) { return arg <= n_max; });
 
-        return saga::accumulate(std::move(input), IntType{0});
+        return saga::reduce(std::move(input), IntType{0});
     }
 
     template <class IntType>
@@ -201,7 +185,7 @@ namespace
         auto input = saga::cursor::filter(std::move(fib_below_n_max)
                                           , [](IntType const & arg) { return arg % 2 == 0; });
 
-        return saga::accumulate(std::move(input), IntType{0});
+        return saga::reduce(std::move(input), IntType{0});
     }
 
     template <class IntType>
@@ -269,6 +253,7 @@ namespace
         using Iterator = saga::iota_iterator<IntType>;
         using Cursor = saga::subrange_cursor<Iterator>;
 
+        // @todo cursor::iota(2, num)
         return saga::accumulate(Cursor(Iterator(2), Iterator(num), saga::unsafe_tag_t{})
                                 , IntType{1}, saga::lcm);
     }
@@ -285,7 +270,7 @@ namespace
     template <class IntType>
     constexpr IntType projectEuler_006_sum_cursor(IntType num)
     {
-        return saga::accumulate(saga::cursor::all(saga::view::indices(1, num+1)), IntType{0});
+        return saga::reduce(saga::cursor::all(saga::view::indices(1, num+1)), IntType{0});
     }
 
     template <class IntType>
@@ -305,7 +290,7 @@ namespace
     {
         auto values = saga::cursor::all(saga::view::indices(1, num+1));
 
-        return saga::accumulate(saga::cursor::transform(values, saga::square), IntType{0});
+        return saga::reduce(saga::cursor::transform(values, saga::square), IntType{0});
     }
 
     template <class IntType>
@@ -323,7 +308,7 @@ namespace
     template <class IntType>
     constexpr IntType projectEuler_006_sum_squares_formula(IntType num)
     {
-        auto P = ::sum_of_first_natural_numbers(num);
+        auto P = saga::triangular_number(num);
 
         if(P % 3 == 0)
         {
@@ -352,18 +337,18 @@ namespace
     template <class IntType>
     constexpr IntType projectEuler_006_formula(IntType num)
     {
-        return saga::square(::sum_of_first_natural_numbers(num))
+        return saga::square(saga::triangular_number(num))
                 - ::projectEuler_006_sum_squares_formula(num);
     }
 }
 
 static_assert(::projectEuler_006_sum_cursor(10) == 55, "");
 static_assert(::projectEuler_006_sum_pipes(10) == 55, "");
-static_assert(::sum_of_first_natural_numbers(10) == 55, "");
+static_assert(saga::triangular_number(10) == 55, "");
 
 static_assert(saga::square(::projectEuler_006_sum_cursor(10)) == 3025, "");
 static_assert(saga::square(::projectEuler_006_sum_pipes(10)) == 3025, "");
-static_assert(saga::square(::sum_of_first_natural_numbers(10)) == 3025, "");
+static_assert(saga::square(saga::triangular_number(10)) == 3025, "");
 
 static_assert(::projectEuler_006_sum_squares_cursor(10) == 385, "");
 static_assert(::projectEuler_006_sum_squares_pipes(10) == 385, "");

@@ -32,6 +32,7 @@ namespace saga
     {
     public:
         // Типы
+        using value_type = cursor_value_t<Cursor>;
         using reference = cursor_reference_t<Cursor>;
 
         // Создание, копирование, уничтожение
