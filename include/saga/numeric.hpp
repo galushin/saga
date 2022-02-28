@@ -21,6 +21,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/algorithm/result_types.hpp>
 #include <saga/algorithm.hpp>
 #include <saga/cursor/cursor_traits.hpp>
+#include <saga/cursor/subrange.hpp>
 #include <saga/functional.hpp>
 
 #include <functional>
@@ -135,7 +136,7 @@ namespace saga
         template <class InputCursor
                   , class Value = cursor_value_t<InputCursor>
                   , class BinaryOperation = std::plus<>>
-        Value
+        constexpr Value
         operator()(InputCursor cur, Value init_value = {}, BinaryOperation bin_op = {}) const
         {
             return accumulate_fn{}(std::move(cur), std::move(init_value), std::move(bin_op));
@@ -354,6 +355,58 @@ namespace saga
         }
     };
 
+    struct copy_primes_below_fn
+    {
+        template <class IntType, class OutputCursor>
+        OutputCursor
+        operator()(IntType n_max, OutputCursor out) const
+        {
+            using Seive = std::vector<unsigned short>;
+
+            if(n_max < IntType(3))
+            {
+                return out;
+            }
+
+            out << IntType(2);
+
+            if(n_max == IntType(3))
+            {
+                return out;
+            }
+
+            auto const N_seive = (n_max - 3)/2;
+
+            Seive seive(N_seive, true);
+
+            saga::eratosthenes_seive_fn{}(saga::cursor::all(seive));
+
+            for(auto index = IntType(0); index < N_seive; ++ index)
+            {
+                if(seive[index])
+                {
+                    out << 2*index + 3;
+                }
+            }
+
+            return out;
+        }
+    };
+
+    struct primes_below_fn
+    {
+        template <class IntType>
+        std::vector<IntType>
+        operator()(IntType n_max) const
+        {
+            std::vector<IntType> primes;
+
+            saga::copy_primes_below_fn{}(std::move(n_max), saga::back_inserter(primes));
+
+            return primes;
+        }
+    };
+
     inline constexpr auto const iota          = iota_fn{};
     inline constexpr auto const accumulate    = accumulate_fn{};
     inline constexpr auto const inner_product = inner_product_fn{};
@@ -370,6 +423,8 @@ namespace saga
 
     inline constexpr auto const mark_eratosthenes_seive = mark_eratosthenes_seive_fn{};
     inline constexpr auto const eratosthenes_seive = eratosthenes_seive_fn{};
+    inline constexpr auto const copy_primes_below = copy_primes_below_fn{};
+    inline constexpr auto const primes_below = primes_below_fn{};
 }
 // namespace saga
 

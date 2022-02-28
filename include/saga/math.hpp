@@ -59,8 +59,27 @@ namespace saga
         }
     };
 
+    struct triangular_number_fn
+    {
+        template <class IntType>
+        constexpr IntType operator()(IntType num) const
+        {
+            assert(num >= 0);
+
+            if(num % 2 == 0)
+            {
+                return num / 2 * (num + 1);
+            }
+            else
+            {
+                return (num + 1) / 2 * num;
+            }
+        }
+    };
+
     inline constexpr auto const abs = saga::absolute_value{};
     inline constexpr auto const square = saga::square_fn{};
+    inline constexpr auto const triangular_number = triangular_number_fn{};
 }
 //namespace saga
 

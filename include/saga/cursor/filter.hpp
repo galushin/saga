@@ -31,6 +31,7 @@ namespace saga
     public:
         // Типы
         using reference = cursor_reference_t<InputCursor>;
+        using value_type = cursor_value_t<InputCursor>;
 
         // Создание, копирование, уничтожение
         constexpr explicit filter_cursor(InputCursor cur, UnaryPredicate pred)
