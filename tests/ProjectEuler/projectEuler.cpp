@@ -34,6 +34,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/view/indices.hpp>
 
 #include <vector>
+#include <optional>
 
 // Тесты
 // PE 001 : сумма кратных 3 или 5
