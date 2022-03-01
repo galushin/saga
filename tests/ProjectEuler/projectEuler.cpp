@@ -243,6 +243,46 @@ namespace
     static_assert(projectEuler_003(600851475143) == 6857, "");
 }
 
+// PE 004: Наибольшее палиндромное произведение
+namespace
+{
+    template <class IntType>
+    std::optional<IntType>
+    projectEuler_004(IntType first, IntType last)
+    {
+        std::optional<IntType> result(std::nullopt);
+
+        for(auto lhs = last; lhs != first; -- lhs)
+        {
+            for(auto rhs = lhs; rhs != first; -- rhs)
+            {
+                auto const prod = lhs * rhs;
+
+                if(result.has_value() && prod < result.value())
+                {
+                    break;
+                }
+
+                auto const str = std::to_string(prod);
+
+                if(saga::is_palindrome(saga::cursor::all(str))
+                   && (!result.has_value() || result.value() < prod))
+                {
+                    result = prod;
+                }
+            }
+        }
+
+        return result;
+    }
+}
+
+TEST_CASE("ProjectEuler: 004")
+{
+    CHECK(::projectEuler_004(10, 100).value() == 9009);
+    CHECK(::projectEuler_004(100, 1000).value() == 906609);
+}
+
 // PE 005: Наименьшее кратное
 namespace
 {
@@ -250,11 +290,7 @@ namespace
     constexpr
     IntType projectEuler_005(IntType num)
     {
-        using Iterator = saga::iota_iterator<IntType>;
-        using Cursor = saga::subrange_cursor<Iterator>;
-
-        // @todo cursor::iota(2, num)
-        return saga::accumulate(Cursor(Iterator(2), Iterator(num), saga::unsafe_tag_t{})
+        return saga::accumulate(saga::cursor::all(saga::view::indices(2, num))
                                 , IntType{1}, saga::lcm);
     }
 
@@ -305,6 +341,7 @@ namespace
         return result;
     }
 
+    // Square pyramidal number
     template <class IntType>
     constexpr IntType projectEuler_006_sum_squares_formula(IntType num)
     {
