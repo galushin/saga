@@ -5745,3 +5745,53 @@ TEST_CASE("for_n: constexpr")
 
     static_assert(::add_via_counter(initial, num) == initial + num, "");
 }
+
+TEST_CASE("is_palindrome : subrange, default predicate")
+{
+    using Container = std::list<int>;
+
+    saga_test::property_checker << [](Container const & values)
+    {
+        auto const src = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        Container src_r(src.begin(), src.end());
+        src_r.reverse();
+
+        REQUIRE(saga::is_palindrome(src) == saga::equal(src, saga::cursor::all(src_r)));
+    };
+}
+
+TEST_CASE("is_palindrome: always true")
+{
+    using Container = std::list<int>;
+
+    saga_test::property_checker << [](Container const & values)
+    {
+        Container values_p(values);
+        saga::reverse_copy(saga::cursor::all(values), saga::back_inserter(values_p));
+
+        REQUIRE(saga::is_palindrome(saga::cursor::all(values_p)));
+    };
+}
+
+TEST_CASE("is_palindrome : subrange, custom predicate")
+{
+    using Value = int;
+    using Container = std::list<Value>;
+
+    saga_test::property_checker << [](Container const & values)
+    {
+        auto const bin_pred = [](Value const & lhs, Value const & rhs)
+        {
+            return lhs % 5 == rhs % 5;
+        };
+
+        auto const src = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        Container src_r(src.begin(), src.end());
+        src_r.reverse();
+
+        REQUIRE(saga::is_palindrome(src, bin_pred)
+                == saga::equal(src, saga::cursor::all(src_r), bin_pred));
+    };
+}

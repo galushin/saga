@@ -2329,6 +2329,38 @@ namespace saga
         }
     };
 
+    struct is_palindrome_fn
+    {
+        template <class BidirectionalCursor, class BinaryPredicate = std::equal_to<>>
+        bool operator()(BidirectionalCursor cur, BinaryPredicate bin_pred = {}) const
+        {
+            if(!cur)
+            {
+                return true;
+            }
+
+            for(;!!cur; ++ cur)
+            {
+                auto next = cur;
+                next.drop_back();
+
+                if(!next)
+                {
+                    break;
+                }
+
+                if(saga::invoke(bin_pred, cur.front(), cur.back()) != true)
+                {
+                    return false;
+                }
+
+                cur = std::move(next);
+            }
+
+            return true;
+        }
+    };
+
     // Функциональные объекты
     inline constexpr auto const all_of = all_of_fn{};
     inline constexpr auto const any_of = any_of_fn{};
@@ -2428,6 +2460,8 @@ namespace saga
 
     inline constexpr auto const starts_with = starts_with_fn{};
     inline constexpr auto const ends_with = ends_with_fn{};
+
+    inline constexpr auto const is_palindrome = is_palindrome_fn{};
 
     inline constexpr auto const for_n = for_n_fn{};
 }
