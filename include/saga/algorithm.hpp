@@ -2361,6 +2361,37 @@ namespace saga
         }
     };
 
+    struct adjacent_count_fn
+    {
+        template <class ForwardCursor, class BinaryPredicate = std::equal_to<>>
+        cursor_difference_t<ForwardCursor>
+        operator()(ForwardCursor cur, BinaryPredicate bin_pred = {}) const
+        {
+            cursor_difference_t<ForwardCursor> result(0);
+
+            if(!cur)
+            {
+                return result;
+            }
+
+            auto cur_2 = cur;
+            ++ cur_2;
+
+            for(; !!cur_2; ++cur_2)
+            {
+                if(saga::invoke(bin_pred, *cur, *cur_2))
+                {
+                    ++ result;
+                }
+
+                cur = cur_2;
+            }
+
+            return result;
+        }
+
+    };
+
     // Функциональные объекты
     inline constexpr auto const all_of = all_of_fn{};
     inline constexpr auto const any_of = any_of_fn{};
@@ -2462,6 +2493,7 @@ namespace saga
     inline constexpr auto const ends_with = ends_with_fn{};
 
     inline constexpr auto const is_palindrome = is_palindrome_fn{};
+    inline constexpr auto const adjacent_count = adjacent_count_fn{};
 
     inline constexpr auto const for_n = for_n_fn{};
 }

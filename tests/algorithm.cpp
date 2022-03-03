@@ -5795,3 +5795,66 @@ TEST_CASE("is_palindrome : subrange, custom predicate")
                 == saga::equal(src, saga::cursor::all(src_r), bin_pred));
     };
 }
+
+#include <saga/numeric.hpp>
+
+TEST_CASE("adjacent_count: default predicate")
+{
+    using Value = int;
+    using Container = std::forward_list<Value>;
+
+    saga_test::property_checker <<[](Container const & values)
+    {
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        auto const actual = saga::adjacent_count(saga::cursor::all(input));
+
+        // Проверка
+        if(!input)
+        {
+            REQUIRE(actual == 0);
+        }
+        else
+        {
+            auto const input2 = saga::cursor::drop_front_n(input, 1);
+
+            auto const expected = saga::inner_product(input, input2, std::size_t{0}
+                                                       , std::plus<>{}, std::equal_to<>{});
+
+            REQUIRE(actual == expected);
+        }
+    };
+}
+
+TEST_CASE("adjacent_count: custom predicate")
+{
+    using Value = int;
+    using Container = std::forward_list<Value>;
+
+    saga_test::property_checker <<[](Container const & values)
+    {
+        auto const pred = [](Value const & lhs, Value const & rhs)
+        {
+            return lhs % 3 != rhs % 3;
+        };
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        auto const actual = saga::adjacent_count(saga::cursor::all(input), pred);
+
+        // Проверка
+        if(!input)
+        {
+            REQUIRE(actual == 0);
+        }
+        else
+        {
+            auto const input2 = saga::cursor::drop_front_n(input, 1);
+
+            auto const expected = saga::inner_product(input, input2, std::size_t{0}
+                                                       , std::plus<>{}, pred);
+
+            REQUIRE(actual == expected);
+        }
+    };
+}
