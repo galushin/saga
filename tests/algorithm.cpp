@@ -5668,7 +5668,7 @@ TEST_CASE("starts_with : prefix")
     {
         auto const prefix = str.substr(0, str.size() / 2);
 
-        REQUIRE(::saga::starts_with(str, prefix));
+        REQUIRE(::saga::starts_with(saga::cursor::all(str), saga::cursor::all(prefix)));
     };
 }
 
@@ -5680,7 +5680,7 @@ TEST_CASE("starts_with : common")
 
         CAPTURE(str, test);
 
-        REQUIRE(::saga::starts_with(str, test) == expected);
+        REQUIRE(::saga::starts_with(saga::cursor::all(str), saga::cursor::all(test)) == expected);
     };
 }
 
@@ -5690,7 +5690,7 @@ TEST_CASE("ends_with : suffix")
     {
         auto const suffix = str.substr(str.size() / 2);
 
-        REQUIRE(::saga::ends_with(str, suffix));
+        REQUIRE(::saga::ends_with(saga::cursor::all(str), saga::cursor::all(suffix)));
     };
 }
 
@@ -5703,7 +5703,21 @@ TEST_CASE("ends_with : common")
 
         CAPTURE(str, test);
 
-        REQUIRE(::saga::ends_with(str, test) == expected);
+        REQUIRE(::saga::ends_with(saga::cursor::all(str), saga::cursor::all(test)) == expected);
+    };
+}
+
+TEST_CASE("starts_with, ends_with: minimalistic")
+{
+    using Value = int;
+    using Container = std::forward_list<Value>;
+
+    saga_test::property_checker << [](Container const & str)
+    {
+        auto const input = saga::cursor::all(str);
+
+        REQUIRE(saga::starts_with(input, input));
+        REQUIRE(saga::ends_with(input, input));
     };
 }
 

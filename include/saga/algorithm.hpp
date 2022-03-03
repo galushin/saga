@@ -2248,28 +2248,29 @@ namespace saga
 
     struct starts_with_fn
     {
-        template <typename InputRange1, typename InputRange2>
-        bool operator()(InputRange1 const & input, InputRange2 const & test) const
+        template <typename InputCursor1, typename InputCursor2>
+        bool operator()(InputCursor1 input, InputCursor2 test) const
         {
-            auto const test_end = saga::end(test);
-            auto const pos = std::mismatch(saga::begin(input), saga::end(input),
-                                           saga::begin(test), test_end);
-
-            return pos.second == test_end;
+            return !saga::mismatch_fn{}(std::move(input), std::move(test)).in2;
         }
     };
 
     struct ends_with_fn
     {
     public:
-        template <typename BidirectionalRange1, typename BidirectionalRange2>
-        bool operator()(BidirectionalRange1 const & input, BidirectionalRange2 const & test) const
+        template <typename ForwardCursor1, typename ForwardCursor2>
+        bool operator()(ForwardCursor1 input, ForwardCursor2 test) const
         {
-            auto const test_end = saga::rend(test);
-            auto const pos = std::mismatch(saga::rbegin(input), saga::rend(input),
-                                           saga::rbegin(test), test_end);
+            auto const num1 = saga::cursor::size(input);
+            auto const num2 = saga::cursor::size(test);
 
-            return pos.second == test_end;
+            if(num1 < num2)
+            {
+                return false;
+            }
+
+            return saga::equal_fn{}(saga::cursor::drop_front_n(std::move(input), num1 - num2)
+                                    , std::move(test));
         }
     };
 
