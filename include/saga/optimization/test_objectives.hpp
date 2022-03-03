@@ -62,28 +62,7 @@ namespace saga
         auto operator()(Container const & arg) const
         -> typename Container::size_type
         {
-            using Size = typename Container::size_type;
-            auto result = Size(0);
-
-            auto first = saga::begin(arg);
-            auto const last = saga::end(arg);
-
-            if(first == last)
-            {
-                return result;
-            }
-
-            auto second = std::next(first);
-
-            for(; second != last;)
-            {
-                result += (*first != *second);
-
-                ++ first;
-                ++ second;
-            }
-
-            return result;
+            return saga::adjacent_count(saga::cursor::all(arg), std::not_equal_to<>{});
         }
     };
 
