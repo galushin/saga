@@ -484,10 +484,7 @@ namespace
     template <std::size_t Size>
     constexpr std::size_t projectEuler_008(char const (&str)[Size], std::size_t window)
     {
-        if(window > std::size(str))
-        {
-            return std::size_t{0};
-        }
+        assert(window <= std::size(str));
 
         auto data = saga::cursor::transform(saga::cursor::all(str), [](char c) { return c - '0'; });
 
