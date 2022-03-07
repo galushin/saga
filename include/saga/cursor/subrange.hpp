@@ -175,7 +175,7 @@ namespace saga
             return this->end() - this->begin();
         }
 
-        void drop_front(difference_type num)
+        constexpr void drop_front(difference_type num)
         {
             assert(0 <= num && num <= this->size());
 

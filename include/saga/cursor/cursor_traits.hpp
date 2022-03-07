@@ -88,6 +88,7 @@ namespace saga
                 }
 
                 template <class Cursor>
+                constexpr
                 Cursor operator()(Cursor cur, cursor_difference_t<Cursor> num
                                   , std::random_access_iterator_tag) const
                 {
@@ -98,6 +99,7 @@ namespace saga
 
             public:
                 template <class Cursor>
+                constexpr
                 Cursor operator()(Cursor cur, cursor_difference_t<Cursor> num) const
                 {
                     assert(num >= 0);

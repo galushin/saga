@@ -30,6 +30,8 @@ namespace saga
     public:
         // Типы
         using reference = saga::invoke_result_t<UnaryFunction const &, cursor_reference_t<Cursor>>;
+        using difference_type = saga::cursor_difference_t<Cursor>;
+        using cursor_category = saga::cursor_category_t<Cursor>;
 
         // Создание, копирование, уничтожение
         constexpr explicit transform_cursor(Cursor cur, UnaryFunction fun)
@@ -51,6 +53,19 @@ namespace saga
         constexpr void drop_front()
         {
             this->cur_.drop_front();
+        }
+
+        // Курсор произвольного доступа
+        constexpr difference_type size() const
+        {
+            return this->cur_.size();
+        }
+
+        constexpr void drop_front(difference_type num)
+        {
+            assert(0 <= num && num <= this->size());
+
+            this->cur_.drop_front(num);
         }
 
         // Адаптер курсора

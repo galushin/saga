@@ -48,25 +48,25 @@ namespace saga
         using cursor_category = saga::cursor_category_t<Cursor>;
 
         // Создание, копирование, уничтожение
-        explicit take_cursor(Cursor cur, Difference count)
+        constexpr explicit take_cursor(Cursor cur, Difference count)
          : base_(std::move(cur))
          , count_(std::move(count))
         {}
 
         // Курсор ввода
-        bool operator!() const
+        constexpr bool operator!() const
         {
             return !this->base_ || !(this->count_ > 0);
         }
 
-        reference front() const
+        constexpr reference front() const
         {
             assert(!!*this);
 
             return this->base_.front();
         }
 
-        void drop_front()
+        constexpr void drop_front()
         {
             assert(!!*this);
 
