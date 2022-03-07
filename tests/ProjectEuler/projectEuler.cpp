@@ -509,7 +509,8 @@ namespace
     }
 
     static_assert(::projectEuler_008(pe008_data, 4) == 5832, "");
-    static_assert(::projectEuler_008(pe008_data, 13) == 23514624000, "");
+    // @note Некоторые компиляторы упираются в лимиты реализации constexpr в более сложном тесте
+    // static_assert(::projectEuler_008(pe008_data, 13) == 23514624000, "");
 }
 
 TEST_CASE("ProjectEuler: 008")
