@@ -46,6 +46,7 @@
 		<Unit filename="../include/saga/cursor/cycle.hpp" />
 		<Unit filename="../include/saga/cursor/filter.hpp" />
 		<Unit filename="../include/saga/cursor/istream_cursor.hpp" />
+		<Unit filename="../include/saga/cursor/slide.hpp" />
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
 		<Unit filename="../include/saga/cursor/take.hpp" />
 		<Unit filename="../include/saga/cursor/take_while.hpp" />

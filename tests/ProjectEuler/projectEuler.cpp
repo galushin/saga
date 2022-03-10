@@ -516,6 +516,87 @@ TEST_CASE("ProjectEuler: 008")
     CHECK(::projectEuler_008(pe008_data, 13) == 23514624000);
 }
 
+// PE 009: Особая Пифагорова тройка
+namespace
+{
+    // @todo Обобщить, чтобы можно было использовать в PE 003
+    template <class IntType>
+    IntType remove_factor(IntType num, IntType factor)
+    {
+        for(; num % factor == 0;)
+        {
+            num /= factor;
+        }
+
+        return num;
+    }
+
+    template <class IntType>
+    constexpr IntType projectEuler_009_simple(IntType sum)
+    {
+        for(auto a : saga::view::indices(3, std::max(3, (sum - 3)/3)))
+        for(auto b : saga::view::indices(a+1, std::max(a+1, (sum - 2)/2)))
+        {
+            auto const c = sum - a - b;
+
+            if(a*a + b*b == c*c)
+            {
+                return a*b*c;
+            }
+        }
+
+        return 0;
+    }
+
+    template <class IntType>
+    constexpr IntType projectEuler_009_fast(IntType sum)
+    {
+        auto const sum_2 = sum / 2;
+
+        auto const mlimit = std::max(2, static_cast<IntType>(std::sqrt(sum)+1));
+
+        for(auto m : saga::view::indices(2, mlimit))
+        {
+            if(sum_2 % m == 0)
+            {
+                auto const sum_m = ::remove_factor(sum_2, 2);
+
+                for(auto k = m + 1 + (m % 2); k < 2*m && k <= sum_m; k += 2)
+                {
+                    if(sum_m % k == 0 && std::gcd(k, m) == 1)
+                    {
+                        auto const d = sum_2  / (k*m);
+                        auto const n = k - m;
+
+                        auto const a = d*(m*m - n*n);
+                        auto const b = 2*d*m*n;
+                        auto const c = d*(m*m + n*n);
+
+                        return a*b*c;
+                    }
+                }
+            }
+        }
+
+        return 0;
+    }
+
+    // @note Некоторые компиляторы упираются в лимиты реализации constexpr
+    // static_assert(::projectEuler_009_simple(1000) == 31875000, "");
+
+    // @note требуется constexpr sqrt
+    // static_assert(::projectEuler_009_fast(1000) == 31875000, "");
+}
+
+TEST_CASE("ProjectEuler: 009")
+{
+    CHECK(::projectEuler_009_simple(1) == 0);
+    CHECK(::projectEuler_009_simple(1000) == 31875000);
+
+    CHECK(::projectEuler_009_fast(1) == 0);
+    CHECK(::projectEuler_009_fast(1000) == 31875000);
+}
+
 // PE 010: Суммирование простых чисел
 namespace
 {
