@@ -534,8 +534,8 @@ namespace
     template <class IntType>
     constexpr IntType projectEuler_009_simple(IntType sum)
     {
-        for(auto a : saga::view::indices(3, (sum - 3)/3))
-        for(auto b : saga::view::indices(a+1, (sum - 2)/2))
+        for(auto a : saga::view::indices(3, std::max(3, (sum - 3)/3)))
+        for(auto b : saga::view::indices(a+1, std::max(a+1, (sum - 2)/2)))
         {
             auto const c = sum - a - b;
 
@@ -553,7 +553,7 @@ namespace
     {
         auto const sum_2 = sum / 2;
 
-        auto const mlimit = static_cast<IntType>(std::sqrt(sum)+1);
+        auto const mlimit = std::max(2, static_cast<IntType>(std::sqrt(sum)+1));
 
         for(auto m : saga::view::indices(2, mlimit))
         {
@@ -590,7 +590,10 @@ namespace
 
 TEST_CASE("ProjectEuler: 009")
 {
+    CHECK(::projectEuler_009_simple(1) == 0);
     CHECK(::projectEuler_009_simple(1000) == 31875000);
+
+    CHECK(::projectEuler_009_fast(1) == 0);
     CHECK(::projectEuler_009_fast(1000) == 31875000);
 }
 
