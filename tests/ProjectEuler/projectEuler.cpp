@@ -581,8 +581,10 @@ namespace
         return 0;
     }
 
-    static_assert(::projectEuler_009_simple(1000) == 31875000, "");
-    // @note Добавить (требуется constexpr sqrt)
+    // @note Некоторые компиляторы упираются в лимиты реализации constexpr
+    // static_assert(::projectEuler_009_simple(1000) == 31875000, "");
+
+    // @note требуется constexpr sqrt
     // static_assert(::projectEuler_009_fast(1000) == 31875000, "");
 }
 
