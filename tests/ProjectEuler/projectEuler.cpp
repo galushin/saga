@@ -459,7 +459,7 @@ TEST_CASE("ProjectEuler: 007")
 
 namespace
 {
-    constexpr char const pe008_data[] =
+    static constexpr char pe008_data[] =
         "73167176531330624919225119674426574742355349194934"
         "96983520312774506326239578318016984801869478851843"
         "85861560789112949495459501737958331952853208805511"
@@ -619,4 +619,172 @@ TEST_CASE("ProjectEuler: 010")
 
     REQUIRE(::projectEuler_010(10) == 17);
     REQUIRE(::projectEuler_010(2'000'000LL) == 142913828922);
+}
+
+// PE 011: Наибольшее произведение в решётке
+#include <saga/cursor/istream_cursor.hpp>
+
+namespace
+{
+    static constexpr char pe011_data[] =
+        "08 02 22 97 38 15 00 40 00 75 04 05 07 78 52 12 50 77 91 08\n"
+        "49 49 99 40 17 81 18 57 60 87 17 40 98 43 69 48 04 56 62 00\n"
+        "81 49 31 73 55 79 14 29 93 71 40 67 53 88 30 03 49 13 36 65\n"
+        "52 70 95 23 04 60 11 42 69 24 68 56 01 32 56 71 37 02 36 91\n"
+        "22 31 16 71 51 67 63 89 41 92 36 54 22 40 40 28 66 33 13 80\n"
+        "24 47 32 60 99 03 45 02 44 75 33 53 78 36 84 20 35 17 12 50\n"
+        "32 98 81 28 64 23 67 10 26 38 40 67 59 54 70 66 18 38 64 70\n"
+        "67 26 20 68 02 62 12 20 95 63 94 39 63 08 40 91 66 49 94 21\n"
+        "24 55 58 05 66 73 99 26 97 17 78 78 96 83 14 88 34 89 63 72\n"
+        "21 36 23 09 75 00 76 44 20 45 35 14 00 61 33 97 34 31 33 95\n"
+        "78 17 53 28 22 75 31 67 15 94 03 80 04 62 16 14 09 53 56 92\n"
+        "16 39 05 42 96 35 31 47 55 58 88 24 00 17 54 24 36 29 85 57\n"
+        "86 56 00 48 35 71 89 07 05 44 44 37 44 60 21 58 51 54 17 58\n"
+        "19 80 81 68 05 94 47 69 28 73 92 13 86 52 17 77 04 89 55 40\n"
+        "04 52 08 83 97 35 99 16 07 97 57 32 16 26 26 79 33 27 98 66\n"
+        "88 36 68 87 57 62 20 72 03 46 33 67 46 55 12 32 63 93 53 69\n"
+        "04 42 16 73 38 25 39 11 24 94 72 18 08 46 29 32 40 62 76 36\n"
+        "20 69 36 41 72 30 23 88 34 62 99 69 82 67 59 85 74 04 36 16\n"
+        "20 73 35 29 78 31 90 01 74 31 49 71 48 86 81 16 23 57 05 54\n"
+        "01 70 54 71 83 51 54 69 16 92 33 48 61 43 52 01 89 19 67 48\n";
+
+    template <class IntType>
+    std::vector<std::vector<IntType>>
+    projectEuler_011_parse(std::string const & src)
+    {
+        std::istringstream src_in(src);
+
+        std::vector<std::vector<IntType>> data;
+
+        std::string line;
+        for(; src_in;)
+        {
+            std::getline(src_in, line);
+
+            std::istringstream line_in(line);
+
+            std::vector<IntType> row;
+            saga::copy(saga::make_istream_cursor<IntType>(line_in), saga::back_inserter(row));
+
+            if(!row.empty())
+            {
+                data.push_back(std::move(row));
+            }
+        }
+
+        return data;
+    }
+
+    template <class IntType>
+    IntType
+    projectEuler_011_horizontal(std::vector<std::vector<IntType>> const & data
+                                , std::size_t row, std::size_t col, std::size_t num)
+    {
+        IntType result(1);
+
+        for(auto pos : saga::view::indices(0*num, num))
+        {
+            result *= data.at(row).at(col + pos);
+        }
+
+        return result;
+    }
+
+    template <class IntType>
+    IntType
+    projectEuler_011_vertical(std::vector<std::vector<IntType>> const & data
+                              , std::size_t row, std::size_t col, std::size_t num)
+    {
+        IntType result(1);
+
+        for(auto pos : saga::view::indices(0*num, num))
+        {
+            result *= data.at(row + pos).at(col);
+        }
+
+        return result;
+    }
+
+    template <class IntType>
+    IntType
+    projectEuler_011_diagonal_plus(std::vector<std::vector<IntType>> const & data
+                                   , std::size_t row, std::size_t col, std::size_t num)
+    {
+        IntType result(1);
+
+        for(auto pos : saga::view::indices(0*num, num))
+        {
+            result *= data.at(row + pos).at(col + pos);
+        }
+
+        return result;
+    }
+
+    template <class IntType>
+    IntType
+    projectEuler_011_diagonal_minus(std::vector<std::vector<IntType>> const & data
+                                    , std::size_t row, std::size_t col, std::size_t num)
+    {
+        IntType result(1);
+
+        for(auto pos : saga::view::indices(0*num, num))
+        {
+            result *= data.at(row + pos).at(col - pos);
+        }
+
+        return result;
+    }
+
+    template <class IntType>
+    IntType projectEuler_011(std::vector<std::vector<IntType>> const & data, std::size_t num)
+    {
+        assert(num > 0);
+
+        auto const rows = data.size();
+        auto const cols = data.front().size();
+
+        assert(rows >= num && cols >= num);
+
+        for(auto const & row : data)
+        {
+            assert(row.size() == cols);
+        }
+
+        auto result = IntType(1);
+
+        for(auto row : saga::view::indices(0*num, rows))
+        for(auto col : saga::view::indices(0*num, cols))
+        {
+            if(col + num <= cols)
+            {
+                result = std::max(result, ::projectEuler_011_horizontal(data, row, col, num));
+            }
+
+            if(row + num <= rows)
+            {
+                result = std::max(result, ::projectEuler_011_vertical(data, row, col, num));
+            }
+
+            if(row + num <= rows && col + num <= cols)
+            {
+                result = std::max(result, ::projectEuler_011_diagonal_plus(data, row, col, num));
+            }
+
+            if(row + num <= rows && col + 1 >= num)
+            {
+                result = std::max(result, ::projectEuler_011_diagonal_minus(data, row, col, num));
+            }
+        }
+
+        return result;
+    }
+}
+
+TEST_CASE("ProjectEuler: 011")
+{
+    auto const data = ::projectEuler_011_parse<long long>(pe011_data);
+
+    CAPTURE(data);
+
+    CHECK(projectEuler_011(data, 4) == 70600674);
 }
