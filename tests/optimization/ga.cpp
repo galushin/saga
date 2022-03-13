@@ -321,3 +321,47 @@ TEST_CASE("Gray code - generates all")
         REQUIRE(d == 1);
     }
 }
+
+TEST_CASE("bianry sequence to real: range")
+{
+    saga_test::property_checker << [](std::vector<bool> const & bits)
+    {
+        auto const result = saga::binary_sequence_to_real<double>(saga::cursor::all(bits));
+
+        REQUIRE(0 <= result);
+        REQUIRE(result < 1.0);
+    };
+}
+
+TEST_CASE("binary sequence to real: coverage")
+{
+    saga_test::property_checker << [](saga_test::bounded<unsigned, 1, 2> bit_count)
+    {
+        auto const max_value = 1 << bit_count.value();
+
+        std::vector<double> values;
+
+        for(auto const & int_value : saga::view::indices(0, max_value))
+        {
+            std::vector<bool> bits(bit_count.value(), 0);
+            saga::copy(saga::cursor::digits_of(int_value, 2), saga::cursor::all(bits));
+
+            values.push_back(saga::binary_sequence_to_real<double>(saga::cursor::all(bits)));
+        }
+
+        saga::sort(saga::cursor::all(values));
+
+        // Проверки
+        REQUIRE(!values.empty());
+
+        REQUIRE_THAT(values.front(), Catch::Matchers::WithinULP(0.0, 1));
+        REQUIRE(values.back() < 1);
+
+        auto const step = std::pow(0.5, bit_count.value());
+
+        for(auto const & index : saga::view::indices(values.size() - 1))
+        {
+            REQUIRE_THAT(values[index + 1] - values[index], Catch::Matchers::WithinULP(step, 2));
+        }
+    };
+}

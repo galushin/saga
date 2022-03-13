@@ -227,6 +227,12 @@ namespace saga
     }
 
     template <class Result, class InputCursor>
+    Result binary_sequence_to_real(InputCursor cur)
+    {
+        return saga::polynomial_horner(std::move(cur), Result(0.5), Result(0.0)) * 0.5;
+    }
+
+    template <class Result, class InputCursor>
     Result gray_code_to_integer(InputCursor cur)
     {
         auto result = Result(0);
