@@ -321,3 +321,113 @@ TEST_CASE("Gray code - generates all")
         REQUIRE(d == 1);
     }
 }
+
+TEST_CASE("bianry sequence to real: range")
+{
+    saga_test::property_checker << [](std::vector<bool> const & bits)
+    {
+        auto const result = saga::binary_sequence_to_real<double>(saga::cursor::all(bits));
+
+        REQUIRE(0 <= result);
+        REQUIRE(result < 1.0);
+    };
+}
+
+TEST_CASE("binary sequence to real: coverage")
+{
+    saga_test::property_checker << [](saga_test::bounded<unsigned, 1, 2> bit_count)
+    {
+        auto const max_value = 1 << bit_count.value();
+
+        std::vector<double> values;
+
+        for(auto const & int_value : saga::view::indices(0, max_value))
+        {
+            std::vector<bool> bits(bit_count.value(), 0);
+            saga::copy(saga::cursor::digits_of(int_value, 2), saga::cursor::all(bits));
+
+            values.push_back(saga::binary_sequence_to_real<double>(saga::cursor::all(bits)));
+        }
+
+        saga::sort(saga::cursor::all(values));
+
+        // Проверки
+        REQUIRE(!values.empty());
+
+        REQUIRE_THAT(values.front(), Catch::Matchers::WithinULP(0.0, 1));
+        REQUIRE(values.back() < 1);
+
+        auto const step = std::pow(0.5, bit_count.value());
+
+        for(auto const & index : saga::view::indices(values.size() - 1))
+        {
+            REQUIRE_THAT(values[index + 1] - values[index], Catch::Matchers::WithinULP(step, 2));
+        }
+    };
+}
+
+TEST_CASE("Gray code (real) - generates all")
+{
+    using RealType = double;
+    auto const dim = 20;
+    auto const n_max = 1 << 10;
+
+    assert(n_max > 0);
+
+    using Digit_container = std::vector<bool>;
+
+    std::map<RealType, Digit_container> codes;
+    std::vector<RealType> values;
+
+    // @todo заменить на алгоритм
+    for(auto num : saga::view::indices(n_max))
+    {
+        // Преобразуем целое в двоичный код
+        Digit_container code;
+        saga::copy(saga::cursor::digits_of(num, 2), saga::back_inserter(code));
+
+        REQUIRE(code.size() <= dim);
+
+        code.resize(dim, 0);
+        saga::reverse(saga::cursor::all(code));
+
+        // Переводим Код грея в целое число
+        auto const value = saga::gray_code_to_real<RealType>(saga::cursor::all(code));
+
+        values.push_back(value);
+
+        // Проверка вхождения значения в интервал
+        REQUIRE(0 <= value);
+        REQUIRE(value < n_max);
+
+        codes[value] = code;
+    }
+
+    // Все коды должны быть разные
+    std::sort(values.begin(), values.end());
+
+    for(auto i = 0* values.size(); i+1 != values.size(); ++ i)
+    {
+        REQUIRE(values[i] < values[i+1]);
+    }
+
+    CAPTURE(values);
+    REQUIRE(values.size() == n_max);
+    REQUIRE_THAT(values.front(), Catch::Matchers::WithinULP(0.0, 1));
+    REQUIRE(values.back() < 1.0);
+
+    // Соседним значениям должны соответствовать соседние коды, отличающиеся одним битом
+    std::vector<Digit_container> code_values;
+    for(auto const & code : codes)
+    {
+        code_values.push_back(code.second);
+    }
+
+    for(auto i = 0* code_values.size(); i+1 != code_values.size(); ++ i)
+    {
+        auto const d = saga::boolean_manhattan_distance(code_values[i], code_values[i+1]);
+
+        CAPTURE(i, code_values[i], code_values[i+1]);
+        REQUIRE(d == 1);
+    }
+}
