@@ -284,26 +284,36 @@ namespace saga
 
     struct gcd_fn
     {
-        template <class IntType>
-        constexpr IntType operator()(IntType lhs, IntType rhs) const
+        template <class IntType1, class IntType2>
+        constexpr
+        std::common_type_t<IntType1, IntType2>
+        operator()(IntType1 lhs, IntType2 rhs) const
         {
-            if(lhs == 0)
-            {
-                return rhs;
-            }
-
-            return gcd_fn{}(rhs % lhs, lhs);
+            return std::gcd(std::move(lhs), std::move(rhs));
         }
     };
 
     struct lcm_fn
     {
-        template <class IntType>
-        constexpr IntType operator()(IntType lhs, IntType rhs) const
+        template <class IntType1, class IntType2>
+        constexpr
+        std::common_type_t<IntType1, IntType2>
+        operator()(IntType1 lhs, IntType2 rhs) const
         {
+            static_assert(std::is_integral<IntType1>{}
+                          && !std::is_same<IntType1, const volatile bool>{});
+
+            static_assert(std::is_integral<IntType2>{}
+                          && !std::is_same<IntType2, const volatile bool>{});
+
             auto g = gcd_fn{}(lhs, rhs);
 
-            return (lhs / g) * rhs;
+            if(g == std::common_type_t<IntType1, IntType2>(0))
+            {
+                return g;
+            }
+
+            return (std::abs(lhs) / g) * std::abs(rhs);
         }
     };
 
@@ -419,6 +429,7 @@ namespace saga
     inline constexpr auto const transform_exclusive_scan = transform_exclusive_scan_fn{};
     inline constexpr auto const transform_inclusive_scan = transform_inclusive_scan_fn{};
 
+    inline constexpr auto const gcd = gcd_fn{};
     inline constexpr auto const lcm = lcm_fn{};
 
     inline constexpr auto const mark_eratosthenes_seive = mark_eratosthenes_seive_fn{};
