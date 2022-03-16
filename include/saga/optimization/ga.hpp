@@ -248,6 +248,25 @@ namespace saga
 
         return result;
     }
+
+    template <class Result, class InputCursor>
+    Result gray_code_to_real(InputCursor cur)
+    {
+        auto result = Result(0);
+        saga::cursor_difference_t<InputCursor> num(0);
+        bool parity = 0;
+
+        for(; !!cur; ++ cur)
+        {
+            ++ num;
+            bool value = (*cur != false);
+
+            result = 2 * result + (value != parity);
+            parity = (parity != value);
+        }
+
+        return result * std::pow(Result(0.5), num);
+    }
 }
 // namespace saga
 

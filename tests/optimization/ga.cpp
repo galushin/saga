@@ -365,3 +365,68 @@ TEST_CASE("binary sequence to real: coverage")
         }
     };
 }
+
+TEST_CASE("Gray code (real) - generates all")
+{
+    using RealType = double;
+    auto const dim = 20;
+    auto const n_max = 1 << 10;
+
+    assert(n_max > 0);
+
+    using Digit_container = std::vector<bool>;
+
+    std::map<RealType, Digit_container> codes;
+    std::vector<RealType> values;
+
+    // @todo заменить на алгоритм
+    for(auto num : saga::view::indices(n_max))
+    {
+        // Преобразуем целое в двоичный код
+        Digit_container code;
+        saga::copy(saga::cursor::digits_of(num, 2), saga::back_inserter(code));
+
+        REQUIRE(code.size() <= dim);
+
+        code.resize(dim, 0);
+        saga::reverse(saga::cursor::all(code));
+
+        // Переводим Код грея в целое число
+        auto const value = saga::gray_code_to_real<RealType>(saga::cursor::all(code));
+
+        values.push_back(value);
+
+        // Проверка вхождения значения в интервал
+        REQUIRE(0 <= value);
+        REQUIRE(value < n_max);
+
+        codes[value] = code;
+    }
+
+    // Все коды должны быть разные
+    std::sort(values.begin(), values.end());
+    values.erase(std::unique(values.begin(), values.end()
+                             , [](double const & lhs, double const & rhs)
+                             { return std::abs(lhs - rhs) < pow(0.5, n_max + 2); })
+                 , values.end());
+
+    CAPTURE(values);
+    REQUIRE(values.size() == n_max);
+    REQUIRE_THAT(values.front(), Catch::Matchers::WithinULP(0.0, 1));
+    REQUIRE(values.back() < 1.0);
+
+    // Соседним значениям должны соответствовать соседние коды, отличающиеся одним битом
+    std::vector<Digit_container> code_values;
+    for(auto const & code : codes)
+    {
+        code_values.push_back(code.second);
+    }
+
+    for(auto i = 0* code_values.size(); i+1 != code_values.size(); ++ i)
+    {
+        auto const d = saga::boolean_manhattan_distance(code_values[i], code_values[i+1]);
+
+        CAPTURE(i, code_values[i], code_values[i+1]);
+        REQUIRE(d == 1);
+    }
+}
