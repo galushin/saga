@@ -403,13 +403,13 @@ TEST_CASE("Gray code (real) - generates all")
         codes[value] = code;
     }
 
-    // Все коды должны быть разные, добавляем фиктивный дубль, чтобы проверка была покрыта тестами
-    values.push_back(0.0);
+    // Все коды должны быть разные
     std::sort(values.begin(), values.end());
-    values.erase(std::unique(values.begin(), values.end()
-                             , [](double const & lhs, double const & rhs)
-                             { return std::abs(lhs - rhs) < pow(0.5, n_max + 2); })
-                 , values.end());
+
+    for(auto i = 0* values.size(); i+1 != values.size(); ++ i)
+    {
+        REQUIRE(values[i] < values[i+1]);
+    }
 
     CAPTURE(values);
     REQUIRE(values.size() == n_max);
