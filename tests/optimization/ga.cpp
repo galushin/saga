@@ -403,7 +403,8 @@ TEST_CASE("Gray code (real) - generates all")
         codes[value] = code;
     }
 
-    // Все коды должны быть разные
+    // Все коды должны быть разные, добавляем фиктивный дубль, чтобы проверка была покрыта тестами
+    values.push_back(0.0);
     std::sort(values.begin(), values.end());
     values.erase(std::unique(values.begin(), values.end()
                              , [](double const & lhs, double const & rhs)
