@@ -300,20 +300,7 @@ namespace saga
         std::common_type_t<IntType1, IntType2>
         operator()(IntType1 lhs, IntType2 rhs) const
         {
-            static_assert(std::is_integral<IntType1>{}
-                          && !std::is_same<IntType1, const volatile bool>{});
-
-            static_assert(std::is_integral<IntType2>{}
-                          && !std::is_same<IntType2, const volatile bool>{});
-
-            auto g = gcd_fn{}(lhs, rhs);
-
-            if(g == std::common_type_t<IntType1, IntType2>(0))
-            {
-                return g;
-            }
-
-            return (std::abs(lhs) / g) * std::abs(rhs);
+            return std::lcm(std::move(lhs), std::move(rhs));
         }
     };
 
