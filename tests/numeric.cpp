@@ -1475,3 +1475,37 @@ TEST_CASE("transform_inclusive_scan: inplace, init_value")
         REQUIRE(actual == expected);
     };
 }
+
+namespace
+{
+    static_assert(2 * 3 == saga::gcd(2 * 2 * 3, 2 * 3 * 3), "");
+
+    static_assert(2 * 2 * 3 * 3 == saga::lcm(2 * 2 * 3, 2 * 3 * 3));
+    static_assert(225 == saga::lcm(45, 75));
+}
+
+TEST_CASE("gcd : functional object")
+{
+    using Value1 = int;
+    using Value2 = long long;
+
+    static_assert(sizeof(Value2) > sizeof(Value1), "");
+
+    saga_test::property_checker <<[](Value1 const & lhs, Value1 const & rhs)
+    {
+        REQUIRE(saga::gcd(lhs, Value2(rhs)) == std::gcd(lhs, Value2(rhs)));
+    };
+}
+
+TEST_CASE("lcm : functional object")
+{
+    using Value1 = int;
+    using Value2 = long long;
+
+    static_assert(sizeof(Value2) > sizeof(Value1), "");
+
+    saga_test::property_checker <<[](Value1 const & lhs, Value1 const & rhs)
+    {
+        REQUIRE(saga::lcm(lhs, Value2(rhs)) == std::lcm(lhs, Value2(rhs)));
+    };
+}
