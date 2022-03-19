@@ -985,6 +985,16 @@ namespace saga
 }
 // namespace saga
 
+TEST_CASE("saga::integer: default ctor")
+{
+    saga::integer const zero{};
+
+    std::ostringstream os;
+    os << zero;
+
+    REQUIRE(os.str() == "0");
+}
+
 TEST_CASE("PE 013 - range for loop")
 {
     saga::integer result{};
