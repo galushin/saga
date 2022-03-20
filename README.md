@@ -1,5 +1,5 @@
 # SAGA
-Самонастраивающиеся генетические алгоритмы на [![Standard](https://img.shields.io/badge/c%2B%2B-14/17/20-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
+Самонастраивающиеся генетические алгоритмы на [![Standard](https://img.shields.io/badge/c%2B%2B-17/20-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
 
 Статус основной ветки: [![Статус основной ветки](https://github.com/galushin/saga/workflows/test/badge.svg?branch=master)](https://github.com/galushin/saga/actions/workflows/test.yml)
 
