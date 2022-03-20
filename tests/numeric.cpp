@@ -1506,6 +1506,6 @@ TEST_CASE("lcm : functional object")
 
     saga_test::property_checker <<[](Value1 const & lhs, Value1 const & rhs)
     {
-        REQUIRE(saga::lcm(lhs, Value2(rhs)) == std::lcm(lhs, Value2(rhs)));
+        REQUIRE(saga::lcm(lhs, Value2(rhs)) == std::lcm(Value2(lhs), Value2(rhs)));
     };
 }
