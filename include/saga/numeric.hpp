@@ -300,7 +300,8 @@ namespace saga
         std::common_type_t<IntType1, IntType2>
         operator()(IntType1 lhs, IntType2 rhs) const
         {
-            return std::lcm(std::move(lhs), std::move(rhs));
+            using Result = std::common_type_t<IntType1, IntType2>;
+            return std::lcm(Result(std::move(lhs)), Result(std::move(rhs)));
         }
     };
 
