@@ -33,8 +33,8 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/utility/exchange.hpp>
 #include <saga/view/indices.hpp>
 
-#include <vector>
 #include <optional>
+#include <vector>
 
 // Тесты
 // PE 001 : сумма кратных 3 или 5
@@ -1021,4 +1021,59 @@ TEST_CASE("PE 013 - algorithms")
     os << result;
 
     REQUIRE(os.str().substr(0, 10) == "5537376230");
+}
+
+// PE 014 Длиннейшая последовательность Коллатца
+namespace
+{
+    template <class IntType>
+    auto collatz_transform(IntType value)
+    {
+        return (value % 2 == 0) ? value / 2 : 3*value+1;
+    }
+
+    template <class IntType>
+    IntType collatz_length_no_memoization(IntType value)
+    {
+        assert(value > 0);
+
+        auto result = IntType(1);
+
+        for(; value != 1;)
+        {
+            value = ::collatz_transform(std::move(value));
+            ++ result;
+        }
+
+        return result;
+    }
+
+    template <class IntType>
+    IntType PE_014_no_memoization(IntType num)
+    {
+        assert(num > 1);
+
+        auto result_value = IntType(1);
+        auto result_length = IntType(1);
+
+        for(auto const & value : saga::view::indices(2+0*num, num))
+        {
+            auto new_length = ::collatz_length_no_memoization(value);
+
+            if(new_length > result_length)
+            {
+                result_length = new_length;
+                result_value = value;
+            }
+        }
+
+        return result_value;
+    }
+}
+
+TEST_CASE("PE 014")
+{
+    using Value = long long;
+
+    REQUIRE(::PE_014_no_memoization(Value(1'000'000)) == 837799);
 }
