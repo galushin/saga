@@ -789,6 +789,52 @@ TEST_CASE("ProjectEuler: 011")
     CHECK(projectEuler_011(data, 4) == 70600674);
 }
 
+// PE 012 - Сильно делимое треугольное число
+namespace
+{
+    template <class IntType>
+    IntType divisors_count(IntType value)
+    {
+        auto result = IntType(0);
+
+        for(auto d = IntType(1); d*d <= value; ++ d)
+        {
+            if(value % d == 0)
+            {
+                result += 1;
+                result += (value / d != d);
+            }
+        }
+
+        return result;
+    }
+
+    template <class IntType>
+    IntType projectEuler_012(IntType num_divisors_limit)
+    {
+        std::vector<IntType> divisors;
+
+        for(auto num = IntType(1);; ++ num)
+        {
+            auto m1 = num % 2 == 0 ? num/2 : num;
+            auto m2 = num % 2 == 0 ? num + 1 : (num + 1)/2;
+
+            auto div_count = ::divisors_count(m1) * ::divisors_count(m2);
+
+            if(div_count > num_divisors_limit)
+            {
+                return m1 * m2;
+            }
+        }
+    }
+}
+
+TEST_CASE("ProjectEuler: 012")
+{
+    REQUIRE(::projectEuler_012(5) == 28);
+    REQUIRE(::projectEuler_012<long long>(500) == 76576500);
+}
+
 // PE 013 - Большая сумма
 namespace
 {
