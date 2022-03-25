@@ -1123,3 +1123,36 @@ TEST_CASE("PE 014")
 
     REQUIRE(::PE_014_no_memoization(Value(1'000'000)) == 837799);
 }
+
+// PE 015 : Пути в решётке
+namespace
+{
+    template <class IntType>
+    IntType projectEuler_015_dynamic(IntType const & row_count, IntType const & col_count)
+    {
+        assert(row_count > 0);
+
+        std::vector<IntType> row(col_count + 1, 1);
+
+        saga::for_n(row_count,
+                    [&]
+                    {
+                        std::vector<IntType> new_row = row;
+
+                        saga::partial_sum(saga::cursor::all(new_row), saga::cursor::all(new_row));
+
+                        row.swap(new_row);
+                    });
+
+        return row.back();
+    }
+
+    template <class IntType>
+    IntType projectEuler_015_formula(IntType const & row_count, IntType const & col_count);
+}
+
+TEST_CASE("PE 015")
+{
+    REQUIRE(::projectEuler_015_dynamic(2, 2) == 6);
+    REQUIRE(::projectEuler_015_dynamic<long long>(20, 20) == 137846528820);
+}
