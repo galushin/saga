@@ -1130,10 +1130,7 @@ namespace
     template <class IntType>
     IntType projectEuler_015_dynamic(IntType const & row_count, IntType const & col_count)
     {
-        if(row_count <= 0)
-        {
-            return IntType(0);
-        }
+        assert(row_count > 0);
 
         std::vector<IntType> row(col_count + 1, 1);
 
