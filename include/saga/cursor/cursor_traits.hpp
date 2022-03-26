@@ -76,8 +76,8 @@ namespace saga
             {
             private:
                 template <class Cursor>
-                Cursor operator()(Cursor cur, cursor_difference_t<Cursor> num
-                                  , std::forward_iterator_tag) const
+                static Cursor
+                impl(Cursor cur, cursor_difference_t<Cursor> num, std::forward_iterator_tag)
                 {
                     for(; num > 0; -- num)
                     {
@@ -88,9 +88,8 @@ namespace saga
                 }
 
                 template <class Cursor>
-                constexpr
-                Cursor operator()(Cursor cur, cursor_difference_t<Cursor> num
-                                  , std::random_access_iterator_tag) const
+                static constexpr Cursor
+                impl(Cursor cur, cursor_difference_t<Cursor> num, std::random_access_iterator_tag)
                 {
                     cur.drop_front(num);
 
@@ -104,7 +103,7 @@ namespace saga
                 {
                     assert(num >= 0);
 
-                    return (*this)(std::move(cur), std::move(num), cursor_category_t<Cursor>{});
+                    return this->impl(std::move(cur), std::move(num), cursor_category_t<Cursor>{});
                 }
             };
 

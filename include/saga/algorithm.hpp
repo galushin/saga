@@ -799,6 +799,62 @@ namespace saga
         }
     };
 
+    struct shift_left_fn
+    {
+        template <class ForwardCursor>
+        ForwardCursor
+        operator()(ForwardCursor input, saga::cursor_difference_t<ForwardCursor> num) const
+        {
+            assert(num >= 0);
+
+            if(num == 0)
+            {
+                input.exhaust_front();
+                return input;
+            }
+
+            auto out = input;
+
+            for(; !!input && num > 0; ++ input, void(--num))
+            {}
+
+            if(!input)
+            {
+                return out;
+            }
+
+            return saga::move_fn{}(std::move(input), std::move(out)).out;
+        }
+    };
+
+    struct shift_right_fn
+    {
+        template <class ForwardCursor>
+        ForwardCursor
+        operator()(ForwardCursor input, saga::cursor_difference_t<ForwardCursor> num) const
+        {
+            assert(num >= 0);
+
+            if(num == 0)
+            {
+                input.exhaust_back();
+                return input;
+            }
+
+            auto out = input;
+
+            for(; !!input && num > 0; input.drop_back(), void(--num))
+            {}
+
+            if(!input)
+            {
+                return out;
+            }
+
+            return saga::move_backward_fn{}(std::move(input), std::move(out)).out;
+        }
+    };
+
     struct shuffle_fn
     {
         template <class RandomAccessCursor, class URBG>
@@ -2438,6 +2494,8 @@ namespace saga
     inline constexpr auto const reverse_copy = reverse_copy_fn{};
     inline constexpr auto const rotate = rotate_fn{};
     inline constexpr auto const rotate_copy = rotate_copy_fn{};
+    inline constexpr auto const shift_left = shift_left_fn{};
+    inline constexpr auto const shift_right = shift_right_fn{};
     inline constexpr auto const shuffle = shuffle_fn{};
     inline constexpr auto const sample = sample_fn{};
     inline constexpr auto const unique = unique_fn{};

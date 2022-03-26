@@ -5872,3 +5872,149 @@ TEST_CASE("adjacent_count: custom predicate")
         }
     };
 }
+TEST_CASE("shift_left, shift_right: great shift -> no effect")
+{
+    using Value = int;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](Container const & values_old)
+    {
+        auto values = values_old;
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        auto const num = 2*input.size();
+
+        auto const r_left = saga::shift_left(input, num);
+
+        REQUIRE(values == values_old);
+        REQUIRE(r_left == input);
+
+        auto const r_right = saga::shift_right(input, num);
+
+        REQUIRE(values == values_old);
+        REQUIRE(r_right == input);
+    };
+}
+
+namespace
+{
+    struct with_unspec_state
+    {
+        int value{0};
+        bool specified_state{true};
+
+        with_unspec_state(int v = 0) : value{v} {}
+        with_unspec_state(with_unspec_state const& rhs) = default;
+        with_unspec_state(with_unspec_state&& rhs) { *this = std::move(rhs); }
+        with_unspec_state& operator=(with_unspec_state const& rhs) = default;
+        with_unspec_state& operator=(with_unspec_state&& rhs)
+        {
+            if (this != &rhs)
+            {
+                value = rhs.value;
+                specified_state = rhs.specified_state;
+                rhs.specified_state = false;
+            }
+            return *this;
+        }
+    };
+
+    bool operator==(with_unspec_state const & lhs, with_unspec_state const & rhs)
+    {
+        if(!lhs.specified_state)
+        {
+            return !rhs.specified_state;
+        }
+
+        return lhs.value == rhs.value;
+    }
+
+    std::ostream& operator<< (std::ostream& os, with_unspec_state const & val)
+    {
+        val.specified_state ? os << val.value : os << '.';
+
+        return os;
+    }
+}
+
+template <>
+struct saga_test::arbitrary<with_unspec_state>
+{
+    template <class UniformRandomBitGenerator>
+    static with_unspec_state generate(generation_t generation, UniformRandomBitGenerator & urbg)
+    {
+        if(generation == 0)
+        {
+            return {};
+        }
+        else
+        {
+            return saga_test::arbitrary<int>::generate(generation - 1, urbg);
+        }
+    }
+};
+
+TEST_CASE("shift_left")
+{
+    using Value = with_unspec_state;
+    using Container = std::forward_list<Value>;
+
+    saga_test::property_checker << [](Container const & values_old)
+    {
+        // Подготовка
+        auto values = values_old;
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        auto const num = saga_test::random_uniform(0, saga::cursor::size(input));
+
+        // Выполнение
+        auto const result = saga::shift_left(input, num);
+
+        // Сравнение
+        auto values_move = values_old;
+        auto const input_move = saga::rebase_cursor(input, values_move);
+
+        auto result_move = saga::move(saga::cursor::drop_front_n(input_move, num), input_move).out;
+
+        // Проверка
+        CAPTURE(values_old, values, input, num);
+
+        REQUIRE(values == values_move);
+        REQUIRE(result == saga::rebase_cursor(result_move, values));
+    };
+}
+
+TEST_CASE("shift_right: Bidirectional")
+{
+    using Value = with_unspec_state;
+    using Container = std::list<Value>;
+
+    saga_test::property_checker << [](Container const & values_old)
+    {
+        // Подготовка
+        auto values = values_old;
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        auto const num = saga_test::random_uniform(0, saga::cursor::size(input));
+
+        // Выполнение
+        auto const result = saga::shift_right(input, num);
+
+        // Сравнение
+        auto values_move = values_old;
+        auto const input_move = saga::rebase_cursor(input, values_move);
+
+        auto const result_move
+            = saga::move_backward(saga::cursor::drop_back_n(input_move, num), input_move).out;
+
+        // Проверка
+        CAPTURE(values_old, values, input, num);
+
+        REQUIRE(values == values_move);
+
+        REQUIRE(result == saga::rebase_cursor(result_move, values));
+    };
+}
