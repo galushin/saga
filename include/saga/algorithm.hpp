@@ -799,6 +799,202 @@ namespace saga
         }
     };
 
+    namespace detail
+    {
+        template <class ForwardCursor>
+        ForwardCursor
+        drop_front_n_guarded_impl(ForwardCursor cur
+                                  , saga::cursor_difference_t<ForwardCursor> num
+                                  , std::forward_iterator_tag)
+        {
+            for(; !!cur && num > 0; cur.drop_front(), void(--num))
+            {}
+
+            return cur;
+        }
+
+        template <class ForwardCursor>
+        ForwardCursor
+        drop_front_n_guarded_impl(ForwardCursor cur
+                                  , saga::cursor_difference_t<ForwardCursor> num
+                                  , std::random_access_iterator_tag)
+        {
+            cur.drop_front(std::min(num, cur.size()));
+
+            return cur;
+        }
+
+        template <class ForwardCursor>
+        ForwardCursor
+        drop_front_n_guarded(ForwardCursor cur, saga::cursor_difference_t<ForwardCursor> num)
+        {
+            return detail::drop_front_n_guarded_impl(std::move(cur), std::move(num)
+                                                     , saga::cursor_category_t<ForwardCursor>{});
+        }
+
+        template <class ForwardCursor>
+        ForwardCursor
+        drop_back_n_guarded_impl(ForwardCursor cur
+                                  , saga::cursor_difference_t<ForwardCursor> num
+                                  , std::random_access_iterator_tag)
+        {
+            cur.drop_back(std::min(num, cur.size()));
+
+            return cur;
+        }
+
+        template <class ForwardCursor>
+        ForwardCursor
+        drop_back_n_guarded_impl(ForwardCursor cur
+                                 , saga::cursor_difference_t<ForwardCursor> num
+                                 , std::bidirectional_iterator_tag)
+        {
+            for(; !!cur && num > 0; cur.drop_back(), void(--num))
+            {}
+
+            return cur;
+        }
+
+        template <class ForwardCursor>
+        ForwardCursor
+        drop_back_n_guarded(ForwardCursor cur, saga::cursor_difference_t<ForwardCursor> num)
+        {
+            return detail::drop_back_n_guarded_impl(std::move(cur), std::move(num)
+                                                    , saga::cursor_category_t<ForwardCursor>{});
+        }
+    }
+
+    struct shift_left_fn
+    {
+        template <class ForwardCursor>
+        ForwardCursor
+        operator()(ForwardCursor input, saga::cursor_difference_t<ForwardCursor> num) const
+        {
+            assert(num >= 0);
+
+            input.forget_front();
+
+            if(num == 0)
+            {
+                input.exhaust_front();
+                return input;
+            }
+
+            auto out = input;
+
+            input = detail::drop_front_n_guarded(std::move(input), std::move(num));
+
+            if(!input)
+            {
+                return out;
+            }
+
+            return saga::move_fn{}(std::move(input), std::move(out)).out;
+        }
+    };
+
+    struct shift_right_fn
+    {
+    private:
+        template <class ForwardCursor>
+        static ForwardCursor impl(ForwardCursor input
+                                  , saga::cursor_difference_t<ForwardCursor> num
+                                  , std::forward_iterator_tag)
+        {
+            assert(num >= 0);
+
+            input.forget_front();
+
+            if(num == 0)
+            {
+                return input;
+            }
+
+            auto out = detail::drop_front_n_guarded(input, std::move(num));
+
+            if(!out)
+            {
+                return out;
+            }
+
+            auto trail = out.dropped_front();
+            assert(!!trail);
+
+            auto lead = out;
+
+            for(; !!trail; ++ lead, void(++trail))
+            {
+                if(!lead)
+                {
+                    saga::move_fn{}(trail.dropped_front(), out);
+                    return out;
+                }
+            }
+
+            trail.splice(out);
+
+            for(;;)
+            {
+                auto mid = out.dropped_front();
+
+                for(; !!mid; ++lead, void(++trail), void(++mid))
+                {
+                    assert(!!trail);
+
+                    if(!lead)
+                    {
+                        trail = saga::move_fn{}(mid, std::move(trail)).out;
+                        saga::move_fn{}(mid.dropped_front(), std::move(trail));
+                        return out;
+                    }
+
+                    using std::swap;
+                    swap(*mid, *trail);
+                }
+            }
+        }
+
+        template <class ForwardCursor>
+        static ForwardCursor impl(ForwardCursor input
+                                  , saga::cursor_difference_t<ForwardCursor> num
+                                  , std::bidirectional_iterator_tag)
+        {
+            assert(num >= 0);
+
+            input.forget_front();
+            input.forget_back();
+
+            if(num == 0)
+            {
+                return input;
+            }
+
+            auto out = input;
+
+            input = detail::drop_back_n_guarded(std::move(input), std::move(num));
+
+            if(!input)
+            {
+                out.exhaust_front();
+                return out;
+            }
+
+            out = saga::move_backward_fn{}(std::move(input), out).out;
+            return detail::make_partition(out, out.dropped_back());
+        }
+
+    public:
+        template <class ForwardCursor>
+        ForwardCursor
+        operator()(ForwardCursor input, saga::cursor_difference_t<ForwardCursor> num) const
+        {
+            assert(num >= 0);
+
+            return this->impl(std::move(input), std::move(num)
+                              , saga::cursor_category_t<ForwardCursor>{});
+        }
+    };
+
     struct shuffle_fn
     {
         template <class RandomAccessCursor, class URBG>
@@ -2438,6 +2634,8 @@ namespace saga
     inline constexpr auto const reverse_copy = reverse_copy_fn{};
     inline constexpr auto const rotate = rotate_fn{};
     inline constexpr auto const rotate_copy = rotate_copy_fn{};
+    inline constexpr auto const shift_left = shift_left_fn{};
+    inline constexpr auto const shift_right = shift_right_fn{};
     inline constexpr auto const shuffle = shuffle_fn{};
     inline constexpr auto const sample = sample_fn{};
     inline constexpr auto const unique = unique_fn{};
