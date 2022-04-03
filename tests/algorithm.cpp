@@ -5872,30 +5872,6 @@ TEST_CASE("adjacent_count: custom predicate")
         }
     };
 }
-TEST_CASE("shift_left, shift_right: great shift -> no effect")
-{
-    using Value = int;
-    using Container = std::vector<Value>;
-
-    saga_test::property_checker << [](Container const & values_old)
-    {
-        auto values = values_old;
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
-
-        auto const num = 2*input.size();
-
-        auto const r_left = saga::shift_left(input, num);
-
-        REQUIRE(values == values_old);
-        REQUIRE(r_left == input);
-
-        auto const r_right = saga::shift_right(input, num);
-
-        REQUIRE(values == values_old);
-        REQUIRE(r_right == input);
-    };
-}
 
 namespace
 {
@@ -5955,10 +5931,16 @@ struct saga_test::arbitrary<with_unspec_state>
     }
 };
 
-TEST_CASE("shift_left")
+namespace
 {
-    using Value = with_unspec_state;
-    using Container = std::forward_list<Value>;
+    using Shift_algo_containers = std::tuple<std::forward_list<with_unspec_state>
+                                            , std::list<with_unspec_state>
+                                            , std::vector<with_unspec_state>>;
+}
+
+TEMPLATE_LIST_TEST_CASE("shift_left : generic", "saga_test", Shift_algo_containers)
+{
+    using Container = TestType;
 
     saga_test::property_checker << [](Container const & values_old)
     {
@@ -5966,30 +5948,40 @@ TEST_CASE("shift_left")
         auto values = values_old;
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+        auto const input_size = saga::cursor::size(input);
 
-        auto const num = saga_test::random_uniform(0, saga::cursor::size(input));
+        auto const num = saga_test::random_uniform(0, input_size + 10);
 
         // Выполнение
         auto const result = saga::shift_left(input, num);
 
-        // Сравнение
-        auto values_move = values_old;
-        auto const input_move = saga::rebase_cursor(input, values_move);
-
-        auto result_move = saga::move(saga::cursor::drop_front_n(input_move, num), input_move).out;
-
         // Проверка
+        if(num == 0 || num >= input_size)
+        {
+            REQUIRE(values == values_old);
+        }
+        else
+        {
+            auto values_move = values_old;
+            auto const input_move = saga::rebase_cursor(input, values_move);
+
+            saga::move(saga::cursor::drop_front_n(input_move, num), input_move);
+
+            REQUIRE(values == values_move);
+        }
+
+        // Сравнение
         CAPTURE(values_old, values, input, num);
 
-        REQUIRE(values == values_move);
-        REQUIRE(result == saga::rebase_cursor(result_move, values));
+        REQUIRE(result.dropped_front().begin() == input.begin());
+        REQUIRE(result.begin() == std::next(input.begin(), input_size - std::min(num, input_size)));
+        REQUIRE(result.end() == input.end());
     };
 }
 
-TEST_CASE("shift_right: Bidirectional")
+TEMPLATE_LIST_TEST_CASE("shift_right : generic", "saga_test", Shift_algo_containers)
 {
-    using Value = with_unspec_state;
-    using Container = std::list<Value>;
+    using Container = TestType;
 
     saga_test::property_checker << [](Container const & values_old)
     {
@@ -5997,24 +5989,34 @@ TEST_CASE("shift_right: Bidirectional")
         auto values = values_old;
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+        auto const input_size = saga::cursor::size(input);
 
-        auto const num = saga_test::random_uniform(0, saga::cursor::size(input));
+        auto const num = saga_test::random_uniform(0, input_size);
 
         // Выполнение
         auto const result = saga::shift_right(input, num);
 
-        // Сравнение
-        auto values_move = values_old;
-        auto const input_move = saga::rebase_cursor(input, values_move);
-
-        auto const result_move
-            = saga::move_backward(saga::cursor::drop_back_n(input_move, num), input_move).out;
-
         // Проверка
-        CAPTURE(values_old, values, input, num);
+        if(num == 0 || num >= input_size)
+        {
+            REQUIRE(values == values_old);
+        }
+        else
+        {
+            auto values_move
+                = std::vector<typename Container::value_type>(values_old.begin(), values_old.end());
+            auto const input_move = saga::rebase_cursor(input, values_move);
 
-        REQUIRE(values == values_move);
+            saga::move_backward(saga::cursor::drop_back_n(input_move, num), input_move);
 
-        REQUIRE(result == saga::rebase_cursor(result_move, values));
+            CAPTURE(values_old, values, input, values_move, num);
+
+            REQUIRE(saga::equal(saga::cursor::all(values), saga::cursor::all(values_move)));
+        }
+
+        // Сравнение
+        REQUIRE(result.dropped_front().begin() == input.begin());
+        REQUIRE(result.begin() == std::next(input.begin(), std::min(num, input_size)));
+        REQUIRE(result.end() == input.end());
     };
 }
