@@ -50,6 +50,7 @@
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
 		<Unit filename="../include/saga/cursor/take.hpp" />
 		<Unit filename="../include/saga/cursor/take_while.hpp" />
+		<Unit filename="../include/saga/cursor/to.hpp" />
 		<Unit filename="../include/saga/cursor/transform.hpp" />
 		<Unit filename="../include/saga/defs.hpp" />
 		<Unit filename="../include/saga/detail/default_ctor_enabler.hpp" />
@@ -104,6 +105,7 @@
 		<Unit filename="cursor/istream_cursor.cpp" />
 		<Unit filename="cursor/subrange.cpp" />
 		<Unit filename="cursor/take.cpp" />
+		<Unit filename="cursor/to.cpp" />
 		<Unit filename="expected.cpp" />
 		<Unit filename="expected/unexpected.cpp" />
 		<Unit filename="functional.cpp" />
