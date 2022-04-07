@@ -31,6 +31,7 @@ namespace saga
         using value_type = Value;
         using reference = Value const &;
         using difference_type = Distance;
+        using pointer = Value const *;
         using cursor_category = std::input_iterator_tag;
 
         // Создание, копирование, уничтожение
