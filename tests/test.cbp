@@ -45,8 +45,11 @@
 		<Unit filename="../include/saga/cursor/cursor_traits.hpp" />
 		<Unit filename="../include/saga/cursor/cycle.hpp" />
 		<Unit filename="../include/saga/cursor/filter.hpp" />
+		<Unit filename="../include/saga/cursor/iota.hpp" />
 		<Unit filename="../include/saga/cursor/istream_cursor.hpp" />
+		<Unit filename="../include/saga/cursor/set_union.hpp" />
 		<Unit filename="../include/saga/cursor/slide.hpp" />
+		<Unit filename="../include/saga/cursor/stride.hpp" />
 		<Unit filename="../include/saga/cursor/subrange.hpp" />
 		<Unit filename="../include/saga/cursor/take.hpp" />
 		<Unit filename="../include/saga/cursor/take_while.hpp" />

@@ -802,10 +802,10 @@ namespace saga
     namespace detail
     {
         template <class ForwardCursor>
-        ForwardCursor
+        constexpr ForwardCursor
         drop_front_n_guarded_impl(ForwardCursor cur
                                   , saga::cursor_difference_t<ForwardCursor> num
-                                  , std::forward_iterator_tag)
+                                  , std::input_iterator_tag)
         {
             for(; !!cur && num > 0; cur.drop_front(), void(--num))
             {}
@@ -825,7 +825,7 @@ namespace saga
         }
 
         template <class ForwardCursor>
-        ForwardCursor
+        constexpr ForwardCursor
         drop_front_n_guarded(ForwardCursor cur, saga::cursor_difference_t<ForwardCursor> num)
         {
             return detail::drop_front_n_guarded_impl(std::move(cur), std::move(num)
