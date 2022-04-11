@@ -22,6 +22,9 @@ SAGA -- это свободной программное обеспечение:
 // Используемые возможности
 #include <saga/algorithm.hpp>
 #include <saga/cursor/filter.hpp>
+#include <saga/cursor/iota.hpp>
+#include <saga/cursor/set_union.hpp>
+#include <saga/cursor/stride.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/cursor/take_while.hpp>
 #include <saga/cursor/transform.hpp>
@@ -104,6 +107,18 @@ namespace
 
         return result;
     }
+
+    template <class IntType>
+    constexpr IntType projectEuler_001_cursor_algorithms_set_union(IntType n_max)
+    {
+        auto in_3 = saga::cursor::stride(saga::cursor::iota(IntType(3)), IntType(3));
+        auto in_5 = saga::cursor::stride(saga::cursor::iota(IntType(5)), IntType(5));
+
+        auto in_3_or_5 = saga::cursor::set_union(std::move(in_3), std::move(in_5));
+        auto input = saga::cursor::take_while(in_3_or_5, [=](IntType num) { return num < n_max; });
+
+        return saga::accumulate(std::move(input), IntType(0));
+    }
 }
 
 static_assert(projectEuler_001_range_for_loop_indices(10) == 23, "");
@@ -117,6 +132,9 @@ static_assert(projectEuler_001_cursor_algorithms_filter(1000) == 233168, "");
 
 static_assert(projectEuler_001_smart_output_cursor(10) == 23, "");
 static_assert(projectEuler_001_smart_output_cursor(1000) == 233168, "");
+
+static_assert(projectEuler_001_cursor_algorithms_set_union(10) == 23, "");
+static_assert(projectEuler_001_cursor_algorithms_set_union(1000) == 233168, "");
 
 TEST_CASE("ProjectEuler 001")
 {
