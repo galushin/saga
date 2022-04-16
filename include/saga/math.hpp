@@ -77,9 +77,34 @@ namespace saga
         }
     };
 
-    inline constexpr auto const abs = saga::absolute_value{};
-    inline constexpr auto const square = saga::square_fn{};
-    inline constexpr auto const triangular_number = triangular_number_fn{};
+    struct power_natural_fn
+    {
+        template <class IntType, class Power>
+        constexpr IntType operator()(IntType base, Power power) const
+        {
+            static_assert(std::is_arithmetic<Power>{}, "");
+            assert(power > 0);
+
+            if(power == 1)
+            {
+                return base;
+            }
+
+            auto result = saga::square_fn{}((*this)(base, power / 2));
+
+            if(power % 2 == 1)
+            {
+                result *= base;
+            }
+
+            return result;
+        }
+    };
+
+    inline constexpr auto abs = saga::absolute_value{};
+    inline constexpr auto square = saga::square_fn{};
+    inline constexpr auto triangular_number = triangular_number_fn{};
+    inline constexpr auto power_natural = saga::power_natural_fn{};
 }
 //namespace saga
 

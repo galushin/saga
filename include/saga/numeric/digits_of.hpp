@@ -18,6 +18,12 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_NUMERIC_DIGITS_OF_HPP_INCLUDED
 #define Z_SAGA_NUMERIC_DIGITS_OF_HPP_INCLUDED
 
+/** @file saga/numeric/digits_of.hpp
+ @brief Курсор последовательности цифр неотрицательного целого числа
+*/
+
+#include <saga/cursor/cursor_facade.hpp>
+
 #include <cassert>
 #include <iterator>
 #include <utility>
@@ -26,20 +32,20 @@ namespace saga
 {
     template <class IntType>
     class digits_cursor
+     : saga::cursor_facade<digits_cursor<IntType>, IntType const &>
     {
     public:
         // Типы
-        using reference = IntType const &;
-
-        // @todo Можно ли усилить категорию?
         using cursor_category = std::input_iterator_tag;
+        using value_type = IntType;
+        using reference = IntType const &;
 
         // Создание, копирование, уничтожение
         /**
         @pre <tt>base >= 2</tt>
         @pre <tt>num >= 0</tt>
         */
-        explicit digits_cursor(IntType num, IntType base = IntType(10))
+        constexpr explicit digits_cursor(IntType num, IntType base = IntType(10))
          : num_(std::move(num))
          , base_(std::move(base))
          , cur_(this->num_ % this->base_)
@@ -48,22 +54,20 @@ namespace saga
         }
 
         // Курсор ввода
-        bool operator!() const
+        constexpr bool operator!() const
         {
             return !(this->num_ > 0);
         }
 
-        reference operator*() const
+        constexpr reference front() const
         {
             return this->cur_;
         }
 
-        digits_cursor & operator++()
+        constexpr void drop_front()
         {
             this->num_ /= this->base_;
             this->cur_ = this->num_ % this->base_;
-
-            return *this;
         }
 
     private:
@@ -75,13 +79,13 @@ namespace saga
     namespace cursor
     {
         template <class IntType>
-        auto digits_of(IntType num, IntType base) -> saga::digits_cursor<IntType>
+        constexpr auto digits_of(IntType num, IntType base) -> saga::digits_cursor<IntType>
         {
             return digits_cursor<IntType>(num, base);
         }
 
         template <class IntType>
-        auto digits_of(IntType num) -> saga::digits_cursor<IntType>
+        constexpr auto digits_of(IntType num) -> saga::digits_cursor<IntType>
         {
             return digits_of(num, IntType(10));
         }
