@@ -959,40 +959,103 @@ namespace
         "53503534226472524250874054075591789781264330331690"};
 }
 
+#include <saga/numeric/digits_of.hpp>
+
 namespace saga
 {
     class integer
     {
-    template <class CharT, class Traits>
-    friend std::basic_ostream<CharT, Traits> &
-    operator<<(std::basic_ostream<CharT, Traits> & out, integer const & value)
-    {
-        auto num = value.digits_.size();
-
-        if(num == 0)
+        template <class CharT, class Traits>
+        friend std::basic_ostream<CharT, Traits> &
+        operator<<(std::basic_ostream<CharT, Traits> & out, integer const & value)
         {
-            out << '0';
+            auto num = value.digits_.size();
+
+            if(num == 0)
+            {
+                out << '0';
+                return out;
+            }
+
+            for(; num > 0; -- num)
+            {
+                out << char('0' + value.digits_[num - 1]);
+            }
+
             return out;
         }
 
-        for(; num > 0; -- num)
+        friend integer operator+(integer lhs, integer const & rhs)
         {
-            out << char('0' + value.digits_[num - 1]);
+            lhs += rhs;
+
+            return lhs;
         }
 
-        return out;
-    }
+        friend integer operator*(integer lhs, integer const & rhs)
+        {
+            integer result;
 
-    friend integer operator+(integer lhs, integer const & rhs)
-    {
-        lhs += rhs;
+            auto const rhs_size = rhs.digits_.size();
 
-        return lhs;
-    }
+            for(size_t index = 0; index != rhs_size; ++ index)
+            {
+                result += saga::integer::mult_impl(lhs, rhs.digits_[index], index);
+            }
+
+            return result;
+        }
+
+        friend bool operator==(integer const & lhs, integer const & rhs)
+        {
+            return lhs.digits_ == rhs.digits_;
+        }
+
+    private:
+        using Digit = int;
+
+        static integer mult_impl(integer const & lhs, Digit const & rhs, std::size_t initial_zeroes)
+        {
+            if(lhs.digits_.empty())
+            {
+                return lhs;
+            }
+
+            std::vector<Digit> result(initial_zeroes, Digit(0));
+
+            auto carry = Digit(0);
+
+            for(auto const & digit : lhs.digits_)
+            {
+                carry += digit * rhs;
+
+                result.push_back(carry % 10);
+
+                carry /= 10;
+            }
+
+            for(; carry > 0; carry /= 10)
+            {
+                result.push_back(carry);
+            }
+
+            integer tmp;
+            tmp.digits_ = std::move(result);
+
+            return tmp;
+        }
 
     public:
         // Создание, копирование, уничтожение
         integer() = default;
+
+        template <class IntType, class = std::enable_if_t<std::is_integral<IntType>{}>>
+        explicit integer(IntType value)
+        {
+            assert(value >= 0);
+
+            saga::copy(saga::cursor::digits_of(value), saga::back_inserter(this->digits_));
+        }
 
         explicit integer(std::string const & str)
         {
@@ -1013,37 +1076,48 @@ namespace saga
 
             this->digits_.resize(num, 0);
 
-            auto curry = Digit(0);
+            auto carry = Digit(0);
 
             for(auto index : saga::view::indices(rhs.digits_.size()))
             {
-                auto sum = this->digits_[index] + rhs.digits_[index] + curry;
+                auto sum = this->digits_[index] + rhs.digits_[index] + carry;
 
                 this->digits_[index] = sum % 10;
 
-                curry = sum / 10;
+                carry = sum / 10;
             }
 
             for(auto index : saga::view::indices(rhs.digits_.size(), this->digits_.size()))
             {
-                auto sum = this->digits_[index] + curry;
+                auto sum = this->digits_[index] + carry;
 
                 this->digits_[index] = sum % 10;
 
-                curry = sum / 10;
+                carry = sum / 10;
             }
 
-            for(; curry > 0; curry /= 10)
+            for(; carry > 0; carry /= 10)
             {
-                this->digits_.push_back(curry % 10);
+                this->digits_.push_back(carry % 10);
             }
 
             return *this;
         }
 
-    private:
-        using Digit = int;
+        integer & operator*=(integer const & rhs)
+        {
+            *this = *this * rhs;
 
+            return *this;
+        }
+
+        // Доступ к представлению
+        std::vector<Digit> const & digits() const
+        {
+            return this->digits_;
+        }
+
+    private:
         std::vector<Digit> digits_;
     };
 }
@@ -1057,6 +1131,18 @@ TEST_CASE("saga::integer: default ctor")
     os << zero;
 
     REQUIRE(os.str() == "0");
+}
+
+TEST_CASE("saga::integer: zero multiplication")
+{
+    saga_test::property_checker << [](unsigned const value)
+    {
+        saga::integer const zero{};
+
+        auto const prod = zero * saga::integer(value);
+
+        REQUIRE(prod == zero);
+    };
 }
 
 TEST_CASE("PE 013 - range for loop")
@@ -1173,4 +1259,35 @@ TEST_CASE("PE 015")
 {
     REQUIRE(::projectEuler_015_dynamic(2, 2) == 6);
     REQUIRE(::projectEuler_015_dynamic<long long>(20, 20) == 137846528820);
+}
+
+// PE 016: Сумма цифр степени
+#include <saga/numeric/digits_of.hpp>
+
+namespace
+{
+    template <class IntType, class Power>
+    constexpr IntType
+    projectEuler_016_buildin(IntType const & base, Power const & power)
+    {
+        return saga::reduce(saga::cursor::digits_of(saga::power_natural(base, power)));
+    }
+
+    int
+    projectEuler_016_arbitrary(int base, int power)
+    {
+        assert(power > 0);
+
+        auto num = saga::power_natural(saga::integer(base), power);
+
+        return saga::reduce(saga::cursor::all(num.digits()));
+    }
+}
+
+static_assert(::projectEuler_016_buildin(2, 15) == 26, "");
+
+TEST_CASE("PE 016")
+{
+    REQUIRE(::projectEuler_016_arbitrary(2, 15) == 26);
+    REQUIRE(::projectEuler_016_arbitrary(2, 1000) == 1366);
 }
