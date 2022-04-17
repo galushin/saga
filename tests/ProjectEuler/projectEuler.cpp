@@ -1034,7 +1034,9 @@ namespace saga
                 carry /= 10;
             }
 
-            for(; carry > 0; carry /= 10)
+            assert(0 <= carry && carry < 10);
+
+            if(carry > 0)
             {
                 result.push_back(carry);
             }
@@ -1059,6 +1061,8 @@ namespace saga
 
         explicit integer(std::string const & str)
         {
+            this->digits_.reserve(str.size());
+
             for(auto const & each : str)
             {
                 assert(std::isdigit(each));
@@ -1080,25 +1084,27 @@ namespace saga
 
             for(auto index : saga::view::indices(rhs.digits_.size()))
             {
-                auto sum = this->digits_[index] + rhs.digits_[index] + carry;
+                carry += this->digits_[index] + rhs.digits_[index];
 
-                this->digits_[index] = sum % 10;
+                this->digits_[index] = carry % 10;
 
-                carry = sum / 10;
+                carry /= 10;
             }
 
             for(auto index : saga::view::indices(rhs.digits_.size(), this->digits_.size()))
             {
-                auto sum = this->digits_[index] + carry;
+                carry += this->digits_[index];
 
-                this->digits_[index] = sum % 10;
+                this->digits_[index] = carry % 10;
 
-                carry = sum / 10;
+                carry /= 10;
             }
 
-            for(; carry > 0; carry /= 10)
+            assert(0 <= carry && carry < 10);
+
+            if(carry > 0)
             {
-                this->digits_.push_back(carry % 10);
+                this->digits_.push_back(carry);
             }
 
             return *this;
