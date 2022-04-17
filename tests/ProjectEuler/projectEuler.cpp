@@ -965,46 +965,51 @@ namespace saga
 {
     class integer
     {
-    template <class CharT, class Traits>
-    friend std::basic_ostream<CharT, Traits> &
-    operator<<(std::basic_ostream<CharT, Traits> & out, integer const & value)
-    {
-        auto num = value.digits_.size();
-
-        if(num == 0)
+        template <class CharT, class Traits>
+        friend std::basic_ostream<CharT, Traits> &
+        operator<<(std::basic_ostream<CharT, Traits> & out, integer const & value)
         {
-            out << '0';
+            auto num = value.digits_.size();
+
+            if(num == 0)
+            {
+                out << '0';
+                return out;
+            }
+
+            for(; num > 0; -- num)
+            {
+                out << char('0' + value.digits_[num - 1]);
+            }
+
             return out;
         }
 
-        for(; num > 0; -- num)
+        friend integer operator+(integer lhs, integer const & rhs)
         {
-            out << char('0' + value.digits_[num - 1]);
+            lhs += rhs;
+
+            return lhs;
         }
 
-        return out;
-    }
-
-    friend integer operator+(integer lhs, integer const & rhs)
-    {
-        lhs += rhs;
-
-        return lhs;
-    }
-
-    friend integer operator*(integer lhs, integer const & rhs)
-    {
-        integer result;
-
-        auto const rhs_size = rhs.digits_.size();
-
-        for(size_t index = 0; index != rhs_size; ++ index)
+        friend integer operator*(integer lhs, integer const & rhs)
         {
-            result += saga::integer::mult_impl(lhs, rhs.digits_[index], index);
+            integer result;
+
+            auto const rhs_size = rhs.digits_.size();
+
+            for(size_t index = 0; index != rhs_size; ++ index)
+            {
+                result += saga::integer::mult_impl(lhs, rhs.digits_[index], index);
+            }
+
+            return result;
         }
 
-        return result;
-    }
+        friend bool operator==(integer const & lhs, integer const & rhs)
+        {
+            return lhs.digits_ == rhs.digits_;
+        }
 
     private:
         using Digit = int;
@@ -1047,7 +1052,7 @@ namespace saga
         template <class IntType, class = std::enable_if_t<std::is_integral<IntType>{}>>
         explicit integer(IntType value)
         {
-            assert(value > 0);
+            assert(value >= 0);
 
             saga::copy(saga::cursor::digits_of(value), saga::back_inserter(this->digits_));
         }
@@ -1126,6 +1131,18 @@ TEST_CASE("saga::integer: default ctor")
     os << zero;
 
     REQUIRE(os.str() == "0");
+}
+
+TEST_CASE("saga::integer: zero multiplication")
+{
+    saga_test::property_checker << [](unsigned const value)
+    {
+        saga::integer const zero{};
+
+        auto const prod = zero * saga::integer(value);
+
+        REQUIRE(prod == zero);
+    };
 }
 
 TEST_CASE("PE 013 - range for loop")

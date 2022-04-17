@@ -48,13 +48,3 @@ TEST_CASE("square, custom operation")
         REQUIRE(saga::square(value, std::plus<>{}) == value + value);
     };
 }
-
-TEST_CASE("power_natural: 1 is id")
-{
-    using Value = int;
-
-    saga_test::property_checker << [](Value const & value)
-    {
-        REQUIRE(saga::power_natural(value, 1) == value);
-    };
-}

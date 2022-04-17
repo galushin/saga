@@ -22,7 +22,6 @@ SAGA -- это свободной программное обеспечение:
  @brief Функциональность, связанная с математикой, общего назначения
 */
 
-#include <cassert>
 #include <cmath>
 
 #include <functional>
@@ -84,7 +83,6 @@ namespace saga
         constexpr IntType operator()(IntType base, Power power) const
         {
             static_assert(std::is_arithmetic<Power>{}, "");
-
             assert(power > 0);
 
             if(power == 1)
