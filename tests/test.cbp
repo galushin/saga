@@ -47,6 +47,7 @@
 		<Unit filename="../include/saga/cursor/filter.hpp" />
 		<Unit filename="../include/saga/cursor/iota.hpp" />
 		<Unit filename="../include/saga/cursor/istream_cursor.hpp" />
+		<Unit filename="../include/saga/cursor/reverse.hpp" />
 		<Unit filename="../include/saga/cursor/set_union.hpp" />
 		<Unit filename="../include/saga/cursor/slide.hpp" />
 		<Unit filename="../include/saga/cursor/stride.hpp" />
@@ -106,6 +107,7 @@
 		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
 		<Unit filename="cpp20/span.cpp" />
 		<Unit filename="cursor/istream_cursor.cpp" />
+		<Unit filename="cursor/reverse.cpp" />
 		<Unit filename="cursor/subrange.cpp" />
 		<Unit filename="cursor/take.cpp" />
 		<Unit filename="cursor/to.cpp" />
