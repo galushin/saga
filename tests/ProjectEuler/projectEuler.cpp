@@ -1297,3 +1297,86 @@ TEST_CASE("PE 016")
     REQUIRE(::projectEuler_016_arbitrary(2, 15) == 26);
     REQUIRE(::projectEuler_016_arbitrary(2, 1000) == 1366);
 }
+
+// Подсчёт количества букв
+namespace
+{
+    std::string number_as_words(int value)
+    {
+        assert(value >= 0);
+        assert(value <= 1000);
+
+        static std::vector<std::string> const named_small
+            {"", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"
+            , "eleven", "twelwe", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen"
+            , "eighteen", "nineteen"};
+
+        static std::vector<std::string> const dozens
+            = {"twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"};
+
+        if(value == 1000)
+        {
+            return "one thousand";
+        }
+
+        std::string result;
+
+        if(value >= 100)
+        {
+            result += named_small.at(value / 100);
+            result += " hundred";
+
+            value %= 100;
+
+            if(value > 0)
+            {
+                result += " and ";
+            }
+        }
+
+        if(value >= 20)
+        {
+            result += dozens.at(value / 10 - 2);
+            value %= 10;
+
+            if(value > 0)
+            {
+                result += "-";
+            }
+        }
+
+        result += named_small.at(value);
+
+        return result;
+    }
+
+    std::size_t projectEuler_017(int max_value)
+    {
+        auto result = std::size_t{0};
+
+        for(auto value : saga::view::indices(1, max_value+1))
+        {
+            auto words = ::number_as_words(value);
+
+            result += saga::count_if(saga::cursor::all(words)
+                                     , [](char val) { return val != ' ' && val != '-'; });
+        }
+
+        return result;
+    }
+}
+
+TEST_CASE("PE 017")
+{
+    CHECK(::number_as_words(1) == "one");
+    CHECK(::number_as_words(2) == "two");
+    CHECK(::number_as_words(3) == "three");
+    CHECK(::number_as_words(4) == "four");
+    CHECK(::number_as_words(5) == "five");
+
+    CHECK(::number_as_words(342) == "three hundred and forty-two");
+    CHECK(::number_as_words(115) == "one hundred and fifteen");
+
+    CHECK(::projectEuler_017(5) == 19);
+    CHECK(::projectEuler_017(1000) == 21124);
+}
