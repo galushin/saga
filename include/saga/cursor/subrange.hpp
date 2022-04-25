@@ -119,7 +119,7 @@ namespace saga
             this->cur_old_ = this->cur_;
         }
 
-        void splice_front(subrange_cursor const & other)
+        void splice(subrange_cursor const & other)
         {
             assert(this->end() == other.begin());
 

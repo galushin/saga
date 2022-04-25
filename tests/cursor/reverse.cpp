@@ -26,7 +26,32 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
 
+#include <forward_list>
 #include <list>
+
+TEST_CASE("reverse_cursor: value_type and cursor_category")
+{
+    using Value = int;
+
+    std::forward_list<Value> const c_fwd;
+    std::list<Value> const c_bi;
+    std::vector<Value> const c_ra;
+
+    auto const r_fwd = saga::cursor::reverse(saga::cursor::all(c_fwd));
+    auto const r_bi = saga::cursor::reverse(saga::cursor::all(c_bi));
+    auto const r_ra = saga::cursor::reverse(saga::cursor::all(c_ra));
+
+    static_assert(std::is_same<decltype(r_fwd)::value_type, Value>{}, "");
+    static_assert(std::is_same<decltype(r_fwd)::cursor_category, std::forward_iterator_tag>{}, "");
+
+    static_assert(std::is_same<decltype(r_bi)::value_type, Value>{}, "");
+    static_assert(std::is_same<decltype(r_bi)::cursor_category
+                              , std::bidirectional_iterator_tag>{}, "");
+
+    static_assert(std::is_same<decltype(r_ra)::value_type, Value>{}, "");
+    static_assert(std::is_same<decltype(r_ra)::cursor_category
+                              , std::random_access_iterator_tag>{}, "");
+}
 
 TEST_CASE("cursor::reverse of reverse_cursor")
 {
@@ -226,5 +251,40 @@ TEST_CASE("reverse_cursor: drop_front(n) and drop_back(n)")
         cur.drop_front(num);
 
         REQUIRE(rev_cur.base() == cur);
+    };
+}
+
+TEST_CASE("reverse_cursor: splice")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    << [](std::vector<Value> const & data)
+    {
+        auto const cur = saga_test::random_subcursor_of(saga::cursor::all(data));
+
+        auto const rev_cur = saga::cursor::reverse(cur);
+
+        auto res1 = cur.dropped_front();
+        res1.splice(cur);
+
+        auto res2 = rev_cur;
+        res2.splice(rev_cur.dropped_back());
+
+        REQUIRE(res2.base() == res1);
+    }
+    << [](std::vector<Value> const & data)
+    {
+        auto const cur = saga_test::random_subcursor_of(saga::cursor::all(data));
+
+        auto const rev_cur = saga::cursor::reverse(cur);
+
+        auto res1 = cur;
+        res1.splice(cur.dropped_back());
+
+        auto res2 = rev_cur.dropped_front();
+        res2.splice(rev_cur);
+
+        REQUIRE(res2.base() == res1);
     };
 }

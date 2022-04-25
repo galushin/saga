@@ -34,8 +34,8 @@ namespace saga
     {
     public:
         // Типы
-        // @todo using cursor_category = ;
-        // @todo using value_type = ;
+        using cursor_category = saga::cursor_category_t<BidirectionalCursor>;
+        using value_type = saga::cursor_value_t<BidirectionalCursor>;
         using reference = saga::cursor_reference_t<BidirectionalCursor>;
         using difference_type = saga::cursor_difference_t<BidirectionalCursor>;
 
@@ -81,7 +81,12 @@ namespace saga
             return this->base_.forget_back();
         }
 
-        // @todo splice
+        void splice(reverse_cursor const & other)
+        {
+            auto res = other.base_;
+            res.splice(this->base_);
+            this->base_ = std::move(res);
+        }
 
         void rewind_front()
         {

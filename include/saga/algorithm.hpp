@@ -43,7 +43,7 @@ namespace saga
         {
             cur1.forget_front();
             cur1.exhaust_front();
-            cur1.splice_front(cur2);
+            cur1.splice(cur2);
 
             return cur1;
         }
@@ -741,7 +741,7 @@ namespace saga
 
             if(!read)
             {
-                write.splice_front(read);
+                write.splice(read);
                 return write;
             }
 
@@ -751,7 +751,7 @@ namespace saga
             {
                 if(!write)
                 {
-                    write.splice_front(read.dropped_front());
+                    write.splice(read.dropped_front());
                     read.forget_front();
                     next_read = read;
                 }
@@ -762,7 +762,7 @@ namespace saga
 
             this->impl_void(write, next_read);
 
-            write.splice_front(next_read);
+            write.splice(next_read);
 
             return write;
         }
@@ -918,7 +918,7 @@ namespace saga
                 }
             }
 
-            trail.splice_front(out);
+            trail.splice(out);
 
             for(;;)
             {
@@ -1267,10 +1267,10 @@ namespace saga
                 = saga::rotate_fn{}(detail::make_partition(result1, result2.dropped_front()));
 
             auto r_true = result1.dropped_front();
-            r_true.splice_front(r_rotation.dropped_front());
+            r_true.splice(r_rotation.dropped_front());
 
             r_rotation.forget_front();
-            r_rotation.splice_front(result2);
+            r_rotation.splice(result2);
 
             return detail::make_partition(r_true, r_rotation);
         }
@@ -1610,7 +1610,7 @@ namespace saga
             cur.forget_front();
             cur.exhaust_back();
 
-            part1.splice_front(cur);
+            part1.splice(cur);
 
             return part1;
         }
