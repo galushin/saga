@@ -27,6 +27,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/functional.hpp>
 #include <saga/iterator.hpp>
 #include <saga/cursor/cursor_traits.hpp>
+#include <saga/cursor/reverse.hpp>
 
 #include <cassert>
 #include <algorithm>
@@ -403,14 +404,9 @@ namespace saga
         copy_backward_result<BidirectionalCursor1, BidirectionalCursor2>
         operator()(BidirectionalCursor1 input, BidirectionalCursor2 out) const
         {
-            for(; !!input && !!out;)
-            {
-                out.back() = input.back();
-                input.drop_back();
-                out.drop_back();
-            }
+            auto result = saga::copy_fn{}(saga::cursor::reverse(input), saga::cursor::reverse(out));
 
-            return {std::move(input), std::move(out)};
+            return {std::move(result.in).base(), std::move(result.out).base()};
         }
     };
 
@@ -441,14 +437,9 @@ namespace saga
         move_backward_result<BidirectionalCursor1, BidirectionalCursor2>
         operator()(BidirectionalCursor1 input, BidirectionalCursor2 out) const
         {
-            for(; !!input && !!out;)
-            {
-                out.back() = std::move(input.back());
-                input.drop_back();
-                out.drop_back();
-            }
+            auto result = saga::move_fn{}(saga::cursor::reverse(input), saga::cursor::reverse(out));
 
-            return {std::move(input), std::move(out)};
+            return {std::move(result.in).base(), std::move(result.out).base()};
         }
     };
 
@@ -699,14 +690,10 @@ namespace saga
         reverse_copy_result<BidirectionalCursor, OutputCursor>
         operator()(BidirectionalCursor input, OutputCursor output) const
         {
-            for(;!!input && !!output;)
-            {
-                output << input.back();
+            auto result = saga::copy_fn{}(saga::cursor::reverse(std::move(input))
+                                          , std::move(output));
 
-                input.drop_back();
-            }
-
-            return {std::move(input), std::move(output)};
+            return {std::move(result.in).base(), std::move(result.out)};
         }
     };
 
