@@ -666,6 +666,8 @@ namespace
         "20 73 35 29 78 31 90 01 74 31 49 71 48 86 81 16 23 57 05 54\n"
         "01 70 54 71 83 51 54 69 16 92 33 48 61 43 52 01 89 19 67 48\n";
 
+    // @todo Сделать так, чтобы корректно работал, когда последняя строка не пуста
+    // (сейчас последняя строка повторяется!)
     template <class IntType>
     std::vector<std::vector<IntType>>
     projectEuler_011_parse(std::string const & src)
@@ -1298,7 +1300,7 @@ TEST_CASE("PE 016")
     REQUIRE(::projectEuler_016_arbitrary(2, 1000) == 1366);
 }
 
-// Подсчёт количества букв
+// PE 017: Подсчёт количества букв
 namespace
 {
     std::string number_as_words(int value)
@@ -1379,4 +1381,72 @@ TEST_CASE("PE 017")
 
     CHECK(::projectEuler_017(5) == 19);
     CHECK(::projectEuler_017(1000) == 21124);
+}
+
+// PE 018: Путь наибольшей суммы (часть I)
+
+namespace
+{
+    static std::string pe018_sample_data{
+        "3\n"
+        "7 4\n"
+        "2 4 6\n"
+        "8 5 9 3\n"};
+
+    static std::string pe018_data{
+        "75\n"
+        "95 64\n"
+        "17 47 82\n"
+        "18 35 87 10\n"
+        "20 04 82 47 65\n"
+        "19 01 23 75 03 34\n"
+        "88 02 77 73 07 63 67\n"
+        "99 65 04 28 06 16 70 92\n"
+        "41 41 26 56 83 40 80 70 33\n"
+        "41 48 72 33 47 32 37 16 94 29\n"
+        "53 71 44 65 25 43 91 52 97 51 14\n"
+        "70 11 33 28 77 73 17 78 39 68 17 57\n"
+        "91 71 52 38 17 14 91 43 58 50 27 29 48\n"
+        "63 66 04 68 89 53 67 30 73 16 69 87 40 31\n"
+        "04 62 98 27 23 09 70 98 73 93 38 53 60 04 23\n"};
+
+    template <class IntType>
+    IntType projectEuler_018(std::vector<std::vector<IntType>> data)
+    {
+        auto result = std::move(data.back());
+        data.pop_back();
+
+        for(; !data.empty(); data.pop_back())
+        {
+            auto cur = std::move(data.back());
+
+            assert(cur.size() + 1 == result.size());
+
+            for(auto index : saga::view::indices(cur.size()))
+            {
+                cur[index] += std::max(result[index], result[index+1]);
+            }
+
+            result = std::move(cur);
+        }
+
+        assert(result.size() == 1);
+
+        return result.front();
+    }
+
+
+    template <class IntType>
+    IntType projectEuler_018_string(std::string const & text)
+    {
+        auto data = ::projectEuler_011_parse<IntType>(text);
+
+        return ::projectEuler_018(std::move(data));
+    }
+}
+
+TEST_CASE("PE 018")
+{
+    REQUIRE(projectEuler_018_string<int>(pe018_sample_data) == 23);
+    REQUIRE(projectEuler_018_string<int>(pe018_data) == 1074);
 }
