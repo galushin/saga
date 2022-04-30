@@ -789,10 +789,11 @@ namespace saga
     namespace detail
     {
         template <class ForwardCursor>
-        constexpr ForwardCursor
+        ForwardCursor
         drop_front_n_guarded_impl(ForwardCursor cur
                                   , saga::cursor_difference_t<ForwardCursor> num
-                                  , std::input_iterator_tag)
+                                  , std::input_iterator_tag
+                                  , saga::finite_cursor_cardinality_tag)
         {
             for(; !!cur && num > 0; cur.drop_front(), void(--num))
             {}
@@ -801,12 +802,25 @@ namespace saga
         }
 
         template <class ForwardCursor>
+        constexpr ForwardCursor
+        drop_front_n_guarded_impl(ForwardCursor cur
+                                  , saga::cursor_difference_t<ForwardCursor> num
+                                  , std::random_access_iterator_tag
+                                  , saga::infinite_cursor_cardinality_tag)
+        {
+            cur.drop_front(std::move(num));
+
+            return cur;
+        }
+
+        template <class ForwardCursor>
         ForwardCursor
         drop_front_n_guarded_impl(ForwardCursor cur
                                   , saga::cursor_difference_t<ForwardCursor> num
-                                  , std::random_access_iterator_tag)
+                                  , std::random_access_iterator_tag
+                                  , saga::finite_cursor_cardinality_tag)
         {
-            cur.drop_front(std::min(num, cur.size()));
+            cur.drop_front(std::min(std::move(num), cur.size()));
 
             return cur;
         }
@@ -816,7 +830,8 @@ namespace saga
         drop_front_n_guarded(ForwardCursor cur, saga::cursor_difference_t<ForwardCursor> num)
         {
             return detail::drop_front_n_guarded_impl(std::move(cur), std::move(num)
-                                                     , saga::cursor_category_t<ForwardCursor>{});
+                                                     , saga::cursor_category_t<ForwardCursor>{}
+                                                     , saga::cursor_cardinality_t<ForwardCursor>{});
         }
 
         template <class ForwardCursor>
