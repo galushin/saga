@@ -23,6 +23,17 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    struct any_cursor_cardinality_tag
+    {};
+
+    struct finite_cursor_cardinality_tag
+     : any_cursor_cardinality_tag
+    {};
+
+    struct infinite_cursor_cardinality_tag
+     : any_cursor_cardinality_tag
+    {};
+
     template <class Cursor>
     using cursor_reference_t = typename Cursor::reference;
 
@@ -31,6 +42,9 @@ namespace saga
 
     template <class Cursor>
     using cursor_category_t = typename Cursor::cursor_category;
+
+    template <class Cursor>
+    using cursor_cardinality_t = typename Cursor::cursor_cardinality;
 
     template <class Cursor>
     using cursor_value_t = typename Cursor::value_type;

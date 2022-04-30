@@ -22,6 +22,8 @@ SAGA -- это свободной программное обеспечение:
  @brief Бесконечный курсор в виде последовательности целых чисел, начинающихся с заданного
 */
 
+#include <saga/cursor/cursor_traits.hpp>
+
 #include <iterator>
 
 namespace saga
@@ -31,7 +33,8 @@ namespace saga
     {
     public:
         // Типы
-        using cursor_category = std::input_iterator_tag;
+        using cursor_category = std::random_access_iterator_tag;
+        using cursor_cardinality = saga::infinite_cursor_cardinality_tag;
         using difference_type = Incrementable;
         using reference = Incrementable const &;
         using value_type = Incrementable;
@@ -52,9 +55,15 @@ namespace saga
             return this->cur_;
         }
 
-        constexpr void drop_front()
+        void drop_front()
         {
             ++ cur_;
+        }
+
+        // Курсор произвольного доступа
+        constexpr void drop_front(difference_type num)
+        {
+            this->cur_ += std::move(num);
         }
 
     private:
