@@ -642,6 +642,8 @@ TEST_CASE("ProjectEuler: 010")
 // PE 011: Наибольшее произведение в решётке
 #include <saga/cursor/istream_cursor.hpp>
 
+#include <sstream>
+
 namespace
 {
     static constexpr char pe011_data[] =
@@ -664,22 +666,23 @@ namespace
         "04 42 16 73 38 25 39 11 24 94 72 18 08 46 29 32 40 62 76 36\n"
         "20 69 36 41 72 30 23 88 34 62 99 69 82 67 59 85 74 04 36 16\n"
         "20 73 35 29 78 31 90 01 74 31 49 71 48 86 81 16 23 57 05 54\n"
-        "01 70 54 71 83 51 54 69 16 92 33 48 61 43 52 01 89 19 67 48\n";
+        "01 70 54 71 83 51 54 69 16 92 33 48 61 43 52 01 89 19 67 48";
 
-    // @todo Сделать так, чтобы корректно работал, когда последняя строка не пуста
-    // (сейчас последняя строка повторяется!)
     template <class IntType>
     std::vector<std::vector<IntType>>
-    projectEuler_011_parse(std::string const & src)
+    projectEuler_011_parse(std::istream & src_in)
     {
-        std::istringstream src_in(src);
-
         std::vector<std::vector<IntType>> data;
 
         std::string line;
         for(; src_in;)
         {
             std::getline(src_in, line);
+
+            if(!src_in)
+            {
+                break;
+            }
 
             std::istringstream line_in(line);
 
@@ -693,6 +696,15 @@ namespace
         }
 
         return data;
+    }
+
+    template <class IntType>
+    std::vector<std::vector<IntType>>
+    projectEuler_011_parse(std::string const & src)
+    {
+        std::istringstream src_in(src);
+
+        return ::projectEuler_011_parse<IntType>(src_in);
     }
 
     template <class IntType>
@@ -1384,14 +1396,13 @@ TEST_CASE("PE 017")
 }
 
 // PE 018: Путь наибольшей суммы (часть I)
-
 namespace
 {
     static std::string pe018_sample_data{
         "3\n"
         "7 4\n"
         "2 4 6\n"
-        "8 5 9 3\n"};
+        "8 5 9 3"};
 
     static std::string pe018_data{
         "75\n"
@@ -1408,40 +1419,62 @@ namespace
         "70 11 33 28 77 73 17 78 39 68 17 57\n"
         "91 71 52 38 17 14 91 43 58 50 27 29 48\n"
         "63 66 04 68 89 53 67 30 73 16 69 87 40 31\n"
-        "04 62 98 27 23 09 70 98 73 93 38 53 60 04 23\n"};
+        "04 62 98 27 23 09 70 98 73 93 38 53 60 04 23"};
 
-    template <class IntType>
-    IntType projectEuler_018(std::vector<std::vector<IntType>> data)
+    template <class Vector>
+    void projectEuler_018_update(Vector & result, Vector & row)
     {
-        auto result = std::move(data.back());
-        data.pop_back();
-
-        for(; !data.empty(); data.pop_back())
+        if(row.size() > 1)
         {
-            auto cur = std::move(data.back());
+            row.front() += result.front();
+            row.back() += result.back();
 
-            assert(cur.size() + 1 == result.size());
-
-            for(auto index : saga::view::indices(cur.size()))
+            for(auto index : saga::view::indices(1+0*result.size(), result.size()))
             {
-                cur[index] += std::max(result[index], result[index+1]);
+                row[index] += std::max(result[index-1], result[index]);
             }
-
-            result = std::move(cur);
         }
 
-        assert(result.size() == 1);
+        result.swap(row);
+    }
 
-        return result.front();
+    template <class IntType>
+    IntType projectEuler_018(std::istream & src_in)
+    {
+        std::vector<IntType> result;
+
+        std::string line;
+        std::vector<IntType> row;
+
+        for(; src_in;)
+        {
+            std::getline(src_in, line);
+
+            if(!src_in)
+            {
+                break;
+            }
+
+            std::istringstream line_in(line);
+
+            row.clear();
+            saga::copy(saga::make_istream_cursor<IntType>(line_in), saga::back_inserter(row));
+
+            ::projectEuler_018_update(result, row);
+        }
+
+        assert(!result.empty());
+
+        return saga::max_element(saga::cursor::all(result)).front();
     }
 
 
     template <class IntType>
     IntType projectEuler_018_string(std::string const & text)
     {
-        auto data = ::projectEuler_011_parse<IntType>(text);
+        std::istringstream istr(text);
 
-        return ::projectEuler_018(std::move(data));
+        return ::projectEuler_018<IntType>(istr);
     }
 }
 
@@ -1449,4 +1482,16 @@ TEST_CASE("PE 018")
 {
     REQUIRE(projectEuler_018_string<int>(pe018_sample_data) == 23);
     REQUIRE(projectEuler_018_string<int>(pe018_data) == 1074);
+}
+
+// PE 067: Путь наибольшей суммы (часть II)
+#include <fstream>
+
+TEST_CASE("PE 067")
+{
+    std::ifstream file("ProjectEuler/p067_triangle.txt");
+
+    REQUIRE(!!file);
+
+    REQUIRE(::projectEuler_018<int>(file) == 7273);
 }
