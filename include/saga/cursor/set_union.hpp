@@ -58,7 +58,7 @@ namespace saga
         {
             assert(this->state_ != State::empty);
 
-            if(this->state_ == State::second)
+            if(this->state_ == State::second || this->state_ == State::always_second)
             {
                 return this->in2_.front();
             }
@@ -72,12 +72,14 @@ namespace saga
         {
             assert(this->state_ != State::empty);
 
-            if(this->state_ == State::first || this->state_ == State::equiv)
+            if(this->state_ == State::first || this->state_ == State::equiv
+               || this->state_ == State::always_first)
             {
                 this->in1_.drop_front();
             }
 
-            if(this->state_ == State::second || this->state_ == State::equiv)
+            if(this->state_ == State::second || this->state_ == State::equiv
+               || this->state_ == State::always_second)
             {
                 this->in2_.drop_front();
             }
@@ -91,22 +93,29 @@ namespace saga
             empty,
             first,
             second,
-            equiv
+            equiv,
+            always_first,
+            always_second
         };
 
         constexpr void adjust_state()
         {
+            if(this->state_ == State::always_first || this->state_ == State::always_second)
+            {
+                return;
+            }
+
             if(!in1_ && !in2_)
             {
                 this->state_ = State::empty;
             }
             else if(!in1_)
             {
-                this->state_ = State::second;
+                this->state_ = State::always_second;
             }
             else if(!in2_)
             {
-                this->state_ = State::first;
+                this->state_ = State::always_first;
             }
             else if(in2_.front() < in1_.front())
             {
