@@ -1484,6 +1484,59 @@ TEST_CASE("PE 018")
     REQUIRE(projectEuler_018_string<int>(pe018_data) == 1074);
 }
 
+// PE 019 Подсчёт числа воскресений
+namespace
+{
+    bool is_leap(int year)
+    {
+        return (year % 4 == 0) - (year % 100 == 0 && year % 400 != 0);
+    }
+
+    int days_in_month(int month, int year)
+    {
+        switch(month)
+        {
+        case 1:
+        case 3:
+        case 5:
+        case 7:
+        case 8:
+        case 10:
+        case 12:
+            return 31;
+
+        case 2:
+            return 28 + ::is_leap(year);
+
+        default:
+            return 30;
+        }
+    }
+}
+
+TEST_CASE("PE 019")
+{
+    REQUIRE(::days_in_month(2, 1900) == 28);
+    REQUIRE(::days_in_month(2, 2000) == 29);
+
+    auto result = 0;
+
+    auto weekday = 2;
+
+    for(auto year : saga::view::indices(1901, 2001))
+    {
+        for(auto month : saga::view::indices(1, 13))
+        {
+            result += (weekday == 0);
+
+            weekday += ::days_in_month(month, year);
+            weekday %= 7;
+        }
+    }
+
+    REQUIRE(result == 171);
+}
+
 // PE 067: Путь наибольшей суммы (часть II)
 #include <fstream>
 
