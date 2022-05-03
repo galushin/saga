@@ -795,9 +795,10 @@ TEST_CASE("find_end: default predicate, minimalistic")
                                          , needle_cur.begin(), needle_cur.end());
 
         REQUIRE(r_saga.begin() == r_std);
-        REQUIRE(r_saga.end() == haystack_cur.end());
-        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
-        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+        REQUIRE(saga::cursor::size(r_saga)
+                == (r_std != haystack_cur.end() ? saga::cursor::size(needle_cur) : 0));
+        REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
 }
 
@@ -818,9 +819,12 @@ TEST_CASE("find_end: custom predicate, minimalistic")
                                          , needle_cur.begin(), needle_cur.end(), pred);
 
         REQUIRE(r_saga.begin() == r_std);
-        REQUIRE(r_saga.end() == haystack_cur.end());
-        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
-        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+        if(r_std != haystack_cur.end())
+        {
+            REQUIRE(saga::cursor::size(r_saga) == saga::cursor::size(needle_cur));
+        }
+        REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
 }
 
@@ -847,10 +851,16 @@ TEST_CASE("find_end: default predicate, guaranty")
         auto const r_std = std::find_end(haystack_cur.begin(), haystack_cur.end()
                                          , needle_cur.begin(), needle_cur.end());
 
-        REQUIRE(r_saga.begin() == r_std);
-        REQUIRE(r_saga.end() == haystack_cur.end());
-        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
-        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+        CAPTURE(haystack_cur, needle_cur);
+
+        REQUIRE(std::distance(haystack_cur.begin(), r_saga.begin())
+                == std::distance(haystack_cur.begin(), r_std));
+        if(r_std != haystack_cur.end())
+        {
+            REQUIRE(saga::cursor::size(r_saga) == saga::cursor::size(needle_cur));
+        }
+        REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
 }
 
@@ -1047,9 +1057,12 @@ TEST_CASE("search: default predicate, minimalistic")
                                        , needle_cur.begin(), needle_cur.end());
 
         REQUIRE(r_saga.begin() == r_std);
-        REQUIRE(r_saga.end() == haystack_cur.end());
-        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
-        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+        if(r_std != haystack_cur.end())
+        {
+            REQUIRE(saga::cursor::size(r_saga) == saga::cursor::size(needle_cur));
+        }
+        REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
 }
 
@@ -1070,9 +1083,12 @@ TEST_CASE("search: custom predicate, minimalistic")
                                        , needle_cur.begin(), needle_cur.end(), pred);
 
         REQUIRE(r_saga.begin() == r_std);
-        REQUIRE(r_saga.end() == haystack_cur.end());
-        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
-        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+        if(r_std != haystack_cur.end())
+        {
+            REQUIRE(saga::cursor::size(r_saga) == saga::cursor::size(needle_cur));
+        }
+        REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
 }
 
@@ -1100,9 +1116,12 @@ TEST_CASE("search: default predicate, guaranty")
                                        , needle_cur.begin(), needle_cur.end());
 
         REQUIRE(r_saga.begin() == r_std);
-        REQUIRE(r_saga.end() == haystack_cur.end());
-        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
-        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+        if(r_std != haystack_cur.end())
+        {
+            REQUIRE(saga::cursor::size(r_saga) == saga::cursor::size(needle_cur));
+        }
+        REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
 }
 
@@ -1112,7 +1131,7 @@ TEST_CASE("search_n: default predicate, minimalistic")
 
     saga_test::property_checker
     <<[](std::forward_list<Value> const & haystack
-         , saga_test::container_size<std::size_t> const & num, Value const & value)
+         , saga_test::container_size<std::ptrdiff_t> const & num, Value const & value)
     {
         auto const haystack_cur = saga_test::random_subcursor_of(saga::cursor::all(haystack));
 
@@ -1121,9 +1140,12 @@ TEST_CASE("search_n: default predicate, minimalistic")
                                          , num.value, value);
 
         REQUIRE(r_saga.begin() == r_std);
-        REQUIRE(r_saga.end() == haystack_cur.end());
-        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
-        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+        if(r_std != haystack_cur.end())
+        {
+            REQUIRE(saga::cursor::size(r_saga) == num.value);
+        }
+        REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
 }
 
@@ -1144,9 +1166,12 @@ TEST_CASE("search_n: custom predicate, minimalistic")
                                          , num.value, value, pred);
 
         REQUIRE(r_saga.begin() == r_std);
-        REQUIRE(r_saga.end() == haystack_cur.end());
-        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
-        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+        if(r_std != haystack_cur.end())
+        {
+            REQUIRE(saga::cursor::size(r_saga) == num.value);
+        }
+        REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
 }
 
@@ -1174,9 +1199,12 @@ TEST_CASE("search_n: default predicate, guaranty")
                                          , num.value, value);
 
         REQUIRE(r_saga.begin() == r_std);
-        REQUIRE(r_saga.end() == haystack_cur.end());
-        REQUIRE(r_saga.dropped_front().begin() == haystack.begin());
-        REQUIRE(r_saga.dropped_back().end() == haystack.end());
+        if(r_std != haystack_cur.end())
+        {
+            REQUIRE(saga::cursor::size(r_saga) == num.value);
+        }
+        REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
+        REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
 }
 
