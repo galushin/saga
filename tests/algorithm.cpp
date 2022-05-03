@@ -795,10 +795,8 @@ TEST_CASE("find_end: default predicate, minimalistic")
                                          , needle_cur.begin(), needle_cur.end());
 
         REQUIRE(r_saga.begin() == r_std);
-        if(r_std != haystack_cur.end())
-        {
-            REQUIRE(saga::cursor::size(r_saga) == saga::cursor::size(needle_cur));
-        }
+        REQUIRE(saga::cursor::size(r_saga)
+                == (r_std != haystack_cur.end() ? saga::cursor::size(needle_cur) : 0));
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
