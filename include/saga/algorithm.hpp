@@ -39,13 +39,23 @@ namespace saga
     namespace detail
     {
         template <class Cursor>
-        Cursor make_partition(Cursor cur1, Cursor cur2)
+        Cursor cursor_from_parts(Cursor before, Cursor cur)
         {
-            cur1.forget_front();
-            cur1.exhaust_front();
-            cur1.splice(cur2);
+            before.forget_front();
+            before.exhaust_front();
+            before.splice(cur);
 
-            return cur1;
+            return before;
+        }
+
+        template <class Cursor>
+        Cursor cursor_from_parts(Cursor before, Cursor cur, Cursor after)
+        {
+            after.forget_back();
+            after.exhaust_back();
+            cur.splice(after);
+
+            return detail::cursor_from_parts(std::move(before), std::move(cur));
         }
     }
 
@@ -238,31 +248,41 @@ namespace saga
         ForwardCursor1 operator()(ForwardCursor1 cur, ForwardCursor2 s_cur
                                   , BinaryPredicate bin_pred = {}) const
         {
-            auto cur_rest = cur;
-            auto s_cur_rest = s_cur;
+            cur.forget_front();
+            cur.forget_back();
 
-            for(;;)
+            auto probe = cur;
+
+            for(auto s_cur_rest = s_cur;;)
             {
                 if(!s_cur_rest)
                 {
-                    return cur;
+                    return saga::detail::cursor_from_parts(cur.dropped_front()
+                                                           , probe.dropped_front()
+                                                           , std::move(probe));
                 }
 
-                if(!cur_rest)
+                if(!probe)
                 {
-                    return cur_rest;
+                    auto result = cur.dropped_front();
+                    result.splice(probe.dropped_front());
+                    result.exhaust_front();
+
+                    result.splice(probe);
+
+                    return result;
                 }
 
-                if(saga::invoke(bin_pred, *cur_rest, *s_cur_rest))
+                if(saga::invoke(bin_pred, *probe, *s_cur_rest))
                 {
-                    ++ cur_rest;
+                    ++ probe;
                     ++ s_cur_rest;
                 }
                 else
                 {
                     ++ cur;
-                    cur_rest = cur;
-
+                    probe = cur;
+                    probe.forget_front();
                     s_cur_rest = s_cur;
                 }
             }
@@ -276,6 +296,9 @@ namespace saga
         ForwardCursor1 operator()(ForwardCursor1 cur, ForwardCursor2 s_cur
                                   , BinaryPredicate bin_pred = {}) const
         {
+            cur.forget_front();
+            cur.forget_back();
+
             if(!s_cur)
             {
                 cur.exhaust_front();
@@ -295,8 +318,14 @@ namespace saga
                 }
                 else
                 {
-                    result = new_result;
+                    auto before = cur.dropped_front();
+                    before.splice(new_result.dropped_front());
+
+                    result = detail::cursor_from_parts(std::move(before), std::move(new_result),
+                                                       new_result.dropped_back());
                     cur = result;
+                    cur.rewind_back();
+
                     ++ cur;
                 }
             }
@@ -309,30 +338,37 @@ namespace saga
         ForwardCursor operator()(ForwardCursor input, Size const num, T const & value
                                  , BinaryPredicate bin_pred = {}) const
         {
-            auto probe = input;
-            auto cur_count = Size{0};
+            input.forget_front();
+            input.forget_back();
 
-            for(;;)
+            auto before = input.dropped_front();
+
+            for(auto cur_count = Size{0};;)
             {
                 if(cur_count == num)
                 {
-                    return input;
+                    return saga::detail::cursor_from_parts(std::move(before)
+                                                           , input.dropped_front()
+                                                           , std::move(input));
                 }
 
-                if(!probe)
+                if(!input)
                 {
-                    return probe;
+                    before.splice(input.dropped_front());
+
+                    return saga::detail::cursor_from_parts(std::move(before), input);
                 }
 
-                if(saga::invoke(bin_pred, *probe, value))
+                if(saga::invoke(bin_pred, *input, value))
                 {
-                    ++ probe;
+                    ++ input;
                     ++ cur_count;
                 }
                 else
                 {
-                    ++ probe;
-                    input = probe;
+                    ++ input;
+                    before.splice(input.dropped_front());
+                    input.forget_front();
                     cur_count = Size{0};
                 }
             }
@@ -982,7 +1018,7 @@ namespace saga
             }
 
             out = saga::move_backward_fn{}(std::move(input), out).out;
-            return detail::make_partition(out, out.dropped_back());
+            return detail::cursor_from_parts(out, out.dropped_back());
         }
 
     public:
@@ -1279,7 +1315,7 @@ namespace saga
             auto const result2 = this->impl(input, pred, num - num1);
 
             auto r_rotation
-                = saga::rotate_fn{}(detail::make_partition(result1, result2.dropped_front()));
+                = saga::rotate_fn{}(detail::cursor_from_parts(result1, result2.dropped_front()));
 
             auto r_true = result1.dropped_front();
             r_true.splice(r_rotation.dropped_front());
@@ -1287,7 +1323,7 @@ namespace saga
             r_rotation.forget_front();
             r_rotation.splice(result2);
 
-            return detail::make_partition(r_true, r_rotation);
+            return detail::cursor_from_parts(r_true, r_rotation);
         }
 
     public:
@@ -1694,7 +1730,7 @@ namespace saga
 
                 cur2 = lower_bound_fn{}(std::move(cur2), *cur1, cmp);
 
-                auto cur_mid = rotate_fn{}(detail::make_partition(cur1, cur2.dropped_front()));
+                auto cur_mid = rotate_fn{}(detail::cursor_from_parts(cur1, cur2.dropped_front()));
 
                 if(num1 == 1)
                 {
