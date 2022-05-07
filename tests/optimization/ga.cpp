@@ -314,11 +314,11 @@ TEST_CASE("Gray code - generates all")
     }
 
     // Соседним значениям должны соответствовать соседние коды, отличающиеся одним битом
-    for(auto i = 0* codes.size(); i+1 != codes.size(); ++ i)
-    {
-        auto const d = saga::boolean_manhattan_distance(codes[i], codes[i+1]);
+    REQUIRE(!codes.empty());
 
-        REQUIRE(d == 1);
+    for(auto const & index : saga::view::indices(codes.size() - 1))
+    {
+        REQUIRE(saga::boolean_manhattan_distance(codes[index], codes[index+1]) == 1);
     }
 }
 
@@ -406,9 +406,11 @@ TEST_CASE("Gray code (real) - generates all")
     // Все коды должны быть разные
     std::sort(values.begin(), values.end());
 
-    for(auto i = 0* values.size(); i+1 != values.size(); ++ i)
+    REQUIRE(!values.empty());
+
+    for(auto const & index : saga::view::indices(values.size() - 1))
     {
-        REQUIRE(values[i] < values[i+1]);
+        REQUIRE(values[index] < values[index+1] - std::numeric_limits<RealType>::epsilon());
     }
 
     CAPTURE(values);
@@ -423,11 +425,12 @@ TEST_CASE("Gray code (real) - generates all")
         code_values.push_back(code.second);
     }
 
-    for(auto i = 0* code_values.size(); i+1 != code_values.size(); ++ i)
-    {
-        auto const d = saga::boolean_manhattan_distance(code_values[i], code_values[i+1]);
+    REQUIRE(!code_values.empty());
 
-        CAPTURE(i, code_values[i], code_values[i+1]);
-        REQUIRE(d == 1);
+    for(auto const & index : saga::view::indices(code_values.size() - 1))
+    {
+        CAPTURE(index, code_values[index], code_values[index+1]);
+
+        REQUIRE(saga::boolean_manhattan_distance(code_values[index], code_values[index+1]) == 1);
     }
 }

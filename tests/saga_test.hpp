@@ -213,12 +213,12 @@ namespace saga_test
                 std::uniform_int_distribution<generation_t> distr(0, generation);
 
                 using Element = typename Container::value_type;
-                auto element_gen = [&](){ return arbitrary<Element>::generate(distr(urbg), urbg); };
+                auto elem_gen = [&](){ return arbitrary<Element>::generate(distr(urbg), urbg); };
 
-                auto first = ::saga_test::detail::make_function_input_iterator(element_gen, 0*num);
-                auto last = ::saga_test::detail::make_function_input_iterator(element_gen, num);
+                auto first = ::saga_test::detail::make_function_input_iterator(elem_gen, Size{0});
+                auto last = ::saga_test::detail::make_function_input_iterator(elem_gen, num);
 
-                return value_type(first, last);
+                return value_type(std::move(first), std::move(last));
             }
         };
 

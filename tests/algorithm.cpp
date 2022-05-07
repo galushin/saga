@@ -355,7 +355,7 @@ TEST_CASE("for_each_n - minimal")
     saga_test::property_checker << [](std::vector<Value> const & src)
     {
         // saga
-        auto const num = saga_test::random_uniform(0*src.size(), src.size());
+        auto const num = saga_test::random_uniform(0, src.size());
 
         auto src_in = saga_test::make_istringstream_from_range(src);
 
@@ -2814,7 +2814,7 @@ TEST_CASE("sample: Input -> RandomAccess")
         auto const out = saga_test::random_subcursor_of(saga::cursor::all(dest));
 
         auto const num
-            = static_cast<std::size_t>(saga_test::random_uniform(0*out.size(), out.size()));
+            = static_cast<std::size_t>(saga_test::random_uniform(0, out.size()));
 
         auto const result = saga::sample(saga::make_istream_cursor<Value>(src_in)
                                          , out, num, saga_test::random_engine());
@@ -2841,7 +2841,7 @@ TEST_CASE("sample: Forward -> RandomAccess")
         auto dest = dest_old;
         auto const out = saga_test::random_subcursor_of(saga::cursor::all(dest));
 
-        auto const num = saga_test::random_uniform(0*out.size(), out.size());
+        auto const num = saga_test::random_uniform(0, out.size());
 
         auto const result = saga::sample(input, out, num, saga_test::random_engine());
 

@@ -162,41 +162,39 @@ namespace saga
         Incrementable value_;
     };
 
-    namespace detail
+    template <class Incrementable>
+    class iota_view
     {
-        template <class Incrementable>
-        class iota_view
+    public:
+        // Типы
+        using iterator = saga::iota_iterator<Incrementable>;
+
+        // Создание, копирование, уничтожение
+        constexpr iota_view(Incrementable from, Incrementable to)
+         : from_(std::move(from))
+         , to_(std::move(to))
         {
-        public:
-            // Типы
-            using iterator = saga::iota_iterator<Incrementable>;
+            assert(this->from_ <= this->to_);
+        }
 
-            // Создание, копирование, уничтожение
-            constexpr iota_view(Incrementable from, Incrementable to)
-             : from_(std::move(from))
-             , to_(std::move(to))
-            {}
+        // Итераторы
+        constexpr iterator begin() const
+        {
+            return iterator{this->from_};
+        }
 
-            // Итераторы
-            constexpr iterator begin() const
-            {
-                return iterator{this->from_};
-            }
+        constexpr iterator end() const
+        {
+            return iterator{this->to_};
+        }
 
-            constexpr iterator end() const
-            {
-                return iterator{this->to_};
-            }
-
-        private:
-            Incrementable from_ = {};
-            Incrementable to_ = {};
-        };
-    }
-    // namespace detail
+    private:
+        Incrementable from_ = {};
+        Incrementable to_ = {};
+    };
 
     template <class Incrementable>
-    struct enable_borrowed_range_t<detail::iota_view<Incrementable>>
+    struct enable_borrowed_range_t<saga::iota_view<Incrementable>>
      : std::true_type
     {};
 
@@ -205,16 +203,16 @@ namespace saga
         struct indices_fn
         {
         public:
-            template <class Incrementable>
-            constexpr auto operator()(Incrementable from, Incrementable to) const
-            -> saga::detail::iota_view<Incrementable>
+            template <class Incrementable1, class Incrementable2>
+            constexpr auto operator()(Incrementable1 from, Incrementable2 to) const
+            -> saga::iota_view<std::common_type_t<Incrementable1, Incrementable2>>
             {
                 return {std::move(from), std::move(to)};
             }
 
             template <class Incrementable>
             constexpr auto operator()(Incrementable num) const
-            -> saga::detail::iota_view<Incrementable>
+            -> saga::iota_view<Incrementable>
             {
                 return (*this)(Incrementable(), num);
             }

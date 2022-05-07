@@ -714,7 +714,7 @@ namespace
     {
         IntType result(1);
 
-        for(auto pos : saga::view::indices(0*num, num))
+        for(auto pos : saga::view::indices(num))
         {
             result *= data.at(row).at(col + pos);
         }
@@ -729,7 +729,7 @@ namespace
     {
         IntType result(1);
 
-        for(auto pos : saga::view::indices(0*num, num))
+        for(auto pos : saga::view::indices(num))
         {
             result *= data.at(row + pos).at(col);
         }
@@ -744,7 +744,7 @@ namespace
     {
         IntType result(1);
 
-        for(auto pos : saga::view::indices(0*num, num))
+        for(auto pos : saga::view::indices(num))
         {
             result *= data.at(row + pos).at(col + pos);
         }
@@ -759,7 +759,7 @@ namespace
     {
         IntType result(1);
 
-        for(auto pos : saga::view::indices(0*num, num))
+        for(auto pos : saga::view::indices(num))
         {
             result *= data.at(row + pos).at(col - pos);
         }
@@ -784,8 +784,8 @@ namespace
 
         auto result = IntType(1);
 
-        for(auto row : saga::view::indices(0*num, rows))
-        for(auto col : saga::view::indices(0*num, cols))
+        for(auto row : saga::view::indices(rows))
+        for(auto col : saga::view::indices(cols))
         {
             if(col + num <= cols)
             {
@@ -1226,7 +1226,7 @@ namespace
         auto result_value = IntType(1);
         auto result_length = IntType(1);
 
-        for(auto const & value : saga::view::indices(2+0*num, num))
+        for(auto const & value : saga::view::indices(2, num))
         {
             auto new_length = ::collatz_length_no_memoization(value);
 
@@ -1429,7 +1429,7 @@ namespace
             row.front() += result.front();
             row.back() += result.back();
 
-            for(auto index : saga::view::indices(1+0*result.size(), result.size()))
+            for(auto index : saga::view::indices(1u, result.size()))
             {
                 row[index] += std::max(result[index-1], result[index]);
             }
