@@ -164,6 +164,7 @@ namespace saga
 
     namespace detail
     {
+        // @todo Значение по умолчанию для Sentinel
         template <class Incrementable>
         class iota_view
         {
@@ -205,9 +206,9 @@ namespace saga
         struct indices_fn
         {
         public:
-            template <class Incrementable>
-            constexpr auto operator()(Incrementable from, Incrementable to) const
-            -> saga::detail::iota_view<Incrementable>
+            template <class Incrementable1, class Incrementable2>
+            constexpr auto operator()(Incrementable1 from, Incrementable2 to) const
+            -> saga::detail::iota_view<std::common_type_t<Incrementable1, Incrementable2>>
             {
                 return {std::move(from), std::move(to)};
             }

@@ -47,12 +47,14 @@ namespace saga
     {
         template <class BooleanVector1, class BooleanVector2>
         auto operator()(BooleanVector1 const & x, BooleanVector2 const & y) const
-        -> decltype(x.size())
+        -> std::common_type_t<decltype(x.size()), decltype(y.size())>
         {
             assert(x.size() == y.size());
 
+            using Size = std::common_type_t<decltype(x.size()), decltype(y.size())>;
+
             return saga::inner_product(saga::cursor::all(x), saga::cursor::all(y),
-                                       0*x.size(), std::plus<>{}, std::not_equal_to<>{});
+                                       Size{0}, std::plus<>{}, std::not_equal_to<>{});
         }
     };
 

@@ -36,7 +36,7 @@ TEST_CASE("take_cursor: input")
     {
         auto src_in = saga_test::make_istringstream_from_range(values);
 
-        auto const num = saga_test::random_uniform(0*values.size(), 2*values.size());
+        auto const num = saga_test::random_uniform(0, 2*values.size());
 
         // Выполнение
         std::vector<Value> dest_saga;
@@ -60,7 +60,7 @@ TEST_CASE("take_cursor: output")
     saga_test::property_checker
     << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
     {
-        auto const num = saga_test::random_uniform(0*dest_old.size(), 2*dest_old.size());
+        auto const num = saga_test::random_uniform(0, 2*dest_old.size());
 
         auto const input = saga::cursor::all(src);
 

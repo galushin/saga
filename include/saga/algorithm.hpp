@@ -1992,6 +1992,14 @@ namespace saga
 
             saga::detail::push_heap(std::move(cur), hole, top_index, std::move(value), cmp);
         }
+
+        template <class RandomAccessCursor, class Distance, class T, class Compare>
+        void
+        adjust_heap(RandomAccessCursor cur, Distance length, T value, Compare & cmp)
+        {
+            return detail::adjust_heap(std::move(cur), Distance{0}, std::move(length)
+                                       , std::move(value), cmp);
+        }
     }
 
     struct is_heap_until_fn
@@ -2006,7 +2014,7 @@ namespace saga
             }
 
             auto const num = cur.size();
-            auto index = 1 + 0*num;
+            auto index = saga::cursor_difference_t<RandomAccessCursor>{1};
 
             for(; index < num; ++index)
             {
@@ -2086,7 +2094,7 @@ namespace saga
 
                 input.back() = std::move(input.front());
 
-                saga::detail::adjust_heap(input, 0*num, num-1, std::move(value), cmp);
+                saga::detail::adjust_heap(input, num-1, std::move(value), cmp);
             }
         }
     };
@@ -2249,7 +2257,7 @@ namespace saga
                     saga::cursor_value_t<RandomAccessCursor> value = std::move(*input);
                     *input = std::move(*out);
 
-                    saga::detail::adjust_heap(out, 0*out_size, out_size, std::move(value), cmp);
+                    saga::detail::adjust_heap(out, out_size, std::move(value), cmp);
                 }
             }
 
@@ -2287,7 +2295,7 @@ namespace saga
 
                 if(saga::invoke(cmp, *result.in, *heap))
                 {
-                    saga::detail::adjust_heap(heap, 0*num, num, *result.in, cmp);
+                    saga::detail::adjust_heap(heap, num, *result.in, cmp);
                 }
             }
 
