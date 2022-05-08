@@ -1006,7 +1006,7 @@ namespace saga
             return lhs;
         }
 
-        friend integer operator*(integer lhs, integer const & rhs)
+        friend integer operator*(integer const & lhs, integer const & rhs)
         {
             integer result;
 
@@ -1018,6 +1018,13 @@ namespace saga
             }
 
             return result;
+        }
+
+        template <class IntType>
+        friend auto operator*(integer const & lhs, IntType rhs)
+        -> std::enable_if_t<std::is_integral<IntType>{}, integer>
+        {
+            return lhs * integer(std::move(rhs));
         }
 
         friend bool operator==(integer const & lhs, integer const & rhs)
@@ -1535,6 +1542,25 @@ TEST_CASE("PE 019")
     }
 
     REQUIRE(result == 171);
+}
+
+// PE 020: Сумма цифр факториала
+namespace
+{
+    template <class IntType>
+    IntType projectEuler_020(IntType num)
+    {
+        auto const factorial = saga::accumulate(saga::cursor::all(saga::view::indices(1, num))
+                                                , saga::integer(1), std::multiplies<>{});
+
+        return saga::reduce(saga::cursor::all(factorial.digits()));
+    }
+}
+
+TEST_CASE("PE 020")
+{
+    REQUIRE(::projectEuler_020(10) == 27);
+    REQUIRE(::projectEuler_020(100) == 648);
 }
 
 // PE 067: Путь наибольшей суммы (часть II)
