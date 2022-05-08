@@ -1006,7 +1006,7 @@ namespace saga
             return lhs;
         }
 
-        friend integer operator*(integer lhs, integer const & rhs)
+        friend integer operator*(integer const & lhs, integer const & rhs)
         {
             integer result;
 
@@ -1021,10 +1021,10 @@ namespace saga
         }
 
         template <class IntType>
-        friend auto operator*(integer lhs, IntType rhs)
+        friend auto operator*(integer const & lhs, IntType rhs)
         -> std::enable_if_t<std::is_integral<IntType>{}, integer>
         {
-            return std::move(lhs) * integer(std::move(rhs));
+            return lhs * integer(std::move(rhs));
         }
 
         friend bool operator==(integer const & lhs, integer const & rhs)
