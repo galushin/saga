@@ -1563,6 +1563,42 @@ TEST_CASE("PE 020")
     REQUIRE(::projectEuler_020(100) == 648);
 }
 
+// PE 021: Дружественные числа
+namespace
+{
+    template <class IntType>
+    IntType projectEuler_021(IntType n_max)
+    {
+        std::vector<IntType> d_sum(n_max, 1);
+
+        for(auto d : saga::view::indices(2, n_max))
+        {
+            for(auto num = 2*d; num < n_max; num += d)
+            {
+                d_sum[num] += d;
+            }
+        }
+
+        auto result = IntType(0);
+        for(auto a : saga::view::indices(2, n_max))
+        {
+            auto const b = d_sum[a];
+
+            if(b < n_max && a != b && d_sum[b] == a)
+            {
+                result += a;
+            }
+        }
+
+        return result;
+    }
+}
+
+TEST_CASE("PE 021")
+{
+    REQUIRE(::projectEuler_021(10000) == 31626);
+}
+
 // PE 067: Путь наибольшей суммы (часть II)
 #include <fstream>
 
