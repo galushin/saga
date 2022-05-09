@@ -32,9 +32,9 @@ OBJDIR_RELEASE = ./obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = ./bin/Release/test
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/ProjectEuler/projectEuler.o $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/any.o $(OBJDIR_DEBUG)/container/reserve_if_supported.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/cursor/istream_cursor.o $(OBJDIR_DEBUG)/cursor/reverse.o $(OBJDIR_DEBUG)/cursor/subrange.o $(OBJDIR_DEBUG)/cursor/take.o $(OBJDIR_DEBUG)/cursor/to.o $(OBJDIR_DEBUG)/expected.o $(OBJDIR_DEBUG)/expected/unexpected.o $(OBJDIR_DEBUG)/functional.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/numeric.o $(OBJDIR_DEBUG)/numeric/digits_of.o $(OBJDIR_DEBUG)/numeric/polynomial.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/saga_test.o $(OBJDIR_DEBUG)/test/invocable_tracer.o $(OBJDIR_DEBUG)/test/regular_tracer.o $(OBJDIR_DEBUG)/type_traits.o $(OBJDIR_DEBUG)/utility/as_const.o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o $(OBJDIR_DEBUG)/utility/operators.o $(OBJDIR_DEBUG)/view/indices.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/ProjectEuler/projectEuler.o $(OBJDIR_DEBUG)/algorithm.o $(OBJDIR_DEBUG)/any.o $(OBJDIR_DEBUG)/container/reserve_if_supported.o $(OBJDIR_DEBUG)/cpp20/span.o $(OBJDIR_DEBUG)/cursor/indices.o $(OBJDIR_DEBUG)/cursor/istream_cursor.o $(OBJDIR_DEBUG)/cursor/reverse.o $(OBJDIR_DEBUG)/cursor/subrange.o $(OBJDIR_DEBUG)/cursor/take.o $(OBJDIR_DEBUG)/cursor/to.o $(OBJDIR_DEBUG)/expected.o $(OBJDIR_DEBUG)/expected/unexpected.o $(OBJDIR_DEBUG)/functional.o $(OBJDIR_DEBUG)/iterator.o $(OBJDIR_DEBUG)/iterator/reverse.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/math.o $(OBJDIR_DEBUG)/math/probability.o $(OBJDIR_DEBUG)/numeric.o $(OBJDIR_DEBUG)/numeric/digits_of.o $(OBJDIR_DEBUG)/numeric/polynomial.o $(OBJDIR_DEBUG)/optimization/ga.o $(OBJDIR_DEBUG)/optimization/local_search.o $(OBJDIR_DEBUG)/random/any_distribution.o $(OBJDIR_DEBUG)/random/iid_distribution.o $(OBJDIR_DEBUG)/random_engine.o $(OBJDIR_DEBUG)/saga_test.o $(OBJDIR_DEBUG)/test/invocable_tracer.o $(OBJDIR_DEBUG)/test/regular_tracer.o $(OBJDIR_DEBUG)/type_traits.o $(OBJDIR_DEBUG)/utility/as_const.o $(OBJDIR_DEBUG)/utility/equality_comparable_box.o $(OBJDIR_DEBUG)/utility/operators.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/ProjectEuler/projectEuler.o $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/any.o $(OBJDIR_RELEASE)/container/reserve_if_supported.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/cursor/istream_cursor.o $(OBJDIR_RELEASE)/cursor/reverse.o $(OBJDIR_RELEASE)/cursor/subrange.o $(OBJDIR_RELEASE)/cursor/take.o $(OBJDIR_RELEASE)/cursor/to.o $(OBJDIR_RELEASE)/expected.o $(OBJDIR_RELEASE)/expected/unexpected.o $(OBJDIR_RELEASE)/functional.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/numeric.o $(OBJDIR_RELEASE)/numeric/digits_of.o $(OBJDIR_RELEASE)/numeric/polynomial.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/saga_test.o $(OBJDIR_RELEASE)/test/invocable_tracer.o $(OBJDIR_RELEASE)/test/regular_tracer.o $(OBJDIR_RELEASE)/type_traits.o $(OBJDIR_RELEASE)/utility/as_const.o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o $(OBJDIR_RELEASE)/utility/operators.o $(OBJDIR_RELEASE)/view/indices.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/ProjectEuler/projectEuler.o $(OBJDIR_RELEASE)/algorithm.o $(OBJDIR_RELEASE)/any.o $(OBJDIR_RELEASE)/container/reserve_if_supported.o $(OBJDIR_RELEASE)/cpp20/span.o $(OBJDIR_RELEASE)/cursor/indices.o $(OBJDIR_RELEASE)/cursor/istream_cursor.o $(OBJDIR_RELEASE)/cursor/reverse.o $(OBJDIR_RELEASE)/cursor/subrange.o $(OBJDIR_RELEASE)/cursor/take.o $(OBJDIR_RELEASE)/cursor/to.o $(OBJDIR_RELEASE)/expected.o $(OBJDIR_RELEASE)/expected/unexpected.o $(OBJDIR_RELEASE)/functional.o $(OBJDIR_RELEASE)/iterator.o $(OBJDIR_RELEASE)/iterator/reverse.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/math.o $(OBJDIR_RELEASE)/math/probability.o $(OBJDIR_RELEASE)/numeric.o $(OBJDIR_RELEASE)/numeric/digits_of.o $(OBJDIR_RELEASE)/numeric/polynomial.o $(OBJDIR_RELEASE)/optimization/ga.o $(OBJDIR_RELEASE)/optimization/local_search.o $(OBJDIR_RELEASE)/random/any_distribution.o $(OBJDIR_RELEASE)/random/iid_distribution.o $(OBJDIR_RELEASE)/random_engine.o $(OBJDIR_RELEASE)/saga_test.o $(OBJDIR_RELEASE)/test/invocable_tracer.o $(OBJDIR_RELEASE)/test/regular_tracer.o $(OBJDIR_RELEASE)/type_traits.o $(OBJDIR_RELEASE)/utility/as_const.o $(OBJDIR_RELEASE)/utility/equality_comparable_box.o $(OBJDIR_RELEASE)/utility/operators.o
 
 all: debug release
 
@@ -55,7 +55,6 @@ before_debug:
 	test -d $(OBJDIR_DEBUG)/random || mkdir -p $(OBJDIR_DEBUG)/random
 	test -d $(OBJDIR_DEBUG)/test || mkdir -p $(OBJDIR_DEBUG)/test
 	test -d $(OBJDIR_DEBUG)/utility || mkdir -p $(OBJDIR_DEBUG)/utility
-	test -d $(OBJDIR_DEBUG)/view || mkdir -p $(OBJDIR_DEBUG)/view
 
 after_debug: 
 
@@ -78,6 +77,9 @@ $(OBJDIR_DEBUG)/container/reserve_if_supported.o: container/reserve_if_supported
 
 $(OBJDIR_DEBUG)/cpp20/span.o: cpp20/span.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c cpp20/span.cpp -o $(OBJDIR_DEBUG)/cpp20/span.o
+
+$(OBJDIR_DEBUG)/cursor/indices.o: cursor/indices.cpp
+	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c cursor/indices.cpp -o $(OBJDIR_DEBUG)/cursor/indices.o
 
 $(OBJDIR_DEBUG)/cursor/istream_cursor.o: cursor/istream_cursor.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c cursor/istream_cursor.cpp -o $(OBJDIR_DEBUG)/cursor/istream_cursor.o
@@ -163,9 +165,6 @@ $(OBJDIR_DEBUG)/utility/equality_comparable_box.o: utility/equality_comparable_b
 $(OBJDIR_DEBUG)/utility/operators.o: utility/operators.cpp
 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c utility/operators.cpp -o $(OBJDIR_DEBUG)/utility/operators.o
 
-$(OBJDIR_DEBUG)/view/indices.o: view/indices.cpp
-	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c view/indices.cpp -o $(OBJDIR_DEBUG)/view/indices.o
-
 clean_debug: 
 	rm -f $(OBJ_DEBUG) $(OUT_DEBUG)
 	rm -rf ./bin/Debug
@@ -182,7 +181,6 @@ clean_debug:
 	rm -rf $(OBJDIR_DEBUG)/random
 	rm -rf $(OBJDIR_DEBUG)/test
 	rm -rf $(OBJDIR_DEBUG)/utility
-	rm -rf $(OBJDIR_DEBUG)/view
 
 before_release: 
 	test -d ./bin/Release || mkdir -p ./bin/Release
@@ -199,7 +197,6 @@ before_release:
 	test -d $(OBJDIR_RELEASE)/random || mkdir -p $(OBJDIR_RELEASE)/random
 	test -d $(OBJDIR_RELEASE)/test || mkdir -p $(OBJDIR_RELEASE)/test
 	test -d $(OBJDIR_RELEASE)/utility || mkdir -p $(OBJDIR_RELEASE)/utility
-	test -d $(OBJDIR_RELEASE)/view || mkdir -p $(OBJDIR_RELEASE)/view
 
 after_release: 
 
@@ -222,6 +219,9 @@ $(OBJDIR_RELEASE)/container/reserve_if_supported.o: container/reserve_if_support
 
 $(OBJDIR_RELEASE)/cpp20/span.o: cpp20/span.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c cpp20/span.cpp -o $(OBJDIR_RELEASE)/cpp20/span.o
+
+$(OBJDIR_RELEASE)/cursor/indices.o: cursor/indices.cpp
+	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c cursor/indices.cpp -o $(OBJDIR_RELEASE)/cursor/indices.o
 
 $(OBJDIR_RELEASE)/cursor/istream_cursor.o: cursor/istream_cursor.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c cursor/istream_cursor.cpp -o $(OBJDIR_RELEASE)/cursor/istream_cursor.o
@@ -307,9 +307,6 @@ $(OBJDIR_RELEASE)/utility/equality_comparable_box.o: utility/equality_comparable
 $(OBJDIR_RELEASE)/utility/operators.o: utility/operators.cpp
 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c utility/operators.cpp -o $(OBJDIR_RELEASE)/utility/operators.o
 
-$(OBJDIR_RELEASE)/view/indices.o: view/indices.cpp
-	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c view/indices.cpp -o $(OBJDIR_RELEASE)/view/indices.o
-
 clean_release: 
 	rm -f $(OBJ_RELEASE) $(OUT_RELEASE)
 	rm -rf ./bin/Release
@@ -326,7 +323,6 @@ clean_release:
 	rm -rf $(OBJDIR_RELEASE)/random
 	rm -rf $(OBJDIR_RELEASE)/test
 	rm -rf $(OBJDIR_RELEASE)/utility
-	rm -rf $(OBJDIR_RELEASE)/view
 
 .PHONY: before_debug after_debug clean_debug before_release after_release clean_release
 

@@ -1,4 +1,4 @@
-/* (c) 2020-2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2020-2022 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -16,7 +16,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 // Тестируемый файл
-#include <saga/view/indices.hpp>
+#include <saga/cursor/indices.hpp>
 
 // Тестовая инфраструктура
 #include <catch/catch.hpp>
@@ -160,10 +160,12 @@ TEST_CASE("range-for with indices")
         std::vector<Index> ins_obj(xs.size());
         std::iota(ins_obj.begin(), ins_obj.end(), Index(0));
 
-        auto indices_view = saga::view::indices_of(xs);
-
         std::vector<Index> ins;
-        saga::copy(saga::cursor::all(indices_view), saga::back_inserter(ins));
+
+        for(auto const & each : saga::cursor::indices_of(xs))
+        {
+            ins.push_back(each);
+        }
 
         CHECK(ins == ins_obj);
     };
@@ -178,10 +180,13 @@ TEST_CASE("indices_of for arrays")
     std::vector<Index> ins_obj(saga::size(xs));
     std::iota(ins_obj.begin(), ins_obj.end(), Index(0));
 
-    auto indices_view = saga::view::indices_of(xs);
+    auto indices_view = saga::cursor::indices_of(xs);
 
     std::vector<Index> ins;
     saga::copy(saga::cursor::all(indices_view), saga::back_inserter(ins));
 
     CHECK(ins == ins_obj);
 }
+
+static_assert(!(saga::unreachable_sentinel{} == 42), "");
+static_assert(!(42 == saga::unreachable_sentinel{}), "");

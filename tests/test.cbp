@@ -45,6 +45,7 @@
 		<Unit filename="../include/saga/cursor/cursor_traits.hpp" />
 		<Unit filename="../include/saga/cursor/cycle.hpp" />
 		<Unit filename="../include/saga/cursor/filter.hpp" />
+		<Unit filename="../include/saga/cursor/indices.hpp" />
 		<Unit filename="../include/saga/cursor/iota.hpp" />
 		<Unit filename="../include/saga/cursor/istream_cursor.hpp" />
 		<Unit filename="../include/saga/cursor/reverse.hpp" />
@@ -99,13 +100,13 @@
 		<Unit filename="../include/saga/utility/exchange.hpp" />
 		<Unit filename="../include/saga/utility/in_place.hpp" />
 		<Unit filename="../include/saga/utility/operators.hpp" />
-		<Unit filename="../include/saga/view/indices.hpp" />
 		<Unit filename="ProjectEuler/projectEuler.cpp" />
 		<Unit filename="algorithm.cpp" />
 		<Unit filename="any.cpp" />
 		<Unit filename="container/reserve_if_supported.cpp" />
 		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
 		<Unit filename="cpp20/span.cpp" />
+		<Unit filename="cursor/indices.cpp" />
 		<Unit filename="cursor/istream_cursor.cpp" />
 		<Unit filename="cursor/reverse.cpp" />
 		<Unit filename="cursor/subrange.cpp" />
@@ -137,7 +138,6 @@
 		<Unit filename="utility/as_const.cpp" />
 		<Unit filename="utility/equality_comparable_box.cpp" />
 		<Unit filename="utility/operators.cpp" />
-		<Unit filename="view/indices.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>
