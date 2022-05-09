@@ -1057,10 +1057,8 @@ TEST_CASE("search: default predicate, minimalistic")
                                        , needle_cur.begin(), needle_cur.end());
 
         REQUIRE(r_saga.begin() == r_std);
-        if(r_std != haystack_cur.end())
-        {
-            REQUIRE(saga::cursor::size(r_saga) == saga::cursor::size(needle_cur));
-        }
+        REQUIRE(saga::cursor::size(r_saga)
+                == (r_std == haystack_cur.end() ? 0 : saga::cursor::size(needle_cur)));
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
@@ -1083,10 +1081,8 @@ TEST_CASE("search: custom predicate, minimalistic")
                                        , needle_cur.begin(), needle_cur.end(), pred);
 
         REQUIRE(r_saga.begin() == r_std);
-        if(r_std != haystack_cur.end())
-        {
-            REQUIRE(saga::cursor::size(r_saga) == saga::cursor::size(needle_cur));
-        }
+        REQUIRE(saga::cursor::size(r_saga)
+                == (r_std == haystack_cur.end() ? 0 : saga::cursor::size(needle_cur)));
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
@@ -1116,10 +1112,8 @@ TEST_CASE("search: default predicate, guaranty")
                                        , needle_cur.begin(), needle_cur.end());
 
         REQUIRE(r_saga.begin() == r_std);
-        if(r_std != haystack_cur.end())
-        {
-            REQUIRE(saga::cursor::size(r_saga) == saga::cursor::size(needle_cur));
-        }
+        REQUIRE(saga::cursor::size(r_saga)
+                == (r_std == haystack_cur.end() ? 0 : saga::cursor::size(needle_cur)));
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
@@ -1140,10 +1134,7 @@ TEST_CASE("search_n: default predicate, minimalistic")
                                          , num.value, value);
 
         REQUIRE(r_saga.begin() == r_std);
-        if(r_std != haystack_cur.end())
-        {
-            REQUIRE(saga::cursor::size(r_saga) == num.value);
-        }
+        REQUIRE(saga::cursor::size(r_saga) == (r_std == haystack_cur.end() ? 0 : num.value));
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
@@ -1166,10 +1157,7 @@ TEST_CASE("search_n: custom predicate, minimalistic")
                                          , num.value, value, pred);
 
         REQUIRE(r_saga.begin() == r_std);
-        if(r_std != haystack_cur.end())
-        {
-            REQUIRE(saga::cursor::size(r_saga) == num.value);
-        }
+        REQUIRE(saga::cursor::size(r_saga) == (r_std == haystack_cur.end() ? 0 : num.value));
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
@@ -1199,10 +1187,7 @@ TEST_CASE("search_n: default predicate, guaranty")
                                          , num.value, value);
 
         REQUIRE(r_saga.begin() == r_std);
-        if(r_std != haystack_cur.end())
-        {
-            REQUIRE(saga::cursor::size(r_saga) == num.value);
-        }
+        REQUIRE(saga::cursor::size(r_saga) == (r_std == haystack_cur.end() ? 0 : num.value));
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
