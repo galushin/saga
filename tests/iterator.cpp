@@ -25,7 +25,7 @@ SAGA -- это свободной программное обеспечение:
 // Вспомогательные файлы
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
-#include <saga/view/indices.hpp>
+#include <saga/cursor/indices.hpp>
 
 #include <list>
 
@@ -121,7 +121,7 @@ TEST_CASE("back_emplacer")
 
         REQUIRE(result.size() == nums.size());
 
-        for(auto i : saga::view::indices_of(nums))
+        for(auto i : saga::cursor::indices_of(nums))
         {
             REQUIRE(result.at(i) == Container(nums.at(i)));
         }
@@ -157,7 +157,7 @@ TEST_CASE("front_emplacer")
 
         REQUIRE(result.size() == nums.size());
 
-        for(auto i : saga::view::indices_of(nums))
+        for(auto i : saga::cursor::indices_of(nums))
         {
             REQUIRE(result.at(i) == Container(nums.at(i)));
         }

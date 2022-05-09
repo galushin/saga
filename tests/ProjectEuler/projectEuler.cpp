@@ -34,7 +34,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/math.hpp>
 #include <saga/numeric.hpp>
 #include <saga/utility/exchange.hpp>
-#include <saga/view/indices.hpp>
+#include <saga/cursor/indices.hpp>
 
 #include <optional>
 #include <vector>
@@ -48,7 +48,7 @@ namespace
     {
         auto result = IntType(0);
 
-        for(auto num : saga::view::indices(n_max))
+        for(auto num : saga::cursor::indices(n_max))
         {
             if(num % 3 == 0 || num % 5 == 0)
             {
@@ -77,7 +77,7 @@ namespace
     IntType projectEuler_001_cursor_algorithms(IntType n_max)
     {
         std::vector<IntType> tmp;
-        saga::copy_if(saga::cursor::all(saga::view::indices(n_max))
+        saga::copy_if(saga::cursor::indices(n_max)
                       , saga::back_inserter(tmp)
                       , [](IntType const & num) { return num % 3 == 0 || num % 5 == 0; });
 
@@ -89,7 +89,7 @@ namespace
     {
         auto pred = [](IntType const & num) { return num % 3 == 0 || num % 5 == 0; };
 
-        auto input = saga::cursor::filter(saga::cursor::all(saga::view::indices(n_max)), pred);
+        auto input = saga::cursor::filter(saga::cursor::indices(n_max), pred);
 
         return saga::reduce(std::move(input));
     }
@@ -102,7 +102,7 @@ namespace
         auto result = IntType{0};
         auto accumulator = [&result](IntType const & arg) { result += arg; };
 
-        saga::copy(saga::cursor::all(saga::view::indices(n_max))
+        saga::copy(saga::cursor::indices(n_max)
                    , saga::pipes::filter(saga::pipes::for_each(accumulator), pred));
 
         return result;
@@ -141,7 +141,7 @@ TEST_CASE("ProjectEuler 001")
     CHECK(projectEuler_001_cursor_algorithms(10) == 23);
     CHECK(projectEuler_001_cursor_algorithms(1000) == 233168);
 
-    for(auto const & num : saga::view::indices(1, 1000))
+    for(auto const & num : saga::cursor::indices(1, 1000))
     {
         CHECK(projectEuler_001_cursor_algorithms(num)
               == projectEuler_001_closed_form(num));
@@ -315,8 +315,7 @@ namespace
     constexpr
     IntType projectEuler_005(IntType num)
     {
-        return saga::accumulate(saga::cursor::all(saga::view::indices(2, num))
-                                , IntType{1}, saga::lcm);
+        return saga::accumulate(saga::cursor::indices(2, num), IntType{1}, saga::lcm);
     }
 
     static_assert(projectEuler_005(10) == 2520, "");
@@ -331,7 +330,7 @@ namespace
     template <class IntType>
     constexpr IntType projectEuler_006_sum_cursor(IntType num)
     {
-        return saga::reduce(saga::cursor::all(saga::view::indices(1, num+1)), IntType{0});
+        return saga::reduce(saga::cursor::indices(1, num+1), IntType{0});
     }
 
     template <class IntType>
@@ -340,8 +339,7 @@ namespace
         auto result = IntType{0};
         auto accumulator = [&result](IntType const & arg) { result += arg; };
 
-        saga::copy(saga::cursor::all(saga::view::indices(1, num+1))
-                   , saga::pipes::for_each(accumulator));
+        saga::copy(saga::cursor::indices(1, num+1), saga::pipes::for_each(accumulator));
 
         return result;
     }
@@ -349,7 +347,7 @@ namespace
     template <class IntType>
     constexpr IntType projectEuler_006_sum_squares_cursor(IntType num)
     {
-        auto values = saga::cursor::all(saga::view::indices(1, num+1));
+        auto values = saga::cursor::indices(1, num+1);
 
         return saga::reduce(saga::cursor::transform(values, saga::square), IntType{0});
     }
@@ -360,7 +358,7 @@ namespace
         auto result = IntType{0};
         auto accumulator = [&result](IntType const & arg) { result += arg; };
 
-        saga::copy(saga::cursor::all(saga::view::indices(1, num+1))
+        saga::copy(saga::cursor::indices(1, num+1)
                    , saga::pipes::transform(saga::pipes::for_each(accumulator), saga::square));
 
         return result;
@@ -552,8 +550,8 @@ namespace
     template <class IntType>
     constexpr IntType projectEuler_009_simple(IntType sum)
     {
-        for(auto a : saga::view::indices(3, std::max(3, (sum - 3)/3)))
-        for(auto b : saga::view::indices(a+1, std::max(a+1, (sum - 2)/2)))
+        for(auto a : saga::cursor::indices(3, std::max(3, (sum - 3)/3)))
+        for(auto b : saga::cursor::indices(a+1, std::max(a+1, (sum - 2)/2)))
         {
             auto const c = sum - a - b;
 
@@ -573,7 +571,7 @@ namespace
 
         auto const mlimit = std::max(2, static_cast<IntType>(std::sqrt(sum)+1));
 
-        for(auto m : saga::view::indices(2, mlimit))
+        for(auto m : saga::cursor::indices(2, mlimit))
         {
             if(sum_2 % m == 0)
             {
@@ -714,7 +712,7 @@ namespace
     {
         IntType result(1);
 
-        for(auto pos : saga::view::indices(num))
+        for(auto pos : saga::cursor::indices(num))
         {
             result *= data.at(row).at(col + pos);
         }
@@ -729,7 +727,7 @@ namespace
     {
         IntType result(1);
 
-        for(auto pos : saga::view::indices(num))
+        for(auto pos : saga::cursor::indices(num))
         {
             result *= data.at(row + pos).at(col);
         }
@@ -744,7 +742,7 @@ namespace
     {
         IntType result(1);
 
-        for(auto pos : saga::view::indices(num))
+        for(auto pos : saga::cursor::indices(num))
         {
             result *= data.at(row + pos).at(col + pos);
         }
@@ -759,7 +757,7 @@ namespace
     {
         IntType result(1);
 
-        for(auto pos : saga::view::indices(num))
+        for(auto pos : saga::cursor::indices(num))
         {
             result *= data.at(row + pos).at(col - pos);
         }
@@ -784,8 +782,8 @@ namespace
 
         auto result = IntType(1);
 
-        for(auto row : saga::view::indices(rows))
-        for(auto col : saga::view::indices(cols))
+        for(auto row : saga::cursor::indices(rows))
+        for(auto col : saga::cursor::indices(cols))
         {
             if(col + num <= cols)
             {
@@ -1103,7 +1101,7 @@ namespace saga
 
             auto carry = Digit(0);
 
-            for(auto index : saga::view::indices(rhs.digits_.size()))
+            for(auto index : saga::cursor::indices(rhs.digits_.size()))
             {
                 carry += this->digits_[index] + rhs.digits_[index];
 
@@ -1112,7 +1110,7 @@ namespace saga
                 carry /= 10;
             }
 
-            for(auto index : saga::view::indices(rhs.digits_.size(), this->digits_.size()))
+            for(auto index : saga::cursor::indices(rhs.digits_.size(), this->digits_.size()))
             {
                 carry += this->digits_[index];
 
@@ -1233,7 +1231,7 @@ namespace
         auto result_value = IntType(1);
         auto result_length = IntType(1);
 
-        for(auto const & value : saga::view::indices(2, num))
+        for(auto const & value : saga::cursor::indices(2, num))
         {
             auto new_length = ::collatz_length_no_memoization(value);
 
@@ -1375,7 +1373,7 @@ namespace
     {
         auto result = std::size_t{0};
 
-        for(auto value : saga::view::indices(1, max_value+1))
+        for(auto value : saga::cursor::indices(1, max_value+1))
         {
             auto words = ::number_as_words(value);
 
@@ -1436,7 +1434,7 @@ namespace
             row.front() += result.front();
             row.back() += result.back();
 
-            for(auto index : saga::view::indices(1u, result.size()))
+            for(auto index : saga::cursor::indices(1u, result.size()))
             {
                 row[index] += std::max(result[index-1], result[index]);
             }
@@ -1530,9 +1528,9 @@ TEST_CASE("PE 019")
 
     auto weekday = 2;
 
-    for(auto year : saga::view::indices(1901, 2001))
+    for(auto year : saga::cursor::indices(1901, 2001))
     {
-        for(auto month : saga::view::indices(1, 13))
+        for(auto month : saga::cursor::indices(1, 13))
         {
             result += (weekday == 0);
 
@@ -1550,7 +1548,7 @@ namespace
     template <class IntType>
     IntType projectEuler_020(IntType num)
     {
-        auto const factorial = saga::accumulate(saga::cursor::all(saga::view::indices(1, num))
+        auto const factorial = saga::accumulate(saga::cursor::indices(1, num)
                                                 , saga::integer(1), std::multiplies<>{});
 
         return saga::reduce(saga::cursor::all(factorial.digits()));
@@ -1561,6 +1559,42 @@ TEST_CASE("PE 020")
 {
     REQUIRE(::projectEuler_020(10) == 27);
     REQUIRE(::projectEuler_020(100) == 648);
+}
+
+// PE 021: Дружественные числа
+namespace
+{
+    template <class IntType>
+    IntType projectEuler_021(IntType n_max)
+    {
+        std::vector<IntType> d_sum(n_max, 1);
+
+        for(auto d : saga::cursor::indices(2, n_max))
+        {
+            for(auto num = 2*d; num < n_max; num += d)
+            {
+                d_sum[num] += d;
+            }
+        }
+
+        auto result = IntType(0);
+        for(auto a : saga::cursor::indices(2, n_max))
+        {
+            auto const b = d_sum[a];
+
+            if(b < n_max && a != b && d_sum[b] == a)
+            {
+                result += a;
+            }
+        }
+
+        return result;
+    }
+}
+
+TEST_CASE("PE 021")
+{
+    REQUIRE(::projectEuler_021(10000) == 31626);
 }
 
 // PE 067: Путь наибольшей суммы (часть II)

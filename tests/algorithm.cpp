@@ -28,7 +28,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/take.hpp>
 #include <saga/iterator/reverse.hpp>
 #include <saga/math.hpp>
-#include <saga/view/indices.hpp>
+#include <saga/cursor/indices.hpp>
 
 #include <forward_list>
 #include <list>
@@ -1057,10 +1057,8 @@ TEST_CASE("search: default predicate, minimalistic")
                                        , needle_cur.begin(), needle_cur.end());
 
         REQUIRE(r_saga.begin() == r_std);
-        if(r_std != haystack_cur.end())
-        {
-            REQUIRE(saga::cursor::size(r_saga) == saga::cursor::size(needle_cur));
-        }
+        REQUIRE(saga::cursor::size(r_saga)
+                == (r_std == haystack_cur.end() ? 0 : saga::cursor::size(needle_cur)));
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
@@ -1083,10 +1081,8 @@ TEST_CASE("search: custom predicate, minimalistic")
                                        , needle_cur.begin(), needle_cur.end(), pred);
 
         REQUIRE(r_saga.begin() == r_std);
-        if(r_std != haystack_cur.end())
-        {
-            REQUIRE(saga::cursor::size(r_saga) == saga::cursor::size(needle_cur));
-        }
+        REQUIRE(saga::cursor::size(r_saga)
+                == (r_std == haystack_cur.end() ? 0 : saga::cursor::size(needle_cur)));
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
@@ -1116,10 +1112,8 @@ TEST_CASE("search: default predicate, guaranty")
                                        , needle_cur.begin(), needle_cur.end());
 
         REQUIRE(r_saga.begin() == r_std);
-        if(r_std != haystack_cur.end())
-        {
-            REQUIRE(saga::cursor::size(r_saga) == saga::cursor::size(needle_cur));
-        }
+        REQUIRE(saga::cursor::size(r_saga)
+                == (r_std == haystack_cur.end() ? 0 : saga::cursor::size(needle_cur)));
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
@@ -1140,10 +1134,7 @@ TEST_CASE("search_n: default predicate, minimalistic")
                                          , num.value, value);
 
         REQUIRE(r_saga.begin() == r_std);
-        if(r_std != haystack_cur.end())
-        {
-            REQUIRE(saga::cursor::size(r_saga) == num.value);
-        }
+        REQUIRE(saga::cursor::size(r_saga) == (r_std == haystack_cur.end() ? 0 : num.value));
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
@@ -1166,10 +1157,7 @@ TEST_CASE("search_n: custom predicate, minimalistic")
                                          , num.value, value, pred);
 
         REQUIRE(r_saga.begin() == r_std);
-        if(r_std != haystack_cur.end())
-        {
-            REQUIRE(saga::cursor::size(r_saga) == num.value);
-        }
+        REQUIRE(saga::cursor::size(r_saga) == (r_std == haystack_cur.end() ? 0 : num.value));
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
@@ -1199,10 +1187,7 @@ TEST_CASE("search_n: default predicate, guaranty")
                                          , num.value, value);
 
         REQUIRE(r_saga.begin() == r_std);
-        if(r_std != haystack_cur.end())
-        {
-            REQUIRE(saga::cursor::size(r_saga) == num.value);
-        }
+        REQUIRE(saga::cursor::size(r_saga) == (r_std == haystack_cur.end() ? 0 : num.value));
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
@@ -1481,17 +1466,17 @@ TEST_CASE("move - subcursors")
 
         std::vector<Value::const_pointer> addresses;
 
-        for(auto index : saga::view::indices(dest_prefix_size))
+        for(auto index : saga::cursor::indices(dest_prefix_size))
         {
             addresses.push_back(dest_saga[index].data());
         }
 
-        for(auto index : saga::view::indices(n_common))
+        for(auto index : saga::cursor::indices(n_common))
         {
             addresses.push_back(src_saga.at(src_prefix_size + index).data());
         }
 
-        for(auto index : saga::view::indices(dest_prefix_size + n_common, dest.size()))
+        for(auto index : saga::cursor::indices(dest_prefix_size + n_common, dest.size()))
         {
             addresses.push_back(dest_saga[index].data());
         }
@@ -1518,23 +1503,23 @@ TEST_CASE("move - subcursors")
         // Проверить значения
         REQUIRE(src_saga == src_std);
 
-        for(auto index : saga::view::indices(dest_prefix_size))
+        for(auto index : saga::cursor::indices(dest_prefix_size))
         {
             REQUIRE(dest_saga[index] == dest[index]);
         }
 
-        for(auto index : saga::view::indices(n_common))
+        for(auto index : saga::cursor::indices(n_common))
         {
             REQUIRE(dest_saga[dest_prefix_size + index] == src[src_prefix_size + index]);
         }
 
-        for(auto index : saga::view::indices(dest_prefix_size + n_common, dest.size()))
+        for(auto index : saga::cursor::indices(dest_prefix_size + n_common, dest.size()))
         {
             REQUIRE(dest_saga[index] == dest[index]);
         }
 
         // Проверить адреса
-        for(auto index : saga::view::indices_of(dest))
+        for(auto index : saga::cursor::indices_of(dest))
         {
             REQUIRE(dest_saga[index].data() == addresses[index]);
         }
@@ -1609,17 +1594,17 @@ TEST_CASE("move_backward - vectors")
 
         std::vector<Value::const_pointer> addresses;
 
-        for(auto index : saga::view::indices(dest_prefix_size))
+        for(auto index : saga::cursor::indices(dest_prefix_size))
         {
             addresses.push_back(dest_saga[index].data());
         }
 
-        for(auto index : saga::view::indices(n_common))
+        for(auto index : saga::cursor::indices(n_common))
         {
             addresses.push_back(src_saga.at(src_prefix_size + index).data());
         }
 
-        for(auto index : saga::view::indices(dest_saga.size() - output.dropped_back().size()
+        for(auto index : saga::cursor::indices(dest_saga.size() - output.dropped_back().size()
                                              , dest_saga.size()))
         {
             addresses.push_back(dest_saga[index].data());
@@ -1647,25 +1632,25 @@ TEST_CASE("move_backward - vectors")
         // Проверить значения
         REQUIRE(src_saga == src_std);
 
-        for(auto index : saga::view::indices(dest_prefix_size))
+        for(auto index : saga::cursor::indices(dest_prefix_size))
         {
             REQUIRE(dest_saga.at(index) == dest.at(index));
         }
 
-        for(auto index : saga::view::indices(n_common))
+        for(auto index : saga::cursor::indices(n_common))
         {
             REQUIRE(dest_saga.at(dest_prefix_size + index)
                     == src.at(src_prefix_size + index));
         }
 
-        for(auto index : saga::view::indices(dest_saga.size() - output.dropped_back().size()
+        for(auto index : saga::cursor::indices(dest_saga.size() - output.dropped_back().size()
                                              , dest_saga.size()))
         {
             REQUIRE(dest_saga.at(index) == dest.at(index));
         }
 
         // Проверить адреса
-        for(auto index : saga::view::indices_of(dest))
+        for(auto index : saga::cursor::indices_of(dest))
         {
             REQUIRE(dest_saga[index].data() == addresses[index]);
         }

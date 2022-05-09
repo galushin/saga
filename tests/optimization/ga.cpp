@@ -26,7 +26,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cpp20/span.hpp>
 #include <saga/numeric/digits_of.hpp>
 #include <saga/optimization/test_objectives.hpp>
-#include <saga/view/indices.hpp>
+#include <saga/cursor/indices.hpp>
 
 #include <valarray>
 
@@ -139,7 +139,7 @@ TEST_CASE("GA_boolean_cycle: empty population")
 
 TEST_CASE("GA boolean : manhattan distance, tournament selection")
 {
-    for(auto tournament : saga::view::indices(2, 5))
+    for(auto tournament : saga::cursor::indices(2, 5))
     {
         {
             saga::selection_tournament selection(tournament);
@@ -278,7 +278,7 @@ TEST_CASE("Gray code - generates all")
     std::vector<Integer> values;
 
     // @todo заменить на алгоритм
-    for(auto num : saga::view::indices(n_max))
+    for(auto num : saga::cursor::indices(n_max))
     {
         // Преобразуем целое в двоичный код
         Digit_container code;
@@ -316,7 +316,7 @@ TEST_CASE("Gray code - generates all")
     // Соседним значениям должны соответствовать соседние коды, отличающиеся одним битом
     REQUIRE(!codes.empty());
 
-    for(auto const & index : saga::view::indices(codes.size() - 1))
+    for(auto const & index : saga::cursor::indices(codes.size() - 1))
     {
         REQUIRE(saga::boolean_manhattan_distance(codes[index], codes[index+1]) == 1);
     }
@@ -341,7 +341,7 @@ TEST_CASE("binary sequence to real: coverage")
 
         std::vector<double> values;
 
-        for(auto const & int_value : saga::view::indices(0, max_value))
+        for(auto const & int_value : saga::cursor::indices(0, max_value))
         {
             std::vector<bool> bits(bit_count.value(), 0);
             saga::copy(saga::cursor::digits_of(int_value, 2), saga::cursor::all(bits));
@@ -359,7 +359,7 @@ TEST_CASE("binary sequence to real: coverage")
 
         auto const step = std::pow(0.5, bit_count.value());
 
-        for(auto const & index : saga::view::indices(values.size() - 1))
+        for(auto const & index : saga::cursor::indices(values.size() - 1))
         {
             REQUIRE_THAT(values[index + 1] - values[index], Catch::Matchers::WithinULP(step, 2));
         }
@@ -380,7 +380,7 @@ TEST_CASE("Gray code (real) - generates all")
     std::vector<RealType> values;
 
     // @todo заменить на алгоритм
-    for(auto num : saga::view::indices(n_max))
+    for(auto num : saga::cursor::indices(n_max))
     {
         // Преобразуем целое в двоичный код
         Digit_container code;
@@ -408,7 +408,7 @@ TEST_CASE("Gray code (real) - generates all")
 
     REQUIRE(!values.empty());
 
-    for(auto const & index : saga::view::indices(values.size() - 1))
+    for(auto const & index : saga::cursor::indices(values.size() - 1))
     {
         REQUIRE(values[index] < values[index+1] - std::numeric_limits<RealType>::epsilon());
     }
@@ -427,7 +427,7 @@ TEST_CASE("Gray code (real) - generates all")
 
     REQUIRE(!code_values.empty());
 
-    for(auto const & index : saga::view::indices(code_values.size() - 1))
+    for(auto const & index : saga::cursor::indices(code_values.size() - 1))
     {
         CAPTURE(index, code_values[index], code_values[index+1]);
 

@@ -26,7 +26,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/subrange.hpp>
 #include <saga/functional.hpp>
 #include <saga/optimization/evaluated_solution.hpp>
-#include <saga/view/indices.hpp>
+#include <saga/cursor/indices.hpp>
 
 #include <functional>
 #include <vector>
@@ -161,7 +161,7 @@ namespace saga
 
         auto y_current = objective(x_init);
 
-        auto pos = saga::cursor::make_cycled(saga::cursor::all(saga::view::indices_of(x_init)));
+        auto pos = saga::cursor::make_cycled(saga::cursor::indices_of(x_init));
 
         for(auto fails_left = dim; fails_left > 0; ++pos)
         {

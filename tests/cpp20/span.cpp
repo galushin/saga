@@ -21,7 +21,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <catch/catch.hpp>
 
-#include <saga/view/indices.hpp>
+#include <saga/cursor/indices.hpp>
 #include "../saga_test.hpp"
 
 // @todo Убедиться, что итераторы являются непрерывными
@@ -430,7 +430,7 @@ TEST_CASE("span : operator []")
 
         REQUIRE(s.size() == src.size());
 
-        for(auto const & i : saga::view::indices_of(src))
+        for(auto const & i : saga::cursor::indices_of(src))
         {
             REQUIRE(s[i] == src[i]);
             REQUIRE(std::addressof(s[i]) == std::addressof(src[i]));
