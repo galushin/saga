@@ -23,7 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
-#include <saga/view/indices.hpp>
+#include <saga/cursor/indices.hpp>
 
 #include <list>
 #include <deque>

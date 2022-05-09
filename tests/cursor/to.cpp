@@ -26,7 +26,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/cursor/istream_cursor.hpp>
-#include <saga/view/indices.hpp>
+#include <saga/cursor/indices.hpp>
 
 #include <vector>
 #include <forward_list>
@@ -57,7 +57,7 @@ TEST_CASE("cursor::to : vector<T>")
 
     saga_test::property_checker << [](saga_test::container_size<Value> num)
     {
-        auto const src = saga::cursor::all(saga::view::indices(num.value));
+        auto const src = saga::cursor::indices(num.value);
 
         auto container = saga::cursor::to<Container>(src);
 
@@ -76,7 +76,7 @@ TEST_CASE("cursor::to : forward_list<T>")
 
     saga_test::property_checker << [](saga_test::container_size<Value> num)
     {
-        auto const src = saga::cursor::all(saga::view::indices(num.value));
+        auto const src = saga::cursor::indices(num.value);
 
         auto container = saga::cursor::to<Container>(src);
 
@@ -95,7 +95,7 @@ TEST_CASE("cursor::to : vector<T>, pipe")
 
     saga_test::property_checker << [](saga_test::container_size<Value> num)
     {
-        auto const src = saga::cursor::all(saga::view::indices(num.value));
+        auto const src = saga::cursor::indices(num.value);
         auto container = src | saga::cursor::to<Container>();
 
         static_assert(std::is_same<decltype(container), Container>{}, "");
@@ -113,7 +113,7 @@ TEST_CASE("cursor::to : forward_list<T>, pipe")
 
     saga_test::property_checker << [](saga_test::container_size<Value> num)
     {
-        auto const src = saga::cursor::all(saga::view::indices(num.value));
+        auto const src = saga::cursor::indices(num.value);
         auto container = src | saga::cursor::to<Container>();
 
         static_assert(std::is_same<decltype(container), Container>{}, "");
@@ -130,7 +130,7 @@ TEST_CASE("cursor::to : vector")
 
     saga_test::property_checker << [](saga_test::container_size<Value> num)
     {
-        auto const src = saga::cursor::all(saga::view::indices(num.value));
+        auto const src = saga::cursor::indices(num.value);
 
         auto container = saga::cursor::to<std::vector>(src);
 
@@ -148,7 +148,7 @@ TEST_CASE("cursor::to : forward_list")
 
     saga_test::property_checker << [](saga_test::container_size<Value> num)
     {
-        auto const src = saga::cursor::all(saga::view::indices(num.value));
+        auto const src = saga::cursor::indices(num.value);
 
         auto container = saga::cursor::to<std::forward_list>(src);
 
@@ -166,7 +166,7 @@ TEST_CASE("cursor::to : vector, pipe")
 
     saga_test::property_checker << [](saga_test::container_size<Value> num)
     {
-        auto const src = saga::cursor::all(saga::view::indices(num.value));
+        auto const src = saga::cursor::indices(num.value);
         auto container = src | saga::cursor::to<std::vector>();
 
         static_assert(std::is_same<decltype(container), std::vector<Value>>{}, "");
@@ -183,7 +183,7 @@ TEST_CASE("cursor::to : forward_list, pipe")
 
     saga_test::property_checker << [](saga_test::container_size<Value> num)
     {
-        auto const src = saga::cursor::all(saga::view::indices(num.value));
+        auto const src = saga::cursor::indices(num.value);
         auto container = src | saga::cursor::to<std::forward_list>();
 
         static_assert(std::is_same<decltype(container), std::forward_list<Value>>{}, "");

@@ -28,7 +28,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/take.hpp>
 #include <saga/iterator/reverse.hpp>
 #include <saga/math.hpp>
-#include <saga/view/indices.hpp>
+#include <saga/cursor/indices.hpp>
 
 #include <forward_list>
 #include <list>
@@ -1481,17 +1481,17 @@ TEST_CASE("move - subcursors")
 
         std::vector<Value::const_pointer> addresses;
 
-        for(auto index : saga::view::indices(dest_prefix_size))
+        for(auto index : saga::cursor::indices(dest_prefix_size))
         {
             addresses.push_back(dest_saga[index].data());
         }
 
-        for(auto index : saga::view::indices(n_common))
+        for(auto index : saga::cursor::indices(n_common))
         {
             addresses.push_back(src_saga.at(src_prefix_size + index).data());
         }
 
-        for(auto index : saga::view::indices(dest_prefix_size + n_common, dest.size()))
+        for(auto index : saga::cursor::indices(dest_prefix_size + n_common, dest.size()))
         {
             addresses.push_back(dest_saga[index].data());
         }
@@ -1518,23 +1518,23 @@ TEST_CASE("move - subcursors")
         // Проверить значения
         REQUIRE(src_saga == src_std);
 
-        for(auto index : saga::view::indices(dest_prefix_size))
+        for(auto index : saga::cursor::indices(dest_prefix_size))
         {
             REQUIRE(dest_saga[index] == dest[index]);
         }
 
-        for(auto index : saga::view::indices(n_common))
+        for(auto index : saga::cursor::indices(n_common))
         {
             REQUIRE(dest_saga[dest_prefix_size + index] == src[src_prefix_size + index]);
         }
 
-        for(auto index : saga::view::indices(dest_prefix_size + n_common, dest.size()))
+        for(auto index : saga::cursor::indices(dest_prefix_size + n_common, dest.size()))
         {
             REQUIRE(dest_saga[index] == dest[index]);
         }
 
         // Проверить адреса
-        for(auto index : saga::view::indices_of(dest))
+        for(auto index : saga::cursor::indices_of(dest))
         {
             REQUIRE(dest_saga[index].data() == addresses[index]);
         }
@@ -1609,17 +1609,17 @@ TEST_CASE("move_backward - vectors")
 
         std::vector<Value::const_pointer> addresses;
 
-        for(auto index : saga::view::indices(dest_prefix_size))
+        for(auto index : saga::cursor::indices(dest_prefix_size))
         {
             addresses.push_back(dest_saga[index].data());
         }
 
-        for(auto index : saga::view::indices(n_common))
+        for(auto index : saga::cursor::indices(n_common))
         {
             addresses.push_back(src_saga.at(src_prefix_size + index).data());
         }
 
-        for(auto index : saga::view::indices(dest_saga.size() - output.dropped_back().size()
+        for(auto index : saga::cursor::indices(dest_saga.size() - output.dropped_back().size()
                                              , dest_saga.size()))
         {
             addresses.push_back(dest_saga[index].data());
@@ -1647,25 +1647,25 @@ TEST_CASE("move_backward - vectors")
         // Проверить значения
         REQUIRE(src_saga == src_std);
 
-        for(auto index : saga::view::indices(dest_prefix_size))
+        for(auto index : saga::cursor::indices(dest_prefix_size))
         {
             REQUIRE(dest_saga.at(index) == dest.at(index));
         }
 
-        for(auto index : saga::view::indices(n_common))
+        for(auto index : saga::cursor::indices(n_common))
         {
             REQUIRE(dest_saga.at(dest_prefix_size + index)
                     == src.at(src_prefix_size + index));
         }
 
-        for(auto index : saga::view::indices(dest_saga.size() - output.dropped_back().size()
+        for(auto index : saga::cursor::indices(dest_saga.size() - output.dropped_back().size()
                                              , dest_saga.size()))
         {
             REQUIRE(dest_saga.at(index) == dest.at(index));
         }
 
         // Проверить адреса
-        for(auto index : saga::view::indices_of(dest))
+        for(auto index : saga::cursor::indices_of(dest))
         {
             REQUIRE(dest_saga[index].data() == addresses[index]);
         }

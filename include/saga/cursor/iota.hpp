@@ -205,6 +205,7 @@ namespace saga
         // Создание, копирование, уничтожение
         constexpr explicit iota_cursor(Incrementable first, Sentinel last)
          : cur_(std::move(first))
+         , cur_old_(this->cur_)
          , last_(std::move(last))
         {}
 
@@ -235,14 +236,27 @@ namespace saga
             ++ cur_;
         }
 
+        // Прямой курсор
+        iota_cursor<Incrementable, Incrementable>
+        dropped_front() const
+        {
+            return iota_cursor<Incrementable, Incrementable>(this->cur_old_, this->cur_);
+        }
+
         // Курсор произвольного доступа
         constexpr void drop_front(difference_type num)
         {
             this->cur_ += std::move(num);
         }
 
+        difference_type size() const
+        {
+            return this->last_ - this->cur_;
+        }
+
     private:
         Incrementable cur_{};
+        Incrementable cur_old_{};
         Sentinel last_{};
     };
 
