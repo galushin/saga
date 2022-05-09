@@ -21,7 +21,6 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/iota.hpp>
 #include <saga/ranges.hpp>
 
-#include <limits>
 #include <utility>
 
 namespace saga

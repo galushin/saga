@@ -28,6 +28,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/utility/operators.hpp>
 
 #include <iterator>
+#include <limits>
 
 namespace saga
 {
