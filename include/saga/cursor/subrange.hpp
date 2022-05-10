@@ -43,7 +43,7 @@ namespace saga
             return lhs.begin() == rhs.begin()
                     && lhs.end() == rhs.end()
                     && lhs.cur_old_ == rhs.cur_old_
-                    && rhs.last_old_ == rhs.last_old_;
+                    && lhs.last_old_ == rhs.last_old_;
         }
 
     public:
@@ -64,7 +64,7 @@ namespace saga
          , last_(this->last_old_)
          , back_(this->last_)
         {
-            this->tweak_back(typename std::iterator_traits<Sentinel>::iterator_category{});
+            this->tweak_back();
         }
 
         // Итераторы
@@ -127,6 +127,11 @@ namespace saga
             this->back_ = other.back_;
             this->last_ = other.last_;
             this->last_old_ = other.last_old_;
+
+            if(this->back_ == this->last_)
+            {
+                this->tweak_back();
+            }
         }
 
         void rewind_front()
@@ -150,6 +155,7 @@ namespace saga
         constexpr reference back() const
         {
             assert(!!*this);
+            assert(this->back_ != this->last_);
 
             return *this->back_;
         }
@@ -163,7 +169,7 @@ namespace saga
         {
             this->last_ = this->last_old_;
             this->back_ = this->last_;
-            this->tweak_back(typename std::iterator_traits<Sentinel>::iterator_category{});
+            this->tweak_back();
         }
 
         void forget_back()
@@ -200,6 +206,11 @@ namespace saga
         }
 
     private:
+        constexpr void tweak_back()
+        {
+            return this->tweak_back(typename std::iterator_traits<Sentinel>::iterator_category{});
+        }
+
         constexpr void tweak_back(std::input_iterator_tag)
         {}
 
@@ -255,15 +266,19 @@ namespace saga
         ForwardCursor2
         rebase_cursor(ForwardCursor1 src, ForwardCursor2 dest, std::forward_iterator_tag)
         {
-            // Что если у src есть пройденная задняя часть?
-
-            auto const n_front = saga::cursor::size(src.dropped_front());
+            auto const n_before = saga::cursor::size(src.dropped_front());
+            auto const n_body = saga::cursor::size(src);
 
             auto const n_result = saga::cursor::size(dest);
 
-            assert(n_front <= n_result);
+            assert(n_before + n_body <= n_result);
 
-            return saga::cursor::drop_front_n(std::move(dest), n_front);
+            auto after = saga::cursor::drop_front_n(std::move(dest), n_before + n_body);
+            dest = after.dropped_front();
+            after.exhaust_back();
+            dest.splice(after);
+
+            return saga::cursor::drop_front_n(std::move(dest), n_before);
         }
 
         template <class ForwardCursor, class BidirectionalCursor>

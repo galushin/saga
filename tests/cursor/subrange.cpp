@@ -62,6 +62,14 @@ namespace
     void check_cursor_equal(saga::subrange_cursor<FI, S> const & lhs,
                             saga::subrange_cursor<FI, S> const & rhs)
     {
+        if(lhs == rhs)
+        {
+            CHECK(lhs.begin() == rhs.begin());
+            CHECK(lhs.end() == rhs.end());
+            CHECK(lhs.dropped_front().begin() == rhs.dropped_front().begin());
+            CHECK(lhs.dropped_back().end() == rhs.dropped_back().end());
+        }
+
         CHECK((lhs == rhs)
               == (lhs.begin() == rhs.begin()
                   && lhs.end() == rhs.end()
@@ -156,4 +164,24 @@ TEST_CASE("subrange cursor rebase")
         REQUIRE(result_mutable.dropped_front().begin() == dest.begin());
         REQUIRE(result_mutable.dropped_back().end() == dest.end());
     };
+}
+
+TEST_CASE("subrange_cursor::splice, regression #996")
+{
+      saga_test::property_checker << [](std::list<int> const & src)
+      {
+          auto const part2 = saga::make_subrange_cursor(src.end(), src.end(), saga::unsafe_tag_t{});
+          auto const part1 = saga::cursor::all(src);
+
+          auto result = part1;
+          result.splice(part2);
+
+          REQUIRE(!part2);
+          REQUIRE(result == part1);
+
+          if(!src.empty())
+          {
+              REQUIRE(std::addressof(result.back()) == std::addressof(src.back()));
+          }
+      };
 }
