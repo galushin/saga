@@ -64,7 +64,7 @@ namespace saga
          , last_(this->last_old_)
          , back_(this->last_)
         {
-            this->tweak_back(typename std::iterator_traits<Sentinel>::iterator_category{});
+            this->tweak_back();
         }
 
         // Итераторы
@@ -127,6 +127,11 @@ namespace saga
             this->back_ = other.back_;
             this->last_ = other.last_;
             this->last_old_ = other.last_old_;
+
+            if(this->back_ == this->last_)
+            {
+                this->tweak_back();
+            }
         }
 
         void rewind_front()
@@ -150,6 +155,7 @@ namespace saga
         constexpr reference back() const
         {
             assert(!!*this);
+            assert(this->back_ != this->last_);
 
             return *this->back_;
         }
@@ -163,7 +169,7 @@ namespace saga
         {
             this->last_ = this->last_old_;
             this->back_ = this->last_;
-            this->tweak_back(typename std::iterator_traits<Sentinel>::iterator_category{});
+            this->tweak_back();
         }
 
         void forget_back()
@@ -200,6 +206,11 @@ namespace saga
         }
 
     private:
+        constexpr void tweak_back()
+        {
+            return this->tweak_back(typename std::iterator_traits<Sentinel>::iterator_category{});
+        }
+
         constexpr void tweak_back(std::input_iterator_tag)
         {}
 
