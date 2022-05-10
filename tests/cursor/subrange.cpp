@@ -62,6 +62,14 @@ namespace
     void check_cursor_equal(saga::subrange_cursor<FI, S> const & lhs,
                             saga::subrange_cursor<FI, S> const & rhs)
     {
+        if(lhs == rhs)
+        {
+            CHECK(lhs.begin() == rhs.begin());
+            CHECK(lhs.end() == rhs.end());
+            CHECK(lhs.dropped_front().begin() == rhs.dropped_front().begin());
+            CHECK(lhs.dropped_back().end() == rhs.dropped_back().end());
+        }
+
         CHECK((lhs == rhs)
               == (lhs.begin() == rhs.begin()
                   && lhs.end() == rhs.end()
