@@ -1601,14 +1601,8 @@ namespace
 {
     long alphabetical_value(std::string_view str)
     {
-        long result = 0;
-
-        for(auto const & each : str)
-        {
-            result += (each - 'A' + 1);
-        }
-
-        return result;
+        return saga::transform_reduce(saga::cursor::all(str), long{0}, std::plus<>{}
+                                      , [](char each) { return each - 'A' + 1; });
     }
 }
 
@@ -1653,12 +1647,11 @@ TEST_CASE("PE 022")
     REQUIRE(names[938 - 1] == "COLIN");
 
     // Вычислить алфавитные значения имён и получить ответ
-    auto result = long{0};
-
-    for(auto const index : saga::cursor::indices_of(names))
-    {
-        result += (index + 1) * ::alphabetical_value(names[index]);
-    }
+    auto const result
+        = saga::transform_reduce(saga::cursor::indices_of(names)
+                                 , saga::cursor::all(names), long{0}, std::plus<>{}
+                                 , [](long index, std::string const & name)
+                                   { return (index + 1) * ::alphabetical_value(name); });
 
     REQUIRE(result == 871'198'282);
 }
