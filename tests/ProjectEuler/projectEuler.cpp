@@ -1597,9 +1597,73 @@ TEST_CASE("PE 021")
     REQUIRE(::projectEuler_021(10000) == 31626);
 }
 
-// PE 067: Путь наибольшей суммы (часть II)
+namespace
+{
+    long alphabetical_value(std::string_view str)
+    {
+        long result = 0;
+
+        for(auto const & each : str)
+        {
+            result += (each - 'A' + 1);
+        }
+
+        return result;
+    }
+}
+
+// PE 022: Баллы для имён
 #include <fstream>
 
+TEST_CASE("PE 022")
+{
+    REQUIRE(::alphabetical_value("COLIN") == 53);
+
+    std::vector<std::string> names;
+
+    {
+        std::ifstream file("ProjectEuler/p022_names.txt");
+
+        REQUIRE(!!file);
+
+        std::string reader;
+        for(; file; )
+        {
+            char c = file.get();
+            if(std::isalpha(c))
+            {
+                reader.push_back(c);
+            }
+            else if(c == ',')
+            {
+                names.push_back(std::move(reader));
+                reader.clear();
+            }
+        }
+
+        if(!reader.empty())
+        {
+            names.push_back(std::move(reader));
+        }
+    }
+
+    // Отсортировать
+    saga::sort(saga::cursor::all(names));
+
+    REQUIRE(names[938 - 1] == "COLIN");
+
+    // Вычислить алфавитные значения имён и получить ответ
+    auto result = long{0};
+
+    for(auto const index : saga::cursor::indices_of(names))
+    {
+        result += (index + 1) * ::alphabetical_value(names[index]);
+    }
+
+    REQUIRE(result == 871'198'282);
+}
+
+// PE 067: Путь наибольшей суммы (часть II)
 TEST_CASE("PE 067")
 {
     std::ifstream file("ProjectEuler/p067_triangle.txt");
