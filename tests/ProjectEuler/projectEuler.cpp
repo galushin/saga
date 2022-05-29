@@ -1565,7 +1565,8 @@ TEST_CASE("PE 020")
 namespace
 {
     template <class IntType>
-    IntType projectEuler_021(IntType n_max)
+    std::vector<IntType>
+    proper_divisors_sums_below(IntType n_max)
     {
         std::vector<IntType> d_sum(n_max, 1);
 
@@ -1576,6 +1577,14 @@ namespace
                 d_sum[num] += d;
             }
         }
+
+        return d_sum;
+    }
+
+    template <class IntType>
+    IntType projectEuler_021(IntType n_max)
+    {
+        auto const d_sum = ::proper_divisors_sums_below(n_max);
 
         auto result = IntType(0);
         for(auto a : saga::cursor::indices(2, n_max))
@@ -1654,6 +1663,49 @@ TEST_CASE("PE 022")
                                    { return (index + 1) * ::alphabetical_value(name); });
 
     REQUIRE(result == 871'198'282);
+}
+
+// PE 023 Не-избыточные суммы
+TEST_CASE("PE 023")
+{
+    using IntType = long;
+
+    // Установлено с помощью математического анализа
+    auto const n_max = IntType(28123 + 1);
+
+    std::vector<IntType> abundants;
+
+    saga::copy_if(saga::cursor::indices(1, n_max), saga::back_inserter(abundants)
+                  , [d_sum = ::proper_divisors_sums_below(n_max)](IntType num)
+                    { return d_sum[num] > num ; });
+
+    REQUIRE(abundants.front() == 12);
+
+    std::vector<IntType> marks(n_max, true);
+
+    for(auto cur1 = saga::cursor::all(abundants); !!cur1; ++ cur1)
+    for(auto cur2 = cur1; !!cur2; ++ cur2)
+    {
+        auto const sum = *cur1 + *cur2;
+
+        if(sum < n_max)
+        {
+            marks[sum] = false;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    auto result = IntType(0);
+
+    for(auto const & num : saga::cursor::indices(1, n_max))
+    {
+        result += num * marks[num];
+    }
+
+    REQUIRE(result == 4'179'871);
 }
 
 // PE 067: Путь наибольшей суммы (часть II)
