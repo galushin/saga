@@ -23,12 +23,13 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Вспомогательные файлы
+#include <saga/accumulator/sum.hpp>
+#include <saga/cursor/indices.hpp>
 #include <saga/cursor/istream_cursor.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/cursor/take.hpp>
 #include <saga/iterator/reverse.hpp>
 #include <saga/math.hpp>
-#include <saga/cursor/indices.hpp>
 
 #include <forward_list>
 #include <list>
@@ -265,20 +266,6 @@ TEST_CASE("all_of, any_of, some_of - subcursor")
     };
 }
 
-namespace
-{
-    template <class T>
-    struct sum_accumulator
-    {
-        void operator()(T const & x)
-        {
-            this->sum += x;
-        }
-
-        T sum{0};
-    };
-}
-
 TEST_CASE("for_each - minimal")
 {
     using Value = unsigned;
@@ -288,13 +275,14 @@ TEST_CASE("for_each - minimal")
         // saga
         auto src_in = saga_test::make_istringstream_from_range(src);
         auto const result_saga = saga::for_each(saga::make_istream_cursor<Value>(src_in)
-                                                , ::sum_accumulator<Value>{});
+                                                , saga::sum_accumulator<Value>{});
 
         // std
-        auto const result_std = std::for_each(src.begin(), src.end(), ::sum_accumulator<Value>{});
+        auto const result_std = std::for_each(src.begin(), src.end()
+                                              , saga::sum_accumulator<Value>{});
 
         // Сравение
-        REQUIRE(result_saga.fun.sum == result_std.sum);
+        REQUIRE(result_saga.fun.sum() == result_std.sum());
     };
 }
 
@@ -307,16 +295,17 @@ TEST_CASE("for_each - subcursor, const")
         auto const sub = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         // saga
-        auto const result_saga = saga::for_each(sub, ::sum_accumulator<Value>{});
+        auto const result_saga = saga::for_each(sub, saga::sum_accumulator<Value>{});
 
         // std
-        auto const result_std = std::for_each(sub.begin(), sub.end(), ::sum_accumulator<Value>{});
+        auto const result_std = std::for_each(sub.begin(), sub.end()
+                                              , saga::sum_accumulator<Value>{});
 
         // Сравение
         REQUIRE(result_saga.in.begin() == sub.end());
         REQUIRE(result_saga.in.end() == sub.end());
 
-        REQUIRE(result_saga.fun.sum == result_std.sum);
+        REQUIRE(result_saga.fun.sum() == result_std.sum());
     };
 }
 
@@ -360,15 +349,15 @@ TEST_CASE("for_each_n - minimal")
         auto src_in = saga_test::make_istringstream_from_range(src);
 
         auto const result_saga = saga::for_each_n(saga::make_istream_cursor<Value>(src_in)
-                                                  , num, ::sum_accumulator<Value>{});
+                                                  , num, saga::sum_accumulator<Value>{});
 
         // std
         auto const result_std
-            = std::for_each(src.begin(), src.begin() + num, ::sum_accumulator<Value>{});
+            = std::for_each(src.begin(), src.begin() + num, saga::sum_accumulator<Value>{});
 
         // Сравение
-        REQUIRE(result_saga.fun.sum == result_std.sum);
-        REQUIRE(result_saga.fun.sum == result_std.sum);
+        REQUIRE(result_saga.fun.sum() == result_std.sum());
+        REQUIRE(result_saga.fun.sum() == result_std.sum());
     };
 }
 
@@ -382,13 +371,13 @@ TEST_CASE("for_each_n - subcursor, const")
         auto const sub = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         // saga
-        auto const result_saga = saga::for_each_n(sub, num.value, ::sum_accumulator<Value>{});
+        auto const result_saga = saga::for_each_n(sub, num.value, saga::sum_accumulator<Value>{});
 
         // std
         auto const n_common = std::min(sub.size(), num.value);
 
         auto const result_std
-            = std::for_each(sub.begin(), sub.begin() + n_common, ::sum_accumulator<Value>{});
+            = std::for_each(sub.begin(), sub.begin() + n_common, saga::sum_accumulator<Value>{});
 
         // Сравение
         auto result_expected = sub;
@@ -396,7 +385,7 @@ TEST_CASE("for_each_n - subcursor, const")
 
         REQUIRE(result_saga.in == result_expected);
 
-        REQUIRE(result_saga.fun.sum == result_std.sum);
+        REQUIRE(result_saga.fun.sum() == result_std.sum());
     };
 }
 
