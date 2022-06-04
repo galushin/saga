@@ -405,6 +405,53 @@ namespace saga
         }
     };
 
+    struct factoriadic_fn
+    {
+        template <class Size, class OutputCursor>
+        void operator()(Size num, OutputCursor out) const
+        {
+            for(auto d = Size(1); num > 0; num /= d, void(++d))
+            {
+                out  << num % d;
+            }
+        }
+    };
+
+    struct nth_permutation_fn
+    {
+        template <class RandomAccessCursor, class Size>
+        void operator()(RandomAccessCursor cur, Size num) const
+        {
+            if(num == 0)
+            {
+                return;
+            }
+
+            std::vector<Size> indices(cur.size(), Size(0));
+            factoriadic_fn{}(std::move(num), saga::cursor::all(indices));
+
+            for(; !indices.empty(); void(++cur), indices.pop_back())
+            {
+                assert(!!cur);
+
+                if(indices.back() != 0)
+                {
+                    assert(indices.back() < indices.size());
+
+                    saga::cursor_value_t<RandomAccessCursor> item = std::move(cur[indices.back()]);
+
+                    auto pos = cur;
+                    pos.forget_front();
+                    pos.drop_front(indices.back() + 1);
+
+                    saga::shift_right_fn{}(pos.dropped_front(), Size(1));
+
+                    cur.front() = std::move(item);
+                }
+            }
+        }
+    };
+
     inline constexpr auto const iota          = iota_fn{};
     inline constexpr auto const accumulate    = accumulate_fn{};
     inline constexpr auto const inner_product = inner_product_fn{};
@@ -424,6 +471,8 @@ namespace saga
     inline constexpr auto const eratosthenes_seive = eratosthenes_seive_fn{};
     inline constexpr auto const copy_primes_below = copy_primes_below_fn{};
     inline constexpr auto const primes_below = primes_below_fn{};
+
+    inline constexpr auto const nth_permutation = nth_permutation_fn{};
 }
 // namespace saga
 
