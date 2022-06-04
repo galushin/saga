@@ -24,8 +24,9 @@ SAGA -- это свободной программное обеспечение:
 
 // Вспомогательные возможности, используемые в тестах
 #include <saga/algorithm.hpp>
-#include <saga/cursor/subrange.hpp>
+#include <saga/cursor/indices.hpp>
 #include <saga/cursor/istream_cursor.hpp>
+#include <saga/cursor/subrange.hpp>
 
 #include <list>
 #include <vector>
@@ -1508,4 +1509,37 @@ TEST_CASE("lcm : functional object")
     {
         REQUIRE(saga::lcm(lhs, Value2(rhs)) == std::lcm(Value2(lhs), Value2(rhs)));
     };
+}
+
+TEST_CASE("nth_permutation: default compare")
+{
+    using Container = std::vector<int>;
+    Container const elements{0, 1, 2, 3};
+
+    auto const num = elements.size();
+
+    auto const n_perm = saga::accumulate(saga::cursor::indices(1u, num + 1), 1u
+                                         , std::multiplies<>{});
+
+    std::vector<Container> perms;
+
+    for(auto const & index : saga::cursor::indices(n_perm))
+    {
+        auto perm = elements;
+        saga::nth_permutation(saga::cursor::all(perm), index);
+
+        REQUIRE(saga::is_permutation(saga::cursor::all(perm), saga::cursor::all(elements)));
+
+        perms.push_back(std::move(perm));
+    }
+
+    CAPTURE(perms);
+    CAPTURE(saga::is_sorted_until(saga::cursor::all(perms)).dropped_front());
+
+    REQUIRE(perms.size() == n_perm);
+    REQUIRE(saga::is_sorted(saga::cursor::all(perms)));
+
+    perms.erase(saga::unique(saga::cursor::all(perms)).begin(), perms.end());
+
+    REQUIRE(perms.size() == n_perm);
 }

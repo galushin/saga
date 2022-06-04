@@ -1708,6 +1708,16 @@ TEST_CASE("PE 023")
     REQUIRE(result == 4'179'871);
 }
 
+// PE 024: Лексикографические перестановки
+TEST_CASE("PE 024")
+{
+    std::string digits("0123456789");
+
+    saga::nth_permutation(saga::cursor::all(digits), 1'000'000 - 1);
+
+    REQUIRE(digits == "2783915460");
+}
+
 // PE 067: Путь наибольшей суммы (часть II)
 TEST_CASE("PE 067")
 {
