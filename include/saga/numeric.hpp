@@ -436,7 +436,7 @@ namespace saga
 
                 if(indices.back() != 0)
                 {
-                    assert(indices.back() < indices.size());
+                    assert(indices.back() < cur.size());
 
                     saga::cursor_value_t<RandomAccessCursor> item = std::move(cur[indices.back()]);
 
