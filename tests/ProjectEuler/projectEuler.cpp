@@ -21,6 +21,7 @@ SAGA -- это свободной программное обеспечение:
 
 // Используемые возможности
 #include <saga/algorithm.hpp>
+#include <saga/cursor/enumerate.hpp>
 #include <saga/cursor/filter.hpp>
 #include <saga/cursor/iota.hpp>
 #include <saga/cursor/set_union.hpp>
@@ -159,6 +160,7 @@ namespace
         // Типы
         using value_type = IntType;
         using reference = value_type const &;
+        using difference_type = std::ptrdiff_t;
 
         // Создание, копирование, уничтожение
         constexpr fibonacci_sequence(IntType num1, IntType num2)
@@ -186,6 +188,13 @@ namespace
         IntType prev_;
         IntType cur_;
     };
+
+    template <class IntType>
+    fibonacci_sequence<IntType>
+    make_fibonacci_sequence(IntType num1, IntType num2)
+    {
+        return fibonacci_sequence<IntType>(std::move(num1), std::move(num2));
+    }
 
     template <class IntType>
     constexpr IntType projectEuler_002_take_while_after_filter_input(IntType n_max)
@@ -1716,6 +1725,27 @@ TEST_CASE("PE 024")
     saga::nth_permutation(saga::cursor::all(digits), 1'000'000 - 1);
 
     REQUIRE(digits == "2783915460");
+}
+
+// PE 025: 1000-значное число Фибоначчи
+namespace
+{
+    std::size_t projectEuler_025(std::size_t digits)
+    {
+        auto cur = saga::cursor::enumerate(::make_fibonacci_sequence(saga::integer(0)
+                                                                     , saga::integer(1)));
+        cur = saga::find_if(std::move(cur),
+                            [&](auto const & elem) {return elem.value.digits().size() >= digits;});
+        assert(!!cur);
+
+        return cur.front().index + 1;
+    }
+}
+
+TEST_CASE("PE 025")
+{
+    CHECK(projectEuler_025(3) == 12);
+    CHECK(projectEuler_025(1000) == 4782);
 }
 
 // PE 067: Путь наибольшей суммы (часть II)
