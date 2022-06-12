@@ -1748,6 +1748,122 @@ TEST_CASE("PE 025")
     CHECK(projectEuler_025(1000) == 4782);
 }
 
+// PE 026: Циклы в обратных числах
+namespace
+{
+    class pe_026_cursor
+     : saga::cursor_facade<pe_026_cursor, int const &>
+    {
+    public:
+        // Типы
+        using reference = int const &;
+
+        // Конструктор
+        explicit pe_026_cursor(int denom)
+         : denom_(denom)
+        {}
+
+        // Курсор ввода
+        bool operator!() const
+        {
+            return this->state_ == 0;
+        }
+
+        reference front() const
+        {
+            return this->state_;
+        }
+
+        void drop_front()
+        {
+            this->state_ *= 10;
+            this->state_ %= this->denom_;
+        }
+
+    private:
+        int state_ = 1;
+        int denom_ = 1;
+    };
+
+    int PE_026_reciprocal_cycle_length(int num)
+    {
+        assert(num > 0);
+
+        auto slow = pe_026_cursor(num);
+
+        assert(!!slow);
+
+        auto fast = slow;
+        ++ fast;
+
+        for(;;)
+        {
+            if(!fast)
+            {
+                return 0;
+            }
+
+            if(*slow == *fast)
+            {
+                break;
+            }
+
+            ++ slow;
+            ++ fast;
+
+            if(!fast)
+            {
+                return 0;
+            }
+
+            ++ fast;
+        }
+
+        int result = 1;
+        ++ fast;
+
+        for(; *fast != *slow; ++ fast, ++ result)
+        {}
+
+        return result;
+    }
+
+    int PE_026(int num)
+    {
+        int max_num = 1;
+        int max_length = 0;
+
+        for(auto const & num : saga::cursor::indices(2, num))
+        {
+            auto new_length = PE_026_reciprocal_cycle_length(num);
+
+            if(new_length > max_length)
+            {
+                max_num = num;
+                max_length = new_length;
+            }
+        }
+
+        return max_num;
+    }
+}
+
+TEST_CASE("PE 026")
+{
+    REQUIRE(PE_026_reciprocal_cycle_length(2)  == 0);
+    REQUIRE(PE_026_reciprocal_cycle_length(3)  == 1);
+    REQUIRE(PE_026_reciprocal_cycle_length(4)  == 0);
+    REQUIRE(PE_026_reciprocal_cycle_length(5)  == 0);
+    REQUIRE(PE_026_reciprocal_cycle_length(6)  == 1);
+    REQUIRE(PE_026_reciprocal_cycle_length(7)  == 6);
+    REQUIRE(PE_026_reciprocal_cycle_length(8)  == 0);
+    REQUIRE(PE_026_reciprocal_cycle_length(9)  == 1);
+    REQUIRE(PE_026_reciprocal_cycle_length(10) == 0);
+
+    REQUIRE(PE_026(11) == 7);
+    REQUIRE(PE_026(1000) == 983);
+}
+
 // PE 067: Путь наибольшей суммы (часть II)
 TEST_CASE("PE 067")
 {
