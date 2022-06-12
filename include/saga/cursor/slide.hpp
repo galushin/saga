@@ -23,7 +23,6 @@ SAGA -- это свободной программное обеспечение:
  курсора.
 */
 
-// @todo Перенести в заголовочный файл
 #include <saga/cursor/take.hpp>
 
 namespace saga

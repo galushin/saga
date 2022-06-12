@@ -99,6 +99,11 @@ namespace saga
 
 namespace detail
 {
+    void begin() = delete;
+    void end() = delete;
+    void rbegin() = delete;
+    void rend() = delete;
+
     struct begin_fn
     {
         template <class Range>
