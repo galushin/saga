@@ -45,6 +45,7 @@
 		<Unit filename="../include/saga/cursor/cursor_facade.hpp" />
 		<Unit filename="../include/saga/cursor/cursor_traits.hpp" />
 		<Unit filename="../include/saga/cursor/cycle.hpp" />
+		<Unit filename="../include/saga/cursor/enumerate.hpp" />
 		<Unit filename="../include/saga/cursor/filter.hpp" />
 		<Unit filename="../include/saga/cursor/indices.hpp" />
 		<Unit filename="../include/saga/cursor/iota.hpp" />
