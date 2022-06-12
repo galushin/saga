@@ -1791,10 +1791,7 @@ namespace
 
         auto slow = pe_026_cursor(num);
 
-        if(!slow)
-        {
-            return 0;
-        }
+        assert(!!slow);
 
         auto fast = slow;
         ++ fast;
