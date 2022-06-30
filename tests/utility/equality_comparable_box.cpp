@@ -154,4 +154,8 @@ TEST_CASE("equality_comparable_box : not empty without equality")
     static_assert(obj_1 == obj_1, "");
     static_assert(obj_2 == obj_2, "");
     static_assert(obj_1 != obj_2, "");
+
+    REQUIRE(obj_1 == obj_1);
+    REQUIRE(obj_2 == obj_2);
+    REQUIRE(obj_1 != obj_2);
 }
