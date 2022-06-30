@@ -438,6 +438,8 @@ namespace
     template <class IntType>
     bool is_coprime_with_sorted(IntType const num, std::vector<IntType> const & values)
     {
+        assert(num >= 0);
+
         for(auto const & value : values)
         {
             if(value * value > num)
@@ -1862,6 +1864,64 @@ TEST_CASE("PE 026")
 
     REQUIRE(PE_026(11) == 7);
     REQUIRE(PE_026(1000) == 983);
+}
+
+// PE 027: Квадратичные простые числа
+namespace
+{
+    template <class IntType, class Primes>
+    IntType PE_027_count(IntType a, IntType b, Primes const & primes)
+    {
+        auto value = b;
+
+        for(auto const & n : saga::cursor::indices(std::abs(b) + 1))
+        {
+            assert(saga::square(primes.back()) >= value);
+
+            if(!is_coprime_with_sorted(std::abs(value), primes))
+            {
+                return n;
+            }
+
+            value += 2 * n + 1 + a;
+        }
+
+        assert(true);
+
+        return std::abs(b);
+    }
+}
+
+/* Мы рассматриваем числа вида n^2 + a*n + b
+ |a|<1000 и |b|<=1000
+ При n=|b| получаем гарантировано простое число, так что n достаточно перебирать до |b|
+ Самое большое число b*b+a*b+b <= 2'001'000.
+ Так что для проверки на простоту нужны только числа до sqrt(2'001'000)
+*/
+TEST_CASE("PE 027")
+{
+    auto const primes = saga::primes_below(static_cast<int>(std::sqrt(2'001'000)));
+
+    REQUIRE(PE_027_count(1, 41, primes) == 40);
+    REQUIRE(PE_027_count(-79, 1601, primes) == 80);
+    REQUIRE(PE_027_count(-999, -1000, primes) == 0);
+
+    auto num_primes = 0;
+    auto coef_prod = 0;
+
+    for(auto const & a : saga::cursor::indices(-1000 + 1, 1000))
+    for(auto const & b : saga::cursor::indices(-1000, 1001))
+    {
+        auto new_num_primes = PE_027_count(a, b, primes);
+
+        if(new_num_primes > num_primes)
+        {
+            num_primes = new_num_primes;
+            coef_prod = a*b;
+        }
+    }
+
+    REQUIRE(coef_prod == -59'231);
 }
 
 // PE 067: Путь наибольшей суммы (часть II)
