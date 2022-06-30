@@ -151,7 +151,10 @@ TEST_CASE("equality_comparable_box : not empty without equality")
     constexpr saga::equality_comparable_box<Value> const obj_1(value);
     constexpr saga::equality_comparable_box<Value> const obj_2(value);
 
-    // @todo constexpr - требует constexpr для addressof
+    static_assert(obj_1 == obj_1, "");
+    static_assert(obj_2 == obj_2, "");
+    static_assert(obj_1 != obj_2, "");
+
     REQUIRE(obj_1 == obj_1);
     REQUIRE(obj_2 == obj_2);
     REQUIRE(obj_1 != obj_2);
