@@ -1924,6 +1924,30 @@ TEST_CASE("PE 027")
     REQUIRE(coef_prod == -59'231);
 }
 
+// PE 028: Диагонали числовой суммы
+namespace
+{
+    template <class IntType>
+    IntType PE_028(IntType max_width)
+    {
+        auto sum = IntType(1);
+
+        // @todo Заменить на алгоритм
+        for(auto width = IntType(3); width <= max_width; width += 2)
+        {
+            sum += 4 * saga::square(width) - 6 * (width - 1);
+        }
+
+        return sum;
+    }
+}
+
+TEST_CASE("PE 028")
+{
+    REQUIRE(PE_028(5) == 101);
+    REQUIRE(PE_028(1001) == 669'171'001);
+}
+
 // PE 067: Путь наибольшей суммы (часть II)
 TEST_CASE("PE 067")
 {
