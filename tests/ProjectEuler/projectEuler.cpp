@@ -406,6 +406,7 @@ static_assert(saga::square(saga::triangular_number(10)) == 3025, "");
 static_assert(::projectEuler_006_sum_squares_cursor(10) == 385, "");
 static_assert(::projectEuler_006_sum_squares_pipes(10) == 385, "");
 static_assert(saga::square_pyramidal_number(10) == 385, "");
+static_assert(saga::square_pyramidal_number(10) == 385, "");
 
 static_assert(::projectEuler_006_cursor(10) == 2640, "");
 static_assert(::projectEuler_006_cursor(100) == 25164150, "");
@@ -1942,6 +1943,8 @@ TEST_CASE("PE 028")
 {
     REQUIRE(PE_028_algorithm(5) == 101);
     REQUIRE(PE_028_algorithm(1001) == 669'171'001);
+
+    REQUIRE(saga::square_pyramidal_number(1) == 1);
 
     REQUIRE(PE_028_closed_form(5) == 101);
     REQUIRE(PE_028_closed_form(1001) == 669'171'001);
