@@ -373,22 +373,6 @@ namespace
         return result;
     }
 
-    // Square pyramidal number
-    template <class IntType>
-    constexpr IntType projectEuler_006_sum_squares_formula(IntType num)
-    {
-        auto P = saga::triangular_number(num);
-
-        if(P % 3 == 0)
-        {
-            return P / 3 * (2 * num + 1);
-        }
-        else
-        {
-            return (2 * num + 1) / 3 * P;
-        }
-    }
-
     template <class IntType>
     constexpr IntType projectEuler_006_cursor(IntType num)
     {
@@ -407,7 +391,7 @@ namespace
     constexpr IntType projectEuler_006_formula(IntType num)
     {
         return saga::square(saga::triangular_number(num))
-                - ::projectEuler_006_sum_squares_formula(num);
+                - saga::square_pyramidal_number(num);
     }
 }
 
@@ -421,7 +405,7 @@ static_assert(saga::square(saga::triangular_number(10)) == 3025, "");
 
 static_assert(::projectEuler_006_sum_squares_cursor(10) == 385, "");
 static_assert(::projectEuler_006_sum_squares_pipes(10) == 385, "");
-static_assert(::projectEuler_006_sum_squares_formula(10) == 385, "");
+static_assert(saga::square_pyramidal_number(10) == 385, "");
 
 static_assert(::projectEuler_006_cursor(10) == 2640, "");
 static_assert(::projectEuler_006_cursor(100) == 25164150, "");
@@ -1925,27 +1909,42 @@ TEST_CASE("PE 027")
 }
 
 // PE 028: Диагонали числовой суммы
+// @todo Аналитическое выражение - требуется сумма квадратов
 namespace
 {
     template <class IntType>
-    IntType PE_028(IntType max_width)
+    constexpr IntType PE_028_algorithm(IntType max_width)
     {
-        auto sum = IntType(1);
+        auto corners_sum = [](IntType num) { return 16*saga::square(num) + 4*num + 4; };
 
-        // @todo Заменить на алгоритм
-        for(auto width = IntType(3); width <= max_width; width += 2)
-        {
-            sum += 4 * saga::square(width) - 6 * (width - 1);
-        }
+        namespace cursor = saga::cursor;
 
-        return sum;
+        return saga::transform_reduce(cursor::indices(1, (max_width+1)/2)
+                                      , IntType(1), std::plus<>{}, corners_sum);
     }
+
+    template <class IntType>
+    constexpr IntType PE_028_closed_form(IntType max_width)
+    {
+        auto const num = (max_width - 1)/2;
+
+        return 16*saga::square_pyramidal_number(num) + 4*saga::triangular_number(num) + 4*num + 1;
+    }
+
+    static_assert(PE_028_algorithm(5) == 101, "");
+    static_assert(PE_028_algorithm(1001) == 669'171'001, "");
+
+    static_assert(PE_028_closed_form(5) == 101, "");
+    static_assert(PE_028_closed_form(1001) == 669'171'001, "");
 }
 
 TEST_CASE("PE 028")
 {
-    REQUIRE(PE_028(5) == 101);
-    REQUIRE(PE_028(1001) == 669'171'001);
+    REQUIRE(PE_028_algorithm(5) == 101);
+    REQUIRE(PE_028_algorithm(1001) == 669'171'001);
+
+    REQUIRE(PE_028_closed_form(5) == 101);
+    REQUIRE(PE_028_closed_form(1001) == 669'171'001);
 }
 
 // PE 067: Путь наибольшей суммы (часть II)
