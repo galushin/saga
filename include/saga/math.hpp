@@ -77,6 +77,24 @@ namespace saga
         }
     };
 
+    struct square_pyramidal_number_fn
+    {
+        template <class IntType>
+        constexpr IntType operator()(IntType num) const
+        {
+            auto P = saga::triangular_number_fn{}(num);
+
+            if(P % 3 == 0)
+            {
+                return std::move(P) / 3 * (2 * num + 1);
+            }
+            else
+            {
+                return (2 * num + 1) / 3 * std::move(P);
+            }
+        }
+    };
+
     struct power_natural_fn
     {
         template <class IntType, class Power>
@@ -104,6 +122,7 @@ namespace saga
     inline constexpr auto abs = saga::absolute_value{};
     inline constexpr auto square = saga::square_fn{};
     inline constexpr auto triangular_number = triangular_number_fn{};
+    inline constexpr auto square_pyramidal_number = square_pyramidal_number_fn{};
     inline constexpr auto power_natural = saga::power_natural_fn{};
 }
 //namespace saga

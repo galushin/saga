@@ -210,6 +210,7 @@ namespace saga
         }
 
         template <class InputCursor, class T, class ReductionOp, class UnaryOp>
+        constexpr
         T operator()(InputCursor input, T init, ReductionOp reducer, UnaryOp transformer) const
         {
             for(; !!input; ++input)
