@@ -57,6 +57,22 @@ namespace saga
 
             return detail::cursor_from_parts(std::move(before), std::move(cur));
         }
+
+        // Результаты этой функции можно передавать только ВНИЗ по цепи вызовов
+        template <class BinaryPredicate, class T>
+        auto bind_front_ref(BinaryPredicate & bin_pred, T const & value)
+        {
+            return [&](auto && arg)
+                      { return saga::invoke(bin_pred, value, std::forward<decltype(arg)>(arg)); };
+        }
+
+        // Результаты этой функции можно передавать только ВНИЗ по цепи вызовов
+        template <class BinaryPredicate, class T>
+        auto bind_back_ref(BinaryPredicate & bin_pred, T const & value)
+        {
+            return [&](auto && arg)
+                      { return saga::invoke(bin_pred, std::forward<decltype(arg)>(arg), value); };
+        }
     }
 
     // Немодифицирующие операции
@@ -75,10 +91,7 @@ namespace saga
         InputCursor
         operator()(InputCursor cur, T const & value, BinaryPredicate bin_pred = {}) const
         {
-            auto pred = [&](auto && arg)
-                        { return saga::invoke(bin_pred, std::forward<decltype(arg)>(arg), value); };
-
-            return find_if_fn{}(std::move(cur), std::move(pred));
+            return find_if_fn{}(std::move(cur), detail::bind_back_ref(bin_pred, value));
         }
     };
 
@@ -171,10 +184,7 @@ namespace saga
         cursor_difference_t<InputCursor>
         operator()(InputCursor cur, T const & value, BinaryPredicate bin_pred = {}) const
         {
-            auto pred = [&](auto && arg)
-                { return saga::invoke(bin_pred, std::forward<decltype(arg)>(arg), value); };
-
-            return count_if_fn{}(std::move(cur), std::move(pred));
+            return count_if_fn{}(std::move(cur), detail::bind_back_ref(bin_pred, value));
         }
     };
 
@@ -205,7 +215,7 @@ namespace saga
         InputCursor
         operator()(InputCursor cur, ForwardCursor s_cur, BinaryPredicate bin_pred = {}) const
         {
-            auto const found_in_s_cur = [&](auto && lhs)
+            auto found_in_s_cur = [&](auto && lhs)
             {
                 return !!saga::find_fn{}(s_cur,  std::forward<decltype(lhs)>(lhs), bin_pred);
             };
@@ -564,10 +574,7 @@ namespace saga
         ForwardCursor
         operator()(ForwardCursor cur, T const & value, BinaryPredicate bin_pred = {}) const
         {
-            auto pred = [&](auto && arg)
-                { return saga::invoke(bin_pred, std::forward<decltype(arg)>(arg), value); };
-
-            return remove_if_fn{}(std::move(cur), std::move(pred));
+            return remove_if_fn{}(std::move(cur), detail::bind_back_ref(bin_pred, value));
         }
     };
 
@@ -595,10 +602,8 @@ namespace saga
         operator()(InputCursor in, OutputCursor out
                    , T const & value, BinaryPredicate bin_pred = {}) const
         {
-            auto pred = [&](auto && x)
-                { return saga::invoke(bin_pred, std::forward<decltype(x)>(x), value); };
-
-            return remove_copy_if_fn{}(std::move(in), std::move(out), std::move(pred));
+            return remove_copy_if_fn{}(std::move(in), std::move(out)
+                                       , detail::bind_back_ref(bin_pred, value));
         }
     };
 
@@ -623,10 +628,8 @@ namespace saga
         void operator()(ForwardCursor cur, T const & old_value
                         , T const & new_value, BinaryPredicate bin_pred = {}) const
         {
-            auto pred = [&](auto && arg)
-                { return saga::invoke(bin_pred, std::forward<decltype(arg)>(arg), old_value); };
-
-            return replace_if_fn{}(std::move(cur), std::move(pred), new_value);
+            return replace_if_fn{}(std::move(cur), detail::bind_back_ref(bin_pred, old_value)
+                                   , new_value);
         }
     };
 
@@ -666,10 +669,8 @@ namespace saga
         operator()(InputCursor in, OutputCursor out, T1 const & old_value
                    , T2 const & new_value, BinaryPredicate bin_pred = {}) const
         {
-            auto pred = [&](auto && x)
-                { return saga::invoke(bin_pred, std::forward<decltype(x)>(x), old_value); };
-
-            return replace_copy_if_fn{}(std::move(in), std::move(out), std::move(pred), new_value);
+            return replace_copy_if_fn{}(std::move(in), std::move(out)
+                                        , detail::bind_back_ref(bin_pred, old_value), new_value);
         }
     };
 
@@ -2412,8 +2413,7 @@ namespace saga
             // Проверяем остальные элементы
             for(cur1 = rest.in1; !!cur1; ++cur1)
             {
-                auto pred
-                    = [&](auto && arg) { return bin_pred(*cur1, std::forward<decltype(arg)>(arg));};
+                auto pred = detail::bind_front_ref(bin_pred, *cur1);
 
                 auto const n1 = saga::count_if_fn{}(rest.in1, pred);
                 auto const n2 = saga::count_if_fn{}(rest.in2, pred);
