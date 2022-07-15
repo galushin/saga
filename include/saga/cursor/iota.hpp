@@ -167,21 +167,6 @@ namespace saga
         Incrementable value_;
     };
 
-    struct unreachable_sentinel
-    {
-        template <class T>
-        friend constexpr bool operator==(T const &, unreachable_sentinel)
-        {
-            return false;
-        }
-
-        template <class T>
-        friend constexpr bool operator==(unreachable_sentinel, T const &)
-        {
-            return false;
-        }
-    };
-
     template <class Incrementable, class Sentinel = Incrementable>
     class iota_cursor
      : saga::cursor_facade<iota_cursor<Incrementable, Sentinel>, Incrementable const &>
@@ -190,7 +175,7 @@ namespace saga
         // Типы
         using cursor_category = std::random_access_iterator_tag;
         using cursor_cardinality
-            = saga::conditional_t<std::is_same<Sentinel, saga::unreachable_sentinel>{}
+            = saga::conditional_t<std::is_same<Sentinel, saga::unreachable_sentinel_t>{}
                                  , saga::infinite_cursor_cardinality_tag
                                  , saga::finite_cursor_cardinality_tag>;
 
@@ -199,8 +184,8 @@ namespace saga
         using value_type = Incrementable;
 
         using iterator = saga::iota_iterator<Incrementable>;
-        using sentinel = saga::conditional_t<std::is_same<Sentinel, saga::unreachable_sentinel>{}
-                                            , saga::unreachable_sentinel
+        using sentinel = saga::conditional_t<std::is_same<Sentinel, saga::unreachable_sentinel_t>{}
+                                            , saga::unreachable_sentinel_t
                                             , saga::iota_iterator<Sentinel>>;
 
         // Создание, копирование, уничтожение
@@ -269,11 +254,11 @@ namespace saga
     namespace cursor
     {
         template <class Incrementable>
-        constexpr iota_cursor<Incrementable, saga::unreachable_sentinel>
+        constexpr iota_cursor<Incrementable, saga::unreachable_sentinel_t>
         iota(Incrementable num)
         {
-            using Cursor = iota_cursor<Incrementable, unreachable_sentinel>;
-            return Cursor(std::move(num), unreachable_sentinel{});
+            using Cursor = iota_cursor<Incrementable, unreachable_sentinel_t>;
+            return Cursor(std::move(num), unreachable_sentinel_t{});
         }
     }
     // namespace cursor
