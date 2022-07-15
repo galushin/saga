@@ -42,6 +42,7 @@
 		<Unit filename="../include/saga/any.hpp" />
 		<Unit filename="../include/saga/container/reserve_if_supported.hpp" />
 		<Unit filename="../include/saga/cpp20/span.hpp" />
+		<Unit filename="../include/saga/cursor/cartesian_product.hpp" />
 		<Unit filename="../include/saga/cursor/cursor_facade.hpp" />
 		<Unit filename="../include/saga/cursor/cursor_traits.hpp" />
 		<Unit filename="../include/saga/cursor/cycle.hpp" />
@@ -66,6 +67,7 @@
 		<Unit filename="../include/saga/expected/bad_expected_access.hpp" />
 		<Unit filename="../include/saga/expected/detail.hpp" />
 		<Unit filename="../include/saga/expected/unexpected.hpp" />
+		<Unit filename="../include/saga/flat_set.hpp" />
 		<Unit filename="../include/saga/functional.hpp" />
 		<Unit filename="../include/saga/iterator.hpp" />
 		<Unit filename="../include/saga/iterator/ostream_joiner.hpp" />
