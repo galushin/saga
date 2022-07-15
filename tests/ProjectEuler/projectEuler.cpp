@@ -1910,7 +1910,6 @@ TEST_CASE("PE 027")
 }
 
 // PE 028: Диагонали числовой суммы
-// @todo Аналитическое выражение - требуется сумма квадратов
 namespace
 {
     template <class IntType>
@@ -1948,6 +1947,35 @@ TEST_CASE("PE 028")
 
     REQUIRE(PE_028_closed_form(5) == 101);
     REQUIRE(PE_028_closed_form(1001) == 669'171'001);
+}
+
+// PE 029: Различные степени
+#include <saga/cursor/cartesian_product.hpp>
+#include <saga/flat_set.hpp>
+
+namespace
+{
+    int PE_029(int n_max)
+    {
+        using Real = double;
+
+        saga::flat_set<std::string> powers;
+
+        auto param_range = saga::cursor::indices(2, n_max + 1);
+
+        saga::transform(saga::cursor::cartesian_product(param_range, param_range)
+                        , saga::inserter(powers, powers.end())
+                        , [](auto args)
+                          { return std::to_string(args.second * std::log(Real(args.first))); });
+
+        return powers.size();
+    }
+}
+
+TEST_CASE("PE 029")
+{
+    REQUIRE(PE_029(5) == 15);
+    REQUIRE(PE_029(100) == 9183);
 }
 
 // PE 067: Путь наибольшей суммы (часть II)

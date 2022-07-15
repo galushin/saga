@@ -244,6 +244,11 @@ namespace saga
             return iota_cursor<Incrementable, Incrementable>(this->cur_old_, this->cur_);
         }
 
+        void forget_front()
+        {
+            this->cur_old_ = this->cur_;
+        }
+
         // Курсор произвольного доступа
         constexpr void drop_front(difference_type num)
         {
