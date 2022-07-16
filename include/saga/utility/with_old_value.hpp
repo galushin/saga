@@ -29,6 +29,7 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    // Все функции constexpr?
     template <class T>
     class with_old_value
      : saga::operators::equality_comparable<with_old_value<T>>
@@ -41,7 +42,7 @@ namespace saga
 
     public:
         // Создание, копирование, уничтожение
-        explicit with_old_value(T value)
+        constexpr explicit with_old_value(T value)
          : value_(std::move(value))
          , old_value_(this->value_)
         {}
@@ -54,12 +55,12 @@ namespace saga
         }
 
         // Немодифицирующие операции
-        T & value()
+        constexpr T & value()
         {
             return this->value_;
         }
 
-        T const & value() const
+        constexpr T const & value() const
         {
             return this->value_;
         }

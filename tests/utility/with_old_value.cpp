@@ -23,7 +23,9 @@ SAGA -- это свободной программное обеспечение:
 #include "../saga_test.hpp"
 
 // Тесты
-TEST_CASE("with_old_value: initialization")
+// @todo TEST_CASE("with_old_value: default constructor")
+
+TEST_CASE("with_old_value: value constructor")
 {
     using Value = std::string;
 
