@@ -26,6 +26,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/cursor_facade.hpp>
 #include <saga/iterator.hpp>
 #include <saga/utility/operators.hpp>
+#include <saga/utility/with_old_value.hpp>
 
 #include <iterator>
 #include <limits>
@@ -190,15 +191,14 @@ namespace saga
 
         // Создание, копирование, уничтожение
         constexpr explicit iota_cursor(Incrementable first, Sentinel last)
-         : cur_(std::move(first))
-         , cur_old_(this->cur_)
+         : first_(std::move(first))
          , last_(std::move(last))
         {}
 
         // Вид
         constexpr iterator begin() const
         {
-            return iterator(this->cur_);
+            return iterator(this->first_.value());
         }
 
         constexpr sentinel end() const
@@ -209,45 +209,45 @@ namespace saga
         // Курсор ввода
         constexpr bool operator!() const
         {
-            return this->cur_ == this->last_;
+            return this->first_.value() == this->last_;
         }
 
         constexpr reference front() const
         {
-            return this->cur_;
+            return this->first_.value();
         }
 
         constexpr void drop_front()
         {
-            ++ cur_;
+            ++ this->first_.value();
         }
 
         // Прямой курсор
         iota_cursor<Incrementable, Incrementable>
         dropped_front() const
         {
-            return iota_cursor<Incrementable, Incrementable>(this->cur_old_, this->cur_);
+            return iota_cursor<Incrementable, Incrementable>(this->first_.old_value()
+                                                             , this->first_.value());
         }
 
         void forget_front()
         {
-            this->cur_old_ = this->cur_;
+            this->first_.commit();
         }
 
         // Курсор произвольного доступа
         constexpr void drop_front(difference_type num)
         {
-            this->cur_ += std::move(num);
+            this->first_.value() += std::move(num);
         }
 
         difference_type size() const
         {
-            return this->last_ - this->cur_;
+            return this->last_ - this->first_.value();
         }
 
     private:
-        Incrementable cur_{};
-        Incrementable cur_old_{};
+        saga::with_old_value<Incrementable> first_{};
         Sentinel last_{};
     };
 

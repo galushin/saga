@@ -27,6 +27,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/defs.hpp>
 #include <saga/iterator.hpp>
 #include <saga/ranges.hpp>
+#include <saga/utility/with_old_value.hpp>
 
 #include <cassert>
 #include <iterator>
@@ -40,10 +41,8 @@ namespace saga
     {
         friend constexpr bool operator==(subrange_cursor const & lhs, subrange_cursor const & rhs)
         {
-            return lhs.begin() == rhs.begin()
-                    && lhs.end() == rhs.end()
-                    && lhs.cur_old_ == rhs.cur_old_
-                    && lhs.last_old_ == rhs.last_old_;
+            return lhs.first_ == rhs.first_
+                    && lhs.last_ == rhs.last_;
         }
 
     public:
@@ -61,11 +60,9 @@ namespace saga
 
         // Создание, копирование, уничтожение
         constexpr subrange_cursor(ForwardIterator first, Sentinel last, unsafe_tag_t)
-         : cur_old_(std::move(first))
-         , last_old_(std::move(last))
-         , cur_(this->cur_old_)
-         , last_(this->last_old_)
-         , back_(this->last_)
+         : first_(std::move(first))
+         , last_(std::move(last))
+         , back_(this->last_.value())
         {
             this->tweak_back();
         }
@@ -73,54 +70,54 @@ namespace saga
         // Итераторы
         constexpr iterator begin() const
         {
-            return this->cur_;
+            return this->first_.value();
         }
 
         constexpr Sentinel end() const
         {
-            return this->last_;
+            return this->last_.value();
         }
 
         // Курсор ввода
         constexpr bool operator!() const
         {
-            return this->cur_ == this->last_;
+            return this->first_.value() == this->last_.value();
         }
 
         constexpr void drop_front()
         {
             assert(!!*this);
 
-            ++ this->cur_;
+            ++ this->first_.value();
         }
 
         constexpr reference front() const
         {
             assert(!!*this);
 
-            return *this->cur_;
+            return *this->first_.value();
         }
 
         // Прямой курсор
         subrange_cursor dropped_front() const
         {
-            return subrange_cursor(this->cur_old_, this->cur_, unsafe_tag_t{});
+            return subrange_cursor(this->first_.old_value(), this->first_.value(), unsafe_tag_t{});
         }
 
         void exhaust_front()
         {
-            this->cur_ = this->last_;
+            this->first_ = this->last_.value();
         }
 
         void exhaust_back()
         {
-            this->last_ = this->cur_;
-            this->back_ = this->cur_;
+            this->last_ = this->first_.value();
+            this->back_ = this->first_.value();
         }
 
         void forget_front()
         {
-            this->cur_old_ = this->cur_;
+            this->first_.commit();
         }
 
         void splice(subrange_cursor const & other)
@@ -129,9 +126,8 @@ namespace saga
 
             this->back_ = other.back_;
             this->last_ = other.last_;
-            this->last_old_ = other.last_old_;
 
-            if(this->back_ == this->last_)
+            if(this->back_ == this->last_.value())
             {
                 this->tweak_back();
             }
@@ -139,7 +135,7 @@ namespace saga
 
         void rewind_front()
         {
-            this->cur_ = this->cur_old_;
+            this->first_.revert();
         }
 
         // Двунаправленный курсор
@@ -158,26 +154,27 @@ namespace saga
         constexpr reference back() const
         {
             assert(!!*this);
-            assert(this->back_ != this->last_);
+            assert(this->back_ != this->last_.value());
 
             return *this->back_;
         }
 
         subrange_cursor dropped_back() const
         {
-            return subrange_cursor(this->last_, this->last_old_, saga::unsafe_tag_t{});
+            return subrange_cursor(this->last_.value(), this->last_.old_value()
+                                   , saga::unsafe_tag_t{});
         }
 
         void rewind_back()
         {
-            this->last_ = this->last_old_;
-            this->back_ = this->last_;
+            this->last_.revert();
+            this->back_ = this->last_.value();
             this->tweak_back();
         }
 
         void forget_back()
         {
-            this->last_old_ = this->last_;
+            this->last_.commit();
         }
 
         // Курсор произвольного доступа
@@ -190,14 +187,14 @@ namespace saga
         {
             assert(0 <= num && num <= this->size());
 
-            this->cur_ += num;
+            this->first_.value() += num;
         }
 
         void drop_back(difference_type num)
         {
             assert(0 <= num && num <= this->size());
 
-            this->last_ -= num;
+            this->last_.value() -= num;
             this->back_ -= num;
         }
 
@@ -205,7 +202,7 @@ namespace saga
         {
             assert(0 <= index && index < this->size());
 
-            return this->cur_[index];
+            return this->first_.value()[index];
         }
 
     private:
@@ -219,17 +216,15 @@ namespace saga
 
         constexpr void tweak_back(std::bidirectional_iterator_tag)
         {
-            if(this->back_ != this->cur_)
+            if(this->back_ != this->first_.value())
             {
                 -- back_;
             }
         }
 
     private:
-        ForwardIterator cur_old_;
-        ForwardIterator last_old_;
-        ForwardIterator cur_;
-        Sentinel last_;
+        saga::with_old_value<ForwardIterator> first_;
+        saga::with_old_value<Sentinel> last_;
         Sentinel back_;
     };
 
