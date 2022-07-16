@@ -188,5 +188,5 @@ TEST_CASE("indices_of for arrays")
     CHECK(ins == ins_obj);
 }
 
-static_assert(!(saga::unreachable_sentinel{} == 42), "");
-static_assert(!(42 == saga::unreachable_sentinel{}), "");
+static_assert(!(saga::unreachable_sentinel_t{} == 42), "");
+static_assert(!(42 == saga::unreachable_sentinel_t{}), "");

@@ -186,9 +186,14 @@ TEST_CASE("subrange_cursor::splice, regression #996")
       };
 }
 
+static_assert(std::is_same<saga::subrange_cursor<int*
+                                                , saga::unreachable_sentinel_t>::cursor_cardinality
+                           , saga::infinite_cursor_cardinality_tag>{}, "");
+
 #if __cpp_lib_ranges >= 201911
-static_assert(std::is_same<saga::subrange_cursor<int*, saga::unreachable_sentinel_t>
-                           , std::infinite_cursor_cardinality_tag>{}, "");
+static_assert(std::is_same<saga::subrange_cursor<int*
+                                                , std::unreachable_sentinel_t>::cursor_cardinality
+                           , saga::infinite_cursor_cardinality_tag>{}, "");
 #endif
 // __cpp_lib_ranges >= 201911
 

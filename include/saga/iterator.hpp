@@ -78,6 +78,7 @@ namespace saga
             using difference_type = std::make_signed_t<decltype(std::declval<T const&>() - std::declval<T const&>())>;
         };
     }
+    //namespace detail
 
     template <class T>
     struct incrementable_traits
@@ -97,70 +98,85 @@ namespace saga
     template <class T>
     using incrementable_difference_t = typename incrementable_traits<T>::difference_type;
 
-namespace detail
-{
-    void begin() = delete;
-    void end() = delete;
-    void rbegin() = delete;
-    void rend() = delete;
-
-    struct begin_fn
+    namespace detail
     {
-        template <class Range>
-        constexpr auto operator()(Range && rng) const
+        void begin() = delete;
+        void end() = delete;
+        void rbegin() = delete;
+        void rend() = delete;
+
+        struct begin_fn
         {
-            using std::begin;
-            return begin(std::forward<Range>(rng));
+            template <class Range>
+            constexpr auto operator()(Range && rng) const
+            {
+                using std::begin;
+                return begin(std::forward<Range>(rng));
+            }
+        };
+
+        struct end_fn
+        {
+            template <class Range>
+            constexpr auto operator()(Range && rng) const
+            {
+                using std::end;
+                return end(std::forward<Range>(rng));
+            }
+        };
+
+        struct rbegin_fn
+        {
+            template <class Range>
+            auto operator()(Range && rng) const
+            {
+                using std::rbegin;
+                return rbegin(std::forward<Range>(rng));
+            }
+        };
+
+        struct rend_fn
+        {
+            template <class Range>
+            auto operator()(Range && rng) const
+            {
+                using std::rend;
+                return rend(std::forward<Range>(rng));
+            }
+        };
+
+        struct size_fn
+        {
+            template <class SizedRange>
+            auto operator()(SizedRange const & sr) const
+            -> decltype(sr.size())
+            {
+                return sr.size();
+            }
+
+            template <class T, std::size_t N>
+            std::size_t operator()(const T(&)[N]) const noexcept
+            {
+                return N;
+            }
+        };
+    }
+    // namespace detail
+
+    struct unreachable_sentinel_t
+    {
+        template <class T>
+        friend constexpr bool operator==(T const &, unreachable_sentinel_t)
+        {
+            return false;
+        }
+
+        template <class T>
+        friend constexpr bool operator==(unreachable_sentinel_t, T const &)
+        {
+            return false;
         }
     };
-
-    struct end_fn
-    {
-        template <class Range>
-        constexpr auto operator()(Range && rng) const
-        {
-            using std::end;
-            return end(std::forward<Range>(rng));
-        }
-    };
-
-    struct rbegin_fn
-    {
-        template <class Range>
-        auto operator()(Range && rng) const
-        {
-            using std::rbegin;
-            return rbegin(std::forward<Range>(rng));
-        }
-    };
-
-    struct rend_fn
-    {
-        template <class Range>
-        auto operator()(Range && rng) const
-        {
-            using std::rend;
-            return rend(std::forward<Range>(rng));
-        }
-    };
-
-    struct size_fn
-    {
-        template <class SizedRange>
-        auto operator()(SizedRange const & sr) const
-        -> decltype(sr.size())
-        {
-            return sr.size();
-        }
-
-        template <class T, std::size_t N>
-        std::size_t operator()(const T(&)[N]) const noexcept
-        {
-            return N;
-        }
-    };
-}
-// namespace detail
 
     struct back_insert_fn
     {
