@@ -29,12 +29,12 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
-    // Все функции constexpr?
     template <class T>
     class with_old_value
      : saga::operators::equality_comparable<with_old_value<T>>
     {
-        friend bool operator==(with_old_value const & lhs, with_old_value const & rhs)
+        constexpr friend
+        bool operator==(with_old_value const & lhs, with_old_value const & rhs)
         {
             return std::tie(lhs.value(), lhs.old_value())
                     == std::tie(rhs.value(), rhs.old_value());
@@ -47,7 +47,7 @@ namespace saga
          , old_value_(this->value_)
         {}
 
-        with_old_value & operator=(T value)
+        constexpr with_old_value & operator=(T value)
         {
             this->value_ = std::move(value);
 
@@ -65,18 +65,18 @@ namespace saga
             return this->value_;
         }
 
-        T const & old_value() const
+        constexpr T const & old_value() const
         {
             return this->old_value_;
         }
 
         // Принятие/сброс изменений
-        void commit()
+        constexpr void commit()
         {
             this->old_value_ = this->value_;
         }
 
-        void revert()
+        constexpr void revert()
         {
             this->value_ = this->old_value_;
         }
