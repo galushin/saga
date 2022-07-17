@@ -29,16 +29,22 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    template <class OutputCursor, class Incrementable>
+    using iota_result = out_value_result<OutputCursor, Incrementable>;
+
     struct iota_fn
     {
     public:
         template <class OutputCursor, class Incrementable>
-        void operator()(OutputCursor out, Incrementable value) const
+        constexpr iota_result<OutputCursor, Incrementable>
+        operator()(OutputCursor out, Incrementable value) const
         {
             for(; !!out; ++ value)
             {
                 out << value;
             }
+
+            return {std::move(out), std::move(value)};
         }
     };
 
