@@ -32,6 +32,23 @@ SAGA -- это свободной программное обеспечение:
 #include <vector>
 
 // Тесты
+namespace
+{
+    constexpr bool check_iota_array()
+    {
+        std::array<int, 5> expected = {1, 2, 3, 4, 5};
+
+        std::array<int, 5> actual{};
+        auto const result = saga::iota(saga::cursor::all(actual), 1);
+
+        return saga::equal(saga::cursor::all(actual), saga::cursor::all(expected))
+               && result.value == 6
+               && result.out == saga::cursor::drop_front_n(saga::cursor::all(actual), 5);
+    }
+
+    static_assert(check_iota_array(), "");
+}
+
 TEST_CASE("iota")
 {
     using Value = unsigned int;
@@ -42,7 +59,7 @@ TEST_CASE("iota")
         auto src_saga = src;
         auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
 
-        saga::iota(cur, init_value);
+        auto const result = saga::iota(cur, init_value);
 
         // std
         auto src_std = src;
@@ -51,8 +68,13 @@ TEST_CASE("iota")
 
         std::iota(cur_std.begin(), cur_std.end(), init_value);
 
-        // Сравнение
+        // Проверки
         REQUIRE(src_saga == src_std);
+
+        auto const num = Value(saga::cursor::size(cur));
+
+        REQUIRE(result.out == saga::cursor::drop_front_n(cur, num));
+        REQUIRE(result.value == init_value + num);
     };
 }
 
