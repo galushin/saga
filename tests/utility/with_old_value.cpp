@@ -79,7 +79,7 @@ TEST_CASE("with_old_value: equality")
 
 TEST_CASE("with_old_value: modifying access")
 {
-    using Value = int;
+    using Value = unsigned int;
 
     saga_test::property_checker << [](Value const & value)
     {
