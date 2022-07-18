@@ -38,7 +38,7 @@ jobs:
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: UB,
-              CFLAGS:  "-std=gnu++17 -fsanitize=undefined",
+              CFLAGS:  "-std=gnu++17 -fsanitize=undefined -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=undefined",
             }
           - {
@@ -47,7 +47,7 @@ jobs:
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: float-cast-overflow,
-              CFLAGS:  "-std=gnu++17 -fsanitize=float-cast-overflow",
+              CFLAGS:  "-std=gnu++17 -fsanitize=float-cast-overflow -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=float-cast-overflow",
             }
           - {
@@ -105,7 +105,7 @@ jobs:
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: address,
-              CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract",
+              CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=address",
               ASAN_OPTIONS: "detect_invalid_pointer_pairs=2",
             }
@@ -115,7 +115,7 @@ jobs:
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: UB,
-              CFLAGS:  "-std=c++17 -fsanitize=undefined",
+              CFLAGS:  "-std=c++17 -fsanitize=undefined -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=undefined",
             }
           - {
@@ -124,7 +124,7 @@ jobs:
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: float-cast-overflow,
-              CFLAGS:  "-std=c++17 -fsanitize=float-cast-overflow",
+              CFLAGS:  "-std=c++17 -fsanitize=float-cast-overflow -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=float-cast-overflow",
             }
           - {
@@ -198,8 +198,8 @@ jobs:
           CC: ${{ matrix.config.cc }}
           CFLAGS:  "${{ matrix.config.cflags }} -O1 -fno-omit-frame-pointer"
           LDFLAGS: ${{ matrix.config.ldflags }}
-          UBSAN_OPTIONS: "${{ matrix.config.ubsan_options }} print_stacktrace=1"
-          ASAN_OPTIONS: "${{ matrix.config.asan_options }} print_stacktrace=1"
+          UBSAN_OPTIONS: "${{ matrix.config.ubsan_options }} print_stacktrace=1 halt_on_error=1"
+          ASAN_OPTIONS: "${{ matrix.config.asan_options }} print_stacktrace=1 halt_on_error=1"
           
         run: >
           $CXX -v

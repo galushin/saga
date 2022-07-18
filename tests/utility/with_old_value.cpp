@@ -23,7 +23,20 @@ SAGA -- это свободной программное обеспечение:
 #include "../saga_test.hpp"
 
 // Тесты
-// @todo TEST_CASE("with_old_value: default constructor")
+namespace
+{
+    static_assert(saga::with_old_value<int>().value() == int{});
+    static_assert(saga::with_old_value<int>().old_value() == int{});
+}
+
+TEMPLATE_TEST_CASE("with_old_value: default constructor", ""
+                   , int, std::string, (std::pair<int, std::string>))
+{
+    auto const obj = saga::with_old_value<TestType>();
+
+    REQUIRE(obj.value() == TestType());
+    REQUIRE(obj.old_value() == TestType());
+}
 
 TEST_CASE("with_old_value: value constructor")
 {
@@ -79,7 +92,7 @@ TEST_CASE("with_old_value: equality")
 
 TEST_CASE("with_old_value: modifying access")
 {
-    using Value = int;
+    using Value = unsigned int;
 
     saga_test::property_checker << [](Value const & value)
     {
