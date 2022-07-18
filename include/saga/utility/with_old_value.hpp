@@ -42,6 +42,8 @@ namespace saga
 
     public:
         // Создание, копирование, уничтожение
+        with_old_value() = default;
+
         constexpr explicit with_old_value(T value)
          : value_(std::move(value))
          , old_value_(this->value_)
@@ -82,8 +84,8 @@ namespace saga
         }
 
     private:
-        T value_;
-        T old_value_;
+        T value_{};
+        T old_value_{};
     };
 }
 
