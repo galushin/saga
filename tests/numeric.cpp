@@ -71,7 +71,7 @@ TEST_CASE("iota")
         // Проверки
         REQUIRE(src_saga == src_std);
 
-        auto const num = saga::cursor::size(cur);
+        auto const num = Value(saga::cursor::size(cur));
 
         REQUIRE(result.out == saga::cursor::drop_front_n(cur, num));
         REQUIRE(result.value == init_value + num);
