@@ -30,7 +30,7 @@ SAGA -- это свободной программное обеспечение:
 namespace
 {
     template <class IntType>
-    constexpr IntType digits_powers_sum(IntType num, IntType power)
+    IntType digits_powers_sum(IntType num, IntType power)
     {
         auto fun = [=](IntType arg) { return saga::power_natural(arg, power); };
 
@@ -38,7 +38,7 @@ namespace
     }
 
     template <class IntType>
-    constexpr IntType PE_030(IntType power)
+    IntType PE_030(IntType power)
     {
         auto cur = saga::cursor::indices(10, (power + 1) * saga::power_natural(9, power));
 
