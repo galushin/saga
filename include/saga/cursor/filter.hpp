@@ -20,6 +20,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/algorithm/find_if.hpp>
 #include <saga/cursor/cursor_facade.hpp>
+#include <saga/cursor/cursor_traits.hpp>
 
 namespace saga
 {
