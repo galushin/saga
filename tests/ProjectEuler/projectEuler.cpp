@@ -1998,10 +1998,6 @@ namespace
 
         return saga::reduce(saga::cursor::filter(std::move(cur), pred));
     }
-
-    static_assert(::digits_powers_sum(1634, 4) == 1634, "");
-    static_assert(::digits_powers_sum(8208, 4) == 8208, "");
-    static_assert(::digits_powers_sum(9474, 4) == 9474, "");
 }
 
 TEST_CASE("PE 030")
