@@ -18,6 +18,8 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_CURSOR_TRANSFORM_HPP_INCLUDED
 #define Z_SAGA_CURSOR_TRANSFORM_HPP_INCLUDED
 
+#include <saga/cursor/cursor_facade.hpp>
+#include <saga/cursor/cursor_traits.hpp>
 #include <saga/functional.hpp>
 
 namespace saga
@@ -25,13 +27,15 @@ namespace saga
     template <class Cursor, class UnaryFunction>
     class transform_cursor
      : saga::cursor_facade<transform_cursor<Cursor, UnaryFunction>
-                           , saga::invoke_result_t<UnaryFunction const &, cursor_reference_t<Cursor>>>
+                           , saga::invoke_result_t<UnaryFunction const &
+                                                  , cursor_reference_t<Cursor>>>
     {
     public:
         // Типы
         using reference = saga::invoke_result_t<UnaryFunction const &, cursor_reference_t<Cursor>>;
         using difference_type = saga::cursor_difference_t<Cursor>;
         using cursor_category = saga::cursor_category_t<Cursor>;
+        using value_type = std::decay_t<reference>;
 
         // Создание, копирование, уничтожение
         constexpr explicit transform_cursor(Cursor cur, UnaryFunction fun)

@@ -6,6 +6,9 @@
  элемента базового курсора
 */
 
+#include <saga/cursor/cursor_facade.hpp>
+#include <saga/cursor/cursor_traits.hpp>
+
 namespace saga
 {
     namespace cursor

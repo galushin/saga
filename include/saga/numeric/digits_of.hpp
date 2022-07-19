@@ -30,13 +30,20 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
-    template <class IntType>
+    /**
+    Тип разности должен быть достаточен для представления количества цифр числа по данному
+    основанию. Если IntType -- это встроенный тип, то make_signed_t<IntType> подходящий тип.
+    В общем случае трудно сказать что-то более определённое. Поэтому тип расстояния сделан
+    настраиваемым.
+    */
+    template <class IntType, class Difference = std::ptrdiff_t>
     class digits_cursor
      : saga::cursor_facade<digits_cursor<IntType>, IntType const &>
     {
     public:
         // Типы
         using cursor_category = std::input_iterator_tag;
+        using difference_type = Difference;
         using value_type = IntType;
         using reference = IntType const &;
 

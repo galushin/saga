@@ -105,6 +105,8 @@
 		<Unit filename="../include/saga/utility/in_place.hpp" />
 		<Unit filename="../include/saga/utility/operators.hpp" />
 		<Unit filename="../include/saga/utility/with_old_value.hpp" />
+		<Unit filename="ProjectEuler/PE030.cpp" />
+		<Unit filename="ProjectEuler/PE_18_67.cpp" />
 		<Unit filename="ProjectEuler/projectEuler.cpp" />
 		<Unit filename="algorithm.cpp" />
 		<Unit filename="any.cpp" />
