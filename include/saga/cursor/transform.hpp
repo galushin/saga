@@ -32,6 +32,7 @@ namespace saga
         using reference = saga::invoke_result_t<UnaryFunction const &, cursor_reference_t<Cursor>>;
         using difference_type = saga::cursor_difference_t<Cursor>;
         using cursor_category = saga::cursor_category_t<Cursor>;
+        using value_type = std::decay_t<reference>;
 
         // Создание, копирование, уничтожение
         constexpr explicit transform_cursor(Cursor cur, UnaryFunction fun)

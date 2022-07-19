@@ -1978,6 +1978,42 @@ TEST_CASE("PE 029")
     REQUIRE(PE_029(100) == 9183);
 }
 
+// PE 030: Суммы степеней цифр
+namespace
+{
+    template <class IntType>
+    constexpr IntType digits_powers_sum(IntType num, IntType power)
+    {
+        auto fun = [=](IntType arg) { return saga::power_natural(arg, power); };
+
+        return saga::reduce(saga::cursor::transform(saga::cursor::digits_of(num), fun));
+    }
+
+    template <class IntType>
+    constexpr IntType PE_030(IntType power)
+    {
+        auto cur = saga::cursor::indices(10, (power + 1) * saga::power_natural(9, power));
+
+        auto pred = [=](IntType num) { return num == ::digits_powers_sum(num, power); };
+
+        return saga::reduce(saga::cursor::filter(std::move(cur), pred));
+    }
+
+    static_assert(::digits_powers_sum(1634, 4) == 1634, "");
+    static_assert(::digits_powers_sum(8208, 4) == 8208, "");
+    static_assert(::digits_powers_sum(9474, 4) == 9474, "");
+}
+
+TEST_CASE("PE 030")
+{
+    REQUIRE(::digits_powers_sum(1634, 4) == 1634);
+    REQUIRE(::digits_powers_sum(8208, 4) == 8208);
+    REQUIRE(::digits_powers_sum(9474, 4) == 9474);
+
+    REQUIRE(::PE_030(4) == 19316);
+    REQUIRE(::PE_030(5) == 443839);
+}
+
 // PE 067: Путь наибольшей суммы (часть II)
 TEST_CASE("PE 067")
 {
