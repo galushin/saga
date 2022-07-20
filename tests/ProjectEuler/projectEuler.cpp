@@ -20,6 +20,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Используемые возможности
+#include <saga/cursor/cartesian_product.hpp>
 #include <saga/cursor/enumerate.hpp>
 #include <saga/cursor/indices.hpp>
 #include <saga/cursor/iota.hpp>
@@ -28,6 +29,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/stride.hpp>
 #include <saga/cursor/take_while.hpp>
 #include <saga/cursor/transform.hpp>
+#include <saga/flat_set.hpp>
 #include <saga/math.hpp>
 #include <saga/numeric.hpp>
 #include <saga/pipes/filter.hpp>
@@ -1645,6 +1647,8 @@ TEST_CASE("PE 025")
 }
 
 // PE 026: Циклы в обратных числах
+#include <saga/cursor/cached1.hpp>
+
 namespace
 {
     class pe_026_cursor
@@ -1726,21 +1730,10 @@ namespace
 
     int PE_026(int num)
     {
-        int max_num = 1;
-        int max_length = 0;
+        auto cur = saga::cursor::transform(saga::cursor::indices(2, num)
+                                           , ::PE_026_reciprocal_cycle_length);
 
-        for(auto const & num : saga::cursor::indices(2, num))
-        {
-            auto new_length = PE_026_reciprocal_cycle_length(num);
-
-            if(new_length > max_length)
-            {
-                max_num = num;
-                max_length = new_length;
-            }
-        }
-
-        return max_num;
+        return saga::max_element(saga::cursor::cached1(std::move(cur))).base().base().front();
     }
 }
 
@@ -1859,9 +1852,6 @@ TEST_CASE("PE 028")
 }
 
 // PE 029: Различные степени
-#include <saga/cursor/cartesian_product.hpp>
-#include <saga/flat_set.hpp>
-
 namespace
 {
     int PE_029(int n_max)
