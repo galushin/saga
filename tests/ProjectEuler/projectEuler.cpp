@@ -1793,22 +1793,16 @@ TEST_CASE("PE 027")
     REQUIRE(PE_027_count(-79, 1601, primes) == 80);
     REQUIRE(PE_027_count(-999, -1000, primes) == 0);
 
-    auto num_primes = 0;
-    auto coef_prod = 0;
+    auto fun = [&](auto const & value) { return PE_027_count(value.first, value.second, primes); };
 
-    for(auto const & a : saga::cursor::indices(-1000 + 1, 1000))
-    for(auto const & b : saga::cursor::indices(-1000, 1001))
-    {
-        auto new_num_primes = PE_027_count(a, b, primes);
+    auto cur = saga::cursor::cartesian_product(saga::cursor::indices(-1000 + 1, 1000)
+                                               , saga::cursor::indices(-1000, 1001));
 
-        if(new_num_primes > num_primes)
-        {
-            num_primes = new_num_primes;
-            coef_prod = a*b;
-        }
-    }
+    auto transformed = saga::cursor::transform(std::move(cur), std::ref(fun));
 
-    REQUIRE(coef_prod == -59'231);
+    auto const pos = saga::max_element(saga::cursor::cached1(std::move(transformed))).base().base();
+
+    REQUIRE(std::get<0>(*pos) * std::get<1>(*pos) == -59'231);
 }
 
 // PE 028: Диагонали числовой суммы

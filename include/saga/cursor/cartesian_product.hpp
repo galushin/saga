@@ -28,7 +28,7 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
-    template <class InputCursor, class ForwardCursor>
+    template <class InputCursor, class ForwardCursor, class Difference = std::ptrdiff_t>
     class cartesian_product_cursor
      : saga::cursor_facade<cartesian_product_cursor<InputCursor, ForwardCursor>
                           , std::pair<cursor_reference_t<InputCursor>
@@ -38,6 +38,9 @@ namespace saga
         // Типы
         using reference = std::pair<cursor_reference_t<InputCursor>
                                    , cursor_reference_t<ForwardCursor>>;
+
+        using difference_type = Difference;
+        using cursor_category = saga::cursor_category_t<InputCursor>;
 
         // Создание
         explicit cartesian_product_cursor(InputCursor cur1, ForwardCursor cur2)
