@@ -20,6 +20,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch/catch.hpp>
 
 // Используемые возможности
+#include <saga/cursor/cartesian_product.hpp>
 #include <saga/cursor/enumerate.hpp>
 #include <saga/cursor/indices.hpp>
 #include <saga/cursor/iota.hpp>
@@ -28,6 +29,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/stride.hpp>
 #include <saga/cursor/take_while.hpp>
 #include <saga/cursor/transform.hpp>
+#include <saga/flat_set.hpp>
 #include <saga/math.hpp>
 #include <saga/numeric.hpp>
 #include <saga/pipes/filter.hpp>
@@ -1645,6 +1647,8 @@ TEST_CASE("PE 025")
 }
 
 // PE 026: Циклы в обратных числах
+#include <saga/cursor/cached1.hpp>
+
 namespace
 {
     class pe_026_cursor
@@ -1726,21 +1730,10 @@ namespace
 
     int PE_026(int num)
     {
-        int max_num = 1;
-        int max_length = 0;
+        auto cur = saga::cursor::transform(saga::cursor::indices(2, num)
+                                           , ::PE_026_reciprocal_cycle_length);
 
-        for(auto const & num : saga::cursor::indices(2, num))
-        {
-            auto new_length = PE_026_reciprocal_cycle_length(num);
-
-            if(new_length > max_length)
-            {
-                max_num = num;
-                max_length = new_length;
-            }
-        }
-
-        return max_num;
+        return saga::max_element(saga::cursor::cached1(std::move(cur))).base().base().front();
     }
 }
 
@@ -1800,22 +1793,16 @@ TEST_CASE("PE 027")
     REQUIRE(PE_027_count(-79, 1601, primes) == 80);
     REQUIRE(PE_027_count(-999, -1000, primes) == 0);
 
-    auto num_primes = 0;
-    auto coef_prod = 0;
+    auto fun = [&](auto const & value) { return PE_027_count(value.first, value.second, primes); };
 
-    for(auto const & a : saga::cursor::indices(-1000 + 1, 1000))
-    for(auto const & b : saga::cursor::indices(-1000, 1001))
-    {
-        auto new_num_primes = PE_027_count(a, b, primes);
+    auto cur = saga::cursor::cartesian_product(saga::cursor::indices(-1000 + 1, 1000)
+                                               , saga::cursor::indices(-1000, 1001));
 
-        if(new_num_primes > num_primes)
-        {
-            num_primes = new_num_primes;
-            coef_prod = a*b;
-        }
-    }
+    auto transformed = saga::cursor::transform(std::move(cur), std::ref(fun));
 
-    REQUIRE(coef_prod == -59'231);
+    auto const pos = saga::max_element(saga::cursor::cached1(std::move(transformed))).base().base();
+
+    REQUIRE(std::get<0>(*pos) * std::get<1>(*pos) == -59'231);
 }
 
 // PE 028: Диагонали числовой суммы
@@ -1859,9 +1846,6 @@ TEST_CASE("PE 028")
 }
 
 // PE 029: Различные степени
-#include <saga/cursor/cartesian_product.hpp>
-#include <saga/flat_set.hpp>
-
 namespace
 {
     int PE_029(int n_max)

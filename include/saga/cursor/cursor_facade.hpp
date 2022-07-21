@@ -40,6 +40,11 @@ namespace saga
             return cur;
         }
 
+        friend constexpr Reference operator*(Cursor & cur)
+        {
+            return cur.front();
+        }
+
         friend constexpr Reference operator*(Cursor const & cur)
         {
             return cur.front();
