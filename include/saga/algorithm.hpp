@@ -2410,17 +2410,23 @@ namespace saga
                 return false;
             }
 
-            // Проверяем остальные элементы
-            for(cur1 = rest.in1; !!cur1; ++cur1)
+
+            // Проверяем элементы
+            rest.in1.forget_front();
+
+            for(; !!rest.in1; ++rest.in1)
             {
-                auto pred = detail::bind_front_ref(bin_pred, *cur1);
+                auto pred = detail::bind_front_ref(bin_pred, *rest.in1);
 
-                auto const n1 = saga::count_if_fn{}(rest.in1, pred);
-                auto const n2 = saga::count_if_fn{}(rest.in2, pred);
-
-                if(n1 != n2)
+                if(!saga::find_if_fn{}(rest.in1.dropped_front(), pred))
                 {
-                    return false;
+                    auto const n1 = saga::count_if_fn{}(rest.in1, pred);
+                    auto const n2 = saga::count_if_fn{}(rest.in2, pred);
+
+                    if(n1 != n2)
+                    {
+                        return false;
+                    }
                 }
             }
 
