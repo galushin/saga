@@ -1870,3 +1870,26 @@ TEST_CASE("PE 029")
     REQUIRE(PE_029(5) == 15);
     REQUIRE(PE_029(100) == 9183);
 }
+
+// PE 031: Суммы монет
+TEST_CASE("PE 031")
+{
+    using IntType = std::size_t;
+
+    std::vector<IntType> const coins{1, 2, 5, 10, 20, 50, 100, 200};
+
+    auto const amount = IntType(200);
+
+    std::vector<IntType> ways(amount+1, 0);
+    ways.front() = 1;
+
+    for(auto coin : saga::cursor::all(coins))
+    {
+        for(auto index : saga::cursor::indices(0u, ways.size() - coin))
+        {
+            ways[index + coin] += ways[index];
+        }
+    }
+
+    REQUIRE(ways.back() == 73682);
+}
