@@ -51,6 +51,11 @@ namespace saga
         }
 
         // Итераторы
+        const_iterator begin() const
+        {
+            return this->data_.begin();
+        }
+
         const_iterator end() const
         {
             return this->data_.end();
