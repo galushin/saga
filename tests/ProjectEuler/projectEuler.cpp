@@ -1893,3 +1893,42 @@ TEST_CASE("PE 031")
 
     REQUIRE(ways.back() == 73682);
 }
+
+// PE 032: Панцифирные произведения
+TEST_CASE("PE 032")
+{
+    using IntType = long;
+    auto const min_mult = saga::power_natural(IntType(10), 2);
+    auto const max_mult = saga::power_natural(IntType(10), 4);
+
+    saga::flat_set<IntType> obj;
+
+    for(auto lhs : saga::cursor::indices(min_mult, max_mult))
+    {
+        auto const lhs_str = std::to_string(lhs);
+
+        for(auto rhs : saga::cursor::indices(1, lhs))
+        {
+            auto rhs_str = std::to_string(rhs);
+
+            auto prod = lhs * rhs;
+
+            auto str = lhs_str + rhs_str + std::to_string(prod);
+
+            if(str.size() > 9)
+            {
+                break;
+            }
+
+            saga::sort(saga::cursor::all(str));
+
+            if(str == "123456789")
+            {
+                // @todo Убрать первый аргумент?
+                obj.insert(obj.end(), std::move(prod));
+            }
+        }
+    }
+
+    REQUIRE(saga::reduce(saga::cursor::all(obj)) == 45228);
+}
