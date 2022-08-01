@@ -105,45 +105,70 @@ namespace saga
         void rbegin() = delete;
         void rend() = delete;
 
-        struct begin_fn
+        namespace std_begin_adl
         {
-            template <class Range>
-            constexpr auto operator()(Range && rng) const
-            {
-                using std::begin;
-                return begin(std::forward<Range>(rng));
-            }
-        };
+            void begin() = delete;
 
-        struct end_fn
-        {
-            template <class Range>
-            constexpr auto operator()(Range && rng) const
-            {
-                using std::end;
-                return end(std::forward<Range>(rng));
-            }
-        };
+            using std::begin;
 
-        struct rbegin_fn
-        {
-            template <class Range>
-            auto operator()(Range && rng) const
+            struct begin_fn
             {
-                using std::rbegin;
-                return rbegin(std::forward<Range>(rng));
-            }
-        };
+                template <class Range>
+                constexpr
+                auto operator()(Range && rng) const -> decltype(begin(std::forward<Range>(rng)))
+                {
+                    return begin(std::forward<Range>(rng));
+                }
+            };
+        }
 
-        struct rend_fn
+        namespace std_end_adl
         {
-            template <class Range>
-            auto operator()(Range && rng) const
+            void end() = delete;
+            using std::end;
+
+            struct end_fn
             {
-                using std::rend;
-                return rend(std::forward<Range>(rng));
-            }
-        };
+                template <class Range>
+                constexpr
+                auto operator()(Range && rng) const -> decltype(end(std::forward<Range>(rng)))
+                {
+                    return end(std::forward<Range>(rng));
+                }
+            };
+        }
+
+        namespace std_rbegin_adl
+        {
+            void rbegin() = delete;
+
+            using std::rbegin;
+
+            struct rbegin_fn
+            {
+                template <class Range>
+                auto operator()(Range && rng) const -> decltype(rbegin(std::forward<Range>(rng)))
+                {
+                    return rbegin(std::forward<Range>(rng));
+                }
+            };
+        }
+
+        namespace std_rend_adl
+        {
+            void rend() = delete;
+
+            using std::rend;
+
+            struct rend_fn
+            {
+                template <class Range>
+                auto operator()(Range && rng) const -> decltype(rend(std::forward<Range>(rng)))
+                {
+                    return rend(std::forward<Range>(rng));
+                }
+            };
+        }
 
         struct size_fn
         {
@@ -404,10 +429,10 @@ namespace saga
         return insert_iterator<Container>(container, std::move(pos));
     }
 
-    inline constexpr auto const begin = detail::begin_fn{};
-    inline constexpr auto const end = detail::end_fn{};
-    inline constexpr auto const rbegin = detail::rbegin_fn{};
-    inline constexpr auto const rend = detail::rend_fn{};
+    inline constexpr auto const begin = detail::std_begin_adl::begin_fn{};
+    inline constexpr auto const end = detail::std_end_adl::end_fn{};
+    inline constexpr auto const rbegin = detail::std_rbegin_adl::rbegin_fn{};
+    inline constexpr auto const rend = detail::std_rend_adl::rend_fn{};
     inline constexpr auto const size = detail::size_fn{};
 }
 // namespace saga

@@ -31,6 +31,24 @@ SAGA -- это свободной программное обеспечение:
 #include <sstream>
 
 // Тесты
+namespace
+{
+    struct begin_without_end
+    {
+        void begin();
+    };
+
+    struct end_without_begin
+    {
+        void end();
+    };
+}
+
+static_assert(saga::is_range<std::vector<int>>{}, "");
+static_assert(!saga::is_range<int>{}, "");
+static_assert(!saga::is_range<::begin_without_end>{}, "");
+static_assert(!saga::is_range<::end_without_begin>{}, "");
+
 TEST_CASE("equal: input sequence")
 {
     saga_test::property_checker << [](std::vector<int> const & xs_src,
