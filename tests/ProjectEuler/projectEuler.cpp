@@ -1970,3 +1970,53 @@ TEST_CASE("PE 033")
 {
     REQUIRE(PE_033<int>() == 100);
 }
+
+// PE: Факториалы цифр
+namespace
+{
+    template <class IntType>
+    constexpr std::array<IntType, 10> PE_034_factorials_table()
+    {
+        std::array<IntType, 10> factorials{1};
+
+        saga::iota(saga::cursor::all(factorials), 0);
+        factorials.front() = 1;
+
+        saga::partial_sum(saga::cursor::all(factorials), saga::cursor::all(factorials)
+                          , std::multiplies<>{});
+
+        return factorials;
+    }
+
+    template <class IntType>
+    constexpr IntType PE_034_digits_factorial_sum(IntType num)
+    {
+        constexpr auto factorials = ::PE_034_factorials_table<IntType>();
+
+        return saga::transform_reduce(saga::cursor::digits_of(num), IntType(0)
+                                      , std::plus<>{}
+                                      , [&](IntType arg) { return factorials[arg]; });
+    }
+
+    static_assert(::PE_034_digits_factorial_sum(1) == 1);
+    static_assert(::PE_034_digits_factorial_sum(2) == 2);
+    static_assert(::PE_034_digits_factorial_sum(145) == 145);
+    static_assert(::PE_034_digits_factorial_sum(40585) == 40585);
+
+    constexpr long PE_034()
+    {
+        using IntType = long;
+
+        // Можно показать, что если количество цифр больше 7, то сумма факториалов цифр всегда
+        // меньше самого этого числа
+        auto numbers = saga::cursor::indices(IntType(10), saga::power_natural(IntType(10), 7));
+        auto pred = [](IntType num) { return num == PE_034_digits_factorial_sum(num); };
+
+        return saga::reduce(saga::cursor::filter(numbers, pred));
+    }
+}
+
+TEST_CASE("PE 034")
+{
+    REQUIRE(PE_034() == 40730);
+}
