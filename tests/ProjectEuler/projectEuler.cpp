@@ -1932,3 +1932,41 @@ TEST_CASE("PE 032")
 
     REQUIRE(saga::reduce(saga::cursor::all(obj)) == 45228);
 }
+
+// PE 033: Дроби с сокращающимися цифрами
+namespace
+{
+    template <class IntType>
+    constexpr IntType PE_033_is_canceling(IntType num, IntType denom, IntType a)
+    {
+        return (num*(10*a+denom) == denom*(10*num + a))
+                || (num*(10*denom+a) == denom*(10*a + num));
+    }
+
+    template <class IntType>
+    constexpr IntType PE_033()
+    {
+        auto numerator = IntType(1);
+        auto denominator = IntType(1);
+
+        for(auto denom : saga::cursor::indices(1, 10))
+        for(auto num : saga::cursor::indices(1, denom))
+        for(auto a : saga::cursor::indices(1, 10))
+        {
+            if(::PE_033_is_canceling(num, denom, a))
+            {
+                numerator *= num;
+                denominator *= denom;
+            }
+        }
+
+        return denominator / saga::gcd(numerator, denominator);
+    }
+
+    static_assert(PE_033<int>() == 100, "");
+}
+
+TEST_CASE("PE 033")
+{
+    REQUIRE(PE_033<int>() == 100);
+}
