@@ -351,6 +351,15 @@ namespace saga
             input.forget_front();
             input.forget_back();
 
+            if constexpr (saga::is_random_access_cursor<ForwardCursor>{})
+            {
+                if(input.size() < num)
+                {
+                    input.exhaust_front();
+                    return input;
+                }
+            }
+
             auto before = input.dropped_front();
 
             for(auto cur_count = Size{0};;)
@@ -360,6 +369,18 @@ namespace saga
                     return saga::detail::cursor_from_parts(std::move(before)
                                                            , input.dropped_front()
                                                            , std::move(input));
+                }
+
+                if constexpr (saga::is_random_access_cursor<ForwardCursor>{})
+                {
+                    if(input.size() < num - cur_count)
+                    {
+                        input.exhaust_front();
+
+                        before.splice(input.dropped_front());
+
+                        return saga::detail::cursor_from_parts(std::move(before), input);
+                    }
                 }
 
                 if(!input)

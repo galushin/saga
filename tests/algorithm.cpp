@@ -1129,13 +1129,15 @@ TEST_CASE("search_n: default predicate, minimalistic")
     };
 }
 
-TEST_CASE("search_n: custom predicate, minimalistic")
+TEMPLATE_TEST_CASE("search_n: custom predicate", "search_n", std::forward_list<int>
+                   , std::list<int>, std::vector<int>)
 {
-    using Value = int;
+    using Value = typename TestType::value_type;
 
     saga_test::property_checker
-    <<[](std::forward_list<Value> const & haystack
-         , saga_test::container_size<std::size_t> const & num, Value const & value)
+    <<[](TestType const & haystack
+         , saga_test::container_size<typename TestType::difference_type> const & num
+         , Value const & value)
     {
         auto const pred = saga::equivalent_up_to([](Value const & arg) { return arg % 2; });
 
