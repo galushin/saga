@@ -2001,7 +2001,6 @@ namespace
     static_assert(::PE_034_digits_factorial_sum(1) == 1);
     static_assert(::PE_034_digits_factorial_sum(2) == 2);
     static_assert(::PE_034_digits_factorial_sum(145) == 145);
-    static_assert(::PE_034_digits_factorial_sum(40585) == 40585);
 
     constexpr long PE_034()
     {
@@ -2018,5 +2017,7 @@ namespace
 
 TEST_CASE("PE 034")
 {
+    REQUIRE(::PE_034_digits_factorial_sum(40585) == 40585);
+
     REQUIRE(PE_034() == 40730);
 }
