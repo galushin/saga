@@ -1989,7 +1989,7 @@ namespace
     }
 
     template <class IntType>
-    constexpr IntType PE_034_digits_factorial_sum(IntType num)
+    IntType PE_034_digits_factorial_sum(IntType num)
     {
         constexpr auto factorials = ::PE_034_factorials_table<IntType>();
 
@@ -1998,10 +1998,7 @@ namespace
                                       , [&](IntType arg) { return factorials[arg]; });
     }
 
-    static_assert(::PE_034_digits_factorial_sum(1) == 1);
-    static_assert(::PE_034_digits_factorial_sum(2) == 2);
-
-    constexpr long PE_034()
+    long PE_034()
     {
         using IntType = long;
 
@@ -2016,6 +2013,8 @@ namespace
 
 TEST_CASE("PE 034")
 {
+    REQUIRE(::PE_034_digits_factorial_sum(1) == 1);
+    REQUIRE(::PE_034_digits_factorial_sum(2) == 2);
     REQUIRE(::PE_034_digits_factorial_sum(145) == 145);
     REQUIRE(::PE_034_digits_factorial_sum(40585) == 40585);
 
