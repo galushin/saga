@@ -371,18 +371,6 @@ namespace saga
                                                            , std::move(input));
                 }
 
-                if constexpr (saga::is_random_access_cursor<ForwardCursor>{})
-                {
-                    if(input.size() < num - cur_count)
-                    {
-                        input.exhaust_front();
-
-                        before.splice(input.dropped_front());
-
-                        return saga::detail::cursor_from_parts(std::move(before), input);
-                    }
-                }
-
                 if(!input)
                 {
                     before.splice(input.dropped_front());
@@ -401,6 +389,18 @@ namespace saga
                     before.splice(input.dropped_front());
                     input.forget_front();
                     cur_count = Size{0};
+
+                    if constexpr (saga::is_random_access_cursor<ForwardCursor>{})
+                    {
+                        if(input.size() < num)
+                        {
+                            input.exhaust_front();
+
+                            before.splice(input.dropped_front());
+
+                            return saga::detail::cursor_from_parts(std::move(before), input);
+                        }
+                    }
                 }
             }
         }
