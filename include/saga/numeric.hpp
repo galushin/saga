@@ -113,7 +113,7 @@ namespace saga
     struct partial_sum_fn
     {
         template <class InputCursor, class OutputCursor, class BinaryOperation = std::plus<>>
-        in_out_result<InputCursor, OutputCursor>
+        constexpr in_out_result<InputCursor, OutputCursor>
         operator()(InputCursor in, OutputCursor out, BinaryOperation op = {}) const
         {
             if(!in || !out)
