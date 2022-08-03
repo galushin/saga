@@ -25,6 +25,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/type_traits.hpp>
 #include <saga/utility/operators.hpp>
 
+#include <memory>
 #include <utility>
 
 namespace saga
