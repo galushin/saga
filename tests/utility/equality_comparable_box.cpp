@@ -70,7 +70,7 @@ namespace
     {
         friend bool operator==(empty_with_equality const & lhs, empty_with_equality const & rhs)
         {
-            return &lhs == &rhs;
+            return std::addressof(lhs) == std::addressof(rhs);
         }
     };
 }
