@@ -30,6 +30,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/take.hpp>
 #include <saga/iterator/reverse.hpp>
 #include <saga/math.hpp>
+#include <saga/utility/functional_macro.hpp>
 
 #include <forward_list>
 #include <list>
@@ -1765,7 +1766,7 @@ TEST_CASE("transform")
 {
     saga_test::property_checker << [](std::vector<char> const & src, std::string const & dest)
     {
-        auto fun = [](char arg) { return std::toupper(arg); };
+        auto fun = SAGA_OVERLOAD_SET(std::toupper);
 
         auto const n_common = std::min(src.size(), dest.size());
         // std
@@ -1833,7 +1834,7 @@ TEST_CASE("transform binary")
                                       std::string const & dest_old)
     {
         auto const n_common = std::min({lhs.size(), rhs.size(), dest_old.size()});
-        auto const fun = [](char x, char y) { return std::min(x, y); };
+        auto const fun = SAGA_OVERLOAD_SET(std::min);
 
         // std
         auto dest_std = dest_old;
@@ -5654,7 +5655,7 @@ TEST_CASE("lexicographical_compare - prefix, custom compare")
 {
     saga_test::property_checker << [](std::string const & str)
     {
-        auto const fun = [](char x) { return std::tolower(x); };
+        auto const fun = SAGA_OVERLOAD_SET(std::tolower);
 
         auto sub = std::string(str.begin(), saga_test::random_iterator_of(str));
         saga::transform(saga::cursor::all(sub), saga::cursor::all(sub), fun);

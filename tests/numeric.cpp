@@ -27,6 +27,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/indices.hpp>
 #include <saga/cursor/istream_cursor.hpp>
 #include <saga/cursor/subrange.hpp>
+#include <saga/utility/functional_macro.hpp>
 
 #include <list>
 #include <vector>
@@ -497,15 +498,9 @@ TEST_CASE("inner_product: generic operations")
                                       std::list<Value> const & rhs,
                                       Value const & init_value)
     {
-        auto op1 = [](Value const & x, Value const & y)
-        {
-            return std::min(x, y);
-        };
+        auto const op1 = SAGA_OVERLOAD_SET(std::min);
 
-        auto op2 = [](Value const & x, Value const & y)
-        {
-            return std::max(x, y);
-        };
+        auto const op2 = SAGA_OVERLOAD_SET(std::max);
 
         auto const n_min = std::min(lhs.size(), rhs.size());
 
@@ -1087,10 +1082,7 @@ TEST_CASE("transform_reduce: two ranges, custom operations, minimal")
             return std::min(x, y);
         };
 
-        auto combiner = [](Value1 const & x, Value2 const & y)
-        {
-            return x ^ y;
-        };
+        auto combiner = std::bit_xor<>{};
 
         // inner_product
         auto const r_expected = saga::inner_product(saga::cursor::all(lhs)
@@ -1125,10 +1117,7 @@ TEST_CASE("transform_reduce: two ranges, custom operations, subcursors")
             return std::min(x, y);
         };
 
-        auto combiner = [](Value1 const & x, Value2 const & y)
-        {
-            return x ^ y;
-        };
+        auto combiner = std::bit_xor<>{};
 
         auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(lhs));
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(rhs));
