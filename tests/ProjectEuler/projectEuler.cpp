@@ -36,6 +36,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/pipes/for_each.hpp>
 #include <saga/pipes/transform.hpp>
 #include <saga/utility/exchange.hpp>
+#include <saga/utility/functional_macro.hpp>
 
 #include <optional>
 #include <vector>
@@ -509,12 +510,9 @@ namespace
 
         auto data_slided_aggregated = saga::cursor::transform(data_slided, prod);
 
-        auto max_fn = [](auto && lhs, auto && rhs)
-        {
-            return std::max(std::forward<decltype(lhs)>(lhs), std::forward<decltype(rhs)>(rhs));
-        };
-
-        return saga::accumulate(std::move(data_slided_aggregated), std::size_t(0), max_fn);
+        // @todo max_element?
+        return saga::accumulate(std::move(data_slided_aggregated), std::size_t(0)
+                                , SAGA_OVERLOAD_SET(std::max));
     }
 
     static_assert(::projectEuler_008(pe008_data, 4) == 5832, "");
