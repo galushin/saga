@@ -771,10 +771,8 @@ namespace
 
         assert(rows >= num && cols >= num);
 
-        for(auto const & row : data)
-        {
-            assert(row.size() == cols);
-        }
+        assert(saga::all_of(saga::cursor::all(data)
+                            , [&cols](auto const & row) { return row.size() == cols; }));
 
         auto result = IntType(1);
 
@@ -1971,7 +1969,7 @@ TEST_CASE("PE 033")
     REQUIRE(PE_033<int>() == 100);
 }
 
-// PE: Факториалы цифр
+// PE 34: Факториалы цифр
 namespace
 {
     template <class IntType>
@@ -2019,4 +2017,43 @@ TEST_CASE("PE 034")
     REQUIRE(::PE_034_digits_factorial_sum(40585) == 40585);
 
     REQUIRE(PE_034() == 40730);
+}
+
+// PE 35: Круговые простые числа
+namespace
+{
+    bool PE_035_is_circular_prime(std::size_t prime, std::vector<std::size_t> const & primes)
+    {
+        std::size_t num = std::log10(prime);
+        std::size_t const mask = std::pow(10, num);
+
+        for(; num > 0; -- num)
+        {
+            auto last = prime % 10;
+            prime /= 10;
+            prime += mask * last;
+
+            if(!saga::binary_search(saga::cursor::all(primes), prime))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    std::size_t PE_035(std::size_t max_num)
+    {
+        auto const primes = saga::primes_below(max_num);
+
+        return saga::count_if(saga::cursor::all(primes)
+                              , [&](auto prime)
+                                { return ::PE_035_is_circular_prime(std::move(prime), primes);});
+    }
+}
+
+TEST_CASE("PE 035")
+{
+    REQUIRE(::PE_035(100) == 13);
+    REQUIRE(::PE_035(1'000'000) == 55);
 }
