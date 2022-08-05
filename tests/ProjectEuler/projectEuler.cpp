@@ -510,14 +510,12 @@ namespace
 
         auto data_slided_aggregated = saga::cursor::transform(data_slided, prod);
 
-        // @todo max_element?
+        // @todo max_element (требуется copy_wrapper в курсорах)?
         return saga::accumulate(std::move(data_slided_aggregated), std::size_t(0)
                                 , SAGA_OVERLOAD_SET(std::max));
     }
 
     static_assert(::projectEuler_008(pe008_data, 4) == 5832, "");
-    // @note Некоторые компиляторы упираются в лимиты реализации constexpr в более сложном тесте
-    // static_assert(::projectEuler_008(pe008_data, 13) == 23514624000, "");
 }
 
 TEST_CASE("ProjectEuler: 008")
@@ -590,9 +588,6 @@ namespace
 
         return 0;
     }
-
-    // @note Некоторые компиляторы упираются в лимиты реализации constexpr
-    // static_assert(::projectEuler_009_simple(1000) == 31875000, "");
 
     // @note требуется constexpr sqrt
     // static_assert(::projectEuler_009_fast(1000) == 31875000, "");
