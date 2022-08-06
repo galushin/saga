@@ -2050,3 +2050,22 @@ TEST_CASE("PE 035")
     REQUIRE(::PE_035(100) == 13);
     REQUIRE(::PE_035(1'000'000) == 55);
 }
+
+// PE 036 Палиндромы по двум основаниям
+namespace
+{
+    template <class IntType, class Base>
+    bool is_palindrome_in_base(IntType num, Base base)
+    {
+        std::vector<Base> digits;
+        saga::copy(saga::cursor::digits_of(num, base), saga::back_inserter(digits));
+
+        return saga::is_palindrome(saga::cursor::all(digits));
+    }
+}
+
+TEST_CASE("PE 036")
+{
+    REQUIRE(::is_palindrome_in_base(585, 2));
+    REQUIRE(::is_palindrome_in_base(585, 10));
+}

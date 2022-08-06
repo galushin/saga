@@ -18,6 +18,10 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_CURSOR_TO_HPP_INCLUDED
 #define Z_SAGA_CURSOR_TO_HPP_INCLUDED
 
+/** @file saga/cursor/to.hpp
+ @brief Средства для преобразования курсоров в контейнер
+*/
+
 #include <saga/algorithm.hpp>
 #include <saga/container/reserve_if_supported.hpp>
 
