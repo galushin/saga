@@ -2066,6 +2066,8 @@ namespace
 
 TEST_CASE("PE 036")
 {
-    REQUIRE(::is_palindrome_in_base(585, 2));
-    REQUIRE(::is_palindrome_in_base(585, 10));
+    using IntType = long;
+
+    REQUIRE(::is_palindrome_in_base(IntType(585), 2));
+    REQUIRE(::is_palindrome_in_base(IntType(585), 10));
 }
