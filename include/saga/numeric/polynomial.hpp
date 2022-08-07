@@ -30,6 +30,7 @@ namespace saga
     {
     public:
         template <class InputCursor, class T, class Result>
+        constexpr
         Result operator()(InputCursor cur, T const & arg, Result const & zero) const
         {
             auto result = zero;

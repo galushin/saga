@@ -36,16 +36,16 @@ namespace saga
     В общем случае трудно сказать что-то более определённое. Поэтому тип расстояния сделан
     настраиваемым.
     */
-    template <class IntType, class Difference = std::ptrdiff_t>
+    template <class IntType, class Base = IntType, class Difference = std::ptrdiff_t>
     class digits_cursor
-     : saga::cursor_facade<digits_cursor<IntType>, IntType const &>
+     : saga::cursor_facade<digits_cursor<IntType, Base, Difference>, Base const &>
     {
     public:
         // Типы
         using cursor_category = std::input_iterator_tag;
         using difference_type = Difference;
         using value_type = IntType;
-        using reference = IntType const &;
+        using reference = Base const &;
 
         // Создание, копирование, уничтожение
         /**
@@ -79,16 +79,16 @@ namespace saga
 
     private:
         IntType num_ = 0;
-        IntType base_ = 2;
-        IntType cur_ = 0;
+        Base base_ = 2;
+        Base cur_ = 0;
     };
 
     namespace cursor
     {
-        template <class IntType>
-        constexpr auto digits_of(IntType num, IntType base) -> saga::digits_cursor<IntType>
+        template <class IntType, class Base>
+        constexpr auto digits_of(IntType num, Base base) -> saga::digits_cursor<IntType, Base>
         {
-            return digits_cursor<IntType>(num, base);
+            return digits_cursor<IntType, Base>(num, base);
         }
 
         template <class IntType>

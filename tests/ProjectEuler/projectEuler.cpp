@@ -2050,3 +2050,59 @@ TEST_CASE("PE 035")
     REQUIRE(::PE_035(100) == 13);
     REQUIRE(::PE_035(1'000'000) == 55);
 }
+
+// PE 036 Палиндромы по двум основаниям
+#include <saga/numeric/polynomial.hpp>
+
+namespace
+{
+    template <class IntType, class Base>
+    constexpr bool is_palindrome_in_base(IntType const num, Base base)
+    {
+        if(num % base == 0)
+        {
+            return false;
+        }
+
+        auto reversed = saga::polynomial_horner(saga::cursor::digits_of(num, base)
+                                                , base, IntType(0));
+
+        return reversed == num;
+    }
+
+    template <class IntType, class Base>
+    IntType make_palindrome(IntType seed, Base base, bool odd)
+    {
+        return saga::polynomial_horner(saga::cursor::digits_of(odd ? seed / base : seed, base)
+                                       , base, seed);
+    }
+
+    static_assert(::is_palindrome_in_base(585, 2));
+    static_assert(::is_palindrome_in_base(585, 10));
+}
+
+TEST_CASE("PE 036")
+{
+    using IntType = long;
+
+    REQUIRE(::is_palindrome_in_base(IntType(585), 2));
+    REQUIRE(::is_palindrome_in_base(IntType(585), 10));
+    REQUIRE(!::is_palindrome_in_base(IntType(580), 10));
+
+    auto result = IntType(0);
+
+    for(auto seed : saga::cursor::indices(1, 1'000))
+    {
+        if(auto const num = ::make_palindrome(seed, 2, true); ::is_palindrome_in_base(num, 10))
+        {
+            result += num;
+        }
+
+        if(auto const num = ::make_palindrome(seed, 2, false); ::is_palindrome_in_base(num, 10))
+        {
+            result += num;
+        }
+    }
+
+    REQUIRE(result == 872187);
+}
