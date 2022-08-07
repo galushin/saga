@@ -2087,6 +2087,7 @@ TEST_CASE("PE 036")
 
     REQUIRE(::is_palindrome_in_base(IntType(585), 2));
     REQUIRE(::is_palindrome_in_base(IntType(585), 10));
+    REQUIRE(!::is_palindrome_in_base(IntType(583), 10));
 
     auto result = IntType(0);
 
