@@ -30,6 +30,9 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
+    template <class T>
+    using iterator_category_t = typename std::iterator_traits<T>::iterator_category;
+
     namespace detail
     {
         template <class T, bool to_object>

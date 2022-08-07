@@ -89,7 +89,7 @@ namespace saga
     public:
         // Типы
         using iterator_type = Iterator;
-        using iterator_category = typename std::iterator_traits<Iterator>::iterator_category;
+        using iterator_category = saga::iterator_category_t<Iterator>;
         using value_type = typename std::iterator_traits<Iterator>::value_type;
         using difference_type = typename std::iterator_traits<Iterator>::difference_type;
         using pointer = typename std::iterator_traits<Iterator>::pointer;
