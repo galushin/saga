@@ -24,6 +24,7 @@ SAGA -- это свободной программное обеспечение:
 
 // Вспомогательные файлы
 #include <saga/cursor/indices.hpp>
+#include <saga/iterator.hpp>
 
 #include <list>
 #include <deque>

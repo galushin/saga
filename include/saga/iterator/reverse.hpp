@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Адаптор итератора, обходящий базовую последовательность в обратном направлении.
 */
 
+#include <saga/iterator.hpp>
 #include <saga/utility/operators.hpp>
 
 #include <iterator>
