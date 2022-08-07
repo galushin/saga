@@ -1069,16 +1069,13 @@ namespace saga
 
             -- num;
 
-            using Diff = saga::cursor_difference_t<RandomAccessCursor>;
-            using Distr = std::uniform_int_distribution<Diff>;
-            using Param = typename Distr::param_type;
-
-            Distr distr;
-
             for(; num > 0; -- num)
             {
+                using Diff = saga::cursor_difference_t<RandomAccessCursor>;
+                std::uniform_int_distribution<Diff> distr(0, num);
+
                 using std::swap;
-                swap(cur[num], cur[distr(gen, Param(0, num))]);
+                swap(cur[num], cur[distr(gen)]);
             }
         }
     };
@@ -1103,16 +1100,15 @@ namespace saga
             }
 
             // Просмотр остальных элементов
-            using Distr = std::uniform_int_distribution<cursor_difference_t<InputCursor>>;
-            using Param = typename Distr::param_type;
-
-            Distr distr;
-
             auto n_visited = num;
 
             for(; !!input; ++input, void(++n_visited))
             {
-                auto pos = distr(gen, Param(0, n_visited));
+                using Distr = std::uniform_int_distribution<cursor_difference_t<InputCursor>>;
+
+                Distr distr(0, n_visited);
+
+                auto pos = distr(gen);
 
                 if(pos < num)
                 {
