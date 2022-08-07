@@ -2057,7 +2057,7 @@ TEST_CASE("PE 035")
 namespace
 {
     template <class IntType, class Base>
-    bool is_palindrome_in_base(IntType const num, Base base)
+    constexpr bool is_palindrome_in_base(IntType const num, Base base)
     {
         if(num % base == 0)
         {
@@ -2076,6 +2076,9 @@ namespace
         return saga::polynomial_horner(saga::cursor::digits_of(odd ? seed / base : seed, base)
                                        , base, seed);
     }
+
+    static_assert(::is_palindrome_in_base(585, 2));
+    static_assert(::is_palindrome_in_base(585, 10));
 }
 
 TEST_CASE("PE 036")
