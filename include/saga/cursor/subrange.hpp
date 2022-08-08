@@ -47,7 +47,7 @@ namespace saga
 
     public:
         // Типы
-        using cursor_category = typename std::iterator_traits<ForwardIterator>::iterator_category;
+        using cursor_category = saga::iterator_category_t<ForwardIterator>;
         using cursor_cardinality
             = saga::conditional_t<std::is_same<Sentinel, saga::unreachable_sentinel_t>{}
                                  , saga::infinite_cursor_cardinality_tag
@@ -208,7 +208,7 @@ namespace saga
     private:
         constexpr void tweak_back()
         {
-            return this->tweak_back(typename std::iterator_traits<Sentinel>::iterator_category{});
+            return this->tweak_back(saga::iterator_category_t<Sentinel>{});
         }
 
         constexpr void tweak_back(std::input_iterator_tag)

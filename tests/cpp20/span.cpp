@@ -55,9 +55,9 @@ TEST_CASE("span: types and static constants, static extent")
 
     using Iter = Span::iterator;
     using CIter = Span::const_iterator;
-    static_assert(std::is_same<std::iterator_traits<Iter>::iterator_category,
+    static_assert(std::is_same<saga::iterator_category_t<Iter>,
                                std::random_access_iterator_tag>::value, "");
-    static_assert(std::is_same<std::iterator_traits<CIter>::iterator_category,
+    static_assert(std::is_same<saga::iterator_category_t<CIter>,
                                std::random_access_iterator_tag>::value, "");
     static_assert(std::is_same<Span::reverse_iterator,
                                std::reverse_iterator<Iter>>::value, "");
@@ -86,9 +86,9 @@ TEST_CASE("span: types and static constants, dynamic extent")
 
     using Iter = Span::iterator;
     using CIter = Span::const_iterator;
-    static_assert(std::is_same<std::iterator_traits<Iter>::iterator_category,
+    static_assert(std::is_same<saga::iterator_category_t<Iter>,
                                std::random_access_iterator_tag>::value, "");
-    static_assert(std::is_same<std::iterator_traits<CIter>::iterator_category,
+    static_assert(std::is_same<saga::iterator_category_t<CIter>,
                                std::random_access_iterator_tag>::value, "");
     static_assert(std::is_same<Span::reverse_iterator,
                                std::reverse_iterator<Iter>>::value, "");
