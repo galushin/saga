@@ -24,6 +24,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/algorithm/result_types.hpp>
 #include <saga/algorithm/find_if.hpp>
+#include <saga/assert.hpp>
 #include <saga/functional.hpp>
 #include <saga/iterator.hpp>
 #include <saga/cursor/cursor_traits.hpp>
@@ -1359,7 +1360,7 @@ namespace saga
         template <class ForwardCursor, class Predicate>
         ForwardCursor operator()(ForwardCursor cur, Predicate pred) const
         {
-            assert(saga::is_partitioned_fn{}(cur, pred));
+            SAGA_ASSERT_AUDIT(saga::is_partitioned_fn{}(cur, pred));
 
             if(!cur)
             {
