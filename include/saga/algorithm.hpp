@@ -218,10 +218,11 @@ namespace saga
         {
             auto found_in_s_cur = [&](auto && lhs)
             {
-                return !!saga::find_fn{}(s_cur,  std::forward<decltype(lhs)>(lhs), bin_pred);
+                return !!saga::find_fn{}(s_cur, std::forward<decltype(lhs)>(lhs)
+                                         , std::ref(bin_pred));
             };
 
-            return saga::find_if_fn{}(std::move(cur), found_in_s_cur);
+            return saga::find_if_fn{}(std::move(cur), std::move(found_in_s_cur));
         }
     };
 
@@ -321,7 +322,7 @@ namespace saga
 
             for(;;)
             {
-                auto new_result = saga::search_fn{}(cur, s_cur, bin_pred);
+                auto new_result = saga::search_fn{}(cur, s_cur, std::ref(bin_pred));
 
                 if(!new_result)
                 {
@@ -568,7 +569,7 @@ namespace saga
         template <class ForwardCursor, class Predicate>
         ForwardCursor operator()(ForwardCursor cur, Predicate pred) const
         {
-            auto out = saga::find_if_fn{}(std::move(cur), pred);
+            auto out = saga::find_if_fn{}(std::move(cur), std::ref(pred));
 
             if(!out)
             {
@@ -1158,7 +1159,7 @@ namespace saga
         template <class ForwardCursor, class BinaryPredicate = std::equal_to<>>
         ForwardCursor operator()(ForwardCursor cur, BinaryPredicate bin_pred = {}) const
         {
-            cur = saga::adjacent_find_fn{}(std::move(cur), bin_pred);
+            cur = saga::adjacent_find_fn{}(std::move(cur), std::ref(bin_pred));
 
             if(!cur)
             {
@@ -1673,7 +1674,7 @@ namespace saga
                 return cur;
             }
 
-            cur = saga::upper_bound_fn{}(std::move(cur), value, cmp);
+            cur = saga::upper_bound_fn{}(std::move(cur), value, std::ref(cmp));
 
             auto part1 = saga::lower_bound_fn{}(cur.dropped_front(), value, std::move(cmp));
 
@@ -1747,7 +1748,7 @@ namespace saga
 
                 cur1 = saga::cursor::drop_front_n(std::move(cur1), num11);
 
-                cur2 = lower_bound_fn{}(std::move(cur2), *cur1, cmp);
+                cur2 = lower_bound_fn{}(std::move(cur2), *cur1, std::ref(cmp));
 
                 auto cur_mid = rotate_fn{}(detail::cursor_from_parts(cur1, cur2.dropped_front()));
 
@@ -1756,7 +1757,7 @@ namespace saga
                     return;
                 }
 
-                this->impl(cur1.dropped_front(), num11, cur_mid.dropped_front(), cmp);
+                this->impl(cur1.dropped_front(), num11, cur_mid.dropped_front(), std::move(cmp));
 
                 num1 = num12;
                 cur1 = std::move(cur_mid);
@@ -2125,7 +2126,7 @@ namespace saga
         {
             for(; !!input; input.drop_back())
             {
-                saga::pop_heap_fn{}(input, cmp);
+                saga::pop_heap_fn{}(input, std::ref(cmp));
             }
         }
     };
@@ -2161,7 +2162,6 @@ namespace saga
         ForwardCursor operator()(ForwardCursor input, Compare cmp = {}) const
         {
             return saga::min_element_fn{}(std::move(input), saga::not_fn(std::move(cmp)));
-
         }
     };
 
@@ -2265,7 +2265,7 @@ namespace saga
                 return;
             }
 
-            saga::make_heap_fn{}(out, cmp);
+            saga::make_heap_fn{}(out, std::ref(cmp));
 
             auto const out_size = out.size();
 
@@ -2280,7 +2280,7 @@ namespace saga
                 }
             }
 
-            saga::sort_heap_fn{}(out, cmp);
+            saga::sort_heap_fn{}(out, std::move(cmp));
         }
     };
 
@@ -2304,7 +2304,7 @@ namespace saga
 
             auto const heap = saga::cursor::drop_back_n(std::move(out), result.out.size());
 
-            saga::make_heap_fn{}(heap, cmp);
+            saga::make_heap_fn{}(heap, std::ref(cmp));
 
             assert(heap.size() == num);
 
@@ -2341,10 +2341,10 @@ namespace saga
 
             cur.drop_front(num / 2);
 
-            (*this)(cur.dropped_front(), cmp);
-            (*this)(cur, cmp);
+            (*this)(cur.dropped_front(), std::ref(cmp));
+            (*this)(cur, std::ref(cmp));
 
-            saga::inplace_merge_fn{}(cur, cmp);
+            saga::inplace_merge_fn{}(cur, std::move(cmp));
         }
     };
 
@@ -2415,7 +2415,7 @@ namespace saga
         operator()(ForwardCursor1 cur1, ForwardCursor2 cur2, BinaryPredicate bin_pred = {}) const
         {
             // Пропускаем общую часть последовательностей
-            auto rest = saga::mismatch_fn{}(std::move(cur1), std::move(cur2), bin_pred);
+            auto rest = saga::mismatch_fn{}(std::move(cur1), std::move(cur2), std::ref(bin_pred));
 
             if(!rest.in1 || !rest.in2)
             {
