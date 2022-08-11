@@ -443,21 +443,59 @@ namespace
     }
 
     template <class IntType>
+    class primes_cursor
+     : saga::cursor_facade<primes_cursor<IntType>, IntType const &>
+    {
+        using Container = std::vector<IntType>;
+
+    public:
+        // Типы
+        using cursor_category = std::input_iterator_tag;
+        using difference_type = typename Container::difference_type;
+        using reference = IntType const &;
+
+        // Создание, копирование, уничтожение
+        primes_cursor()
+         : primes_(1, IntType(2))
+        {}
+
+        // Курсор ввода
+        bool operator!() const
+        {
+            return false;
+        }
+
+        reference front() const
+        {
+            return this->primes_.back();
+        }
+
+        void drop_front()
+        {
+            auto num = this->primes_.back() + 1 + this->primes_.back() % 2;
+
+            for(;;)
+            {
+                if(::is_coprime_with_sorted(num, this->primes_))
+                {
+                    this->primes_.push_back(num);
+                    break;
+                }
+
+                num += ((num % 6 == 1) ? 4 : 2);
+            }
+        }
+
+    private:
+        Container primes_;
+    };
+
+    template <class IntType>
     IntType projectEuler_007(IntType const count)
     {
         assert(count > 0);
 
-        std::vector<IntType> primes{2};
-
-        for(auto num = IntType{3}; primes.size() < static_cast<std::size_t>(count); num += 2)
-        {
-            if(::is_coprime_with_sorted(num, primes))
-            {
-                primes.push_back(num);
-            }
-        }
-
-        return primes.back();
+        return saga::cursor::drop_front_n(::primes_cursor<IntType>(), count - 1).front();
     }
 }
 
@@ -2105,4 +2143,65 @@ TEST_CASE("PE 036")
     }
 
     REQUIRE(result == 872187);
+}
+
+// PE 037 - Усекаемые простые числа
+namespace
+{
+    template <class IntType>
+    IntType trunc_left(IntType num)
+    {
+        auto M = saga::power_natural(10, IntType(std::log10(num)));
+
+        return num % M;
+    }
+
+    template <class IntType>
+    IntType trunc_right(IntType num)
+    {
+        return (num - (num % 10)) / 10;
+    }
+}
+
+// Количество искомых чисел дано в условии задачи.
+// Более естественное условие существенно увеличивает время выполнения,
+// так как нужно исчерпать все 83 усекаемые справа простые числа
+TEST_CASE("PE 037")
+{
+    using IntType = long;
+    auto primes_cur = ::primes_cursor<IntType>();
+
+    // Левые подстроки-кандидаты
+    std::vector<IntType> lefts;
+
+    for(; *primes_cur < 10; ++primes_cur)
+    {
+        lefts.push_back(*primes_cur);
+    }
+
+    // Правые подстроки кандидаты
+    auto rights = lefts;
+
+    // Ищем усекаемые простые числа
+    std::vector<IntType> results;
+
+    for(; results.size() < 11; ++primes_cur)
+    {
+        auto const num = *primes_cur;
+
+        if(saga::binary_search(saga::cursor::all(rights), ::trunc_right(num)))
+        {
+            rights.push_back(num);
+        }
+        if(saga::binary_search(saga::cursor::all(lefts), ::trunc_left(num)))
+        {
+            lefts.push_back(num);
+        }
+        if(lefts.back() == num && rights.back() == num)
+        {
+            results.push_back(num);
+        }
+    }
+
+    REQUIRE(saga::reduce(saga::cursor::all(results)) == 748'317);
 }
