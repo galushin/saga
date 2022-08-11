@@ -91,7 +91,7 @@ namespace saga
             private:
                 template <class Cursor>
                 static Cursor
-                impl(Cursor cur, cursor_difference_t<Cursor> num, std::forward_iterator_tag)
+                impl(Cursor cur, cursor_difference_t<Cursor> num, std::input_iterator_tag)
                 {
                     for(; num > 0; -- num)
                     {
