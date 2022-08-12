@@ -2205,3 +2205,54 @@ TEST_CASE("PE 037")
 
     REQUIRE(saga::reduce(saga::cursor::all(results)) == 748'317);
 }
+
+// PE 038: Панцифровые кратные
+#include <charconv>
+
+namespace
+{
+    template <class IntType>
+    IntType PE_038_pandigital(IntType num)
+    {
+        assert(num > 0);
+
+        static auto const all_digits = std::string("123456789");
+
+        std::string str;
+
+        for(auto mult = 1; str.size() < 9; mult += 1)
+        {
+            str += std::to_string(num * mult);
+        }
+
+        if(saga::is_permutation(saga::cursor::all(str), saga::cursor::all(all_digits)))
+        {
+            auto value = IntType(0);
+
+            auto result = std::from_chars(str.data(), str.data() + str.size(), value);
+
+            assert(result.ptr == str.data() + str.size());
+
+            return value;
+        }
+        else
+        {
+            return IntType(0);
+        }
+    }
+}
+
+TEST_CASE("PE 038")
+{
+    using IntType = long;
+
+    REQUIRE(::PE_038_pandigital(192) == 192'384'576);
+    REQUIRE(::PE_038_pandigital(9) == 918'273'645);
+
+    // Если в числе A пять цифр, то в конкатенации A и A*2 не менее 10 цифр!
+    auto const result = saga::transform_reduce(saga::cursor::indices(1, IntType(10'000))
+                                               , IntType(0), SAGA_OVERLOAD_SET(std::max)
+                                               , SAGA_OVERLOAD_SET(::PE_038_pandigital));
+
+    REQUIRE(result == 932'718'654);
+}
