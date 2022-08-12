@@ -91,9 +91,7 @@ namespace
     {
         auto pred = [](IntType const & num) { return num % 3 == 0 || num % 5 == 0; };
 
-        auto input = saga::cursor::filter(saga::cursor::indices(n_max), pred);
-
-        return saga::reduce(std::move(input));
+        return saga::reduce(saga::cursor::indices(n_max) | saga::cursor::filter(pred));
     }
 
     template <class IntType>
@@ -113,11 +111,11 @@ namespace
     template <class IntType>
     constexpr IntType projectEuler_001_cursor_algorithms_set_union(IntType n_max)
     {
-        auto in_3 = saga::cursor::stride(saga::cursor::iota(IntType(3)), IntType(3));
-        auto in_5 = saga::cursor::stride(saga::cursor::iota(IntType(5)), IntType(5));
+        auto in_3 = saga::cursor::iota(IntType(3)) | saga::cursor::stride(IntType(3));
+        auto in_5 = saga::cursor::iota(IntType(5)) | saga::cursor::stride(IntType(5));
 
-        auto in_3_or_5 = saga::cursor::set_union(std::move(in_3), std::move(in_5));
-        auto input = saga::cursor::take_while(in_3_or_5, [=](IntType num) { return num < n_max; });
+        auto input = saga::cursor::set_union(std::move(in_3), std::move(in_5))
+                   | saga::cursor::take_while([=](IntType num) { return num < n_max; });
 
         return saga::accumulate(std::move(input), IntType(0));
     }
@@ -200,12 +198,9 @@ namespace
     template <class IntType>
     constexpr IntType projectEuler_002_take_while_after_filter_input(IntType n_max)
     {
-        auto const fib_even
-            = saga::cursor::filter(::fibonacci_sequence<IntType>(1, 2)
-                                   , [](IntType const & arg) { return arg % 2 == 0; });
-
-        auto input
-            = saga::cursor::take_while(fib_even, [&](IntType const & arg) { return arg <= n_max; });
+        auto input = ::fibonacci_sequence<IntType>(1, 2)
+                   | saga::cursor::filter([](IntType const & arg) { return arg % 2 == 0; })
+                   | saga::cursor::take_while([&](IntType const & arg) { return arg <= n_max; });
 
         return saga::reduce(std::move(input), IntType{0});
     }
@@ -213,12 +208,9 @@ namespace
     template <class IntType>
     constexpr IntType projectEuler_002_filter_after_take_while_input(IntType n_max)
     {
-        auto fib_below_n_max
-            = saga::cursor::take_while(::fibonacci_sequence<IntType>(1, 2)
-                                       , [=](IntType const & arg) { return arg <= n_max; });
-
-        auto input = saga::cursor::filter(std::move(fib_below_n_max)
-                                          , [](IntType const & arg) { return arg % 2 == 0; });
+        auto input = ::fibonacci_sequence<IntType>(1, 2)
+                   | saga::cursor::take_while([=](IntType const & arg) { return arg <= n_max; })
+                   | saga::cursor::filter([](IntType const & arg) { return arg % 2 == 0; });
 
         return saga::reduce(std::move(input), IntType{0});
     }
@@ -226,8 +218,8 @@ namespace
     template <class IntType>
     constexpr IntType projectEuler_002_filter_output(IntType n_max)
     {
-        auto input = saga::cursor::take_while(::fibonacci_sequence<IntType>(1, 2)
-                                              , [&](IntType const & arg) { return arg <= n_max; });
+        auto input = ::fibonacci_sequence<IntType>(1, 2)
+                   | saga::cursor::take_while([&](IntType const & arg) { return arg <= n_max; });
 
         auto result = IntType{0};
         auto accumulator = [&result](IntType const & arg) { result += arg; };
@@ -248,6 +240,16 @@ static_assert(projectEuler_002_filter_output(4'000'000) == 4'613'732, "");
 namespace
 {
     template <class IntType>
+    constexpr void PE_003_step(IntType & num, IntType divisor, IntType & max_divisor)
+    {
+        while(num % divisor == 0)
+        {
+            max_divisor = divisor;
+            num /= divisor;
+        }
+    }
+
+    template <class IntType>
     constexpr
     IntType projectEuler_003(IntType num)
     {
@@ -255,21 +257,18 @@ namespace
 
         auto max_divisor = IntType{1};
 
-        while(num % 2 == 0)
-        {
-            max_divisor = 2;
-            num /= 2;
-        }
+        PE_003_step(num, IntType(2), max_divisor);
+        PE_003_step(num, IntType(3), max_divisor);
 
-        for(auto divisor = 3; divisor*divisor <= num; divisor += 2)
-        {
-            while(num % divisor == 0)
-            {
-                max_divisor = divisor;
+        auto divisors = saga::cursor::iota(IntType(5))
+                      | saga::cursor::stride(6)
+                      | saga::cursor::take_while([&](auto const & arg) { return arg*arg < num; });
 
-                num /= divisor;
-            }
-        }
+        saga::for_each(std::move(divisors), [&](auto const & divisor)
+        {
+            PE_003_step(num, divisor, max_divisor);
+            PE_003_step(num, divisor + 2, max_divisor);
+        });
 
         return num == 1 ? max_divisor : num;
     }
@@ -357,9 +356,8 @@ namespace
     template <class IntType>
     constexpr IntType projectEuler_006_sum_squares_cursor(IntType num)
     {
-        auto values = saga::cursor::indices(1, num+1);
-
-        return saga::reduce(saga::cursor::transform(values, saga::square), IntType{0});
+        return saga::reduce(saga::cursor::indices(1, num+1)
+                            | saga::cursor::transform(saga::square));
     }
 
     template <class IntType>
@@ -533,24 +531,21 @@ namespace
         "71636269561882670428252483600823257530420752963450";
 
     template <std::size_t Size>
-    constexpr std::size_t projectEuler_008(char const (&str)[Size], std::size_t window)
+    constexpr std::size_t projectEuler_008(char const (&str)[Size], std::size_t window_width)
     {
-        assert(window <= std::size(str));
-
-        auto data = saga::cursor::transform(saga::cursor::all(str), [](char c) { return c - '0'; });
-
-        auto data_slided = saga::cursor::slide(data, window);
+        assert(window_width <= std::size(str));
 
         auto prod = [](auto const & window)
         {
             return saga::accumulate(window, std::size_t{1}, std::multiplies<>{});
         };
 
-        auto data_slided_aggregated = saga::cursor::transform(data_slided, prod);
+        auto input = saga::cursor::all(str)
+                   | saga::cursor::transform([](char c) { return c - '0'; })
+                   | saga::cursor::slide(window_width)
+                   | saga::cursor::transform(prod);
 
-        // @todo max_element (требуется copy_wrapper в курсорах)?
-        return saga::accumulate(std::move(data_slided_aggregated), std::size_t(0)
-                                , SAGA_OVERLOAD_SET(std::max));
+        return saga::accumulate(std::move(input), std::size_t(0), SAGA_OVERLOAD_SET(std::max));
     }
 
     static_assert(::projectEuler_008(pe008_data, 4) == 5832, "");
@@ -1759,10 +1754,11 @@ namespace
 
     int PE_026(int num)
     {
-        auto cur = saga::cursor::transform(saga::cursor::indices(2, num)
-                                           , ::PE_026_reciprocal_cycle_length);
+        auto cur = saga::cursor::indices(2, num)
+                 | saga::cursor::transform(::PE_026_reciprocal_cycle_length)
+                 | saga::cursor::cached1;
 
-        return saga::max_element(saga::cursor::cached1(std::move(cur))).base().base().front();
+        return saga::max_element(std::move(cur)).base().base().front();
     }
 }
 
@@ -1825,11 +1821,11 @@ TEST_CASE("PE 027")
     auto fun = [&](auto const & value) { return PE_027_count(value.first, value.second, primes); };
 
     auto cur = saga::cursor::cartesian_product(saga::cursor::indices(-1000 + 1, 1000)
-                                               , saga::cursor::indices(-1000, 1001));
+                                               , saga::cursor::indices(-1000, 1001))
+             | saga::cursor::transform(std::ref(fun))
+             | saga::cursor::cached1;
 
-    auto transformed = saga::cursor::transform(std::move(cur), std::ref(fun));
-
-    auto const pos = saga::max_element(saga::cursor::cached1(std::move(transformed))).base().base();
+    auto const pos = saga::max_element(std::move(cur)).base().base();
 
     REQUIRE(std::get<0>(*pos) * std::get<1>(*pos) == -59'231);
 }
@@ -2036,7 +2032,7 @@ namespace
         auto numbers = saga::cursor::indices(IntType(10), saga::power_natural(IntType(10), 7));
         auto pred = [](IntType num) { return num == PE_034_digits_factorial_sum(num); };
 
-        return saga::reduce(saga::cursor::filter(numbers, pred));
+        return saga::reduce(saga::cursor::filter(std::move(numbers), pred));
     }
 }
 

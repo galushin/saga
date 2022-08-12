@@ -82,6 +82,12 @@ namespace saga
             return slide_cursor<Cursor>(std::move(cur), std::move(num));
         }
 
+        template <class Size>
+        constexpr auto slide(Size num)
+        {
+            return saga::make_pipeable([arg = std::move(num)](auto cur)
+                                       { return cursor::slide(std::move(cur), arg);});
+        }
     }
     // namespace cursor
 }

@@ -91,6 +91,13 @@ namespace saga
         {
             return transform_cursor<Cursor, UnaryFunction>(std::move(cur), std::move(fun));
         }
+
+        template <class UnaryFunction>
+        constexpr auto transform(UnaryFunction fun)
+        {
+            return saga::make_pipeable([arg = std::move(fun)](auto cur)
+                                       {return cursor::transform(std::move(cur), arg);});
+        }
     }
     // namespace cursor
 }
