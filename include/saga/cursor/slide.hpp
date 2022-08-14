@@ -23,7 +23,9 @@ SAGA -- это свободной программное обеспечение:
  курсора.
 */
 
+#include <saga/cursor/cursor_facade.hpp>
 #include <saga/cursor/take.hpp>
+#include <saga/utility/pipeable.hpp>
 
 namespace saga
 {
