@@ -25,6 +25,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/algorithm.hpp>
 #include <saga/cursor/cursor_traits.hpp>
+#include <saga/utility/pipeable.hpp>
 
 namespace saga
 {
@@ -71,6 +72,13 @@ namespace saga
         stride(InputCursor cur, saga::cursor_difference_t<InputCursor> num)
         {
             return stride_cursor<InputCursor>(std::move(cur), std::move(num));
+        }
+
+        template <class Size>
+        constexpr auto stride(Size num)
+        {
+            return saga::make_pipeable([arg = std::move(num)](auto cur)
+                                       { return cursor::stride(std::move(cur), arg);});
         }
     }
     // namespace cursor

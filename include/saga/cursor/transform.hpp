@@ -21,6 +21,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/cursor_facade.hpp>
 #include <saga/cursor/cursor_traits.hpp>
 #include <saga/functional.hpp>
+#include <saga/utility/pipeable.hpp>
 
 namespace saga
 {
@@ -90,6 +91,13 @@ namespace saga
         transform(Cursor cur, UnaryFunction fun)
         {
             return transform_cursor<Cursor, UnaryFunction>(std::move(cur), std::move(fun));
+        }
+
+        template <class UnaryFunction>
+        constexpr auto transform(UnaryFunction fun)
+        {
+            return saga::make_pipeable([arg = std::move(fun)](auto cur)
+                                       {return cursor::transform(std::move(cur), arg);});
         }
     }
     // namespace cursor

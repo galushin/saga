@@ -15,47 +15,40 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-// Инфраструктура тестирования
-#include <catch/catch.hpp>
+#ifndef Z_SAGA_UTILITY_PIPEABLE_HPP_INCLUDED
+#define Z_SAGA_UTILITY_PIPEABLE_HPP_INCLUDED
 
-// Используемые возможности
-#include <saga/cursor/filter.hpp>
-#include <saga/cursor/indices.hpp>
-#include <saga/cursor/transform.hpp>
-#include <saga/math.hpp>
-#include <saga/numeric.hpp>
-#include <saga/numeric/digits_of.hpp>
+/** @file saga/utility/pipeable.hpp
+ @brief Функциональность для упрощения добавления конвейерного (через оператор |) синтаксиса
+ создания адаптеров курсоров
+*/
 
-// PE 030: Суммы степеней цифр
-namespace
+namespace saga
 {
-    template <class IntType>
-    IntType digits_powers_sum(IntType num, IntType power)
+    template <class UnaryFunction>
+    class pipeable_unary
+     : private UnaryFunction
     {
-        auto cur = saga::cursor::digits_of(std::move(num))
-                 | saga::cursor::transform([=](IntType arg)
-                                           { return saga::power_natural(arg, power); });
+        template <class Cursor>
+        constexpr friend auto operator|(Cursor cur, pipeable_unary const & pipe)
+        {
+            return static_cast<UnaryFunction const&>(pipe)(std::move(cur));
+        }
 
-        return saga::reduce(std::move(cur));
-    }
+    public:
+        constexpr explicit pipeable_unary(UnaryFunction fun)
+         : UnaryFunction(fun)
+        {}
+    };
 
-    template <class IntType>
-    IntType PE_030(IntType power)
+    template <class UnaryFunction>
+    constexpr pipeable_unary<UnaryFunction>
+    make_pipeable(UnaryFunction fun)
     {
-        auto cur = saga::cursor::indices(10, (power + 1) * saga::power_natural(9, power))
-                 | saga::cursor::filter([=](IntType num)
-                                        {return num == ::digits_powers_sum(num, power); });
-
-        return saga::reduce(std::move(cur));
+        return pipeable_unary<UnaryFunction>(std::move(fun));
     }
 }
+// namespace saga
 
-TEST_CASE("PE 030")
-{
-    REQUIRE(::digits_powers_sum(1634, 4) == 1634);
-    REQUIRE(::digits_powers_sum(8208, 4) == 8208);
-    REQUIRE(::digits_powers_sum(9474, 4) == 9474);
-
-    REQUIRE(::PE_030(4) == 19316);
-    REQUIRE(::PE_030(5) == 443839);
-}
+#endif
+// Z_SAGA_UTILITY_PIPEABLE_HPP_INCLUDED

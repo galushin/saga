@@ -83,12 +83,9 @@ namespace saga
 
     namespace cursor
     {
-        template <class Cursor>
-        saga::cached1_cursor<Cursor>
-        cached1(Cursor cur)
-        {
-            return saga::cached1_cursor<Cursor>(std::move(cur));
-        }
+        inline constexpr auto cached1
+            = saga::make_pipeable([](auto cur)
+                                  {return saga::cached1_cursor<decltype(cur)>(std::move(cur));});
     }
     // namespace cursor
 }

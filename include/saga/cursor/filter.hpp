@@ -21,6 +21,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/algorithm/find_if.hpp>
 #include <saga/cursor/cursor_facade.hpp>
 #include <saga/cursor/cursor_traits.hpp>
+#include <saga/utility/pipeable.hpp>
 
 namespace saga
 {
@@ -95,6 +96,13 @@ namespace saga
         filter(Cursor cur, UnaryPredicate pred)
         {
             return filter_cursor<Cursor, UnaryPredicate>(std::move(cur), std::move(pred));
+        }
+
+        template <class UnaryPredicate>
+        constexpr auto filter(UnaryPredicate pred)
+        {
+            return saga::make_pipeable([arg = std::move(pred)](auto cur)
+                                       {return cursor::filter(std::move(cur), arg);});
         }
     }
     // namespace cursor

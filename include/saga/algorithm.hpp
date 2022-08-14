@@ -129,6 +129,7 @@ namespace saga
     struct for_each_fn
     {
         template <class InputCursor, class UnaryFunction>
+        constexpr
         for_each_result<InputCursor, UnaryFunction>
         operator()(InputCursor cur, UnaryFunction fun) const
         {

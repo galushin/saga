@@ -23,7 +23,9 @@ SAGA -- это свободной программное обеспечение:
  курсора.
 */
 
+#include <saga/cursor/cursor_facade.hpp>
 #include <saga/cursor/take.hpp>
+#include <saga/utility/pipeable.hpp>
 
 namespace saga
 {
@@ -82,6 +84,12 @@ namespace saga
             return slide_cursor<Cursor>(std::move(cur), std::move(num));
         }
 
+        template <class Size>
+        constexpr auto slide(Size num)
+        {
+            return saga::make_pipeable([arg = std::move(num)](auto cur)
+                                       { return cursor::slide(std::move(cur), arg);});
+        }
     }
     // namespace cursor
 }

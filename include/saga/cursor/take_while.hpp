@@ -23,6 +23,10 @@ SAGA -- это свободной программное обеспечение:
  перестают удовлевторять заданному предикату
 */
 
+#include <saga/cursor/cursor_facade.hpp>
+#include <saga/cursor/cursor_traits.hpp>
+#include <saga/utility/pipeable.hpp>
+
 namespace saga
 {
     template <class Cursor, class UnaryPredicate>
@@ -75,6 +79,13 @@ namespace saga
         take_while(Cursor cur, UnaryPredicate pred)
         {
             return take_while_cursor<Cursor, UnaryPredicate>(std::move(cur), std::move(pred));
+        }
+
+        template <class UnaryPredicate>
+        constexpr auto take_while(UnaryPredicate pred)
+        {
+            return saga::make_pipeable([arg = std::move(pred)](auto cur)
+                                       {return cursor::take_while(std::move(cur), arg);});
         }
     }
     // namespace cursor
