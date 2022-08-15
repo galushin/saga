@@ -25,6 +25,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/cursor_traits.hpp>
 #include <saga/cursor/cursor_facade.hpp>
 #include <saga/iterator.hpp>
+#include <saga/type_traits.hpp>
 #include <saga/utility/operators.hpp>
 #include <saga/utility/with_old_value.hpp>
 
@@ -190,10 +191,20 @@ namespace saga
                                             , saga::iota_iterator<Sentinel>>;
 
         // Создание, копирование, уничтожение
+        /** @brief Конструктор
+        @pre Если Sentinel не совпадает с saga::unreachable_sentinel_t, то @c last должна быть
+        достижима из @c first
+        @pre Если is_totally_ordered_with<Incrementable, Sentinel>, то <tt>first <= last</tt>
+        */
         constexpr explicit iota_cursor(Incrementable first, Sentinel last)
          : first_(std::move(first))
          , last_(std::move(last))
-        {}
+        {
+            if constexpr(saga::is_totally_ordered_with<Incrementable, Sentinel>{})
+            {
+                assert(this->first_ <= this->last_);
+            }
+        }
 
         // Вид
         constexpr iterator begin() const
@@ -253,13 +264,30 @@ namespace saga
 
     namespace cursor
     {
-        template <class Incrementable>
-        constexpr iota_cursor<Incrementable, saga::unreachable_sentinel_t>
-        iota(Incrementable num)
+        namespace detail
         {
-            using Cursor = iota_cursor<Incrementable, unreachable_sentinel_t>;
-            return Cursor(std::move(num), unreachable_sentinel_t{});
+            struct iota_fn
+            {
+                template <class Incrementable, class Sentinel>
+                constexpr auto operator()(Incrementable first, Sentinel last) const
+                -> saga::iota_cursor<Incrementable, Sentinel>
+                {
+                    using Cursor = saga::iota_cursor<Incrementable, Sentinel>;
+                    return Cursor{std::move(first), std::move(last)};
+                }
+
+                template <class Incrementable>
+                constexpr auto operator()(Incrementable num) const
+                -> saga::iota_cursor<Incrementable, saga::unreachable_sentinel_t>
+                {
+                    using Cursor = saga::iota_cursor<Incrementable, unreachable_sentinel_t>;
+                    return Cursor(std::move(num), unreachable_sentinel_t{});
+                }
+            };
         }
+        // namespace detail
+
+        inline constexpr auto iota = saga::cursor::detail::iota_fn{};
     }
     // namespace cursor
 }
