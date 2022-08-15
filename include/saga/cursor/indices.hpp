@@ -27,37 +27,41 @@ namespace saga
 {
     namespace cursor
     {
-        struct indices_fn
+        namespace detail
         {
-        public:
-            template <class Incrementable1, class Incrementable2>
-            constexpr auto operator()(Incrementable1 from, Incrementable2 to) const
-            -> saga::iota_cursor<std::common_type_t<Incrementable1, Incrementable2>>
+            struct indices_fn
             {
-                using Cursor = saga::iota_cursor<std::common_type_t<Incrementable1, Incrementable2>>;
-                return Cursor{std::move(from), std::move(to)};
-            }
+            public:
+                template <class Incrementable1, class Incrementable2>
+                constexpr auto operator()(Incrementable1 from, Incrementable2 to) const
+                {
+                    using Common = std::common_type_t<Incrementable1, Incrementable2>;
+                    return saga::cursor::iota(Common(std::move(from))
+                                             ,Common(std::move(to)));
+                }
 
-            template <class Incrementable>
-            constexpr auto operator()(Incrementable num) const
-            -> saga::iota_cursor<Incrementable>
+                template <class Incrementable>
+                constexpr auto operator()(Incrementable num) const
+                -> saga::iota_cursor<Incrementable>
+                {
+                    return (*this)(Incrementable(), num);
+                }
+            };
+
+            struct indices_of_fn
             {
-                return (*this)(Incrementable(), num);
-            }
-        };
+            public:
+                template <class SizedContainer>
+                auto operator()(SizedContainer const & container) const
+                {
+                    return saga::cursor::detail::indices_fn{}(saga::size(container));
+                }
+            };
+        }
+        // namespace detail
 
-        struct indices_of_fn
-        {
-        public:
-            template <class SizedContainer>
-            auto operator()(SizedContainer const & container) const
-            {
-                return saga::cursor::indices_fn{}(saga::size(container));
-            }
-        };
-
-        inline constexpr auto const indices = indices_fn{};
-        inline constexpr auto const indices_of = indices_of_fn{};
+        inline constexpr auto const indices = detail::indices_fn{};
+        inline constexpr auto const indices_of = detail::indices_of_fn{};
     }
     // namespace view
 }

@@ -161,11 +161,93 @@ namespace saga
     }
     // namespace detail
 
+    // common_reference
+    template <class... Types>
+    struct common_reference
+    {};
+
+    template <class T>
+    struct common_reference<T&, T&>
+    {
+        using type = T &;
+    };
+
+    template <class... Types>
+    using common_reference_t = typename common_reference<Types...>::type;
+
     template <class T>
     struct is_equality_comparable
      : is_detected_exact<bool, detail::equality_op_result, T>
     {};
 
+    template <class T, class U, class SFINAE = void>
+    struct is_equality_comparable_with
+     : std::false_type
+    {};
+
+    namespace detail
+    {
+        template <class T, class U>
+        using common_reference_helper
+            = saga::common_reference_t<std::remove_reference<T>&, std::remove_reference<U>&>;
+    }
+    // namespace detail
+
+    template <class T, class U>
+    struct is_equality_comparable_with<T, U, std::void_t<detail::common_reference_helper<T, U>>>
+     : std::conjunction<saga::is_equality_comparable<T>
+                       ,saga::is_equality_comparable<U>
+                       ,saga::is_equality_comparable<detail::common_reference_helper<T, U>>>
+    {};
+
+    // is_totally_ordered
+    namespace detail
+    {
+        template <class T, class U>
+        using partial_order_compare_t = std::tuple<decltype(std::declval<T>() <  std::declval<U>())
+                                                  ,decltype(std::declval<T>() >  std::declval<U>())
+                                                  ,decltype(std::declval<T>() <= std::declval<U>())
+                                                  ,decltype(std::declval<T>() >= std::declval<U>())
+                                                  ,decltype(std::declval<U>() <  std::declval<T>())
+                                                  ,decltype(std::declval<U>() >  std::declval<T>())
+                                                  ,decltype(std::declval<U>() <= std::declval<T>())
+                                                  ,decltype(std::declval<U>() >= std::declval<T>())
+                                                  >;
+
+        template <class T, class U, class SFINAE = void>
+        struct is_partially_ordered_with
+         : std::false_type
+        {};
+
+        template <class T, class U>
+        struct is_partially_ordered_with<T, U, std::void_t<detail::partial_order_compare_t<T, U>>>
+         : std::is_same<detail::partial_order_compare_t<T, U>
+                       ,std::tuple<bool, bool, bool, bool, bool, bool, bool, bool>>
+        {};
+    }
+    //namespace detail
+
+    template <class T>
+    struct is_totally_ordered
+     : std::conjunction<saga::is_equality_comparable<T>
+                       ,saga::detail::is_partially_ordered_with<T,T>>
+    {};
+
+    template <class T, class U, class SFINAE = void>
+    struct is_totally_ordered_with
+     : std::false_type
+    {};
+
+    template <class T, class U>
+    struct is_totally_ordered_with<T, U, std::void_t<detail::common_reference_helper<T, U>>>
+     : std::conjunction<saga::is_totally_ordered<T>
+                       ,saga::is_totally_ordered<U>
+                       ,saga::is_equality_comparable_with<T, U>
+                       ,saga::is_totally_ordered<detail::common_reference_helper<T, U>>
+                       ,saga::detail::is_partially_ordered_with<T, U>>
+    {};
+
+    // is_specialization
     template <class Type, template <class...> class Generic>
     struct is_specialization_of
      : std::false_type
