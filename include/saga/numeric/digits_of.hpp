@@ -57,6 +57,7 @@ namespace saga
          , base_(std::move(base))
          , cur_(this->num_ % this->base_)
         {
+            assert(this->num_ >= 0);
             assert(this->base_ >= 2);
         }
 
