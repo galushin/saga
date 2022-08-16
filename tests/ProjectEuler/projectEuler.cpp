@@ -151,6 +151,7 @@ TEST_CASE("ProjectEuler 001")
 // PE 002 : Чётные числа Фибоначчи
 namespace
 {
+    /// @todo Хранить текущий и следующий элементы: так мы не пропускаем первый!
     template <class IntType>
     class fibonacci_sequence
      : saga::cursor_facade<fibonacci_sequence<IntType>, IntType const &>
@@ -2251,4 +2252,28 @@ TEST_CASE("PE 038")
                                                , SAGA_OVERLOAD_SET(::PE_038_pandigital));
 
     REQUIRE(result == 932'718'654);
+}
+
+// PE 039 Целые прямоугольные треугольники
+// @todo Оптимизация перебора
+TEST_CASE("PE 039")
+{
+    auto const p_max = 1000;
+
+    std::vector<int> counts(p_max+1, 0);
+
+    for(auto a : saga::cursor::indices(1, 500))
+    for(auto b : saga::cursor::indices(1, a))
+    {
+        auto const c = std::hypot(a, b);
+
+        if(c == int(c) && a + b + c <= 1000)
+        {
+            counts.at(a + b + c) += 1;
+        }
+    }
+
+    REQUIRE(counts.at(120) == 3);
+
+    REQUIRE(std::max_element(counts.begin(), counts.end()) - counts.begin() == 840);
 }
