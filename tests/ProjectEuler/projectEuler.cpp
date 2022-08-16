@@ -151,6 +151,7 @@ TEST_CASE("ProjectEuler 001")
 // PE 002 : Чётные числа Фибоначчи
 namespace
 {
+    /// @todo Хранить текущий и следующий элементы: так мы не пропускаем первый!
     template <class IntType>
     class fibonacci_sequence
      : saga::cursor_facade<fibonacci_sequence<IntType>, IntType const &>
