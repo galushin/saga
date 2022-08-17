@@ -22,12 +22,13 @@ SAGA -- это свободной программное обеспечение:
  @brief Аналоги алгоритмов STL, работающие с курсорами и интервалами
 */
 
+#include <saga/pipes/partition.hpp>
 #include <saga/algorithm/result_types.hpp>
 #include <saga/algorithm/find_if.hpp>
 #include <saga/assert.hpp>
+#include <saga/cursor/cursor_traits.hpp>
 #include <saga/functional.hpp>
 #include <saga/iterator.hpp>
-#include <saga/cursor/cursor_traits.hpp>
 #include <saga/cursor/reverse.hpp>
 
 #include <cassert>
@@ -1282,22 +1283,16 @@ namespace saga
     {
         template <class InputCursor, class OutputCursor1, class OutputCursor2, class UnaryPredicate>
         partition_copy_result<InputCursor, OutputCursor1, OutputCursor2>
-        operator()(InputCursor in, OutputCursor1 out_true, OutputCursor2 out_false
+        operator()(InputCursor input, OutputCursor1 out_true, OutputCursor2 out_false
                    , UnaryPredicate pred) const
         {
-            for(;!!in && !!out_true && !!out_false; ++ in)
-            {
-                if(saga::invoke(pred, *in))
-                {
-                    out_true << *in;
-                }
-                else
-                {
-                    out_false << *in;
-                }
-            }
+            auto out = saga::pipes::partition(std::move(out_true), std::move(out_false)
+                                              , std::move(pred));
 
-            return {std::move(in), std::move(out_true), std::move(out_false)};
+            auto result = saga::copy_fn{}(std::move(input), std::move(out));
+
+            return {std::move(result.in), std::move(result.out).output_true()
+                    , std::move(result.out).output_false()};
         }
     };
 
