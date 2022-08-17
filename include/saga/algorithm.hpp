@@ -22,6 +22,8 @@ SAGA -- это свободной программное обеспечение:
  @brief Аналоги алгоритмов STL, работающие с курсорами и интервалами
 */
 
+#include <saga/pipes/for_each.hpp>
+#include <saga/algorithm/copy.hpp>
 #include <saga/pipes/partition.hpp>
 #include <saga/algorithm/result_types.hpp>
 #include <saga/algorithm/find_if.hpp>
@@ -134,12 +136,9 @@ namespace saga
         for_each_result<InputCursor, UnaryFunction>
         operator()(InputCursor cur, UnaryFunction fun) const
         {
-            for(; !!cur; ++cur)
-            {
-                saga::invoke(fun, *cur);
-            }
+            auto result = saga::copy_fn{}(std::move(cur), saga::pipes::for_each(std::move(fun)));
 
-            return {std::move(cur), std::move(fun)};
+            return {std::move(result.in), std::move(result.out).function()};
         }
     };
 
@@ -411,22 +410,6 @@ namespace saga
     };
 
     // Модифицирующие операции
-    struct copy_fn
-    {
-        template <class InputCursor, class OutputCursor>
-        constexpr
-        in_out_result<InputCursor, OutputCursor>
-        operator()(InputCursor in, OutputCursor out) const
-        {
-            for(; !!in && !!out; ++in)
-            {
-                out << *in;
-            }
-
-            return {std::move(in), std::move(out)};
-        }
-    };
-
     template <class InputCursor, class OutputCursor>
     using copy_if_result = in_out_result<InputCursor, OutputCursor>;
 
@@ -2676,7 +2659,6 @@ namespace saga
     inline constexpr auto const search = search_fn{};
     inline constexpr auto const search_n = search_n_fn{};
 
-    inline constexpr auto const copy = copy_fn{};
     inline constexpr auto const copy_if = copy_if_fn{};
     inline constexpr auto const copy_n = copy_n_fn{};
     inline constexpr auto const copy_backward = copy_backward_fn{};
