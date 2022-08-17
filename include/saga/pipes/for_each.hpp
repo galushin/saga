@@ -22,43 +22,58 @@ SAGA -- это свободной программное обеспечение:
  @brief Умный курсор вывода, передающий элементы функциональному объекту
 */
 
+#include <saga/functional.hpp>
+#include <saga/type_traits.hpp>
+
+#include <type_traits>
+
 namespace saga
 {
+    template <class UnaryFunction>
+    class output_function_cursor
+     : private UnaryFunction
+    {
+    public:
+        // Создание, копирование, уничтожение
+        constexpr explicit output_function_cursor(UnaryFunction fun)
+         : UnaryFunction(std::move(fun))
+        {}
+
+        // Курсор вывода
+        constexpr bool operator!() const
+        {
+            return false;
+        }
+
+        template <class Arg, class = std::enable_if_t<saga::is_invocable<UnaryFunction, Arg>{}>>
+        constexpr output_function_cursor &
+        operator<<(Arg && arg)
+        {
+            static_cast<void>(saga::invoke(this->function_ref(), std::forward<Arg>(arg)));
+
+            return *this;
+        }
+
+        // Функция
+        constexpr UnaryFunction function() &&
+        {
+            return *this;
+        }
+
+    private:
+        constexpr UnaryFunction & function_ref()
+        {
+            return *this;
+        }
+    };
+
     namespace pipes
     {
-        template <class UnaryFunction>
-        class output_function_cursor
-        {
-        public:
-            // Создание, копирование, уничтожение
-            constexpr explicit output_function_cursor(UnaryFunction fun)
-             : data_(std::move(fun))
-            {}
-
-            // Курсор вывода
-            constexpr bool operator!() const
-            {
-                return false;
-            }
-
-            template <class Arg, class = std::enable_if_t<saga::is_invocable<UnaryFunction, Arg>{}>>
-            constexpr output_function_cursor &
-            operator<<(Arg && arg)
-            {
-                static_cast<void>(saga::invoke(std::get<0>(this->data_), std::forward<Arg>(arg)));
-
-                return *this;
-            }
-
-        private:
-            std::tuple<UnaryFunction> data_;
-        };
-
         template <class UnaryFunction>
         constexpr output_function_cursor<UnaryFunction>
         for_each(UnaryFunction fun)
         {
-            return output_function_cursor<UnaryFunction>(std::move(fun));
+            return saga::output_function_cursor<UnaryFunction>(std::move(fun));
         }
     }
     // namespace pipes

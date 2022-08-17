@@ -22,12 +22,15 @@ SAGA -- это свободной программное обеспечение:
  @brief Аналоги алгоритмов STL, работающие с курсорами и интервалами
 */
 
+#include <saga/pipes/for_each.hpp>
+#include <saga/algorithm/copy.hpp>
+#include <saga/pipes/partition.hpp>
 #include <saga/algorithm/result_types.hpp>
 #include <saga/algorithm/find_if.hpp>
 #include <saga/assert.hpp>
+#include <saga/cursor/cursor_traits.hpp>
 #include <saga/functional.hpp>
 #include <saga/iterator.hpp>
-#include <saga/cursor/cursor_traits.hpp>
 #include <saga/cursor/reverse.hpp>
 
 #include <cassert>
@@ -133,12 +136,9 @@ namespace saga
         for_each_result<InputCursor, UnaryFunction>
         operator()(InputCursor cur, UnaryFunction fun) const
         {
-            for(; !!cur; ++cur)
-            {
-                saga::invoke(fun, *cur);
-            }
+            auto result = saga::copy_fn{}(std::move(cur), saga::pipes::for_each(std::move(fun)));
 
-            return {std::move(cur), std::move(fun)};
+            return {std::move(result.in), std::move(result.out).function()};
         }
     };
 
@@ -410,22 +410,6 @@ namespace saga
     };
 
     // Модифицирующие операции
-    struct copy_fn
-    {
-        template <class InputCursor, class OutputCursor>
-        constexpr
-        in_out_result<InputCursor, OutputCursor>
-        operator()(InputCursor in, OutputCursor out) const
-        {
-            for(; !!in && !!out; ++in)
-            {
-                out << *in;
-            }
-
-            return {std::move(in), std::move(out)};
-        }
-    };
-
     template <class InputCursor, class OutputCursor>
     using copy_if_result = in_out_result<InputCursor, OutputCursor>;
 
@@ -1282,22 +1266,16 @@ namespace saga
     {
         template <class InputCursor, class OutputCursor1, class OutputCursor2, class UnaryPredicate>
         partition_copy_result<InputCursor, OutputCursor1, OutputCursor2>
-        operator()(InputCursor in, OutputCursor1 out_true, OutputCursor2 out_false
+        operator()(InputCursor input, OutputCursor1 out_true, OutputCursor2 out_false
                    , UnaryPredicate pred) const
         {
-            for(;!!in && !!out_true && !!out_false; ++ in)
-            {
-                if(saga::invoke(pred, *in))
-                {
-                    out_true << *in;
-                }
-                else
-                {
-                    out_false << *in;
-                }
-            }
+            auto out = saga::pipes::partition(std::move(out_true), std::move(out_false)
+                                              , std::move(pred));
 
-            return {std::move(in), std::move(out_true), std::move(out_false)};
+            auto result = saga::copy_fn{}(std::move(input), std::move(out));
+
+            return {std::move(result.in), std::move(result.out).output_true()
+                    , std::move(result.out).output_false()};
         }
     };
 
@@ -2681,7 +2659,6 @@ namespace saga
     inline constexpr auto const search = search_fn{};
     inline constexpr auto const search_n = search_n_fn{};
 
-    inline constexpr auto const copy = copy_fn{};
     inline constexpr auto const copy_if = copy_if_fn{};
     inline constexpr auto const copy_n = copy_n_fn{};
     inline constexpr auto const copy_backward = copy_backward_fn{};
