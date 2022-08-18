@@ -2866,60 +2866,63 @@ TEST_CASE("sample: Forward -> Output")
     };
 }
 
-TEST_CASE("unique_copy: minimal, default predicate")
+namespace
 {
-    using Value = long;
-
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    template <class Value, class... Args>
+    void check_unique_copy_minimal(std::vector<Value> const & src, Args... bin_pred)
     {
-        // saga
-        auto src_in = saga_test::make_istringstream_from_range(src);
+        static_assert(sizeof...(Args) <= 1);
 
-        std::vector<Value> dest_saga;
-
-        saga::unique_copy(saga::make_istream_cursor<Value>(src_in), saga::back_inserter(dest_saga));
-
-        // std
-        std::vector<Value> dest_std;
-        std::unique_copy(src.begin(), src.end(), std::back_inserter(dest_std));
-
-        // Сравнение
-        REQUIRE(dest_saga == dest_std);
-    };
-}
-
-TEST_CASE("unique_copy: minimal, custom predicate")
-{
-    using Value = long;
-
-    saga_test::property_checker << [](std::vector<Value> const & src)
-    {
-        auto const bin_pred = [](Value const & x, Value const & y) { return x % 7 == y % 7;};
         // saga
         auto src_in = saga_test::make_istringstream_from_range(src);
 
         std::vector<Value> dest_saga;
 
         saga::unique_copy(saga::make_istream_cursor<Value>(src_in)
-                          , saga::back_inserter(dest_saga), bin_pred);
+                          , saga::back_inserter(dest_saga), bin_pred...);
 
         // std
         std::vector<Value> dest_std;
-        std::unique_copy(src.begin(), src.end(), std::back_inserter(dest_std), bin_pred);
+        std::unique_copy(src.begin(), src.end(), std::back_inserter(dest_std), bin_pred...);
 
         // Сравнение
         REQUIRE(dest_saga == dest_std);
-    };
-}
+    }
 
-TEST_CASE("unique_copy - subcursors, custom predicate")
-{
-    using Value = char;
-
-    saga_test::property_checker << [](std::vector<Value> const & src
-                                      , std::vector<Value> const & dest_old)
+    template <class Value, class... Args>
+    void check_unique_copy_input_to_forward(std::vector<Value> const & src
+                                            , std::vector<Value> const & dest_old
+                                            , Args... bin_pred)
     {
-        auto const bin_pred = [](char x, char y) { return x == ' ' && y == ' '; };
+        static_assert(sizeof...(Args) <= 1);
+
+        // Из входного
+        auto src_in = saga_test::make_istringstream_from_range(src);
+
+        auto dest_in = dest_old;
+        auto const out_in = saga_test::random_subcursor_of(saga::cursor::all(dest_in));
+
+        auto const result_in = saga::unique_copy(saga::make_istream_cursor<Value>(src_in)
+                                                 , out_in, bin_pred...);
+
+        // Из прямого
+        auto dest_fwd = dest_old;
+        auto const out_fwd = saga::rebase_cursor(out_in, dest_fwd);
+
+        auto const result_fwd = saga::unique_copy(saga::cursor::all(src), out_fwd, bin_pred...);
+
+        // Проверки
+        REQUIRE(dest_in == dest_fwd);
+
+        REQUIRE(result_fwd.out == saga::rebase_cursor(result_in.out, dest_fwd));
+    }
+
+    template <class Value, class... Args>
+    void check_unique_copy_subcursor(std::vector<Value> const & src
+                                     , std::vector<Value> const & dest_old
+                                     , Args... bin_pred)
+    {
+        static_assert(sizeof...(Args) <= 1);
 
         // Подготовка
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
@@ -2928,14 +2931,14 @@ TEST_CASE("unique_copy - subcursors, custom predicate")
         auto dest_saga = dest_old;
         auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
 
-        auto const result_saga = saga::unique_copy(input, out_saga, bin_pred);
+        auto const result_saga = saga::unique_copy(input, out_saga, bin_pred...);
 
         // std
         auto dest_std = dest_old;
         auto const out_std = dest_std.begin() + (out_saga.begin() - dest_saga.begin());
 
         auto const result_std = std::unique_copy(input.begin(), result_saga.in.begin(), out_std
-                                                 , bin_pred);
+                                                 , bin_pred...);
 
         // Проверки
         REQUIRE(dest_saga == dest_std);
@@ -2944,38 +2947,47 @@ TEST_CASE("unique_copy - subcursors, custom predicate")
 
         REQUIRE((result_saga.out.begin() - out_saga.begin()) == (result_std - out_std));
         REQUIRE(result_saga.out.end() == out_saga.end());
+    }
+}
+
+TEST_CASE("unique_copy: minimal")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](std::vector<Value> const & src)
+    {
+        auto const bin_pred = [](Value const & x, Value const & y) { return x % 7 == y % 7;};
+
+        ::check_unique_copy_minimal(src);
+        ::check_unique_copy_minimal(src, std::move(bin_pred));
     };
 }
 
-TEST_CASE("unique_copy - subcursors, default predicate")
+TEST_CASE("unique_copy - subcursors")
+{
+    using Value = std::string;
+
+    saga_test::property_checker << [](std::vector<Value> const & src
+                                      , std::vector<Value> const & dest_old)
+    {
+        auto const bin_pred = [](Value const & x, Value const & y) {return x.size() == y.size();};
+
+        ::check_unique_copy_subcursor(src, dest_old);
+        ::check_unique_copy_subcursor(src, dest_old, bin_pred);
+    };
+}
+
+TEST_CASE("unique_copy - input to forward")
 {
     using Value = int;
 
     saga_test::property_checker << [](std::vector<Value> const & src
                                       , std::vector<Value> const & dest_old)
     {
-        // Подготовка
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
+        auto const bin_pred = [](Value const & x, Value const & y) { return x % 7 == y % 7;};
 
-        // saga
-        auto dest_saga = dest_old;
-        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
-
-        auto const result_saga = saga::unique_copy(input, out_saga);
-
-        // std
-        auto dest_std = dest_old;
-        auto const out_std = dest_std.begin() + (out_saga.begin() - dest_saga.begin());
-
-        auto const result_std = std::unique_copy(input.begin(), result_saga.in.begin(), out_std);
-
-        // Проверки
-        REQUIRE(dest_saga == dest_std);
-
-        REQUIRE(result_saga.in.end() == input.end());
-
-        REQUIRE((result_saga.out.begin() - out_saga.begin()) == (result_std - out_std));
-        REQUIRE(result_saga.out.end() == out_saga.end());
+        ::check_unique_copy_input_to_forward(src, dest_old);
+        ::check_unique_copy_input_to_forward(src, dest_old, bin_pred);
     };
 }
 
