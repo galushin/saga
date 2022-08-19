@@ -1182,33 +1182,33 @@ namespace saga
         {
             if constexpr(saga::is_forward_cursor<InputCursor>{})
             {
-                return this->from_forward(std::move(input), std::move(out), std::move(bin_pred));
+                return this->cache_input<InputCursor>(std::move(input), std::move(out)
+                                                      , std::move(bin_pred));
             }
             else if constexpr(saga::is_forward_cursor<OutputCursor>{}
                               && std::is_same<saga::cursor_value_t<InputCursor>
                                              , saga::cursor_value_t<OutputCursor>>{})
             {
-                return this->from_input_to_forward(std::move(input), std::move(out)
-                                                   , std::move(bin_pred));
+                return this->cache_output(std::move(input), std::move(out), std::move(bin_pred));
             }
             else
             {
-                return this->from_input_to_output(std::move(input), std::move(out)
-                                                  , std::move(bin_pred));
+                return this->cache_input<value_cache<InputCursor>>(std::move(input), std::move(out)
+                                                                   , std::move(bin_pred));
             }
         }
 
     private:
-        template <class ForwardCursor, class OutputCursor, class BinaryPredicate>
+        template <class Cache, class ForwardCursor, class OutputCursor, class BinaryPredicate>
         unique_copy_result<ForwardCursor, OutputCursor>
-        from_forward(ForwardCursor input, OutputCursor out, BinaryPredicate bin_pred) const
+        cache_input(ForwardCursor input, OutputCursor out, BinaryPredicate bin_pred) const
         {
             if(!input || !out)
             {
                 return {std::move(input), std::move(out)};
             }
 
-            ForwardCursor last_pos = input;
+            Cache last_pos(input);
             ++ input;
 
             out << *last_pos;
@@ -1225,36 +1225,44 @@ namespace saga
             return {std::move(input), std::move(out)};
         }
 
-        template <class InputCursor, class OutputCursor, class BinaryPredicate>
-        unique_copy_result<InputCursor, OutputCursor>
-        from_input_to_output(InputCursor input, OutputCursor out, BinaryPredicate bin_pred) const
+        template <class InputCursor>
+        class value_cache
         {
-            if(!input || !out)
+        public:
+            /// @pre !!cur
+            explicit value_cache(InputCursor & cur)
+             : value_(*cur)
+            {}
+
+            /// @pre !!cur
+            value_cache & operator=(InputCursor & cur)
             {
-                return {std::move(input), std::move(out)};
+                assert(!!cur);
+
+                this->value_ = *cur;
+
+                return *this;
             }
 
-            cursor_value_t<InputCursor> last_value = *input;
-            ++ input;
-
-            out << last_value;
-
-            for(; !!input && !!out; ++ input)
+            saga::cursor_value_t<InputCursor> const &
+            operator*() const
             {
-                if(!saga::invoke(bin_pred, last_value, *input))
-                {
-                    last_value = *input;
-                    out << last_value;
-                }
+                return this->value_;
             }
 
-            return {std::move(input), std::move(out)};
-        }
+        private:
+            saga::cursor_value_t<InputCursor> value_;
+        };
 
         template <class InputCursor, class ForwardCursor, class BinaryPredicate>
         unique_copy_result<InputCursor, ForwardCursor>
-        from_input_to_forward(InputCursor input, ForwardCursor out, BinaryPredicate bin_pred) const
+        cache_output(InputCursor input, ForwardCursor out, BinaryPredicate bin_pred) const
         {
+            static_assert(saga::is_forward_cursor<ForwardCursor>{}, "out must be forward");
+            static_assert(std::is_same<saga::cursor_value_t<InputCursor>
+                                      , saga::cursor_value_t<ForwardCursor>>{}
+                          , "input and out must have same value_type");
+
             if(!input || !out)
             {
                 return {std::move(input), std::move(out)};
