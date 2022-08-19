@@ -1178,28 +1178,122 @@ namespace saga
     {
         template <class InputCursor, class OutputCursor, class BinaryPredicate = std::equal_to<>>
         unique_copy_result<InputCursor, OutputCursor>
-        operator()(InputCursor in, OutputCursor out, BinaryPredicate bin_pred = {}) const
+        operator()(InputCursor input, OutputCursor out, BinaryPredicate bin_pred = {}) const
         {
-            if(!in || !out)
+            if constexpr(saga::is_forward_cursor<InputCursor>{})
             {
-                return {std::move(in), std::move(out)};
+                return this->cache_input<InputCursor>(std::move(input), std::move(out)
+                                                      , std::move(bin_pred));
+            }
+            else if constexpr(saga::is_forward_cursor<OutputCursor>{}
+                              && std::is_same<saga::cursor_value_t<InputCursor>
+                                             , saga::cursor_value_t<OutputCursor>>{})
+            {
+                return this->cache_output(std::move(input), std::move(out), std::move(bin_pred));
+            }
+            else
+            {
+                return this->cache_input<value_cache<InputCursor>>(std::move(input), std::move(out)
+                                                                   , std::move(bin_pred));
+            }
+        }
+
+    private:
+        template <class Cache, class ForwardCursor, class OutputCursor, class BinaryPredicate>
+        unique_copy_result<ForwardCursor, OutputCursor>
+        cache_input(ForwardCursor input, OutputCursor out, BinaryPredicate bin_pred) const
+        {
+            if(!input || !out)
+            {
+                return {std::move(input), std::move(out)};
             }
 
-            cursor_value_t<InputCursor> last_value = *in;
-            ++ in;
+            Cache last_pos(input);
+            ++ input;
 
-            out << last_value;
+            out << *last_pos;
 
-            for(; !!in && !!out; ++ in)
+            for(; !!input && !!out; ++ input)
             {
-                if(!saga::invoke(bin_pred, last_value, *in))
+                if(!saga::invoke(bin_pred, *last_pos, *input))
                 {
-                    last_value = *in;
-                    out << last_value;
+                    last_pos = input;
+                    out << *last_pos;
                 }
             }
 
-            return {std::move(in), std::move(out)};
+            return {std::move(input), std::move(out)};
+        }
+
+        template <class InputCursor>
+        class value_cache
+        {
+        public:
+            /// @pre !!cur
+            explicit value_cache(InputCursor & cur)
+             : value_(*cur)
+            {}
+
+            /// @pre !!cur
+            value_cache & operator=(InputCursor & cur)
+            {
+                assert(!!cur);
+
+                this->value_ = *cur;
+
+                return *this;
+            }
+
+            saga::cursor_value_t<InputCursor> const &
+            operator*() const
+            {
+                return this->value_;
+            }
+
+        private:
+            saga::cursor_value_t<InputCursor> value_;
+        };
+
+        template <class InputCursor, class ForwardCursor, class BinaryPredicate>
+        unique_copy_result<InputCursor, ForwardCursor>
+        cache_output(InputCursor input, ForwardCursor out, BinaryPredicate bin_pred) const
+        {
+            static_assert(saga::is_forward_cursor<ForwardCursor>{}, "out must be forward");
+            static_assert(std::is_same<saga::cursor_value_t<InputCursor>
+                                      , saga::cursor_value_t<ForwardCursor>>{}
+                          , "input and out must have same value_type");
+
+            if(!input || !out)
+            {
+                return {std::move(input), std::move(out)};
+            }
+
+            *out = *input;
+            ++ input;
+
+            for(; !!input; ++ input)
+            {
+                if(!saga::invoke(bin_pred, *out, *input))
+                {
+                    ++ out;
+
+                    if(!out)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        *out = *input;
+                    }
+                }
+            }
+
+            if(!!out)
+            {
+                ++ out;
+            }
+
+            return {std::move(input), std::move(out)};
         }
     };
 

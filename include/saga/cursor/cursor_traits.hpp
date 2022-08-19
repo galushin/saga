@@ -164,6 +164,11 @@ namespace saga
     //namespace cursor
 
     template <class Cursor>
+    struct is_forward_cursor
+     : std::is_base_of<std::forward_iterator_tag, saga::cursor_category_t<Cursor>>
+    {};
+
+    template <class Cursor>
     struct is_random_access_cursor
      : std::is_base_of<std::random_access_iterator_tag, saga::cursor_category_t<Cursor>>
     {};

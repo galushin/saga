@@ -38,6 +38,7 @@
 		</Compiler>
 		<Unit filename="../include/saga/accumulator/sum.hpp" />
 		<Unit filename="../include/saga/algorithm.hpp" />
+		<Unit filename="../include/saga/algorithm/copy.hpp" />
 		<Unit filename="../include/saga/algorithm/find_if.hpp" />
 		<Unit filename="../include/saga/algorithm/result_types.hpp" />
 		<Unit filename="../include/saga/any.hpp" />
