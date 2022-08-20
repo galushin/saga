@@ -2277,3 +2277,67 @@ TEST_CASE("PE 039")
 
     REQUIRE(std::max_element(counts.begin(), counts.end()) - counts.begin() == 840);
 }
+
+// PE 040 - Постоянная Чемперноуна
+namespace
+{
+    int PE_040_champernowne(int const index)
+    {
+        if(index < 10)
+        {
+            return index;
+        }
+
+        int skipped_length = 10;
+        int number_length = 2;
+        int numbers_to_skip = 90;
+        int base = 10;
+
+        for(;;)
+        {
+            auto to_skip = number_length * numbers_to_skip;
+
+            if(index < skipped_length + to_skip)
+            {
+                break;
+            }
+
+            numbers_to_skip *= 10;
+            skipped_length += to_skip;
+            number_length += 1;
+            base *= 10;
+        }
+
+        auto const num = base + (index - skipped_length) / number_length;
+        auto const rest = number_length * (num - base + 1) + skipped_length - index;
+        assert(rest >= 0);
+
+        auto const str = std::to_string(num);
+        assert(str.size() == static_cast<std::size_t>(number_length));
+
+        return str[str.size() - rest] - '0';
+    }
+}
+
+TEST_CASE("PE 040")
+{
+    for(auto num : saga::cursor::indices(10))
+    {
+        REQUIRE(::PE_040_champernowne(num) == num);
+    }
+
+    REQUIRE(::PE_040_champernowne(12) == 1);
+
+    REQUIRE(::PE_040_champernowne(1) == 1);
+    REQUIRE(::PE_040_champernowne(10) == 1);
+
+    int const result = ::PE_040_champernowne(1)
+                     * ::PE_040_champernowne(10)
+                     * ::PE_040_champernowne(100)
+                     * ::PE_040_champernowne(1000)
+                     * ::PE_040_champernowne(10000)
+                     * ::PE_040_champernowne(100000)
+                     * ::PE_040_champernowne(1000000);
+
+    REQUIRE(result == 210);
+}
