@@ -693,8 +693,7 @@ namespace saga
         {
             for(; !!in1 && !!in2; ++in1, void(++in2))
             {
-                using std::swap;
-                swap(*in1, *in2);
+                saga::cursor::swap(*in1, *in2);
             }
 
             return {std::move(in1), std::move(in2)};
@@ -717,8 +716,7 @@ namespace saga
                     break;
                 }
 
-                using std::swap;
-                swap(cur.front(), cur.back());
+                saga::cursor::swap(cur.front(), cur.back());
 
                 cur = std::move(cur_next);
             }
@@ -801,8 +799,7 @@ namespace saga
                     next_read = read;
                 }
 
-                using std::swap;
-                swap(*write, *read);
+                saga::cursor::swap(*write, *read);
             }
 
             this->impl_void(write, next_read);
@@ -995,8 +992,7 @@ namespace saga
                         return out;
                     }
 
-                    using std::swap;
-                    swap(*mid, *trail);
+                    saga::cursor::swap(*mid, *trail);
                 }
             }
         }
@@ -1061,8 +1057,7 @@ namespace saga
                 using Diff = saga::cursor_difference_t<RandomAccessCursor>;
                 std::uniform_int_distribution<Diff> distr(0, num);
 
-                using std::swap;
-                swap(cur[num], cur[distr(gen)]);
+                saga::cursor::swap(cur[num], cur[distr(gen)]);
             }
         }
     };
@@ -1336,8 +1331,7 @@ namespace saga
                     continue;
                 }
 
-                using std::swap;
-                swap(input.front(), input.back());
+                saga::cursor::swap(input.front(), input.back());
 
                 input.drop_front();
 
@@ -1559,8 +1553,7 @@ namespace saga
 
             if(saga::invoke(cmp, cur[pos1], cur[pos0]))
             {
-                using std::swap;
-                swap(pos0, pos1);
+                saga::cursor::swap(pos0, pos1);
             }
 
             auto const pos2 = num / 2;
@@ -1591,8 +1584,7 @@ namespace saga
 
             if(pivot != Distance{0})
             {
-                using std::swap;
-                swap(cur[equiv_begin], cur[pivot]);
+                saga::cursor::swap(cur[equiv_begin], cur[pivot]);
             }
 
             for(auto index = equiv_end; index < num; ++ index)
@@ -1611,8 +1603,7 @@ namespace saga
                 }
                 else
                 {
-                    using std::swap;
-                    swap(cur[index], cur[equiv_end]);
+                    saga::cursor::swap(cur[index], cur[equiv_end]);
                     ++equiv_end;
                 }
             }
@@ -1667,8 +1658,7 @@ namespace saga
                 {
                     if(saga::invoke(cmp, input[1], input[0]))
                     {
-                        using std::swap;
-                        swap(input[0], input[1]);
+                        saga::cursor::swap(input[0], input[1]);
                     }
 
                     return;
@@ -2269,8 +2259,7 @@ namespace saga
 
                 if(saga::invoke(cmp, *pos2, *pos1))
                 {
-                    using std::swap;
-                    swap(pos1, pos2);
+                    saga::cursor::swap(pos1, pos2);
                 }
 
                 if(saga::invoke(cmp, *pos1, *result.min))
@@ -2567,8 +2556,7 @@ namespace saga
             for(; !saga::invoke(cmp, prev.back(), cur.back()); cur.drop_back())
             {}
 
-            using std::swap;
-            swap(prev.back(), cur.back());
+            saga::cursor::swap(prev.back(), cur.back());
 
             saga::reverse_fn{}(prev.dropped_back());
 
