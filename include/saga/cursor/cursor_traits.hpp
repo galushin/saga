@@ -154,12 +154,31 @@ namespace saga
                     return (*this)(std::move(cur), std::move(num), cursor_category_t<Cursor>{});
                 }
             };
+
+            namespace swap_adl
+            {
+                template <class T>
+                void swap(T &, T &) = delete;
+
+                struct swap_fn
+                {
+                    template <class T>
+                    void operator()(T && lhs, T && rhs) const
+                    noexcept(std::is_nothrow_swappable<std::remove_reference_t<T>>{})
+                    {
+                        using std::swap;
+                        return swap(std::forward<T>(lhs), std::forward<T>(rhs));
+                    }
+                };
+            }
+            // namespace swap_adl
         }
         // namespace detail
 
-        inline constexpr auto const drop_front_n = detail::drop_front_n_fn{};
-        inline constexpr auto const drop_back_n = detail::drop_back_n_fn{};
-        inline constexpr auto const size = detail::size_fn{};
+        inline constexpr auto drop_front_n = detail::drop_front_n_fn{};
+        inline constexpr auto drop_back_n = detail::drop_back_n_fn{};
+        inline constexpr auto size = detail::size_fn{};
+        inline constexpr auto swap = detail::swap_adl::swap_fn{};
     }
     //namespace cursor
 

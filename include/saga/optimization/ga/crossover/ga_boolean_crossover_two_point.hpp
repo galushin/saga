@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Реализация двухточечного скрещивания для генетического алгоритма псевдобулевой оптимизации
 */
 
+#include <saga/cursor/cursor_traits.hpp>
 #include <saga/iterator.hpp>
 #include <saga/type_traits.hpp>
 
@@ -51,8 +52,7 @@ namespace saga
 
             if(last < first)
             {
-                using std::swap;
-                swap(first, last);
+                saga::cursor::swap(first, last);
             }
 
             assert(0 <= first && first <= last && last <= dim);
