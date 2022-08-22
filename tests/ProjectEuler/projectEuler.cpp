@@ -2359,13 +2359,18 @@ namespace
     }
 
     template <class IntType>
-    IntType PE_041()
+    IntType PE_041(std::size_t digits)
     {
-        auto const max_pandigital = IntType{987'654'321};
+        assert(1 <= digits && digits <= 9);
 
-        auto const primes = saga::primes_below(IntType(std::sqrt(max_pandigital))+1);
+        std::string str;
 
-        auto str = std::to_string(max_pandigital);
+        for(; digits > 0; --digits)
+        {
+            str.push_back('0' + digits);
+        }
+
+        auto const primes = saga::primes_below(IntType(std::sqrt(std::stoi(str)))+1);
 
         for(auto cur = saga::cursor::all(str); !!cur; ++ cur)
         {
@@ -2377,7 +2382,7 @@ namespace
 
                 std::from_chars(str.data() + str.size() - cur.size(), str.data() + str.size(), num);
 
-                if(::is_not_divisible_by_sorted(num, primes))
+                if(::is_not_divisible_by_sorted(num, primes) && num > IntType(1))
                 {
                     return num;
                 }
@@ -2385,9 +2390,7 @@ namespace
             while(saga::prev_permutation(cur));
         }
 
-        assert(false);
-
-        return 1;
+        return -1;
     }
 }
 
@@ -2395,5 +2398,6 @@ TEST_CASE("PE 041")
 {
     REQUIRE(::is_pandigital(std::to_string(2143)));
 
-    REQUIRE(PE_041<decltype(987654321)>() == 7'652'413);
+    REQUIRE(PE_041<int>(2) == -1);
+    REQUIRE(PE_041<decltype(987654321)>(9) == 7'652'413);
 }
