@@ -31,7 +31,9 @@ namespace saga
         template <class Base, class Tag>
         struct inherit
          : public Base
-        {};
+        {
+            using Base::Base;
+        };
 
         template <class Tag>
         struct inherit<void, Tag>
@@ -45,12 +47,18 @@ namespace saga
         struct equality_comparable
          : detail::inherit<Base, equality_comparable<T, Base>>
         {
+        private:
+            using Inherited = detail::inherit<Base, equality_comparable<T, Base>>;
+
+        public:
             friend
             constexpr bool
             operator!=(T const & lhs, T const & rhs) noexcept(noexcept(!(lhs == rhs)))
             {
                 return !(lhs == rhs);
             }
+
+            using Inherited::Inherited;
         };
 
         template <class T, class Base = void>

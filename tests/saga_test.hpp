@@ -150,20 +150,19 @@ namespace saga_test
             // Итератор
             reference operator*()
             {
-                if(!this->has_value_)
+                if(!this->cache_.has_value())
                 {
-                    this->value_ = (this->gen_)();
-                    this->has_value_ = true;
+                    this->cache_ = (this->gen_)();
                 }
 
-                return this->value_;
+                return this->cache_.value();
             }
 
             function_input_iterator & operator++()
             {
-                if(this->has_value_)
+                if(this->cache_.has_value())
                 {
-                    this->has_value_ = false;
+                    this->cache_.reset();
                 }
                 else
                 {
@@ -179,9 +178,7 @@ namespace saga_test
             Generator gen_{};
             Incrementable pos_{};
 
-            // @todo optional
-            bool has_value_ = false;
-            value_type value_{};
+            std::optional<value_type> cache_;
         };
 
         template <class Generator, class Incrementable>

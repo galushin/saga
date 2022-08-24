@@ -71,9 +71,7 @@ namespace saga
             // Создание, копирование, уничтожение
             constexpr empty_base_wrapper() = default;
 
-            // @todo Условный explicit?
-            // @todo Ограничить?
-            template <class... Args>
+            template <class... Args, class = std::enable_if_t<std::is_constructible<T, Args...>{}>>
             explicit constexpr empty_base_wrapper(Args &&... args)
              : value_(std::forward<Args>(args)...)
             {}
@@ -104,9 +102,7 @@ namespace saga
             // Создание, копирование, уничтожение
             constexpr empty_base_wrapper() = default;
 
-            // @todo Условный explicit?
-            // @todo Ограничить?
-            template <class... Args>
+            template <class... Args, class = std::enable_if_t<std::is_constructible<T, Args...>{}>>
             explicit constexpr empty_base_wrapper(Args &&... args)
              : Base(std::forward<Args>(args)...)
             {}
@@ -126,10 +122,11 @@ namespace saga
 
     template <class T>
     class equality_comparable_box
-     : detail::empty_base_wrapper<T>
-     , saga::operators::equality_comparable<equality_comparable_box<T>>
+     : saga::operators::equality_comparable<equality_comparable_box<T>
+                                           , detail::empty_base_wrapper<T>>
     {
-        using Inherited = detail::empty_base_wrapper<T>;
+        using Inherited = saga::operators::equality_comparable<equality_comparable_box<T>
+                                                              , detail::empty_base_wrapper<T>>;
 
     public:
         // Типы
