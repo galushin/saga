@@ -31,6 +31,7 @@ SAGA -- это свободной программное обеспечение:
 #include <array>
 #include <algorithm>
 #include <iterator>
+#include <optional>
 #include <sstream>
 #include <type_traits>
 
