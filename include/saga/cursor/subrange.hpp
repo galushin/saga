@@ -266,10 +266,11 @@ namespace saga
         {
             auto const n_before = saga::cursor::size(src.dropped_front());
             auto const n_body = saga::cursor::size(src);
+            auto const n_back = saga::cursor::size(src.dropped_back());
 
             auto const n_result = saga::cursor::size(dest);
 
-            assert(n_before + n_body <= n_result);
+            assert(n_before + n_body + n_back == n_result);
 
             auto after = saga::cursor::drop_front_n(std::move(dest), n_before + n_body);
             dest = after.dropped_front();
@@ -279,18 +280,18 @@ namespace saga
             return saga::cursor::drop_front_n(std::move(dest), n_before);
         }
 
-        template <class ForwardCursor, class BidirectionalCursor>
-        BidirectionalCursor
-        rebase_cursor(ForwardCursor src, BidirectionalCursor dest, std::bidirectional_iterator_tag)
+        template <class BidirectionalCursor1, class BidirectionalCursor2>
+        BidirectionalCursor2
+        rebase_cursor(BidirectionalCursor1 src, BidirectionalCursor2 dest
+                      , std::bidirectional_iterator_tag)
         {
             auto const n_front = saga::cursor::size(src.dropped_front());
             auto const n_not_back = n_front + saga::cursor::size(src);
+            auto const n_back = saga::cursor::size(src.dropped_back());
 
             auto const n_result = saga::cursor::size(dest);
 
-            assert(n_not_back <= n_result);
-
-            auto const n_back = n_result - n_not_back;
+            assert(n_not_back + n_back == n_result);
 
             dest = saga::cursor::drop_front_n(std::move(dest), n_front);
             dest = saga::cursor::drop_back_n(std::move(dest), n_back);

@@ -150,11 +150,46 @@ TEST_CASE("iterator rebase")
     };
 }
 
-TEST_CASE("subrange cursor rebase")
+TEST_CASE("subrange cursor rebase (from bidirectional)")
 {
-    saga_test::property_checker << [](std::list<int> const & src, std::vector<int> dest)
+    saga_test::property_checker << [](std::list<int> const & src)
     {
-        dest.insert(dest.end(), src.begin(), src.end());
+        std::vector<int> dest(src.begin(), src.end());
+
+        auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src));
+
+        auto const result_mutable = saga::rebase_cursor(cur, dest);
+        auto const result_const = saga::rebase_cursor(cur, saga::as_const(dest));
+
+        static_assert(std::is_same<decltype(result_mutable)
+                                  ,decltype(saga::cursor::all(dest)) const>{}, "");
+        static_assert(std::is_same<decltype(result_const)
+                                  ,decltype(saga::cursor::all(saga::as_const(dest))) const>{}, "");
+
+        REQUIRE(result_const.begin()
+                == saga::rebase_iterator(cur.begin(), src, dest, saga::unsafe_tag_t{}));
+        REQUIRE(result_const.end()
+                == saga::rebase_iterator(cur.end(), src, dest, saga::unsafe_tag_t{}));
+
+        REQUIRE(result_const.dropped_front().begin() == dest.begin());
+        REQUIRE(result_const.dropped_back().end() == dest.end());
+
+        REQUIRE(result_mutable.begin()
+                == saga::rebase_iterator(cur.begin(), src, dest, saga::unsafe_tag_t{}));
+        REQUIRE(result_mutable.end()
+                == saga::rebase_iterator(cur.end(), src, dest, saga::unsafe_tag_t{}));
+
+        REQUIRE(result_mutable.dropped_front().begin() == dest.begin());
+        REQUIRE(result_mutable.dropped_back().end() == dest.end());
+    };
+}
+
+TEMPLATE_TEST_CASE("subrange cursor rebase (from forward)", "rebase_cursor",
+                   (std::vector<int>), (std::forward_list<int>))
+{
+    saga_test::property_checker << [](std::forward_list<int> const & src)
+    {
+        TestType dest(src.begin(), src.end());
 
         auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src));
 
