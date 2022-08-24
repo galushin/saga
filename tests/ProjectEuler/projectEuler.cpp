@@ -1545,29 +1545,31 @@ namespace
 {
     long alphabetical_value(std::string_view str)
     {
-        return saga::transform_reduce(saga::cursor::all(str), long{0}, std::plus<>{}
-                                      , [](char each) { return each - 'A' + 1; });
+        auto letter_pos = [](char letter)
+        {
+            assert(std::isalpha(letter));
+
+            return std::toupper(letter) - 'A' + 1;
+        };
+
+        return saga::transform_reduce(saga::cursor::all(str), long{0}, std::plus<>{}, letter_pos);
     }
 }
 
 // PE 022: Баллы для имён
 #include <fstream>
 
-TEST_CASE("PE 022")
+namespace
 {
-    REQUIRE(::alphabetical_value("COLIN") == 53);
-
-    std::vector<std::string> names;
-
+    std::vector<std::string>
+    read_quoted_comma_separated(std::istream & src)
     {
-        std::ifstream file("ProjectEuler/p022_names.txt");
-
-        REQUIRE(!!file);
+        std::vector<std::string> names;
 
         std::string reader;
-        for(; file; )
+        for(; src; )
         {
-            char c = file.get();
+            char c = src.get();
             if(std::isalpha(c))
             {
                 reader.push_back(c);
@@ -1583,7 +1585,26 @@ TEST_CASE("PE 022")
         {
             names.push_back(std::move(reader));
         }
+
+        return names;
     }
+
+    std::vector<std::string>
+    read_quoted_comma_separated_from_file(std::string const & path)
+    {
+        std::ifstream file(path);
+
+        assert(!!file);
+
+        return ::read_quoted_comma_separated(file);
+    }
+}
+
+TEST_CASE("PE 022")
+{
+    REQUIRE(::alphabetical_value("COLIN") == 53);
+
+    auto names = ::read_quoted_comma_separated_from_file("ProjectEuler/p022_names.txt");
 
     // Отсортировать
     saga::sort(saga::cursor::all(names));
@@ -2400,4 +2421,31 @@ TEST_CASE("PE 041")
 
     REQUIRE(PE_041<int>(2) == -1);
     REQUIRE(PE_041<decltype(987654321)>(9) == 7'652'413);
+}
+
+// PE 042 - Кодированные треугольные числа
+namespace
+{
+    struct is_triangle_number_fn
+    {
+        template <class IntType>
+        bool operator()(IntType num) const
+        {
+            // Решаем уравнение x*(x-1)/2 == num и проверяем, что решение целое
+            auto const x = (std::sqrt(8*num + 1) + 1)/2;
+
+            return !(std::floor(x) < x);
+        }
+    };
+}
+
+TEST_CASE("PE 042")
+{
+    auto const words = ::read_quoted_comma_separated_from_file("ProjectEuler/p042_words.txt");
+
+    REQUIRE(::alphabetical_value("SKY") == 55);
+    REQUIRE(::is_triangle_number_fn{}(::alphabetical_value("SKY")));
+
+    REQUIRE(saga::count_if(saga::cursor::all(words) | saga::cursor::transform(::alphabetical_value)
+                          , is_triangle_number_fn{}) == 162);
 }
