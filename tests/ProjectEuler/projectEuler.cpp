@@ -421,8 +421,10 @@ static_assert(::projectEuler_006_pipes(100) == 25164150, "");
 namespace
 {
     template <class IntType>
-    bool is_coprime_with_sorted(IntType const num, std::vector<IntType> const & values)
+    bool is_not_divisible_by_sorted(IntType const num, std::vector<IntType> const & values)
     {
+        SAGA_ASSERT_AUDIT(saga::is_sorted(saga::cursor::all(values)));
+
         assert(num >= 0);
 
         for(auto const & value : values)
@@ -475,7 +477,7 @@ namespace
 
             for(;;)
             {
-                if(::is_coprime_with_sorted(num, this->primes_))
+                if(::is_not_divisible_by_sorted(num, this->primes_))
                 {
                     this->primes_.push_back(num);
                     break;
@@ -562,6 +564,7 @@ TEST_CASE("ProjectEuler: 008")
 namespace
 {
     // @todo Обобщить, чтобы можно было использовать в PE 003
+    // Может быть передавать действие как дополнительный аргумент?
     template <class IntType>
     IntType remove_factor(IntType num, IntType factor)
     {
@@ -1791,7 +1794,7 @@ namespace
         {
             assert(saga::square(primes.back()) >= value);
 
-            if(!is_coprime_with_sorted(std::abs(value), primes))
+            if(!is_not_divisible_by_sorted(std::abs(value), primes))
             {
                 return n;
             }
@@ -2340,4 +2343,61 @@ TEST_CASE("PE 040")
                      * ::PE_040_champernowne(1000000);
 
     REQUIRE(result == 210);
+}
+
+// PE 041 -  Панцифровое простое число
+// Так как нам нужно самое большое число, то искать начнём с самых больших чисел
+namespace
+{
+    bool is_pandigital(std::string str)
+    {
+        static const auto all_digits = std::string("123456789");
+
+        saga::sort(saga::cursor::all(str));
+
+        return all_digits.compare(0, str.size(), str) == 0;
+    }
+
+    template <class IntType>
+    IntType PE_041(std::size_t digits)
+    {
+        assert(1 <= digits && digits <= 9);
+
+        std::string str;
+
+        for(; digits > 0; --digits)
+        {
+            str.push_back('0' + digits);
+        }
+
+        auto const primes = saga::primes_below(IntType(std::sqrt(std::stoi(str)))+1);
+
+        for(auto cur = saga::cursor::all(str); !!cur; ++ cur)
+        {
+            assert(saga::is_sorted(saga::cursor::all(str), std::greater<>{}));
+
+            do
+            {
+                auto num = IntType(0);
+
+                std::from_chars(str.data() + str.size() - cur.size(), str.data() + str.size(), num);
+
+                if(::is_not_divisible_by_sorted(num, primes) && num > IntType(1))
+                {
+                    return num;
+                }
+            }
+            while(saga::prev_permutation(cur));
+        }
+
+        return -1;
+    }
+}
+
+TEST_CASE("PE 041")
+{
+    REQUIRE(::is_pandigital(std::to_string(2143)));
+
+    REQUIRE(PE_041<int>(2) == -1);
+    REQUIRE(PE_041<decltype(987654321)>(9) == 7'652'413);
 }
