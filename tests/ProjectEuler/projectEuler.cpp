@@ -2449,3 +2449,113 @@ TEST_CASE("PE 042")
     REQUIRE(saga::count_if(saga::cursor::all(words) | saga::cursor::transform(::alphabetical_value)
                           , is_triangle_number_fn{}) == 162);
 }
+
+// PE 043 - Делимость под-строк
+namespace
+{
+    template <class IntType>
+    bool PE_043_check(IntType num)
+    {
+        static std::vector<int> primes = {17, 13, 11, 7, 5, 3, 2};
+
+        for(auto prime : primes)
+        {
+            if((num % 1000) % prime != 0)
+            {
+                return false;
+            }
+
+            num /= 10;
+        }
+
+        return true;
+    }
+
+    // Рефакторинг
+    template <class Container, class Difference = typename Container::difference_type>
+    class permutations_cursor
+     : saga::cursor_facade<permutations_cursor<Container, Difference>, Container const &>
+    {
+    public:
+        // Типы
+        using reference = Container const &;
+        using difference_type = Difference;
+        using cursor_category = std::input_iterator_tag;
+
+        // Конструктор
+        explicit permutations_cursor(Container container)
+         : data_(std::move(container))
+         , stop_(this->data_.empty())
+        {}
+
+        // Курсор ввода
+        bool operator!() const
+        {
+            return this->stop_;
+        }
+
+        reference front() const
+        {
+            return this->data_;
+        }
+
+        void drop_front()
+        {
+            assert(!!*this);
+            this->stop_ = !saga::next_permutation(saga::cursor::all(this->data_));
+        }
+
+    private:
+        Container data_;
+        bool stop_ = true;
+    };
+
+    template <class Container>
+    permutations_cursor<Container>
+    permutations(Container container)
+    {
+        return permutations_cursor<Container>(std::move(container));
+    }
+
+    template <class IntType>
+    IntType PE_043_6th_digit(std::string str, int digit)
+    {
+        constexpr auto n_half = 5;
+
+        auto to_number = [&](std::string const & str)
+        {
+            assert(str.size() == 9);
+
+            auto num = IntType(0);
+            std::from_chars(str.data(), str.data() + n_half, num);
+
+            num = 10 * num + digit;
+
+            auto num2 = IntType(0);
+            std::from_chars(str.data() + n_half, str.data() + str.size(), num2);
+
+            return saga::power_natural(10, str.size() - n_half) * num + num2;
+        };
+
+        auto cur = ::permutations(str)
+                 | saga::cursor::transform(to_number)
+                 | saga::cursor::filter(::PE_043_check<IntType>);
+
+        return saga::reduce(std::move(cur));
+    }
+}
+
+TEST_CASE("PE 043")
+{
+    REQUIRE(::PE_043_check(1406357289));
+
+    auto const expected = 16'695'334'890;
+
+    using IntType = std::remove_const_t<decltype(expected)>;
+    static_assert(std::is_integral<IntType>{});
+
+    auto const total = ::PE_043_6th_digit<IntType>("123456789", 0)
+                     + ::PE_043_6th_digit<IntType>("102346789", 5);
+
+    REQUIRE(total == expected);
+}
