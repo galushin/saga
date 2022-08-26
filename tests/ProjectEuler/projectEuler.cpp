@@ -2559,3 +2559,73 @@ TEST_CASE("PE 043")
 
     REQUIRE(total == expected);
 }
+
+// PE 044 - Пятиугольные числа
+namespace
+{
+    template <class IntType>
+    bool is_pentagonal(IntType num)
+    {
+        assert(num >= 0);
+        auto const x = (std::sqrt(1 + 24 * num) + 1)/6;
+
+        return !(std::floor(x) < x);
+    }
+
+    template <class IntType>
+    IntType pentagonal_number(IntType num)
+    {
+        assert(num >= 0);
+
+        return 3 * saga::triangular_number(num) - 2 * num;
+    }
+
+    template <class IntType>
+    IntType PE_044()
+    {
+        std::vector<IntType> pentagonals;
+
+        pentagonals.push_back(::pentagonal_number(1));
+
+        for(;;)
+        {
+            // Генерируем новое число
+            auto new_value = ::pentagonal_number(IntType(pentagonals.size() + 1));
+
+            // Сравниваем со всеми предыдущими
+            auto pred = [&new_value](IntType const & value)
+            {
+                assert(value <= new_value);
+
+                return ::is_pentagonal(new_value + value) && ::is_pentagonal(new_value - value);
+            };
+
+            auto pos = saga::find_if(saga::cursor::all(pentagonals) | saga::cursor::reverse, pred);
+
+            if(!!pos)
+            {
+                return new_value - *pos;
+            }
+
+            // Если не нашли нужное, то добавляем это число к списку
+            pentagonals.push_back(std::move(new_value));
+        }
+    }
+}
+TEST_CASE("PE 044")
+{
+    REQUIRE(::pentagonal_number(0) == 0);
+    REQUIRE(::pentagonal_number(1) == 1);
+    REQUIRE(::pentagonal_number(4) == 22);
+    REQUIRE(::pentagonal_number(7) == 70);
+    REQUIRE(::pentagonal_number(8) == 92);
+    REQUIRE(::pentagonal_number(9) == 117);
+    REQUIRE(::pentagonal_number(10) == 145);
+
+    REQUIRE(::is_pentagonal(22));
+    REQUIRE(::is_pentagonal(70));
+    REQUIRE(::is_pentagonal(92));
+    REQUIRE(!::is_pentagonal(48));
+
+    REQUIRE(::PE_044<long>() == 5482660);
+}

@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_CURSOR_REVERSE_HPP_INCLUDED
 #define Z_SAGA_CURSOR_REVERSE_HPP_INCLUDED
 
+#include <saga/utility/pipeable.hpp>
 #include <saga/cursor/cursor_facade.hpp>
 #include <saga/cursor/cursor_traits.hpp>
 
@@ -159,19 +160,27 @@ namespace saga
 
     namespace cursor
     {
-        template <class BidirectionalCursor>
-        constexpr reverse_cursor<BidirectionalCursor>
-        reverse(BidirectionalCursor cur)
+        namespace detail
         {
-            return reverse_cursor<BidirectionalCursor>(std::move(cur));
+            struct reverse_maker
+            {
+                template <class BidirectionalCursor>
+                constexpr reverse_cursor<BidirectionalCursor>
+                operator()(BidirectionalCursor cur) const
+                {
+                    return reverse_cursor<BidirectionalCursor>(std::move(cur));
+                }
+
+                template <class BidirectionalCursor>
+                constexpr BidirectionalCursor
+                operator()(reverse_cursor<BidirectionalCursor> const & cur) const
+                {
+                    return cur.base();
+                }
+            };
         }
 
-        template <class BidirectionalCursor>
-        constexpr BidirectionalCursor
-        reverse(reverse_cursor<BidirectionalCursor> const & cur)
-        {
-            return cur.base();
-        }
+        constexpr inline auto reverse = saga::make_pipeable(detail::reverse_maker{});
     }
     // namespace cursor
 }
