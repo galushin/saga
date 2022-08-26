@@ -23,6 +23,8 @@ SAGA -- это свободной программное обеспечение:
  создания адаптеров курсоров
 */
 
+#include <utility>
+
 namespace saga
 {
     template <class UnaryFunction>
@@ -32,13 +34,19 @@ namespace saga
         template <class Cursor>
         constexpr friend auto operator|(Cursor cur, pipeable_unary const & pipe)
         {
-            return static_cast<UnaryFunction const&>(pipe)(std::move(cur));
+            return pipe(std::move(cur));
         }
 
     public:
         constexpr explicit pipeable_unary(UnaryFunction fun)
          : UnaryFunction(fun)
         {}
+
+        template <class Cursor>
+        constexpr auto operator()(Cursor cur) const &
+        {
+            return static_cast<UnaryFunction const&>(*this)(std::move(cur));
+        }
     };
 
     template <class UnaryFunction>
