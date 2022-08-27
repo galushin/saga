@@ -2573,7 +2573,7 @@ namespace
     }
 
     template <class IntType>
-    IntType pentagonal_number(IntType num)
+    constexpr IntType pentagonal_number(IntType num)
     {
         assert(num >= 0);
 
@@ -2628,4 +2628,42 @@ TEST_CASE("PE 044")
     REQUIRE(!::is_pentagonal(48));
 
     REQUIRE(::PE_044<long>() == 5482660);
+}
+
+// PE 045 - Треугольное, пятиугольное и шестиугольное
+namespace
+{
+    struct hexagonal_number_fn
+    {
+        template <class IntType>
+        constexpr IntType operator()(IntType num) const
+        {
+            return num * (2*num - 1);
+        }
+    };
+
+    static_assert(saga::triangular_number(285) == 40755);
+    static_assert(::pentagonal_number(165) == 40755);
+    static_assert(::hexagonal_number_fn{}(143) == 40755);
+}
+
+TEST_CASE("PE 045")
+{
+    REQUIRE(::is_triangle_number_fn{}(40755));
+    REQUIRE(::is_pentagonal(40755));
+
+    auto pred = [](auto const & num)
+        { return ::is_pentagonal(num) && ::is_triangle_number_fn{}(num); };
+
+    auto cur = saga::cursor::iota(std::int64_t(1))
+             | saga::cursor::transform(::hexagonal_number_fn{})
+             | saga::cursor::filter(pred);
+
+    REQUIRE(cur.front() == 1);
+    cur.drop_front();
+
+    REQUIRE(cur.front() == 40755);
+    cur.drop_front();
+
+    REQUIRE(cur.front() == 1'533'776'805);
 }
