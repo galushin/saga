@@ -420,21 +420,25 @@ static_assert(::projectEuler_006_pipes(100) == 25164150, "");
 // PE 007: 10001 Простое число
 namespace
 {
-    template <class IntType>
-    bool is_not_divisible_by_sorted(IntType const num, std::vector<IntType> const & values)
+    /** @brief Определяет, является ли число @c num простым
+    @pre primes содержит все простые числа, не превосходящие <tt> sqrt(num) </tt>, упорядоченные
+    по возрастанию
+    */
+    template <class IntType, class Container>
+    bool is_prime_sorted(IntType const num, Container const & primes, saga::unsafe_tag_t)
     {
-        SAGA_ASSERT_AUDIT(saga::is_sorted(saga::cursor::all(values)));
+        SAGA_ASSERT_AUDIT(saga::is_sorted(saga::cursor::all(primes)));
 
         assert(num >= 0);
 
-        for(auto const & value : values)
+        for(auto const & prime : primes)
         {
-            if(value * value > num)
+            if(saga::square(prime) > num)
             {
                 break;
             }
 
-            if(num % value == 0)
+            if(num % prime == 0)
             {
                 return false;
             }
@@ -477,7 +481,7 @@ namespace
 
             for(;;)
             {
-                if(::is_not_divisible_by_sorted(num, this->primes_))
+                if(::is_prime_sorted(num, this->primes_, saga::unsafe_tag_t{}))
                 {
                     this->primes_.push_back(num);
                     break;
@@ -1815,7 +1819,7 @@ namespace
         {
             assert(saga::square(primes.back()) >= value);
 
-            if(!is_not_divisible_by_sorted(std::abs(value), primes))
+            if(!is_prime_sorted(std::abs(value), primes, saga::unsafe_tag_t{}))
             {
                 return n;
             }
@@ -2403,7 +2407,7 @@ namespace
 
                 std::from_chars(str.data() + str.size() - cur.size(), str.data() + str.size(), num);
 
-                if(::is_not_divisible_by_sorted(num, primes) && num > IntType(1))
+                if(::is_prime_sorted(num, primes, saga::unsafe_tag_t{}) && num > IntType(1))
                 {
                     return num;
                 }
@@ -2666,4 +2670,46 @@ TEST_CASE("PE 045")
     cur.drop_front();
 
     REQUIRE(cur.front() == 1'533'776'805);
+}
+
+// PE 046 - Ещё одна гипотеза Гольдбаха
+namespace
+{
+    template <class IntType, class Container>
+    bool is_prime_plus_twice_square(IntType num, Container primes)
+    {
+        auto pred = [&](auto const & prime)
+        {
+            assert(num > prime);
+
+            auto const d = std::sqrt((num - prime) / 2);
+
+            return !(std::floor(d) < d);
+        };
+
+        return saga::any_of(saga::cursor::all(primes), pred);
+    }
+}
+
+TEST_CASE("PE 046")
+{
+    using IntType = long;
+
+    std::vector<IntType> primes{2};
+
+    auto num = IntType{3};
+
+    for(;; num += 2)
+    {
+        if(::is_prime_sorted(num, primes, saga::unsafe_tag_t{}))
+        {
+            primes.push_back(num);
+        }
+        else if(!::is_prime_plus_twice_square(num, primes))
+        {
+            break;
+        }
+    }
+
+    REQUIRE(num == 5777);
 }
