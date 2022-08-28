@@ -431,18 +431,10 @@ namespace
 
         assert(num >= 0);
 
-        for(auto const & prime : primes)
-        {
-            if(saga::square(prime) > num)
-            {
-                break;
-            }
+        auto cur = saga::cursor::all(primes)
+                 | saga::cursor::take_while([&](auto const & arg){return saga::square(arg) <= num;});
 
-            if(num % prime == 0)
-            {
-                return false;
-            }
-        }
+        return saga::none_of(std::move(cur), [&](auto const & arg){ return num % arg == 0;});
 
         return true;
     }
@@ -2712,4 +2704,73 @@ TEST_CASE("PE 046")
     }
 
     REQUIRE(num == 5777);
+}
+
+// PE 047 - Различные простые делители
+namespace
+{
+    template <class IntType, class Cursor>
+    saga::cursor_difference_t<Cursor>
+    count_prime_divisors_sorted(IntType num, Cursor cur)
+    {
+        SAGA_ASSERT_AUDIT(saga::is_sorted(cur));
+
+        auto result = saga::cursor_difference_t<Cursor>(0);
+
+        for(; !!cur; ++cur)
+        {
+            if(saga::square(*cur) > num)
+            {
+                break;
+            }
+
+            if(num % *cur == 0)
+            {
+                result += 1;
+
+                while(num % *cur == 0)
+                {
+                    num /= *cur;
+                }
+            }
+        }
+
+        // Может быть не более одного простого делителя больше sqrt(num)
+        return result + (num != 1);
+    }
+
+    template <class IntType>
+    IntType PE_047(IntType const required)
+    {
+        assert(required > 0);
+
+        std::vector<IntType> primes;
+
+        auto hits = IntType(0);
+
+        for(auto const & num : saga::cursor::iota(2))
+        {
+            auto const d_count = ::count_prime_divisors_sorted(num, saga::cursor::all(primes));
+
+            if(d_count == 1)
+            {
+                primes.push_back(num);
+            }
+
+            hits = (d_count == required) ? hits + 1 : IntType(0);
+
+            // Условие останова
+            if(hits == required)
+            {
+                return num - required + 1;
+            }
+        }
+    }
+}
+
+TEST_CASE("PE 047")
+{
+    REQUIRE(::PE_047(2) == 14);
+    REQUIRE(::PE_047(3) == 644);
+    REQUIRE(::PE_047(4) == 134043);
 }
