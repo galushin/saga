@@ -22,6 +22,8 @@ SAGA -- это свободной программное обеспечение:
  @brief Макросы, облегчающие работу с функциями (особенно с перегруженными и обобщёнными)
 */
 
+#include <utility>
+
 #define SAGA_RETURNS(...)\
     noexcept(noexcept(__VA_ARGS__)) -> decltype(__VA_ARGS__) { return __VA_ARGS__; }
 
