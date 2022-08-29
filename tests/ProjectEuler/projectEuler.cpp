@@ -2748,23 +2748,21 @@ namespace
 
         auto hits = IntType(0);
 
-        for(auto const & num : saga::cursor::iota(2))
+        auto cur = saga::cursor::iota(2);
+
+        for(; hits < required; ++ cur)
         {
-            auto const d_count = ::count_prime_divisors_sorted(num, saga::cursor::all(primes));
+            auto const d_count = ::count_prime_divisors_sorted(*cur, saga::cursor::all(primes));
 
             if(d_count == 1)
             {
-                primes.push_back(num);
+                primes.push_back(*cur);
             }
 
             hits = (d_count == required) ? hits + 1 : IntType(0);
-
-            // Условие останова
-            if(hits == required)
-            {
-                return num - required + 1;
-            }
         }
+
+        return *cur - required;
     }
 }
 
