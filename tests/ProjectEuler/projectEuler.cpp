@@ -993,13 +993,28 @@ namespace
 
 #include <saga/numeric/digits_of.hpp>
 
-namespace saga
+namespace
 {
-    class integer
+    class integer10
     {
+        // Равенство
+        friend bool operator==(integer10 const & lhs, integer10 const & rhs)
+        {
+            return lhs.digits_ == rhs.digits_;
+        }
+
+        template <class IntType>
+        friend auto operator==(integer10 const & lhs, IntType rhs)
+        -> std::enable_if_t<std::is_integral<IntType>{}, bool>
+        {
+            // @todo Без преобразования
+            return lhs == integer10(rhs);
+        }
+
+        // Вывод
         template <class CharT, class Traits>
         friend std::basic_ostream<CharT, Traits> &
-        operator<<(std::basic_ostream<CharT, Traits> & out, integer const & value)
+        operator<<(std::basic_ostream<CharT, Traits> & out, integer10 const & value)
         {
             auto num = value.digits_.size();
 
@@ -1011,49 +1026,47 @@ namespace saga
 
             for(; num > 0; -- num)
             {
-                out << char('0' + value.digits_[num - 1]);
+                out << value.digits_[num - 1];
             }
 
             return out;
         }
 
-        friend integer operator+(integer lhs, integer const & rhs)
+        // Сложение
+        friend integer10 operator+(integer10 lhs, integer10 const & rhs)
         {
             lhs += rhs;
 
             return lhs;
         }
 
-        friend integer operator*(integer const & lhs, integer const & rhs)
+        // Умножение
+        friend integer10 operator*(integer10 const & lhs, integer10 const & rhs)
         {
-            integer result;
+            integer10 result;
 
             auto const rhs_size = rhs.digits_.size();
 
             for(size_t index = 0; index != rhs_size; ++ index)
             {
-                result += saga::integer::mult_impl(lhs, rhs.digits_[index], index);
+                result += integer10::mult_impl(lhs, rhs.digits_[index], index);
             }
 
             return result;
         }
 
         template <class IntType>
-        friend auto operator*(integer const & lhs, IntType rhs)
-        -> std::enable_if_t<std::is_integral<IntType>{}, integer>
+        friend auto operator*(integer10 const & lhs, IntType rhs)
+        -> std::enable_if_t<std::is_integral<IntType>{}, integer10>
         {
-            return lhs * integer(std::move(rhs));
-        }
-
-        friend bool operator==(integer const & lhs, integer const & rhs)
-        {
-            return lhs.digits_ == rhs.digits_;
+            return lhs * integer10(std::move(rhs));
         }
 
     private:
         using Digit = int;
 
-        static integer mult_impl(integer const & lhs, Digit const & rhs, std::size_t initial_zeroes)
+        static integer10
+        mult_impl(integer10 const & lhs, Digit const & rhs, std::size_t initial_zeroes)
         {
             if(lhs.digits_.empty())
             {
@@ -1080,7 +1093,7 @@ namespace saga
                 result.push_back(carry);
             }
 
-            integer tmp;
+            integer10 tmp;
             tmp.digits_ = std::move(result);
 
             return tmp;
@@ -1088,17 +1101,17 @@ namespace saga
 
     public:
         // Создание, копирование, уничтожение
-        integer() = default;
+        integer10() = default;
 
         template <class IntType, class = std::enable_if_t<std::is_integral<IntType>{}>>
-        explicit integer(IntType value)
+        explicit integer10(IntType value)
         {
             assert(value >= 0);
 
             saga::copy(saga::cursor::digits_of(value), saga::back_inserter(this->digits_));
         }
 
-        explicit integer(std::string const & str)
+        explicit integer10(std::string const & str)
         {
             this->digits_.reserve(str.size());
 
@@ -1113,7 +1126,7 @@ namespace saga
         }
 
         // Арифметические операции
-        integer & operator+=(integer const & rhs)
+        integer10 & operator+=(integer10 const & rhs)
         {
             auto const num = std::max(this->digits_.size(), rhs.digits_.size());
 
@@ -1149,11 +1162,20 @@ namespace saga
             return *this;
         }
 
-        integer & operator*=(integer const & rhs)
+        integer10 & operator*=(integer10 const & rhs)
         {
             *this = *this * rhs;
 
             return *this;
+        }
+
+        // Остаток
+        void mod10(std::size_t power)
+        {
+            if(this->digits_.size() > power)
+            {
+                this->digits_.resize(power);
+            }
         }
 
         // Доступ к представлению
@@ -1166,11 +1188,10 @@ namespace saga
         std::vector<Digit> digits_;
     };
 }
-// namespace saga
 
-TEST_CASE("saga::integer: default ctor")
+TEST_CASE("integer10: default ctor")
 {
-    saga::integer const zero{};
+    ::integer10 const zero{};
 
     std::ostringstream os;
     os << zero;
@@ -1178,13 +1199,13 @@ TEST_CASE("saga::integer: default ctor")
     REQUIRE(os.str() == "0");
 }
 
-TEST_CASE("saga::integer: zero multiplication")
+TEST_CASE("integer10: zero multiplication")
 {
     saga_test::property_checker << [](unsigned const value)
     {
-        saga::integer const zero{};
+        ::integer10 const zero{};
 
-        auto const prod = zero * saga::integer(value);
+        auto const prod = zero * ::integer10(value);
 
         REQUIRE(prod == zero);
     };
@@ -1192,11 +1213,11 @@ TEST_CASE("saga::integer: zero multiplication")
 
 TEST_CASE("PE 013 - range for loop")
 {
-    saga::integer result{};
+    ::integer10 result{};
 
     for(auto const & str : PE_013_data)
     {
-        result += saga::integer(str);
+        result += ::integer10(str);
     }
 
     std::ostringstream os;
@@ -1208,9 +1229,9 @@ TEST_CASE("PE 013 - range for loop")
 TEST_CASE("PE 013 - algorithms")
 {
     auto const result
-        = saga::transform_reduce(saga::cursor::all(PE_013_data), saga::integer{}
+        = saga::transform_reduce(saga::cursor::all(PE_013_data), ::integer10{}
                                  , std::plus<>{}
-                                 , [](std::string const & str) { return saga::integer(str); });
+                                 , [](std::string const & str) { return ::integer10(str); });
 
     std::ostringstream os;
     os << result;
@@ -1323,7 +1344,7 @@ namespace
     {
         assert(power > 0);
 
-        auto num = saga::power_natural(saga::integer(base), power);
+        auto num = saga::power_natural(::integer10(base), power);
 
         return saga::reduce(saga::cursor::all(num.digits()));
     }
@@ -1480,7 +1501,7 @@ namespace
     IntType projectEuler_020(IntType num)
     {
         auto const factorial = saga::accumulate(saga::cursor::indices(1, num)
-                                                , saga::integer(1), std::multiplies<>{});
+                                                , ::integer10(1), std::multiplies<>{});
 
         return saga::reduce(saga::cursor::all(factorial.digits()));
     }
@@ -1675,8 +1696,8 @@ namespace
 {
     std::size_t projectEuler_025(std::size_t digits)
     {
-        auto cur = saga::cursor::enumerate(::make_fibonacci_sequence(saga::integer(0)
-                                                                     , saga::integer(1)));
+        auto cur = saga::cursor::enumerate(::make_fibonacci_sequence(::integer10(0)
+                                                                     , ::integer10(1)));
         cur = saga::find_if(std::move(cur),
                             [&](auto const & elem) {return elem.value.digits().size() >= digits;});
         assert(!!cur);
@@ -2771,4 +2792,55 @@ TEST_CASE("PE 047")
     REQUIRE(::PE_047(2) == 14);
     REQUIRE(::PE_047(3) == 644);
     REQUIRE(::PE_047(4) == 134043);
+}
+
+// PE 048 - Собственные степени
+namespace
+{
+    template <class Integer, class IntType
+             , class BinaryOperation1 = std::multiplies<>
+             , class BinaryOperation2 = std::plus<>>
+    Integer PE_048_self_powers_sum(IntType max_num, BinaryOperation1 prod = {}
+                                  , BinaryOperation2 add = {})
+    {
+        auto self_power = [&](IntType const & num)
+        {
+            assert(num >= 1);
+
+            return saga::power_natural(Integer(num), num, prod);
+        };
+
+        auto cur = saga::cursor::indices(1, max_num + 1) | saga::cursor::transform(self_power);
+
+        return saga::reduce(std::move(cur), {}, add);
+    }
+}
+
+TEST_CASE("PE 048")
+{
+    // Простой пример
+    REQUIRE(::PE_048_self_powers_sum<long long>(10) == 10'405'071'317);
+
+    // Пример, для которого недостаточно 64 бита
+    using Integer = ::integer10;
+
+    auto const digits_needed = 10;
+
+    auto const mult_mod = [=](Integer lhs, Integer const & rhs)
+    {
+        lhs *= rhs;
+        lhs.mod10(digits_needed);
+
+        return lhs;
+    };
+
+    auto const add_mod = [=](Integer lhs, Integer const & rhs)
+    {
+        lhs += rhs;
+        lhs.mod10(digits_needed);
+
+        return lhs;
+    };
+
+    REQUIRE(::PE_048_self_powers_sum<Integer>(1000, mult_mod, add_mod) == 9'110'846'701);
 }
