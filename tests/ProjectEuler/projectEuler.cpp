@@ -151,7 +151,6 @@ TEST_CASE("ProjectEuler 001")
 // PE 002 : Чётные числа Фибоначчи
 namespace
 {
-    /// @todo Хранить текущий и следующий элементы: так мы не пропускаем первый!
     template <class IntType>
     class fibonacci_sequence
      : saga::cursor_facade<fibonacci_sequence<IntType>, IntType const &>
@@ -165,8 +164,8 @@ namespace
 
         // Создание, копирование, уничтожение
         constexpr fibonacci_sequence(IntType num1, IntType num2)
-         : prev_(num1)
-         , cur_(num2)
+         : cur_(std::move(num1))
+         , next_(std::move(num2))
         {}
 
         // Однопроходная последовательность
@@ -182,12 +181,12 @@ namespace
 
         constexpr void drop_front()
         {
-            this->prev_ = saga::exchange(this->cur_, this->cur_ + this->prev_);
+            this->cur_ = saga::exchange(this->next_, this->cur_ + this->next_);
         }
 
     private:
-        IntType prev_;
         IntType cur_;
+        IntType next_;
     };
 
     template <class IntType>
@@ -1754,7 +1753,7 @@ namespace
             return os.str();
         };
 
-        auto fib_str = ::make_fibonacci_sequence(::integer10(0), ::integer10(1))
+        auto fib_str = ::make_fibonacci_sequence(::integer10(1), ::integer10(1))
                      | saga::cursor::transform(to_str);
 
         auto cur = saga::find_if(std::move(saga::cursor::enumerate(fib_str)),
