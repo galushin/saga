@@ -1073,13 +1073,19 @@ namespace
 
                 for(auto const & index : saga::cursor::indices(first, last))
                 {
-                    new_unit += lhs.units_[index] * rhs.units_[pos - index];
+                    auto prod = lhs.units_[index] * rhs.units_[pos - index];
 
-                    carry += new_unit / unit_base;
-                    new_unit %= unit_base;
+                    if(prod >= std::numeric_limits<Unit>::max() - new_unit)
+                    {
+                        carry += new_unit / unit_base;
+                        new_unit %= unit_base;
+                    }
+
+                    new_unit += prod;
                 }
 
-                result.units_.push_back(new_unit);
+                result.units_.push_back(new_unit % unit_base);
+                carry += new_unit / unit_base;
             }
 
             if(carry > 0)
