@@ -998,7 +998,6 @@ namespace
 
 namespace
 {
-    // @todo Перейти на двоичную систему и переименовать в integer
     class integer10
     {
         // Равенство
@@ -1052,13 +1051,40 @@ namespace
         // Умножение
         friend integer10 operator*(integer10 const & lhs, integer10 const & rhs)
         {
-            integer10 result;
+            if(lhs.units_.empty() || rhs.units_.empty())
+            {
+                return integer10{};
+            }
 
+            auto result = integer10{};
+
+            auto carry = Unit(0);
+
+            auto const lhs_size = lhs.units_.size();
             auto const rhs_size = rhs.units_.size();
 
-            for(size_t index = 0; index != rhs_size; ++ index)
+            for(auto pos : saga::cursor::indices(0*lhs_size, lhs_size + rhs_size))
             {
-                result += integer10::mult_impl(lhs, rhs.units_[index], index);
+                auto new_unit = carry % unit_base;
+                carry /= unit_base;
+
+                auto const first = rhs_size <= pos ? pos - rhs_size + 1 : 0 * pos;
+                auto const last = std::min(lhs_size, pos + 1);
+
+                for(auto const & index : saga::cursor::indices(first, last))
+                {
+                    new_unit += lhs.units_[index] * rhs.units_[pos - index];
+
+                    carry += new_unit / unit_base;
+                    new_unit %= unit_base;
+                }
+
+                result.units_.push_back(new_unit);
+            }
+
+            if(carry > 0)
+            {
+                result.units_.push_back(carry);
             }
 
             return result;
@@ -1075,40 +1101,6 @@ namespace
         using Unit = std::uint64_t;
 
         static_assert(std::is_unsigned<Unit>{});
-
-        static integer10
-        mult_impl(integer10 const & lhs, Unit const & rhs, std::size_t initial_zeroes)
-        {
-            if(lhs.units_.empty())
-            {
-                return lhs;
-            }
-
-            std::vector<Unit> result(initial_zeroes, Unit(0));
-
-            auto carry = Unit(0);
-
-            for(auto const & digit : lhs.units_)
-            {
-                carry += digit * rhs;
-
-                result.push_back(carry % unit_base);
-
-                carry /= unit_base;
-            }
-
-            assert(carry < unit_base);
-
-            if(carry > 0)
-            {
-                result.push_back(carry);
-            }
-
-            integer10 tmp;
-            tmp.units_ = std::move(result);
-
-            return tmp;
-        }
 
     public:
         // Создание, копирование, уничтожение
