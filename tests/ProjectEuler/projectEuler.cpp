@@ -2907,3 +2907,48 @@ TEST_CASE("PE 048")
 
     REQUIRE(::PE_048_self_powers_sum<Integer>(1000, mult_mod, add_mod) == 9'110'846'700);
 }
+
+// PE 049 - Простые перестановки
+namespace
+{
+    std::vector<std::string> PE_049_prime_permutations(long max_value)
+    {
+        std::vector<std::string> result;
+
+        auto const primes = saga::primes_below(max_value);
+
+        for(auto second : saga::cursor::indices_of(primes))
+        for(auto first  : saga::cursor::indices(second))
+        {
+            auto const str1 = std::to_string(primes[first]);
+            auto const str2 = std::to_string(primes[second]);
+
+            if(!saga::is_permutation(saga::cursor::all(str1), saga::cursor::all(str2)))
+            {
+                continue;
+            }
+
+            auto dif = primes[second] - primes[first];
+
+            auto const prime3 = primes[second] + dif;
+            auto const str3 = std::to_string(prime3);
+
+            if(saga::is_permutation(saga::cursor::all(str3), saga::cursor::all(str1))
+               && saga::binary_search(saga::cursor::all(primes), prime3))
+            {
+                result.push_back(str1 + str2 + str3);
+            }
+        }
+
+        return result;
+    }
+}
+
+TEST_CASE("PE 049")
+{
+    auto const answer = PE_049_prime_permutations(10'000);
+
+    REQUIRE(answer.size() == 2);
+    REQUIRE(answer[0] == "148748178147");
+    REQUIRE(answer[1] == "296962999629");
+}
