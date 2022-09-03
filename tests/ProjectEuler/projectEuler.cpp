@@ -151,7 +151,6 @@ TEST_CASE("ProjectEuler 001")
 // PE 002 : Чётные числа Фибоначчи
 namespace
 {
-    /// @todo Хранить текущий и следующий элементы: так мы не пропускаем первый!
     template <class IntType>
     class fibonacci_sequence
      : saga::cursor_facade<fibonacci_sequence<IntType>, IntType const &>
@@ -161,11 +160,12 @@ namespace
         using value_type = IntType;
         using reference = value_type const &;
         using difference_type = std::ptrdiff_t;
+        using cursor_category = std::input_iterator_tag;
 
         // Создание, копирование, уничтожение
         constexpr fibonacci_sequence(IntType num1, IntType num2)
-         : prev_(num1)
-         , cur_(num2)
+         : cur_(std::move(num1))
+         , next_(std::move(num2))
         {}
 
         // Однопроходная последовательность
@@ -181,12 +181,12 @@ namespace
 
         constexpr void drop_front()
         {
-            this->prev_ = saga::exchange(this->cur_, this->cur_ + this->prev_);
+            this->cur_ = saga::exchange(this->next_, this->cur_ + this->next_);
         }
 
     private:
-        IntType prev_;
         IntType cur_;
+        IntType next_;
     };
 
     template <class IntType>
@@ -993,15 +993,33 @@ namespace
 
 #include <saga/numeric/digits_of.hpp>
 
-namespace saga
+#include <charconv>
+#include <iomanip>
+
+namespace
 {
-    class integer
+    class integer10
     {
+        // Равенство
+        friend bool operator==(integer10 const & lhs, integer10 const & rhs)
+        {
+            return lhs.units_ == rhs.units_;
+        }
+
+        template <class IntType>
+        friend auto operator==(integer10 const & lhs, IntType rhs)
+        -> std::enable_if_t<std::is_integral<IntType>{}, bool>
+        {
+            return saga::equal(saga::cursor::all(lhs.data())
+                              , saga::cursor::digits_of(rhs, lhs.unit_base));
+        }
+
+        // Вывод
         template <class CharT, class Traits>
         friend std::basic_ostream<CharT, Traits> &
-        operator<<(std::basic_ostream<CharT, Traits> & out, integer const & value)
+        operator<<(std::basic_ostream<CharT, Traits> & out, integer10 const & value)
         {
-            auto num = value.digits_.size();
+            auto num = value.units_.size();
 
             if(num == 0)
             {
@@ -1009,168 +1027,199 @@ namespace saga
                 return out;
             }
 
+            out << value.units_.back();
+            -- num;
+
             for(; num > 0; -- num)
             {
-                out << char('0' + value.digits_[num - 1]);
+                out << std::setw(value.digits_per_unit)
+                    << std::setfill('0')
+                    << value.units_[num - 1];
             }
 
             return out;
         }
 
-        friend integer operator+(integer lhs, integer const & rhs)
+        // Сложение
+        friend integer10 operator+(integer10 lhs, integer10 const & rhs)
         {
             lhs += rhs;
 
             return lhs;
         }
 
-        friend integer operator*(integer const & lhs, integer const & rhs)
+        // Умножение
+        friend integer10 operator*(integer10 const & lhs, integer10 const & rhs)
         {
-            integer result;
-
-            auto const rhs_size = rhs.digits_.size();
-
-            for(size_t index = 0; index != rhs_size; ++ index)
+            if(lhs.units_.empty() || rhs.units_.empty())
             {
-                result += saga::integer::mult_impl(lhs, rhs.digits_[index], index);
+                return integer10{};
             }
+
+            auto result = integer10{};
+
+            auto carry = Unit(0);
+
+            auto const lhs_size = lhs.units_.size();
+            auto const rhs_size = rhs.units_.size();
+
+            for(auto pos : saga::cursor::indices(0*lhs_size, lhs_size + rhs_size))
+            {
+                auto new_unit = carry % unit_base;
+                carry /= unit_base;
+
+                auto const first = rhs_size <= pos ? pos - rhs_size + 1 : 0 * pos;
+                auto const last = std::min(lhs_size, pos + 1);
+
+                for(auto const & index : saga::cursor::indices(first, last))
+                {
+                    auto prod = lhs.units_[index] * rhs.units_[pos - index];
+
+                    if(prod >= std::numeric_limits<Unit>::max() - new_unit)
+                    {
+                        carry += new_unit / unit_base;
+                        new_unit %= unit_base;
+                    }
+
+                    new_unit += prod;
+                }
+
+                result.units_.push_back(new_unit % unit_base);
+                carry += new_unit / unit_base;
+            }
+
+            assert(carry == 0);
 
             return result;
         }
 
         template <class IntType>
-        friend auto operator*(integer const & lhs, IntType rhs)
-        -> std::enable_if_t<std::is_integral<IntType>{}, integer>
+        friend auto operator*(integer10 const & lhs, IntType rhs)
+        -> std::enable_if_t<std::is_integral<IntType>{}, integer10>
         {
-            return lhs * integer(std::move(rhs));
-        }
-
-        friend bool operator==(integer const & lhs, integer const & rhs)
-        {
-            return lhs.digits_ == rhs.digits_;
+            return lhs * integer10(std::move(rhs));
         }
 
     private:
-        using Digit = int;
+        using Unit = std::uint64_t;
 
-        static integer mult_impl(integer const & lhs, Digit const & rhs, std::size_t initial_zeroes)
-        {
-            if(lhs.digits_.empty())
-            {
-                return lhs;
-            }
-
-            std::vector<Digit> result(initial_zeroes, Digit(0));
-
-            auto carry = Digit(0);
-
-            for(auto const & digit : lhs.digits_)
-            {
-                carry += digit * rhs;
-
-                result.push_back(carry % 10);
-
-                carry /= 10;
-            }
-
-            assert(0 <= carry && carry < 10);
-
-            if(carry > 0)
-            {
-                result.push_back(carry);
-            }
-
-            integer tmp;
-            tmp.digits_ = std::move(result);
-
-            return tmp;
-        }
+        static_assert(std::is_unsigned<Unit>{});
 
     public:
         // Создание, копирование, уничтожение
-        integer() = default;
+        integer10() = default;
 
         template <class IntType, class = std::enable_if_t<std::is_integral<IntType>{}>>
-        explicit integer(IntType value)
+        explicit integer10(IntType value)
         {
             assert(value >= 0);
 
-            saga::copy(saga::cursor::digits_of(value), saga::back_inserter(this->digits_));
+            saga::copy(saga::cursor::digits_of(value, unit_base)
+                      , saga::back_inserter(this->units_));
         }
 
-        explicit integer(std::string const & str)
+        explicit integer10(std::string const & str)
         {
-            this->digits_.reserve(str.size());
+            auto const tail_size = str.size() % this->digits_per_unit;
+            auto const units_count = str.size() / this->digits_per_unit + (tail_size != 0);
 
-            for(auto const & each : str)
+            this->units_.reserve(units_count);
+
+            auto start = tail_size * 0;
+            auto finish = tail_size;
+
+            for(; start != str.size(); start = finish, finish += digits_per_unit)
             {
-                assert(std::isdigit(each));
+                auto reader = Unit(0);
+                auto result = std::from_chars(str.data() + start, str.data() + finish, reader);
+                assert(result.ptr == str.data() + finish);
 
-                digits_.push_back(each - '0');
+                this->units_.push_back(reader);
             }
 
-            saga::reverse(saga::cursor::all(this->digits_));
+            saga::reverse(saga::cursor::all(this->units_));
         }
 
         // Арифметические операции
-        integer & operator+=(integer const & rhs)
+        integer10 & operator+=(integer10 const & rhs)
         {
-            auto const num = std::max(this->digits_.size(), rhs.digits_.size());
+            auto const num = std::max(this->units_.size(), rhs.units_.size());
 
-            this->digits_.resize(num, 0);
+            this->units_.resize(num, 0);
 
-            auto carry = Digit(0);
+            auto carry = Unit(0);
 
-            for(auto index : saga::cursor::indices(rhs.digits_.size()))
+            for(auto index : saga::cursor::indices(rhs.units_.size()))
             {
-                carry += this->digits_[index] + rhs.digits_[index];
+                carry += this->units_[index] + rhs.units_[index];
 
-                this->digits_[index] = carry % 10;
+                this->units_[index] = carry % unit_base;
 
-                carry /= 10;
+                carry /= unit_base;
             }
 
-            for(auto index : saga::cursor::indices(rhs.digits_.size(), this->digits_.size()))
+            for(auto index : saga::cursor::indices(rhs.units_.size(), this->units_.size()))
             {
-                carry += this->digits_[index];
+                carry += this->units_[index];
 
-                this->digits_[index] = carry % 10;
+                this->units_[index] = carry % unit_base;
 
-                carry /= 10;
+                carry /= unit_base;
             }
 
-            assert(0 <= carry && carry < 10);
+            assert(carry < unit_base);
 
             if(carry > 0)
             {
-                this->digits_.push_back(carry);
+                this->units_.push_back(carry);
             }
 
             return *this;
         }
 
-        integer & operator*=(integer const & rhs)
+        integer10 & operator*=(integer10 const & rhs)
         {
             *this = *this * rhs;
 
             return *this;
         }
 
-        // Доступ к представлению
-        std::vector<Digit> const & digits() const
+        // Остаток
+        void mod10(std::size_t power)
         {
-            return this->digits_;
+            auto const tail_size = power % this->digits_per_unit;
+            auto const units_to_keep = power / this->digits_per_unit + (tail_size != 0);
+
+            if(this->units_.size() >= units_to_keep)
+            {
+                this->units_.resize(units_to_keep);
+
+                if(tail_size > 0)
+                {
+                    this->units_.back() %= saga::power_natural(10, tail_size);
+                }
+            }
+        }
+
+        // Доступ к представлению
+        std::vector<Unit> const & data() const
+        {
+            return this->units_;
         }
 
     private:
-        std::vector<Digit> digits_;
+        // @todo Добавить условие, что бит достаточно для хранения квадрата
+        static constexpr auto digits_per_unit = 9;
+
+        static constexpr auto unit_base = saga::power_natural(Unit(10), digits_per_unit);
+
+        std::vector<Unit> units_;
     };
 }
-// namespace saga
 
-TEST_CASE("saga::integer: default ctor")
+TEST_CASE("integer10: default ctor")
 {
-    saga::integer const zero{};
+    ::integer10 const zero{};
 
     std::ostringstream os;
     os << zero;
@@ -1178,26 +1227,33 @@ TEST_CASE("saga::integer: default ctor")
     REQUIRE(os.str() == "0");
 }
 
-TEST_CASE("saga::integer: zero multiplication")
+TEST_CASE("integer10: zero multiplication")
 {
     saga_test::property_checker << [](unsigned const value)
     {
-        saga::integer const zero{};
+        ::integer10 const zero{};
 
-        auto const prod = zero * saga::integer(value);
+        auto const prod = zero * ::integer10(value);
 
         REQUIRE(prod == zero);
     };
 }
 
+TEST_CASE("integer10: string ctor")
+{
+    REQUIRE(::integer10("1234567") == 1234567);
+}
+
 TEST_CASE("PE 013 - range for loop")
 {
-    saga::integer result{};
+    ::integer10 result{};
 
     for(auto const & str : PE_013_data)
     {
-        result += saga::integer(str);
+        result += ::integer10(str);
     }
+
+    result += ::integer10{};
 
     std::ostringstream os;
     os << result;
@@ -1208,9 +1264,9 @@ TEST_CASE("PE 013 - range for loop")
 TEST_CASE("PE 013 - algorithms")
 {
     auto const result
-        = saga::transform_reduce(saga::cursor::all(PE_013_data), saga::integer{}
+        = saga::transform_reduce(saga::cursor::all(PE_013_data), ::integer10{}
                                  , std::plus<>{}
-                                 , [](std::string const & str) { return saga::integer(str); });
+                                 , [](std::string const & str) { return ::integer10(str); });
 
     std::ostringstream os;
     os << result;
@@ -1318,14 +1374,26 @@ namespace
         return saga::reduce(saga::cursor::digits_of(saga::power_natural(base, power)));
     }
 
+    long digits_sum(::integer10 const & num)
+    {
+        long digits_sum = 0;
+
+        for(auto const & unit : saga::cursor::all(num.data()))
+        {
+            digits_sum += saga::reduce(saga::cursor::digits_of(unit));
+        }
+
+        return digits_sum;
+    }
+
     int
     projectEuler_016_arbitrary(int base, int power)
     {
         assert(power > 0);
 
-        auto num = saga::power_natural(saga::integer(base), power);
+        auto num = saga::power_natural(::integer10(base), power);
 
-        return saga::reduce(saga::cursor::all(num.digits()));
+        return ::digits_sum(num);
     }
 }
 
@@ -1480,9 +1548,9 @@ namespace
     IntType projectEuler_020(IntType num)
     {
         auto const factorial = saga::accumulate(saga::cursor::indices(1, num)
-                                                , saga::integer(1), std::multiplies<>{});
+                                                , ::integer10(1), std::multiplies<>{});
 
-        return saga::reduce(saga::cursor::all(factorial.digits()));
+        return ::digits_sum(factorial);
     }
 }
 
@@ -1675,10 +1743,18 @@ namespace
 {
     std::size_t projectEuler_025(std::size_t digits)
     {
-        auto cur = saga::cursor::enumerate(::make_fibonacci_sequence(saga::integer(0)
-                                                                     , saga::integer(1)));
-        cur = saga::find_if(std::move(cur),
-                            [&](auto const & elem) {return elem.value.digits().size() >= digits;});
+        auto to_str = [](integer10 const & num)
+        {
+            std::ostringstream os;
+            os << num;
+            return os.str();
+        };
+
+        auto fib_str = ::make_fibonacci_sequence(::integer10(1), ::integer10(1))
+                     | saga::cursor::transform(to_str);
+
+        auto cur = saga::find_if(std::move(saga::cursor::enumerate(fib_str)),
+                            [&](auto const & elem) {return elem.value.size() >= digits;});
         assert(!!cur);
 
         return cur.front().index + 1;
@@ -2771,4 +2847,63 @@ TEST_CASE("PE 047")
     REQUIRE(::PE_047(2) == 14);
     REQUIRE(::PE_047(3) == 644);
     REQUIRE(::PE_047(4) == 134043);
+}
+
+// PE 048 - Собственные степени
+namespace
+{
+    template <class Integer, class IntType
+             , class BinaryOperation1 = std::multiplies<>
+             , class BinaryOperation2 = std::plus<>>
+    Integer PE_048_self_powers_sum(IntType max_num, BinaryOperation1 prod = {}
+                                  , BinaryOperation2 add = {})
+    {
+        auto self_power = [&](IntType const & num)
+        {
+            assert(num >= 1);
+
+            return saga::power_natural(Integer(num), num, prod);
+        };
+
+        auto cur = saga::cursor::indices(1, max_num + 1) | saga::cursor::transform(self_power);
+
+        return saga::reduce(std::move(cur), {}, add);
+    }
+}
+
+TEST_CASE("integer10 : mod10")
+{
+    ::integer10 num("987654321");
+    num.mod10(3);
+
+    REQUIRE(num == 321);
+}
+
+TEST_CASE("PE 048")
+{
+    // Простой пример
+    REQUIRE(::PE_048_self_powers_sum<long long>(10) == 10'405'071'317);
+
+    // Пример, для которого недостаточно 64 бита
+    using Integer = ::integer10;
+
+    auto const digits_needed = 10;
+
+    auto const mult_mod = [=](Integer lhs, Integer const & rhs)
+    {
+        lhs *= rhs;
+        lhs.mod10(digits_needed);
+
+        return lhs;
+    };
+
+    auto const add_mod = [=](Integer lhs, Integer const & rhs)
+    {
+        lhs += rhs;
+        lhs.mod10(digits_needed);
+
+        return lhs;
+    };
+
+    REQUIRE(::PE_048_self_powers_sum<Integer>(1000, mult_mod, add_mod) == 9'110'846'700);
 }

@@ -97,8 +97,8 @@ namespace saga
 
     struct power_natural_fn
     {
-        template <class IntType, class Power>
-        constexpr IntType operator()(IntType base, Power power) const
+        template <class IntType, class Power, class BinaryOperation = std::multiplies<>>
+        constexpr IntType operator()(IntType base, Power power, BinaryOperation bin_op = {}) const
         {
             static_assert(std::is_arithmetic<Power>{}, "");
             assert(power > 0);
@@ -108,11 +108,11 @@ namespace saga
                 return base;
             }
 
-            auto result = saga::square_fn{}((*this)(base, power / 2));
+            auto result = saga::square_fn{}((*this)(base, power / 2), bin_op);
 
             if(power % 2 == 1)
             {
-                result *= base;
+                result = bin_op(std::move(result), std::move(base));
             }
 
             return result;
