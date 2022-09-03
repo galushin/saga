@@ -1088,10 +1088,7 @@ namespace
                 carry += new_unit / unit_base;
             }
 
-            if(carry > 0)
-            {
-                result.units_.push_back(carry);
-            }
+            assert(carry == 0);
 
             return result;
         }
@@ -1255,6 +1252,8 @@ TEST_CASE("PE 013 - range for loop")
     {
         result += ::integer10(str);
     }
+
+    result += ::integer10{};
 
     std::ostringstream os;
     os << result;
