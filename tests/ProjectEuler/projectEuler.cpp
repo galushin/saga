@@ -2911,11 +2911,11 @@ TEST_CASE("PE 048")
 // PE 049 - Простые перестановки
 namespace
 {
-    std::vector<std::string> PE_049_prime_permutations(long max_value)
+    std::vector<std::string> PE_049_prime_permutations(long last)
     {
         std::vector<std::string> result;
 
-        auto const primes = saga::primes_below(max_value);
+        auto const primes = saga::primes_below(last);
 
         for(auto second : saga::cursor::indices_of(primes))
         for(auto first  : saga::cursor::indices(second))
@@ -2951,4 +2951,48 @@ TEST_CASE("PE 049")
     REQUIRE(answer.size() == 2);
     REQUIRE(answer[0] == "148748178147");
     REQUIRE(answer[1] == "296962999629");
+}
+
+// PE 050 - Сумма последовательных простых чисел
+namespace
+{
+    template <class IntType>
+    IntType PE_050(IntType last)
+    {
+        // Простые числа
+        auto primes = saga::primes_below(last);
+        assert(!primes.empty());
+
+        // Накопленные суммы простых чисел
+        std::vector<IntType> acc{0};
+        saga::partial_sum(saga::cursor::all(primes), saga::back_inserter(acc));
+
+        // Находим ограничение на количество слагаемых
+        // Если первые n чисел дают в сумме более last, то и любые n идущих подряд простых
+        // чисел дают в сумме более last
+        auto const pos = saga::lower_bound(saga::cursor::all(acc), last);
+
+        // Ищем простое число
+        for(auto num = acc.size() - pos.size(); num > 0; -- num)
+        {
+            for(auto index = acc.size(); index > num; -- index)
+            {
+                auto const value = acc[index - 1] - acc[index - 1 - num];
+
+                if(saga::binary_search(saga::cursor::all(primes), value))
+                {
+                    return value;
+                }
+            }
+        }
+
+        return primes.back();
+    }
+}
+
+TEST_CASE("PE 050")
+{
+    REQUIRE(::PE_050(100) == 41);
+    REQUIRE(::PE_050(1'000) == 953);
+    REQUIRE(::PE_050<long>(1'000'000) == 997651);
 }
