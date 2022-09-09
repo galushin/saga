@@ -2996,3 +2996,204 @@ TEST_CASE("PE 050")
     REQUIRE(::PE_050(1'000) == 953);
     REQUIRE(::PE_050<long>(1'000'000) == 997651);
 }
+
+// PE 051 - Замена цифр в простых числах
+namespace
+{
+    template <class Cursor>
+    saga::cursor_difference_t<Cursor>
+    PE_051_count(Cursor cur, std::string const & str, char old_digit, char first, char last)
+    {
+        saga::cursor_difference_t<Cursor> counter(0);
+
+        for(auto new_digit : saga::cursor::indices(first, last))
+        {
+            auto new_str = str;
+            saga::replace(saga::cursor::all(new_str), old_digit, new_digit);
+
+            counter += (new_str != str) && saga::binary_search(cur, new_str);
+        }
+
+        return counter;
+    }
+
+    template <class Cursor>
+    bool PE_051_check(Cursor cur, std::string const & str, std::ptrdiff_t family_size)
+    {
+        for(auto old_digit : saga::cursor::indices('0', '9' - family_size + 1))
+        {
+            if(::PE_051_count(cur.dropped_front(), str, old_digit, '0', old_digit) > 0)
+            {
+                continue;
+            }
+
+            if(::PE_051_count(cur, str, old_digit, old_digit + 1, '9' + 1) + 1 >= family_size)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+    @pre first <= last
+    @pre <tt> old_primes.empty() || old_primes.back() < first </tt>
+    @pre Между primes.back() и first нет простых чисел
+    @todo Можно ли унифицировать эту функцию с saga::copy_primes_below?
+    */
+    template <class IntType>
+    std::vector<IntType>
+    PE_051_primes(std::vector<IntType> const & old_primes, IntType first, IntType last)
+    {
+        assert(first <= last);
+        assert(old_primes.empty() || old_primes.back() < first);
+        assert(old_primes.empty() || (old_primes.front() == IntType(2)));
+
+        if(first == last)
+        {
+            return {};
+        }
+
+        first += (first % 2 == 0);
+
+        // Если last чётное, то он не равен first (теперь нечётное), и его можно безопасно уменьшить
+        last -= (last % 2 == 0);
+
+        if(first == last)
+        {
+            return {};
+        }
+
+        // num = first + index * 2
+        // index = (num - first) / 2
+        std::vector<unsigned short> seive((last - first) / 2, true);
+
+        auto const cur = saga::cursor::all(seive);
+
+        // Просеиваем уже найденные простые
+        for(auto prime : old_primes)
+        {
+            // Двойки мы пропускаем и так!
+            if(prime == 2)
+            {
+                continue;
+            }
+
+            auto num = first + prime - (first % prime);
+
+            num += prime * (num % 2 == 0);
+
+            saga::mark_eratosthenes_seive(saga::cursor::drop_front_n(cur, (num - first)/2)
+                                          , prime);
+        }
+
+        // Просеиваем остальные простые
+        for(auto index : saga::cursor::indices(cur.size()))
+        {
+            if(cur[index])
+            {
+                auto new_prime = first + 2*index;
+                auto const square_index = (saga::square(new_prime) - first)/2;
+
+                if(square_index >= cur.size())
+                {
+                    break;
+                }
+
+                saga::mark_eratosthenes_seive(saga::cursor::drop_front_n(cur, square_index)
+                                              , new_prime);
+            }
+        }
+
+        // Выделяем простые числа
+        std::vector<IntType> primes;
+
+        for(auto index : saga::cursor::indices_of(seive))
+        {
+            if(seive[index])
+            {
+                primes.push_back(first + 2 * index);
+            }
+        }
+
+        return primes;
+    }
+
+    template <class Cursor>
+    Cursor PE_051_find(Cursor cur, std::ptrdiff_t const family_size)
+    {
+        for(; !!cur;)
+        {
+            auto cur_next = cur;
+            ++ cur_next;
+
+            if(::PE_051_check(cur_next, *cur, family_size))
+            {
+                break;
+            }
+
+            cur = cur_next;
+        }
+
+        return cur;
+    }
+
+    template <class IntType>
+    std::string PE_051(std::ptrdiff_t const family_size)
+    {
+        std::vector<IntType> old_primes{};
+        std::vector<IntType> primes = saga::primes_below(IntType(10));
+
+        for(auto limit = IntType(10);; limit *= 10)
+        {
+            std::vector<std::string> primes_str;
+            saga::transform(saga::cursor::all(primes), saga::back_inserter(primes_str)
+                            , SAGA_OVERLOAD_SET(std::to_string));
+
+            auto const cur = ::PE_051_find(saga::cursor::all(primes_str), family_size);
+
+            if(!!cur)
+            {
+                return *cur;
+            }
+
+            old_primes.insert(old_primes.end(), primes.begin(), primes.end());
+            primes = ::PE_051_primes(old_primes, limit, limit * 10);
+        }
+    }
+}
+
+TEST_CASE("primes multistep")
+{
+    auto const limit1 = 10;
+    auto const limit2 = 100;
+
+    REQUIRE(limit1 <= limit2);
+
+    // Все сразу
+    auto const primes_all = saga::primes_below(limit2);
+
+    // В два этапа
+    auto const primes1 = saga::primes_below(limit1);
+
+    auto const primes2 = ::PE_051_primes(primes1, limit1, limit2);
+
+    REQUIRE(!primes2.empty());
+    REQUIRE(saga::is_sorted(saga::cursor::all(primes2)));
+    REQUIRE(primes2.front() >= limit1);
+    REQUIRE(primes2.back() < limit2);
+
+    // Сравниваем
+    auto result = primes1;
+    result.insert(result.end(), primes2.begin(), primes2.end());
+
+    REQUIRE(result == primes_all);
+}
+
+TEST_CASE("PE 051")
+{
+    REQUIRE(::PE_051<long>(6) == "13");
+    REQUIRE(::PE_051<long>(7) == "56003");
+    REQUIRE(::PE_051<long>(8) == "121313");
+}
