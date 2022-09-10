@@ -2992,6 +2992,7 @@ namespace
 
 TEST_CASE("PE 050")
 {
+    REQUIRE(::PE_050(3) == 2);
     REQUIRE(::PE_050(100) == 41);
     REQUIRE(::PE_050(1'000) == 953);
     REQUIRE(::PE_050<long>(1'000'000) == 997651);
@@ -3049,6 +3050,7 @@ namespace
         assert(first <= last);
         assert(old_primes.empty() || old_primes.back() < first);
         assert(old_primes.empty() || (old_primes.front() == IntType(2)));
+        assert(!old_primes.empty() || (first <= IntType(2)));
 
         if(first == last)
         {
@@ -3056,14 +3058,6 @@ namespace
         }
 
         first += (first % 2 == 0);
-
-        // Если last чётное, то он не равен first (теперь нечётное), и его можно безопасно уменьшить
-        last -= (last % 2 == 0);
-
-        if(first == last)
-        {
-            return {};
-        }
 
         // num = first + index * 2
         // index = (num - first) / 2
@@ -3108,6 +3102,11 @@ namespace
 
         // Выделяем простые числа
         std::vector<IntType> primes;
+
+        if(old_primes.empty())
+        {
+            primes.emplace_back(2);
+        }
 
         for(auto index : saga::cursor::indices_of(seive))
         {
@@ -3164,10 +3163,20 @@ namespace
     }
 }
 
+TEST_CASE("PE_051_primes")
+{
+    REQUIRE(::PE_051_primes({}, 2, 2).empty());
+
+    auto const primes1 = saga::primes_below(10);
+    auto const primes2 = ::PE_051_primes({}, 2, 10);
+
+    REQUIRE(primes1 == primes2);
+}
+
 TEST_CASE("primes multistep")
 {
     auto const limit1 = 10;
-    auto const limit2 = 100;
+    auto const limit2 = 1000;
 
     REQUIRE(limit1 <= limit2);
 
