@@ -3206,3 +3206,39 @@ TEST_CASE("PE 051")
     REQUIRE(::PE_051<long>(7) == "56003");
     REQUIRE(::PE_051<long>(8) == "121313");
 }
+
+// PE 052 - Перестановочные кратные
+namespace
+{
+    template <class IntType>
+    bool PE_052_check(IntType num, IntType max_mult)
+    {
+        auto str_1 = std::to_string(num);
+        saga::sort(saga::cursor::all(str_1));
+
+        for(auto mult : saga::cursor::indices(2, max_mult + 1))
+        {
+            auto str_k = std::to_string(num * mult);
+            saga::sort(saga::cursor::all(str_k));
+
+            if(str_1 != str_k)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    template <class IntType>
+    IntType PE_052(IntType max_mult)
+    {
+        return saga::find_if(saga::cursor::iota(IntType(1))
+                            , [&](IntType num){ return ::PE_052_check(num, max_mult); }).front();
+    }
+}
+
+TEST_CASE("PE 052")
+{
+    REQUIRE(::PE_052<long>(6) == 142857);
+}
