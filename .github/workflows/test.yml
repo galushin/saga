@@ -99,7 +99,7 @@ jobs:
               SANITIZE: address,
               CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=address",
-              ASAN_OPTIONS: "detect_invalid_pointer_pairs=2",
+              ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1detect_invalid_pointer_pairs=2",
             }
           - {
               name: "Linux Clang default UBSAN",
