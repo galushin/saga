@@ -2973,7 +2973,7 @@ namespace
         auto const pos = saga::lower_bound(saga::cursor::all(acc), last);
 
         // Ищем простое число
-        for(auto num = acc.size() - pos.size(); num > 0; -- num)
+        for(auto num = acc.size() - pos.size(); num > 1; -- num)
         {
             for(auto index = acc.size(); index > num; -- index)
             {
