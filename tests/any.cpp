@@ -30,7 +30,7 @@ SAGA -- это свободной программное обеспечение:
 
 namespace
 {
-    using Value_types_list = std::tuple<int, double, std::string, std::vector<long>>;
+    using Value_types_list = std::tuple<int, unsigned long, std::string, std::vector<long>>;
 
     using any_size_goal = std::tuple<void*, void*>;
 }

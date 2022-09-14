@@ -2363,7 +2363,7 @@ TEST_CASE("PE 039")
     {
         auto const c = std::hypot(a, b);
 
-        if(c == int(c) && a + b + c <= 1000)
+        if(!(int(c) < c) && a + b + c <= 1000)
         {
             counts.at(a + b + c) += 1;
         }

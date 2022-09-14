@@ -18,11 +18,11 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_DETAIL_SWAP_ADL_ENABLER_HPP_INCLUDED
 #define Z_SAGA_DETAIL_SWAP_ADL_ENABLER_HPP_INCLUDED
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnon-template-friend"
 #endif
-// __GNUC__
+// defined(__GNUC__) && !defined(__clang__)
 
 namespace saga
 {
@@ -47,10 +47,10 @@ namespace detail
 }
 // namespace saga
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-// __GNUC__
+// defined(__GNUC__) && !defined(__clang__)
 
 #endif
 // Z_SAGA_DETAIL_SWAP_ADL_ENABLER_HPP_INCLUDED

@@ -1593,7 +1593,7 @@ TEST_CASE("expected: unexpect_t constructor")
         constexpr saga::expected<int, long*> obj0(saga::unexpect);
 
         static_assert(obj0.has_value() == false, "");
-        static_assert(obj0.error() == 0, "");
+        static_assert(obj0.error() == nullptr, "");
 
         constexpr int value = 42;
         constexpr saga::expected<long *, int> obj1(saga::unexpect, value);
@@ -1604,7 +1604,7 @@ TEST_CASE("expected: unexpect_t constructor")
         constexpr saga::expected<void, long*> obj0(saga::unexpect);
 
         static_assert(obj0.has_value() == false, "");
-        static_assert(obj0.error() == 0, "");
+        static_assert(obj0.error() == nullptr, "");
 
         constexpr int value = 42;
         constexpr saga::expected<long *, int> obj1(saga::unexpect, value);
