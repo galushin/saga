@@ -3242,3 +3242,42 @@ TEST_CASE("PE 052")
 {
     REQUIRE(::PE_052<long>(6) == 142857);
 }
+
+// PE 053 - Комбинаторные сочетания
+namespace
+{
+    template <class IntType>
+    std::size_t PE_053(std::size_t n_max, IntType limit_value)
+    {
+        std::vector<IntType> row{1};
+
+        auto result = std::size_t(0);
+
+        saga::for_n(n_max, [&]
+        {
+            row.push_back(1);
+
+            auto prev_value = row.front();
+
+            for(auto index : saga::cursor::indices(1u, row.size()-1))
+            {
+                prev_value = std::exchange(row[index], row[index] + std::move(prev_value));
+
+                if(row[index] > limit_value)
+                {
+                    result += row.size() - 2*index;
+                    row[index] = limit_value + 1;
+                }
+            }
+        });
+
+        return result;
+    }
+}
+
+TEST_CASE("PE 053")
+{
+    using IntType = long;
+
+    REQUIRE(::PE_053(100, IntType(1'000'000)) == 4075);
+}
