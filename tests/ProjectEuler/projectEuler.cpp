@@ -2184,17 +2184,15 @@ TEST_CASE("PE 035")
 namespace
 {
     template <class IntType, class Base>
+    constexpr IntType reverse_number(IntType const num, Base base)
+    {
+        return saga::polynomial_horner(saga::cursor::digits_of(num, base), base, IntType(0));
+    }
+
+    template <class IntType, class Base>
     constexpr bool is_palindrome_in_base(IntType const num, Base base)
     {
-        if(num % base == 0)
-        {
-            return false;
-        }
-
-        auto reversed = saga::polynomial_horner(saga::cursor::digits_of(num, base)
-                                                , base, IntType(0));
-
-        return reversed == num;
+        return (num % base != 0) && ::reverse_number(num, base) == num;
     }
 
     template <class IntType, class Base>
@@ -3276,4 +3274,69 @@ TEST_CASE("PE 053")
     using IntType = long;
 
     REQUIRE(::PE_053(100, IntType(1'000'000)) == 4075);
+}
+
+// PE 055 - Числа Лишрел
+namespace
+{
+    template <class Container>
+    void plus_assign_long_same_size(Container & lhs, Container const & rhs
+                                    , typename Container::value_type base)
+    {
+        assert(lhs.size() == rhs.size());
+
+        using Digit = typename Container::value_type;
+
+        auto carry = Digit(0);
+        for(auto index : saga::cursor::indices_of(lhs))
+        {
+            lhs[index] += (rhs[index] + carry);
+
+            carry = lhs[index] / base;
+            lhs[index] %= base;
+
+            assert(0 <= carry && carry < base);
+        }
+
+        if(carry > 0)
+        {
+            lhs.push_back(carry);
+        }
+    }
+
+    struct PE_055_is_Lychrel_fn
+    {
+        template <class IntType>
+        bool operator()(IntType value) const
+        {
+            using Digit = int;
+            auto const base = Digit(10);
+
+            std::vector<Digit> num;
+            saga::copy(saga::cursor::digits_of(value, base), saga::back_inserter(num));
+
+            for(auto counter = 50; counter > 0; -- counter)
+            {
+                auto reversed = num;
+                saga::reverse(saga::cursor::all(reversed));
+
+                ::plus_assign_long_same_size(num, reversed, base);
+
+                if(saga::is_palindrome(saga::cursor::all(num)))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    };
+}
+TEST_CASE("PE 055")
+{
+    using IntType = long;
+
+    auto const n_max = IntType(10'000);
+
+    REQUIRE(saga::count_if(saga::cursor::iota(IntType(1), n_max), ::PE_055_is_Lychrel_fn{}) == 249);
 }
