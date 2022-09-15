@@ -1075,11 +1075,7 @@ namespace
                 {
                     auto prod = lhs.units_[index] * rhs.units_[pos - index];
 
-                    if(prod >= std::numeric_limits<Unit>::max() - new_unit)
-                    {
-                        carry += new_unit / unit_base;
-                        new_unit %= unit_base;
-                    }
+                    assert(prod < std::numeric_limits<Unit>::max() - new_unit);
 
                     new_unit += prod;
                 }
