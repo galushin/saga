@@ -1096,6 +1096,7 @@ namespace
             return lhs * integer10(std::move(rhs));
         }
 
+
     private:
         using Unit = std::uint64_t;
 
@@ -3355,4 +3356,28 @@ TEST_CASE("PE 056")
              | saga::cursor::cached1;
 
     REQUIRE(saga::reduce(std::move(cur), 0L, SAGA_OVERLOAD_SET(std::max)) == 972);
+}
+
+// PE 097 - Большое не-Мерсеновское простое число
+TEST_CASE("PE 097")
+{
+    using IntType = std::uint64_t;
+    auto const Mod = 10'000'000'000;
+
+    auto prod = [&Mod](IntType lhs, IntType rhs)
+    {
+        auto const HalfMod = 100'000;
+
+        auto a_lhs = lhs / HalfMod;
+        auto b_lhs = lhs % HalfMod;
+
+        auto a_rhs = rhs / HalfMod;
+        auto b_rhs = rhs % HalfMod;
+
+        return (HalfMod * (a_lhs * b_rhs + b_lhs * a_rhs) + b_lhs * b_rhs) % Mod;
+    };
+
+    auto const result = 28433 * saga::power_natural(IntType(2), 7'830'457, prod) + 1;
+
+    REQUIRE(result % Mod == 8'739'992'577);
 }
