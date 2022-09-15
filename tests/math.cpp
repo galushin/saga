@@ -48,3 +48,8 @@ TEST_CASE("square, custom operation")
         REQUIRE(saga::square(value, std::plus<>{}) == value + value);
     };
 }
+
+TEST_CASE("power_natural: regression 1138")
+{
+    REQUIRE(saga::power_natural(3, 5, std::plus<>{}) == 3 * 5);
+}
