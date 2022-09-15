@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <cmath>
+#include <cassert>
 
 #include <functional>
 
@@ -108,7 +109,7 @@ namespace saga
                 return base;
             }
 
-            auto result = saga::square_fn{}((*this)(base, power / 2), bin_op);
+            auto result = saga::square_fn{}((*this)(base, power / 2, bin_op), bin_op);
 
             if(power % 2 == 1)
             {
