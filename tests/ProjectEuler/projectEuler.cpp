@@ -3340,3 +3340,19 @@ TEST_CASE("PE 055")
 
     REQUIRE(saga::count_if(saga::cursor::iota(IntType(1), n_max), ::PE_055_is_Lychrel_fn{}) == 249);
 }
+
+// PE 056 - Сумма цифр степени
+TEST_CASE("PE 056")
+{
+    auto fun = [](auto const & arg)
+    {
+        return ::digits_sum(saga::power_natural(::integer10(std::get<0>(arg)), std::get<1>(arg)));
+    };
+
+    auto cur = saga::cursor::cartesian_product(saga::cursor::indices(1, 100)
+                                               , saga::cursor::indices(1, 100))
+             | saga::cursor::transform(fun)
+             | saga::cursor::cached1;
+
+    REQUIRE(saga::reduce(std::move(cur), 0L, SAGA_OVERLOAD_SET(std::max)) == 972);
+}
