@@ -1114,7 +1114,7 @@ namespace
                       , saga::back_inserter(this->units_));
         }
 
-        explicit integer10(std::string const & str)
+        explicit integer10(std::string_view str)
         {
             auto const tail_size = str.size() % this->digits_per_unit;
             auto const units_count = str.size() / this->digits_per_unit + (tail_size != 0);
