@@ -24,7 +24,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/test/regular_tracer.hpp>
 #include <saga/utility/operators.hpp>
 
-#include <catch/catch.hpp>
+#include <catch2/catch_amalgamated.hpp>
 
 #include <cassert>
 

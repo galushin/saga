@@ -20,7 +20,7 @@ SAGA -- это свободной программное обеспечение:
 
 // Тестовая инфраструктура
 #include "./saga_test.hpp"
-#include <catch/catch.hpp>
+#include <catch2/catch_amalgamated.hpp>
 #include <type_traits>
 
 // Вспомогательные файлы
@@ -2876,7 +2876,7 @@ TEST_CASE("bad_expected_access<std::string>")
         using Exception = saga::bad_expected_access<Value>;
         Exception exc(value);
 
-        REQUIRE_THAT(std::string(exc.what()), Catch::Matchers::Contains("expected"));
+        REQUIRE_THAT(std::string(exc.what()), Catch::Matchers::ContainsSubstring("expected"));
 
         Exception const & c_ref = exc;
 

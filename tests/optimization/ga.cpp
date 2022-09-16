@@ -19,7 +19,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/optimization/ga.hpp>
 
 //Инфраструктура тестирования
-#include <catch/catch.hpp>
+#include <catch2/catch_amalgamated.hpp>
 #include "../saga_test.hpp"
 
 // Используемое при тестах

@@ -17,7 +17,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/random/iid_distribution.hpp>
 
-#include <catch/catch.hpp>
+#include <catch2/catch_amalgamated.hpp>
 
 #include "../saga_test.hpp"
 #include "../random_engine.hpp"
@@ -99,8 +99,10 @@ TEST_CASE("iid_distribution<normal_distribution, std::valarray>")
 
         REQUIRE(distr.dim() == dim);
 
-        REQUIRE_THAT(distr.component_distribution().mean(), Catch::WithinULP(unit_distr.mean(), 1));
-        REQUIRE_THAT(distr.component_distribution().stddev(), Catch::WithinULP(unit_distr.stddev(), 1));
+        REQUIRE_THAT(distr.component_distribution().mean()
+                     , Catch::Matchers::WithinULP(unit_distr.mean(), 1));
+        REQUIRE_THAT(distr.component_distribution().stddev()
+                     , Catch::Matchers::WithinULP(unit_distr.stddev(), 1));
     };
 
     // @todo Статистический тест распределения?
