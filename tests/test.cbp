@@ -11,6 +11,7 @@
 				<Option object_output="./obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option parameters="--order rand" />
 				<Compiler>
 					<Add option="-Og" />
 					<Add option="-g" />
@@ -21,6 +22,7 @@
 				<Option object_output="./obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option parameters="--order rand" />
 				<Compiler>
 					<Add option="-O2" />
 				</Compiler>
@@ -143,7 +145,8 @@
 		<Unit filename="algorithm.cpp" />
 		<Unit filename="any.cpp" />
 		<Unit filename="container/reserve_if_supported.cpp" />
-		<Unit filename="contrib/catch2/include/catch/catch.hpp" />
+		<Unit filename="contrib/catch2/include/catch2/catch_amalgamated.cpp" />
+		<Unit filename="contrib/catch2/include/catch2/catch_amalgamated.hpp" />
 		<Unit filename="cpp20/span.cpp" />
 		<Unit filename="cursor/indices.cpp" />
 		<Unit filename="cursor/istream_cursor.cpp" />

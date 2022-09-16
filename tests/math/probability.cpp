@@ -18,7 +18,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/math.hpp>
 #include <saga/math/probability.hpp>
 
-#include <catch/catch.hpp>
+#include <catch2/catch_amalgamated.hpp>
 #include "../saga_test.hpp"
 
 TEST_CASE("probabilty : default initialization")
@@ -27,7 +27,7 @@ TEST_CASE("probabilty : default initialization")
 
     static_assert(std::is_same<decltype(p.value()), double const &>::value, "Must be same!");
 
-    REQUIRE_THAT(p.value(), Catch::WithinULP(0.0, 1));
+    REQUIRE_THAT(p.value(), Catch::Matchers::WithinULP(0.0, 1));
 }
 
 TEST_CASE("probabilty : initialization with correct value")
@@ -40,7 +40,7 @@ TEST_CASE("probabilty : initialization with correct value")
 
         Probability p(p_value);
 
-        REQUIRE_THAT(p.value(), Catch::WithinULP(p_value, 1));
+        REQUIRE_THAT(p.value(), Catch::Matchers::WithinULP(p_value, 1));
     };
 
     saga_test::check_property(property);
@@ -56,7 +56,7 @@ TEST_CASE("probabilty : throw on incorrect value")
         {
             Probability p(p_value);
 
-            REQUIRE_THAT(p.value(), Catch::WithinULP(p_value, 1));
+            REQUIRE_THAT(p.value(), Catch::Matchers::WithinULP(p_value, 1));
         }
         else
         {
