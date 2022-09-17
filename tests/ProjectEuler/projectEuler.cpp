@@ -181,7 +181,8 @@ namespace
 
         constexpr void drop_front()
         {
-            this->cur_ = saga::exchange(this->next_, this->cur_ + this->next_);
+            this->cur_ = saga::exchange(this->next_
+                                       , std::move(this->cur_) + std::move(this->next_));
         }
 
     private:
@@ -1084,6 +1085,14 @@ namespace
                 carry += new_unit / unit_base;
             }
 
+            // @todo Можно ли вообще не вносить ненулевые элементы?
+            while(result.units_.back() == 0)
+            {
+                assert(!result.units_.empty());
+
+                result.units_.pop_back();
+            }
+
             assert(carry == 0);
 
             return result;
@@ -1103,6 +1112,10 @@ namespace
         static_assert(std::is_unsigned<Unit>{});
 
     public:
+        // @todo Сделать настраиваемым через шаблонный параметр,
+        // Добавить проверку, что бит достаточно для хранения квадрата
+        static constexpr auto digits_per_unit = 9;
+
         // Создание, копирование, уничтожение
         integer10() = default;
 
@@ -1205,9 +1218,6 @@ namespace
         }
 
     private:
-        // @todo Добавить условие, что бит достаточно для хранения квадрата
-        static constexpr auto digits_per_unit = 9;
-
         static constexpr auto unit_base = saga::power_natural(Unit(10), digits_per_unit);
 
         std::vector<Unit> units_;
@@ -3256,7 +3266,8 @@ namespace
 
             for(auto index : saga::cursor::indices(1u, row.size()-1))
             {
-                prev_value = std::exchange(row[index], row[index] + std::move(prev_value));
+                prev_value = std::exchange(row[index]
+                                          , std::move(row[index]) + std::move(prev_value));
 
                 if(row[index] > limit_value)
                 {
@@ -3356,6 +3367,123 @@ TEST_CASE("PE 056")
              | saga::cursor::cached1;
 
     REQUIRE(saga::reduce(std::move(cur), 0L, SAGA_OVERLOAD_SET(std::max)) == 972);
+}
+
+// PE 057 - Подходящие цепные дроби квадратного корня
+namespace
+{
+    template <class IntType>
+    class convergent
+    {
+    public:
+        explicit convergent(IntType num)
+         : p_cur_(std::move(num))
+         , q_cur_(1)
+        {}
+
+        IntType const & numerator() const
+        {
+            return this->p_cur_;
+        }
+
+        IntType const & denominator() const
+        {
+            return this->q_cur_;
+        }
+
+        void add(IntType const & arg)
+        {
+            this->update(this->p_cur_, std::move(this->p_prev_), arg);
+            this->update(this->q_cur_, std::move(this->q_prev_), arg);
+        }
+
+    private:
+        static void update(IntType & cur, IntType && prev, IntType const & arg)
+        {
+            prev = saga::exchange(cur, arg * std::move(cur) + std::move(prev));
+        }
+
+        IntType p_cur_ = IntType(0);
+        IntType q_cur_ = IntType(0);
+
+        IntType p_prev_ = IntType(1);
+        IntType q_prev_ = IntType(0);
+    };
+
+    std::size_t digits_count(::integer10 const & num)
+    {
+        if(num.data().empty())
+        {
+            return 0;
+        }
+
+        return (num.data().size() - 1) * num.digits_per_unit
+                + saga::cursor::size(saga::cursor::digits_of(num.data().back(), 10));
+    }
+}
+
+TEMPLATE_TEST_CASE("sqrt(2) convergents", "convergent", int, ::integer10)
+{
+    ::convergent<TestType> conv(TestType(1));
+
+    REQUIRE(conv.numerator() == 1);
+    REQUIRE(conv.denominator() == 1);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 3);
+    REQUIRE(conv.denominator() == 2);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 7);
+    REQUIRE(conv.denominator() == 5);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 17);
+    REQUIRE(conv.denominator() == 12);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 41);
+    REQUIRE(conv.denominator() == 29);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 99);
+    REQUIRE(conv.denominator() == 70);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 239);
+    REQUIRE(conv.denominator() == 169);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 577);
+    REQUIRE(conv.denominator() == 408);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 1393);
+    REQUIRE(conv.denominator() == 985);
+}
+
+TEST_CASE("PE 057")
+{
+    ::convergent<::integer10> conv(::integer10(1));
+
+    std::size_t result = 0;
+
+    for(auto steps = 1000; steps > 0; -- steps)
+    {
+        conv.add(::integer10(2));
+
+        result += (::digits_count(conv.numerator()) > ::digits_count(conv.denominator()));
+    }
+
+    REQUIRE(result == 153);
 }
 
 // PE 097 - Большое не-Мерсеновское простое число
