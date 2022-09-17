@@ -1086,7 +1086,7 @@ namespace
             }
 
             // @todo Можно ли вообще не вносить ненулевые элементы?
-            while(result.units_.back() == 0)
+            while(!result.units_.empty() && result.units_.back() == 0)
             {
                 assert(!result.units_.empty());
 
