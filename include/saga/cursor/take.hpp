@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
  @brief Адаптер курсора, ограниченный заданным количеством элементов базового курсора
 */
 
+#include <saga/utility/pipeable.hpp>
 #include <saga/cursor/cursor_traits.hpp>
 #include <saga/cursor/cursor_facade.hpp>
 
@@ -117,6 +118,13 @@ namespace saga
         take(Cursor cur, Difference count)
         {
             return take_cursor<Cursor, Difference>(std::move(cur), std::move(count));
+        }
+
+        template <class Difference>
+        auto take(Difference count)
+        {
+            return saga::make_pipeable([arg = std::move(count)]
+                                       (auto cur){ return cursor::take(std::move(cur), arg); });
         }
     }
     //namespace cursor

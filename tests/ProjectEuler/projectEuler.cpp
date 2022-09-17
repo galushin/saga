@@ -3486,6 +3486,82 @@ TEST_CASE("PE 057")
     REQUIRE(result == 153);
 }
 
+// PE 065 - Подходящие цепные дроби числа e
+namespace
+{
+    template <class IntType>
+    class cursor_for_continued_fraction_for_e
+     : saga::cursor_facade<cursor_for_continued_fraction_for_e<IntType>, IntType const &>
+    {
+    public:
+        // Типы
+        using cursor_category = std::input_iterator_tag;
+        using reference = IntType const &;
+
+        // Создание, копирование, уничтожение
+        cursor_for_continued_fraction_for_e() = default;
+
+        // Курсор ввода
+        bool operator!() const
+        {
+            return false;
+        }
+
+        reference front() const
+        {
+            return this->value_;
+        }
+
+        void drop_front()
+        {
+            ++ index;
+
+            this->value_ = (index % 3 == 2) ? IntType(2 * ((index+1) / 3)) : IntType(1);
+        }
+
+    private:
+        IntType value_ = IntType(2);
+        std::size_t index = 0;
+    };
+
+    std::size_t PE_065(std::size_t num)
+    {
+        auto cur = ::cursor_for_continued_fraction_for_e<::integer10>{}
+                 | saga::cursor::take(num);
+
+        ::convergent<::integer10> conv(*cur);
+        ++ cur;
+
+        for(; !!cur; ++ cur)
+        {
+            conv.add(*cur);
+        }
+
+        return ::digits_sum(conv.numerator());
+    }
+}
+
+TEST_CASE("continued fraction of e")
+{
+    using IntType = int;
+
+    std::vector<IntType> const expected{2, 1, 2, 1, 1, 4, 1, 1, 6, 1, 1, 8, 1, 1, 10, 1};
+
+    auto cur = ::cursor_for_continued_fraction_for_e<IntType>()
+             | saga::cursor::take(expected.size());
+
+    std::vector<IntType> actual;
+    saga::copy(std::move(cur), saga::back_inserter(actual));
+
+    REQUIRE(actual == expected);
+}
+
+TEST_CASE("PE 065")
+{
+    REQUIRE(::PE_065(10) == 17);
+    REQUIRE(::PE_065(100) == 272);
+}
+
 // PE 097 - Большое не-Мерсеновское простое число
 TEST_CASE("PE 097")
 {
