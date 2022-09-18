@@ -1785,6 +1785,7 @@ namespace
     public:
         // Типы
         using reference = int const &;
+        using difference_type = std::ptrdiff_t;
 
         // Конструктор
         explicit pe_026_cursor(int denom)
@@ -1813,13 +1814,14 @@ namespace
         int denom_ = 1;
     };
 
-    int PE_026_reciprocal_cycle_length(int num)
+    template <class ForwardCursor>
+    saga::cursor_difference_t<ForwardCursor>
+    cycle_length(ForwardCursor slow)
     {
-        assert(num > 0);
-
-        auto slow = pe_026_cursor(num);
-
-        assert(!!slow);
+        if(!slow)
+        {
+            return saga::cursor_difference_t<ForwardCursor>(0);
+        }
 
         auto fast = slow;
         ++ fast;
@@ -1828,7 +1830,7 @@ namespace
         {
             if(!fast)
             {
-                return 0;
+                return saga::cursor_difference_t<ForwardCursor>(0);
             }
 
             if(*slow == *fast)
@@ -1841,19 +1843,26 @@ namespace
 
             if(!fast)
             {
-                return 0;
+                return saga::cursor_difference_t<ForwardCursor>(0);
             }
 
             ++ fast;
         }
 
-        int result = 1;
+        auto result = saga::cursor_difference_t<ForwardCursor>(1);
         ++ fast;
 
         for(; *fast != *slow; ++ fast, ++ result)
         {}
 
         return result;
+    }
+
+    int PE_026_reciprocal_cycle_length(int num)
+    {
+        assert(num > 0);
+
+        return ::cycle_length(pe_026_cursor(num));
     }
 
     int PE_026(int num)
@@ -1864,6 +1873,11 @@ namespace
 
         return saga::max_element(std::move(cur)).base().base().front();
     }
+}
+
+TEST_CASE("cycle_length of empty")
+{
+    REQUIRE(::cycle_length(saga::cursor::indices(0)) == 0);
 }
 
 TEST_CASE("PE 026")
