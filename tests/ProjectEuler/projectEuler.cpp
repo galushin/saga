@@ -1852,7 +1852,7 @@ namespace
         auto result = saga::cursor_difference_t<ForwardCursor>(1);
         ++ fast;
 
-        for(; *fast != *slow; ++ fast, ++ result)
+        for(; !(*fast == *slow); ++ fast, ++ result)
         {}
 
         return result;
@@ -3498,6 +3498,111 @@ TEST_CASE("PE 057")
     }
 
     REQUIRE(result == 153);
+}
+
+// PE 064 - Квадратные корни с нечётным периодом
+namespace
+{
+    template <class IntType>
+    struct PE_64_state
+    {
+        friend bool operator==(PE_64_state const & lhs, PE_64_state const & rhs)
+        {
+            return std::tie(lhs.shift, lhs.denominator)
+                    == std::tie(rhs.shift, rhs.denominator);
+        }
+
+        IntType shift = IntType(0);
+        IntType denominator = IntType(1);
+    };
+
+    template <class IntType>
+    class PE_64_cursor
+     : saga::cursor_facade<PE_64_cursor<IntType>, PE_64_state<IntType> const &>
+    {
+    public:
+        // Типы
+        using reference = PE_64_state<IntType> const &;
+        using difference_type = std::ptrdiff_t;
+
+        // Конструктор
+        /**
+        @pre number >= 0
+        */
+        explicit PE_64_cursor(IntType number)
+         : number_(std::move(number))
+         , sqrt_floor_(std::sqrt(this->number_))
+         , state_{this->sqrt_floor_, 1}
+        {}
+
+        // Курсор ввода
+        bool operator!() const
+        {
+            return this->state_.denominator == 0;
+        }
+
+        reference front() const
+        {
+            return this->state_;
+        }
+
+        void drop_front()
+        {
+            auto denom = this->number_ - saga::square(this->state_.shift);
+
+            assert(this->state_.denominator != 0);
+            assert(denom % this->state_.denominator == 0);
+
+            this->state_.denominator = std::move(denom) / this->state_.denominator;
+
+            if(this->state_.denominator == 0)
+            {
+                return;
+            }
+
+            auto value = (this->sqrt_floor_ + this->state_.shift) / this->state_.denominator;
+
+            this->state_.shift = std::move(value) * this->state_.denominator - this->state_.shift;
+            assert(this->state_.shift > 0);
+        }
+
+    private:
+        IntType number_;
+        IntType sqrt_floor_;
+        PE_64_state<IntType> state_;
+    };
+
+    template <class IntType>
+    std::ptrdiff_t square_root_cycle_length(IntType num)
+    {
+        return ::cycle_length(::PE_64_cursor<IntType>(std::move(num)));
+    }
+
+    template <class IntType>
+    std::size_t PE_064(IntType num)
+    {
+        auto pred = [](auto const & arg) { return ::square_root_cycle_length(arg) % 2 == 1; };
+
+        return saga::count_if(saga::cursor::indices(IntType(2), num + 1), pred);
+    }
+}
+
+TEST_CASE("PE 064")
+{
+    REQUIRE(::square_root_cycle_length(2) == 1);
+    REQUIRE(::square_root_cycle_length(3) == 2);
+    REQUIRE(::square_root_cycle_length(4) == 0);
+    REQUIRE(::square_root_cycle_length(5) == 1);
+    REQUIRE(::square_root_cycle_length(6) == 2);
+    REQUIRE(::square_root_cycle_length(7) == 4);
+    REQUIRE(::square_root_cycle_length(8) == 2);
+    REQUIRE(::square_root_cycle_length(10) == 1);
+    REQUIRE(::square_root_cycle_length(11) == 2);
+    REQUIRE(::square_root_cycle_length(12) == 2);
+    REQUIRE(::square_root_cycle_length(13) == 5);
+
+    REQUIRE(::PE_064(13) == 4);
+    REQUIRE(::PE_064(10'000) == 1322);
 }
 
 // PE 065 - Подходящие цепные дроби числа e
