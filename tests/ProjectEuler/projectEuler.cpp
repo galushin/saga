@@ -181,7 +181,8 @@ namespace
 
         constexpr void drop_front()
         {
-            this->cur_ = saga::exchange(this->next_, this->cur_ + this->next_);
+            this->cur_ = saga::exchange(this->next_
+                                       , std::move(this->cur_) + std::move(this->next_));
         }
 
     private:
@@ -1084,6 +1085,14 @@ namespace
                 carry += new_unit / unit_base;
             }
 
+            // @todo Можно ли вообще не вносить ненулевые элементы?
+            while(!result.units_.empty() && result.units_.back() == 0)
+            {
+                assert(!result.units_.empty());
+
+                result.units_.pop_back();
+            }
+
             assert(carry == 0);
 
             return result;
@@ -1103,6 +1112,10 @@ namespace
         static_assert(std::is_unsigned<Unit>{});
 
     public:
+        // @todo Сделать настраиваемым через шаблонный параметр,
+        // Добавить проверку, что бит достаточно для хранения квадрата
+        static constexpr auto digits_per_unit = 9;
+
         // Создание, копирование, уничтожение
         integer10() = default;
 
@@ -1205,9 +1218,6 @@ namespace
         }
 
     private:
-        // @todo Добавить условие, что бит достаточно для хранения квадрата
-        static constexpr auto digits_per_unit = 9;
-
         static constexpr auto unit_base = saga::power_natural(Unit(10), digits_per_unit);
 
         std::vector<Unit> units_;
@@ -1775,6 +1785,7 @@ namespace
     public:
         // Типы
         using reference = int const &;
+        using difference_type = std::ptrdiff_t;
 
         // Конструктор
         explicit pe_026_cursor(int denom)
@@ -1803,13 +1814,14 @@ namespace
         int denom_ = 1;
     };
 
-    int PE_026_reciprocal_cycle_length(int num)
+    template <class ForwardCursor>
+    saga::cursor_difference_t<ForwardCursor>
+    cycle_length(ForwardCursor slow)
     {
-        assert(num > 0);
-
-        auto slow = pe_026_cursor(num);
-
-        assert(!!slow);
+        if(!slow)
+        {
+            return saga::cursor_difference_t<ForwardCursor>(0);
+        }
 
         auto fast = slow;
         ++ fast;
@@ -1818,7 +1830,7 @@ namespace
         {
             if(!fast)
             {
-                return 0;
+                return saga::cursor_difference_t<ForwardCursor>(0);
             }
 
             if(*slow == *fast)
@@ -1831,19 +1843,26 @@ namespace
 
             if(!fast)
             {
-                return 0;
+                return saga::cursor_difference_t<ForwardCursor>(0);
             }
 
             ++ fast;
         }
 
-        int result = 1;
+        auto result = saga::cursor_difference_t<ForwardCursor>(1);
         ++ fast;
 
-        for(; *fast != *slow; ++ fast, ++ result)
+        for(; !(*fast == *slow); ++ fast, ++ result)
         {}
 
         return result;
+    }
+
+    int PE_026_reciprocal_cycle_length(int num)
+    {
+        assert(num > 0);
+
+        return ::cycle_length(pe_026_cursor(num));
     }
 
     int PE_026(int num)
@@ -1854,6 +1873,11 @@ namespace
 
         return saga::max_element(std::move(cur)).base().base().front();
     }
+}
+
+TEST_CASE("cycle_length of empty")
+{
+    REQUIRE(::cycle_length(saga::cursor::indices(0)) == 0);
 }
 
 TEST_CASE("PE 026")
@@ -3256,7 +3280,8 @@ namespace
 
             for(auto index : saga::cursor::indices(1u, row.size()-1))
             {
-                prev_value = std::exchange(row[index], row[index] + std::move(prev_value));
+                prev_value = std::exchange(row[index]
+                                          , std::move(row[index]) + std::move(prev_value));
 
                 if(row[index] > limit_value)
                 {
@@ -3356,6 +3381,309 @@ TEST_CASE("PE 056")
              | saga::cursor::cached1;
 
     REQUIRE(saga::reduce(std::move(cur), 0L, SAGA_OVERLOAD_SET(std::max)) == 972);
+}
+
+// PE 057 - Подходящие цепные дроби квадратного корня
+namespace
+{
+    template <class IntType>
+    class convergent
+    {
+    public:
+        explicit convergent(IntType num)
+         : p_cur_(std::move(num))
+         , q_cur_(1)
+        {}
+
+        IntType const & numerator() const
+        {
+            return this->p_cur_;
+        }
+
+        IntType const & denominator() const
+        {
+            return this->q_cur_;
+        }
+
+        void add(IntType const & arg)
+        {
+            this->update(this->p_cur_, std::move(this->p_prev_), arg);
+            this->update(this->q_cur_, std::move(this->q_prev_), arg);
+        }
+
+    private:
+        static void update(IntType & cur, IntType && prev, IntType const & arg)
+        {
+            prev = saga::exchange(cur, arg * std::move(cur) + std::move(prev));
+        }
+
+        IntType p_cur_ = IntType(0);
+        IntType q_cur_ = IntType(0);
+
+        IntType p_prev_ = IntType(1);
+        IntType q_prev_ = IntType(0);
+    };
+
+    std::size_t digits_count(::integer10 const & num)
+    {
+        if(num.data().empty())
+        {
+            return 0;
+        }
+
+        return (num.data().size() - 1) * num.digits_per_unit
+                + saga::cursor::size(saga::cursor::digits_of(num.data().back(), 10));
+    }
+}
+
+TEST_CASE("integer10(0) digits_count")
+{
+    REQUIRE(::digits_count(::integer10()) == 0);
+}
+
+TEMPLATE_TEST_CASE("sqrt(2) convergents", "convergent", int, ::integer10)
+{
+    ::convergent<TestType> conv(TestType(1));
+
+    REQUIRE(conv.numerator() == 1);
+    REQUIRE(conv.denominator() == 1);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 3);
+    REQUIRE(conv.denominator() == 2);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 7);
+    REQUIRE(conv.denominator() == 5);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 17);
+    REQUIRE(conv.denominator() == 12);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 41);
+    REQUIRE(conv.denominator() == 29);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 99);
+    REQUIRE(conv.denominator() == 70);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 239);
+    REQUIRE(conv.denominator() == 169);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 577);
+    REQUIRE(conv.denominator() == 408);
+
+    conv.add(TestType(2));
+
+    REQUIRE(conv.numerator() == 1393);
+    REQUIRE(conv.denominator() == 985);
+}
+
+TEST_CASE("PE 057")
+{
+    ::convergent<::integer10> conv(::integer10(1));
+
+    std::size_t result = 0;
+
+    for(auto steps = 1000; steps > 0; -- steps)
+    {
+        conv.add(::integer10(2));
+
+        result += (::digits_count(conv.numerator()) > ::digits_count(conv.denominator()));
+    }
+
+    REQUIRE(result == 153);
+}
+
+// PE 064 - Квадратные корни с нечётным периодом
+namespace
+{
+    template <class IntType>
+    struct PE_64_state
+    {
+        friend bool operator==(PE_64_state const & lhs, PE_64_state const & rhs)
+        {
+            return std::tie(lhs.shift, lhs.denominator)
+                    == std::tie(rhs.shift, rhs.denominator);
+        }
+
+        IntType shift = IntType(0);
+        IntType denominator = IntType(1);
+    };
+
+    template <class IntType>
+    class PE_64_cursor
+     : saga::cursor_facade<PE_64_cursor<IntType>, PE_64_state<IntType> const &>
+    {
+    public:
+        // Типы
+        using reference = PE_64_state<IntType> const &;
+        using difference_type = std::ptrdiff_t;
+
+        // Конструктор
+        /**
+        @pre number >= 0
+        */
+        explicit PE_64_cursor(IntType number)
+         : number_(std::move(number))
+         , sqrt_floor_(std::sqrt(this->number_))
+         , state_{this->sqrt_floor_, 1}
+        {}
+
+        // Курсор ввода
+        bool operator!() const
+        {
+            return this->state_.denominator == 0;
+        }
+
+        reference front() const
+        {
+            return this->state_;
+        }
+
+        void drop_front()
+        {
+            auto denom = this->number_ - saga::square(this->state_.shift);
+
+            assert(this->state_.denominator != 0);
+            assert(denom % this->state_.denominator == 0);
+
+            this->state_.denominator = std::move(denom) / this->state_.denominator;
+
+            if(this->state_.denominator == 0)
+            {
+                return;
+            }
+
+            auto value = (this->sqrt_floor_ + this->state_.shift) / this->state_.denominator;
+
+            this->state_.shift = std::move(value) * this->state_.denominator - this->state_.shift;
+            assert(this->state_.shift > 0);
+        }
+
+    private:
+        IntType number_;
+        IntType sqrt_floor_;
+        PE_64_state<IntType> state_;
+    };
+
+    template <class IntType>
+    std::ptrdiff_t square_root_cycle_length(IntType num)
+    {
+        return ::cycle_length(::PE_64_cursor<IntType>(std::move(num)));
+    }
+
+    template <class IntType>
+    std::size_t PE_064(IntType num)
+    {
+        auto pred = [](auto const & arg) { return ::square_root_cycle_length(arg) % 2 == 1; };
+
+        return saga::count_if(saga::cursor::indices(IntType(2), num + 1), pred);
+    }
+}
+
+TEST_CASE("PE 064")
+{
+    REQUIRE(::square_root_cycle_length(2) == 1);
+    REQUIRE(::square_root_cycle_length(3) == 2);
+    REQUIRE(::square_root_cycle_length(4) == 0);
+    REQUIRE(::square_root_cycle_length(5) == 1);
+    REQUIRE(::square_root_cycle_length(6) == 2);
+    REQUIRE(::square_root_cycle_length(7) == 4);
+    REQUIRE(::square_root_cycle_length(8) == 2);
+    REQUIRE(::square_root_cycle_length(10) == 1);
+    REQUIRE(::square_root_cycle_length(11) == 2);
+    REQUIRE(::square_root_cycle_length(12) == 2);
+    REQUIRE(::square_root_cycle_length(13) == 5);
+
+    REQUIRE(::PE_064(13) == 4);
+    REQUIRE(::PE_064(10'000) == 1322);
+}
+
+// PE 065 - Подходящие цепные дроби числа e
+namespace
+{
+    template <class IntType>
+    class cursor_for_continued_fraction_for_e
+     : saga::cursor_facade<cursor_for_continued_fraction_for_e<IntType>, IntType const &>
+    {
+    public:
+        // Типы
+        using cursor_category = std::input_iterator_tag;
+        using reference = IntType const &;
+
+        // Создание, копирование, уничтожение
+        cursor_for_continued_fraction_for_e() = default;
+
+        // Курсор ввода
+        bool operator!() const
+        {
+            return false;
+        }
+
+        reference front() const
+        {
+            return this->value_;
+        }
+
+        void drop_front()
+        {
+            ++ index;
+
+            this->value_ = (index % 3 == 2) ? IntType(2 * ((index+1) / 3)) : IntType(1);
+        }
+
+    private:
+        IntType value_ = IntType(2);
+        std::size_t index = 0;
+    };
+
+    std::size_t PE_065(std::size_t num)
+    {
+        auto cur = ::cursor_for_continued_fraction_for_e<::integer10>{}
+                 | saga::cursor::take(num);
+
+        ::convergent<::integer10> conv(*cur);
+        ++ cur;
+
+        for(; !!cur; ++ cur)
+        {
+            conv.add(*cur);
+        }
+
+        return ::digits_sum(conv.numerator());
+    }
+}
+
+TEST_CASE("continued fraction of e")
+{
+    using IntType = int;
+
+    std::vector<IntType> const expected{2, 1, 2, 1, 1, 4, 1, 1, 6, 1, 1, 8, 1, 1, 10, 1};
+
+    auto cur = ::cursor_for_continued_fraction_for_e<IntType>()
+             | saga::cursor::take(expected.size());
+
+    std::vector<IntType> actual;
+    saga::copy(std::move(cur), saga::back_inserter(actual));
+
+    REQUIRE(actual == expected);
+}
+
+TEST_CASE("PE 065")
+{
+    REQUIRE(::PE_065(10) == 17);
+    REQUIRE(::PE_065(100) == 272);
 }
 
 // PE 097 - Большое не-Мерсеновское простое число
