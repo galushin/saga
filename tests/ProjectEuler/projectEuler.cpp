@@ -3436,6 +3436,11 @@ namespace
     }
 }
 
+TEST_CASE("integer10(0) digits_count")
+{
+    REQUIRE(::digits_count(::integer10()) == 0);
+}
+
 TEMPLATE_TEST_CASE("sqrt(2) convergents", "convergent", int, ::integer10)
 {
     ::convergent<TestType> conv(TestType(1));
