@@ -23,7 +23,6 @@ SAGA -- это свободной программное обеспечение:
 #include "../saga_test.hpp"
 
 // Вспомогательные файлы
-#include <complex>
 #include <utility>
 
 // Тесты
@@ -134,20 +133,18 @@ TEST_CASE("invocable_tracer: variable member pointer")
 
 TEST_CASE("invocable_tracer: function member pointer")
 {
-    using Scalar = double;
+    using Value = int;
+    using Container = std::vector<Value>;
 
-    saga_test::property_checker <<[](Scalar const real, Scalar const imag)
+    saga_test::property_checker <<[](Container const & value)
     {
-        using Complex = std::complex<Scalar>;
+        auto pmf = static_cast<Container::size_type (Container::*)() const>(&Container::size);
 
-        auto const pmf = static_cast<Scalar (Complex::*)() const>(&Complex::real);
-
-        auto value = Complex(real, imag);
         auto const tracer = saga::make_invocable_tracer(pmf);
 
         auto const invoke_count_old = tracer.invoke_count();
 
-        REQUIRE(tracer(value) == real);
+        REQUIRE(tracer(value) == value.size());
         REQUIRE(tracer.invoke_count() == invoke_count_old + 1);
     };
 }

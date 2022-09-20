@@ -26,7 +26,7 @@ SAGA -- это свободной программное обеспечение:
 
 TEST_CASE("iid_distribution<bernoully_distribution> simple sample")
 {
-    saga_test::property_checker << [](saga_test::container_size<int> const dim)
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> const dim)
     {
         saga::iid_distribution<std::bernoulli_distribution> distr(dim);
 
@@ -44,7 +44,7 @@ TEST_CASE("iid_distribution<bernoully_distribution> simple sample")
 
 TEST_CASE("iid_distribution<bernoully_distribution, std::valarray>")
 {
-    saga_test::property_checker << [](saga_test::container_size<int> const dim)
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> const dim)
     {
         saga::iid_distribution_deduced<std::bernoulli_distribution, std::valarray> distr(dim);
 
@@ -62,7 +62,7 @@ TEST_CASE("iid_distribution<bernoully_distribution, std::valarray>")
 
 TEST_CASE("iid_distribution<bernoully_distribution, std::vector>")
 {
-    saga_test::property_checker << [](saga_test::container_size<int> const dim)
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> const dim)
     {
         saga::iid_distribution_deduced<std::bernoulli_distribution, std::vector> distr(dim);
 
@@ -79,7 +79,7 @@ TEST_CASE("iid_distribution<bernoully_distribution, std::vector>")
 TEST_CASE("iid_distribution<normal_distribution, std::valarray>")
 {
     saga_test::property_checker
-    << [](saga_test::container_size<int> const dim)
+    << [](saga_test::container_size<std::size_t> const dim)
     {
         auto const mean = saga_test::random_uniform(-10.0, 10.0);
         auto const sigma = saga_test::random_uniform(0.1, 10.0);

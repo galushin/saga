@@ -38,23 +38,23 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
-    inline constexpr std::ptrdiff_t dynamic_extent = -1;
+    inline constexpr std::size_t dynamic_extent = std::numeric_limits<std::size_t>::max();
 
     namespace detail
     {
-        template <class Pointer, std::ptrdiff_t extent>
+        template <class Pointer, std::size_t extent>
         struct span_base
         {
             span_base() = default;
 
-            constexpr span_base(Pointer data, std::ptrdiff_t size)
+            constexpr span_base(Pointer data, std::size_t size)
              : ptr(data)
             {
                 assert(size == extent);
             }
 
             Pointer ptr = nullptr;
-            static constexpr std::ptrdiff_t size = extent;
+            static constexpr std::size_t size = extent;
         };
 
         template <class Pointer>
@@ -62,28 +62,29 @@ namespace saga
         {
             span_base() = default;
 
-            constexpr span_base(Pointer data, std::ptrdiff_t size)
+            constexpr span_base(Pointer data, std::size_t size)
              : ptr(data)
              , size(size)
             {}
 
             Pointer ptr = nullptr;
-            std::ptrdiff_t size = 0;
+            std::size_t size = 0;
         };
     }
     // namespace detail
 
-    template <class ElementType, std::ptrdiff_t Extent = dynamic_extent>
+    template <class ElementType, std::size_t Extent = saga::dynamic_extent>
     class span
-     : detail::default_ctor_enabler<(Extent <= 0)>
+     : detail::default_ctor_enabler<Extent == 0 || Extent == saga::dynamic_extent>
     {
-        using default_ctor_enabler = detail::default_ctor_enabler<(Extent <= 0)>;
+        using default_ctor_enabler
+            = detail::default_ctor_enabler<Extent == 0 || Extent == saga::dynamic_extent>;
 
     public:
         // Константы и типы
         using element_type = ElementType;
         using value_type = std::remove_cv_t<element_type>;
-        using index_type = std::ptrdiff_t;
+        using size_type = std::size_t;
         using difference_type = std::ptrdiff_t;
         using pointer = element_type *;
         using reference = element_type &;
@@ -91,13 +92,13 @@ namespace saga
         using const_iterator = element_type const *;
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-        static constexpr index_type extent = Extent;
+        static constexpr size_type extent = Extent;
 
         // Конструкторы, копирование и присваивание
         constexpr span() noexcept = default;
 
         // @todo Покрыть тестами, что этот конструктор должен быть constexpr
-        span(pointer ptr, index_type count)
+        span(pointer ptr, size_type count)
          : default_ctor_enabler(0)
          , base_(ptr, count)
         {}
@@ -165,7 +166,7 @@ namespace saga
 
         // Подинтервалы
         span<element_type, dynamic_extent>
-        first(index_type count) const
+        first(size_type count) const
         {
             assert(0 <= count && count <= this->size());
 
@@ -173,7 +174,7 @@ namespace saga
         }
 
         span<element_type, dynamic_extent>
-        last(index_type count) const
+        last(size_type count) const
         {
             assert(0 <= count && count <= this->size());
 
@@ -181,7 +182,7 @@ namespace saga
         }
 
         span<element_type, dynamic_extent>
-        subspan(index_type offset, index_type count = dynamic_extent) const
+        subspan(size_type offset, size_type count = dynamic_extent) const
         {
             assert(0 <= offset && offset <= this->size());
             assert(count == saga::dynamic_extent || (0 <= count && offset + count <= this->size()));
@@ -192,12 +193,12 @@ namespace saga
         }
 
         // Свойства
-        constexpr index_type size() const noexcept
+        constexpr size_type size() const noexcept
         {
             return this->base_.size;
         }
 
-        constexpr index_type size_bytes() const noexcept
+        constexpr size_type size_bytes() const noexcept
         {
             return this->size() * sizeof(element_type);
         }
@@ -208,7 +209,7 @@ namespace saga
         }
 
         // Доступ к элементам
-        reference operator[](index_type index) const
+        reference operator[](size_type index) const
         {
             assert(0 <= index && index < this->size());
 

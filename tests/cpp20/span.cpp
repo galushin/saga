@@ -39,7 +39,7 @@ TEST_CASE("span: types and static constants, static extent")
 
     static_assert(std::is_same<Span::element_type, Element>::value, "");
     static_assert(std::is_same<Span::value_type, Value>::value, "");
-    static_assert(std::is_same<Span::index_type, std::ptrdiff_t>::value, "");
+    static_assert(std::is_same<Span::size_type, std::size_t>::value, "");
     static_assert(std::is_same<Span::difference_type, std::ptrdiff_t>::value, "");
     static_assert(std::is_same<Span::pointer, Element*>::value, "");
     static_assert(std::is_same<Span::reference, Element&>::value, "");
@@ -47,7 +47,7 @@ TEST_CASE("span: types and static constants, static extent")
     struct span_structure
     {
         Span::pointer ptr;
-        Span::index_type size;
+        Span::size_type size;
     };
 
     static_assert(sizeof(Span) <= sizeof(span_structure), "");
@@ -65,7 +65,7 @@ TEST_CASE("span: types and static constants, static extent")
                                std::reverse_iterator<CIter>>::value, "");
     static_assert(Span::extent == n_elements, "");
     static_assert(std::is_same<decltype(Span::extent),
-                               Span::index_type const>::value, "");
+                               Span::size_type const>::value, "");
 }
 
 TEST_CASE("span: types and static constants, dynamic extent")
@@ -79,7 +79,7 @@ TEST_CASE("span: types and static constants, dynamic extent")
 
     static_assert(std::is_same<Span::element_type, Element>::value, "");
     static_assert(std::is_same<Span::value_type, Value>::value, "");
-    static_assert(std::is_same<Span::index_type, ptrdiff_t>::value, "");
+    static_assert(std::is_same<Span::size_type, std::size_t>::value, "");
     static_assert(std::is_same<Span::difference_type, ptrdiff_t>::value, "");
     static_assert(std::is_same<Span::pointer, Element*>::value, "");
     static_assert(std::is_same<Span::reference, Element&>::value, "");
@@ -96,7 +96,7 @@ TEST_CASE("span: types and static constants, dynamic extent")
                                std::reverse_iterator<CIter>>::value, "");
     static_assert(Span::extent == saga::dynamic_extent, "");
     static_assert(std::is_same<decltype(Span::extent),
-                               Span::index_type const>::value, "");
+                               Span::size_type const>::value, "");
 }
 
 // Конструирование, копирование, присваивание
@@ -160,7 +160,7 @@ TEST_CASE("span : initialization from range, defined by two pointers")
 
         saga::span<Element const> const s(first, last);
 
-        REQUIRE(s.size() == last - first);
+        REQUIRE(s.size() == static_cast<std::size_t>(last - first));
         REQUIRE(s.data() == first);
     };
 }
@@ -354,18 +354,18 @@ TEST_CASE("span : first and last")
     {
         saga::span<Element const> const s(src);
 
-        auto const n = saga_test::random_position_of(s);
+        auto const num = static_cast<std::size_t>(saga_test::random_position_of(s));
 
-        auto const s1 = s.first(n);
-        auto const s2 = s.last(n);
+        auto const s1 = s.first(num);
+        auto const s2 = s.last(num);
 
         static_assert(std::is_same<decltype(s1), saga::span<Element const> const>::value, "");
 
-        REQUIRE(s1.size() == n);
+        REQUIRE(s1.size() == num);
         REQUIRE(s1.data() == s.data());
 
-        REQUIRE(s2.size() == n);
-        REQUIRE(s2.data() == s.data() + (s.size() - n));
+        REQUIRE(s2.size() == num);
+        REQUIRE(s2.data() == s.data() + (s.size() - num));
     };
 }
 

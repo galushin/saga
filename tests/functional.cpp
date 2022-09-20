@@ -71,24 +71,20 @@ TEST_CASE("increment and decrement functional objects")
         << ::test_decrement<unsigned, saga::decrement<>>;
 }
 
-#include <complex>
-
 TEST_CASE("invoke: function member pointer")
 {
-    using Scalar = double;
+    using Value = int;
+    using Container = std::vector<Value>;
 
-    saga_test::property_checker <<[](Scalar const real, Scalar const imag)
+    saga_test::property_checker <<[](Container const & value)
     {
-        using Complex = std::complex<Scalar>;
-        auto const value = Complex(real, imag);
+        auto pmf = static_cast<Container::size_type (Container::*)() const>(&Container::size);
 
-        auto pmf = static_cast<Scalar (Complex::*)() const>(&Complex::real);
+        REQUIRE(saga::invoke(pmf, value) == value.size());
 
-        REQUIRE(saga::invoke(pmf, value) == value.real());
+        REQUIRE(saga::invoke(pmf, std::ref(value)) == value.size());
 
-        REQUIRE(saga::invoke(pmf, std::ref(value)) == value.real());
-
-        REQUIRE(saga::invoke(pmf, std::addressof(value)) == value.real());
+        REQUIRE(saga::invoke(pmf, std::addressof(value)) == value.size());
     };
 }
 

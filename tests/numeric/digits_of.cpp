@@ -59,19 +59,15 @@ TEST_CASE("digits_of - reverse of poynomial_horner")
     using NotNegativeInteger = unsigned;
 
     saga_test::property_checker << [](NotNegativeInteger const & value
-                                      , saga_test::bounded<NotNegativeInteger, 2, 100> const & base)
+                                      , saga_test::bounded<int, 2, 100> const & base)
     {
         std::vector<int> digits;
         saga::copy(saga::cursor::digits_of(value, base.value()), saga::back_inserter(digits));
         saga::reverse(saga::cursor::all(digits));
 
         // Цифры в заданном диапазоне
-        // @todo Заменить на алгоритм - all_of?
-        for(auto const & digit : digits)
-        {
-            REQUIRE(0 <= digit);
-            REQUIRE(digit < base);
-        }
+        REQUIRE(saga::all_of(saga::cursor::all(digits)
+                             , [&](int const & digit){ return 0 <= digit && digit < base; }));
 
         // Обратное преобразование приводит к исходному числу
         auto const ans
