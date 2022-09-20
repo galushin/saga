@@ -2770,20 +2770,6 @@ TEST_CASE("expected: observers")
 
 TEST_CASE("expected: value_or() const &")
 {
-    using Value = long;
-    using Error = std::string;
-    using OtherValue = int;
-
-    saga_test::property_checker
-    << [](Value const & value, Error const & error, OtherValue const & other)
-    {
-        saga::expected<Value, Error> const obj_value(saga::in_place_t{}, value);
-        saga::expected<Value, Error> const obj_error(saga::unexpect_t{}, error);
-
-        ::check_expected_value_or(obj_value, other);
-        ::check_expected_value_or(obj_error, other);
-    };
-
     {
         using Value = long;
         using Error = void *;
@@ -2801,6 +2787,22 @@ TEST_CASE("expected: value_or() const &")
 
         static_assert(Expected(saga::in_place_t{}, value).value_or(other_value) == value, "");
         static_assert(Expected(saga::unexpect_t{}, error).value_or(other_value) == other_value, "");
+    }
+
+    {
+        using Value = long;
+        using Error = std::string;
+        using OtherValue = int;
+
+        saga_test::property_checker
+        << [](Value const & value, Error const & error, OtherValue const & other)
+        {
+            saga::expected<Value, Error> const obj_value(saga::in_place_t{}, value);
+            saga::expected<Value, Error> const obj_error(saga::unexpect_t{}, error);
+
+            ::check_expected_value_or(obj_value, other);
+            ::check_expected_value_or(obj_error, other);
+        };
     }
 }
 

@@ -2609,7 +2609,7 @@ namespace
     }
 
     template <class IntType>
-    IntType PE_043_6th_digit(std::string str, int digit)
+    IntType PE_043_6th_digit(std::string arg, int digit)
     {
         constexpr auto n_half = 5;
 
@@ -2628,7 +2628,7 @@ namespace
             return saga::power_natural(10, str.size() - n_half) * num + num2;
         };
 
-        auto cur = ::permutations(str)
+        auto cur = ::permutations(arg)
                  | saga::cursor::transform(to_number)
                  | saga::cursor::filter(::PE_043_check<IntType>);
 

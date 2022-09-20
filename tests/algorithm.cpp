@@ -1161,7 +1161,7 @@ TEST_CASE("search_n: default predicate, guaranty")
 
     saga_test::property_checker
     <<[](std::list<Value> const & prefix, std::list<Value> const & suffix
-         , saga_test::container_size<std::size_t> const & num, Value const & value)
+         , saga_test::container_size<std::ptrdiff_t> const & num, Value const & value)
     {
         auto const haystack = [&]
         {
@@ -1944,7 +1944,7 @@ TEST_CASE("generate_n - minimal")
         Value value_ = 0;
     };
 
-    saga_test::property_checker << [](saga_test::container_size<std::ptrdiff_t> num)
+    saga_test::property_checker << [](saga_test::container_size<std::size_t> num)
     {
         // saga
         std::vector<Value> dest_saga;
@@ -2851,7 +2851,8 @@ TEST_CASE("sample: Forward -> Output")
         saga::sample(input, saga::back_inserter(dest), num.value, saga_test::random_engine());
 
         // Проверки
-        REQUIRE(dest.size() == std::min(num.value, saga::cursor::size(input)));
+        REQUIRE(static_cast<std::ptrdiff_t>(dest.size())
+                == std::min(num.value, saga::cursor::size(input)));
 
         {
             auto pos = input;
@@ -5849,7 +5850,7 @@ TEST_CASE("adjacent_count: default predicate")
         {
             auto const input2 = saga::cursor::drop_front_n(input, 1);
 
-            auto const expected = saga::inner_product(input, input2, std::size_t{0}
+            auto const expected = saga::inner_product(input, input2, std::ptrdiff_t{0}
                                                        , std::plus<>{}, std::equal_to<>{});
 
             REQUIRE(actual == expected);
@@ -5882,7 +5883,7 @@ TEST_CASE("adjacent_count: custom predicate")
         {
             auto const input2 = saga::cursor::drop_front_n(input, 1);
 
-            auto const expected = saga::inner_product(input, input2, std::size_t{0}
+            auto const expected = saga::inner_product(input, input2, std::ptrdiff_t{0}
                                                        , std::plus<>{}, pred);
 
             REQUIRE(actual == expected);
