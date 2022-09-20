@@ -3505,6 +3505,33 @@ TEST_CASE("PE 057")
     REQUIRE(result == 153);
 }
 
+// PE 063 - Количество цифр степеней
+/* Число 10^n содержит n+1 цифр, поэтому основания больше 9 проверять смысла нет.
+ Степени n, для которых уже нет смысла проверять, определяется неравенством 9^n < 10^(n-1).
+ (n-1) > n * log10(9)
+ n(1-log10(9)) > 1
+ n > 1/((1-log10(9)))
+
+ Если число b меньше 10, то в b^n не больше n цифр, поэтому при наших пределах перебора проверка
+ сверху не требуется.
+
+ Проверка снизу производится с помощью логарифмирования и упрощения неравенства
+ b^n >= 10^(n-1)
+ n log10(b) >= (n-1)
+ log10(b) >= 1 - 1 / n
+*/
+TEST_CASE("PE 063")
+{
+    auto const power_max = static_cast<std::size_t>(std::ceil(1.0 / (1 - std::log10(9))));
+
+    auto cur = saga::cursor::cartesian_product(saga::cursor::indices(1u, power_max)
+                                               , saga::cursor::indices(1, 10));
+
+    auto pred = [](auto const & arg) { return std::log10(arg.second) >= 1 - 1.0 / arg.first; };
+
+    REQUIRE(saga::count_if(cur, pred) == 49);
+}
+
 // PE 064 - Квадратные корни с нечётным периодом
 namespace
 {
