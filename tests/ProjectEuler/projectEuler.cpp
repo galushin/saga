@@ -3507,29 +3507,20 @@ TEST_CASE("PE 057")
 
 // PE 063 - Количество цифр степеней
 /* Число 10^n содержит n+1 цифр, поэтому основания больше 9 проверять смысла нет.
- Степени n, для которых уже нет смысла проверять, определяется неравенством 9^n < 10^(n-1).
- (n-1) > n * log10(9)
- n(1-log10(9)) > 1
- n > 1/((1-log10(9)))
+ Степени n числа b, для которых уже нет смысла проверять, определяется неравенством b^n < 10^(n-1).
+ (n-1) > n * log10(b)
+ n(1-log10(b)) > 1
+ n > 1/(1-log10(b))
 
- Если число b меньше 10, то в b^n не больше n цифр, поэтому при наших пределах перебора проверка
- сверху не требуется.
-
- Проверка снизу производится с помощью логарифмирования и упрощения неравенства
- b^n >= 10^(n-1)
- n log10(b) >= (n-1)
- log10(b) >= 1 - 1 / n
+ Так как b^1 == b, то при n от 1 до 1/(1-log10(b)) числа b^n содержат n цифр
 */
 TEST_CASE("PE 063")
 {
-    auto const power_max = static_cast<std::size_t>(std::ceil(1.0 / (1 - std::log10(9))));
+    auto max_power = [](auto num){ return static_cast<std::size_t>(1/(1 - std::log10(num)));};
 
-    auto cur = saga::cursor::cartesian_product(saga::cursor::indices(1u, power_max)
-                                               , saga::cursor::indices(1, 10));
-
-    auto pred = [](auto const & arg) { return std::log10(arg.second) >= 1 - 1.0 / arg.first; };
-
-    REQUIRE(saga::count_if(cur, pred) == 49);
+    auto const result = saga::transform_reduce(saga::cursor::indices(1, 10), std::size_t(0)
+                                               , std::plus<>{}, max_power);
+    REQUIRE(result == 49);
 }
 
 // PE 064 - Квадратные корни с нечётным периодом
