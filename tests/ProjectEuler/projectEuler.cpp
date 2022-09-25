@@ -3385,6 +3385,11 @@ namespace
                 else
                 {
                     result.low_pair = value;
+                    if(result.low_pair > result.high_pair)
+                    {
+                        using std::swap;
+                        swap(result.low_pair, result.high_pair);
+                    }
                 }
             }
         }
@@ -3609,6 +3614,7 @@ TEST_CASE("PE 054")
     CHECK(::PE_054_line("2H KD 4C 4D 4S 3C 3D 3S 9S QD") == true);
     CHECK(::PE_054_line("2H 2D 4C 4D JS 3C 3D TS 9S 9D") == false);
     CHECK(::PE_054_line("2H 2D 4C 4D JS 3C 3D TS 4S 4H") == false);
+    CHECK(::PE_054_line("2H 2D 4C 4D JS 2C 2H TS 3S 3H") == true);
     CHECK(::PE_054_line("3H 3D 4C 4D QS 3S 3D TS 4S 4H") == true);
 
     CHECK(::PE_054_file("ProjectEuler/p054_poker.txt") == 376);
