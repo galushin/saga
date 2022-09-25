@@ -3519,6 +3519,11 @@ namespace
 
         for(auto const & number : saga::cursor::iota(IntType(1)))
         {
+            if(number >= std::numeric_limits<IntType>::max() / number / number)
+            {
+                break;
+            }
+
             auto const cube = saga::power_natural(number, 3);
             auto str = std::to_string(cube);
             saga::sort(saga::cursor::all(str));
@@ -3546,8 +3551,11 @@ namespace
 
             ref.second += 1;
         }
+
+        throw std::range_error("PE 062 : answer is not found");
     }
 }
+
 TEST_CASE("PE 062")
 {
     using IntType = std::uint64_t;
@@ -3556,6 +3564,8 @@ TEST_CASE("PE 062")
     REQUIRE(::PE_062<IntType>(5) == 127035954683);
 
     REQUIRE(::PE_062<IntType>(6) == 1000600120008);
+
+    REQUIRE_THROWS(::PE_062<int>(5));
 }
 
 // PE 063 - Количество цифр степеней
