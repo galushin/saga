@@ -3416,14 +3416,10 @@ namespace
         // Четыре карты
         if(lhs_summary.four > 0 && rhs_summary.four > 0)
         {
-            if(lhs_summary.four != rhs_summary.four)
-            {
-                return lhs_summary.four < rhs_summary.four;
-            }
-            else
-            {
-                return less_by_highest(lhs, rhs);
-            }
+            // Не может быть 8 карт одного номинала
+            assert(lhs_summary.four != rhs_summary.four);
+
+            return lhs_summary.four < rhs_summary.four;
         }
         else if(lhs_summary.four > 0 || rhs_summary.four > 0)
         {
@@ -3434,19 +3430,10 @@ namespace
         if(lhs_summary.triple > 0 && lhs_summary.high_pair > 0
            && rhs_summary.triple > 0 && rhs_summary.high_pair > 0)
         {
-            if(lhs_summary.triple != rhs_summary.triple)
-            {
-                return lhs_summary.triple < rhs_summary.triple;
-            }
-            else if(lhs_summary.high_pair != rhs_summary.high_pair)
-            {
-                return lhs_summary.high_pair < rhs_summary.high_pair;
-            }
-            else
-            {
-                assert(false);
-                return false;
-            }
+            // Не может быть 6 карт одного номинала
+            assert(lhs_summary.triple != rhs_summary.triple);
+
+            return lhs_summary.triple < rhs_summary.triple;
         }
         else if((lhs_summary.triple > 0 && lhs_summary.high_pair > 0)
                 || (rhs_summary.triple > 0 && rhs_summary.high_pair > 0))
@@ -3477,14 +3464,10 @@ namespace
         // Тройка
         if(lhs_summary.triple > 0 && rhs_summary.triple > 0)
         {
-            if(lhs_summary.triple != rhs_summary.triple)
-            {
-                return lhs_summary.triple < rhs_summary.triple;
-            }
-            else
-            {
-                return less_by_highest(lhs, rhs);
-            }
+            // Не может быть 6 карт одного номинала
+            assert(lhs_summary.triple != rhs_summary.triple);
+
+            return lhs_summary.triple < rhs_summary.triple;
         }
         else if(lhs_summary.triple > 0 || rhs_summary.triple > 0)
         {
@@ -3611,13 +3594,24 @@ namespace
 
 TEST_CASE("PE 054")
 {
-    REQUIRE(::PE_054_line("5H 5C 6S 7S KD 2C 3S 8S 8D TD") == false);
-    REQUIRE(::PE_054_line("5D 8C 9S JS AC 2C 5C 7D 8S QH") == true);
-    REQUIRE(::PE_054_line("2D 9C AS AH AC 3D 6D 7D TD QD") == false);
-    REQUIRE(::PE_054_line("4D 6S 9H QH QC 3D 6D 7H QD QS") == true);
-    REQUIRE(::PE_054_line("2H 2D 4C 4D 4S 3C 3D 3S 9S 9D") == true);
+    CHECK(::PE_054_line("5H 5C 6S 7S KD 2C 3S 8S 8D TD") == false);
+    CHECK(::PE_054_line("5D 8C 9S JS AC 2C 5C 7D 8S QH") == true);
+    CHECK(::PE_054_line("2D 9C AS AH AC 3D 6D 7D TD QD") == false);
+    CHECK(::PE_054_line("4D 6S 9H QH QC 3D 6D 7H QD QS") == true);
+    CHECK(::PE_054_line("2H 2D 4C 4D 4S 3C 3D 3S 9S 9D") == true);
 
-    REQUIRE(::PE_054_file("ProjectEuler/p054_poker.txt") == 376);
+    CHECK(::PE_054_line("3S 4S 5S 6S 7S 2D 3D 4D 5D 6D") == true);
+    CHECK(::PE_054_line("3S 4S 5S 6S 7H 2D 3D 4D 5D 6D") == false);
+    CHECK(::PE_054_line("2H 2C 2S 2D AH 3H 3C 3S 3D KH") == false);
+    CHECK(::PE_054_line("2H 2C 2S 2D AH 3H 3C 3S KD KH") == true);
+    CHECK(::PE_054_line("3S 4S 5S 6S 8S 2D 3D 4D 6D 8D") == true);
+    CHECK(::PE_054_line("3S 4S 5D 6S 7S 2D 3D 4S 5D 6D") == true);
+    CHECK(::PE_054_line("2H KD 4C 4D 4S 3C 3D 3S 9S QD") == true);
+    CHECK(::PE_054_line("2H 2D 4C 4D JS 3C 3D TS 9S 9D") == false);
+    CHECK(::PE_054_line("2H 2D 4C 4D JS 3C 3D TS 4S 4H") == false);
+    CHECK(::PE_054_line("3H 3D 4C 4D QS 3S 3D TS 4S 4H") == true);
+
+    CHECK(::PE_054_file("ProjectEuler/p054_poker.txt") == 376);
 }
 
 // PE 055 - Числа Лишрел
