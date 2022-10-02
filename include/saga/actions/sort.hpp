@@ -15,60 +15,62 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_UTILITY_PIPEABLE_HPP_INCLUDED
-#define Z_SAGA_UTILITY_PIPEABLE_HPP_INCLUDED
+#ifndef Z_SAGA_ACTIONS_SORT_HPP_INCLUDED
+#define Z_SAGA_ACTIONS_SORT_HPP_INCLUDED
 
-/** @file saga/utility/pipeable.hpp
- @brief Функциональность для упрощения добавления конвейерного (через оператор |) синтаксиса
- создания адаптеров курсоров
+/** @file saga/actions/sort.hpp
+ @brief Функциональный объект, выполняющий сортировку контейнера.
 */
 
-#include <utility>
+#include <saga/actions/action_closure.hpp>
+#include <saga/algorithm.hpp>
+#include <saga/cursor/subrange.hpp>
 
 namespace saga
 {
-    template <class UnaryFunction>
-    class pipeable_unary
-     : private UnaryFunction
+namespace actions
+{
+    struct sort_fn
     {
-        template <class Cursor>
-        constexpr friend auto operator|(Cursor cur, pipeable_unary const & pipe)
+        template <class Range>
+        friend Range operator|(Range && arg, sort_fn pipe)
         {
-            return pipe(std::move(cur));
+            return std::move(pipe)(std::forward<Range>(arg));
         }
 
-        template <class Cursor>
-        constexpr friend auto operator|(Cursor cur, pipeable_unary && pipe)
+        template <class Range>
+        friend void operator|=(Range & arg, sort_fn pipe)
         {
-            return std::move(pipe)(std::move(cur));
+            std::ref(arg) | std::move(pipe);
         }
 
-    public:
-        constexpr explicit pipeable_unary(UnaryFunction fun)
-         : UnaryFunction(fun)
-        {}
-
-        template <class Cursor>
-        constexpr auto operator()(Cursor cur) const &
+        template <class Range, class Compare = std::less<>
+                 , class = std::enable_if_t<saga::is_range<Range>{}>
+                 , class = std::enable_if_t<!std::is_reference<Range>{}>>
+        Range operator()(Range && arg, Compare cmp = {}) const
         {
-            return static_cast<UnaryFunction const&>(*this)(std::move(cur));
+            saga::sort(saga::cursor::all(arg), std::move(cmp));
+
+            return arg;
         }
 
-        template <class Cursor>
-        constexpr auto operator()(Cursor cur) &&
+        template <class Compare, class = std::enable_if_t<!saga::is_range<Compare>{}>>
+        auto operator()(Compare cmp) const
         {
-            return static_cast<UnaryFunction &&>(*this)(std::move(cur));
+            auto fun = [cmp](auto && arg)
+            {
+                return sort_fn{}(std::forward<decltype(arg)>(arg), cmp);
+            };
+
+            return saga::actions::make_action_closure(std::move(fun));
         }
     };
 
-    template <class UnaryFunction>
-    constexpr pipeable_unary<UnaryFunction>
-    make_pipeable(UnaryFunction fun)
-    {
-        return pipeable_unary<UnaryFunction>(std::move(fun));
-    }
+    constexpr auto sort = saga::actions::sort_fn{};
+}
+// namespace actions
 }
 // namespace saga
 
 #endif
-// Z_SAGA_UTILITY_PIPEABLE_HPP_INCLUDED
+// Z_SAGA_ACTIONS_SORT_HPP_INCLUDED

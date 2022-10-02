@@ -61,6 +61,8 @@
 			<Add directory="../include" />
 		</Compiler>
 		<Unit filename="../include/saga/accumulator/sum.hpp" />
+		<Unit filename="../include/saga/actions/action_closure.hpp" />
+		<Unit filename="../include/saga/actions/sort.hpp" />
 		<Unit filename="../include/saga/algorithm.hpp" />
 		<Unit filename="../include/saga/algorithm/copy.hpp" />
 		<Unit filename="../include/saga/algorithm/find_if.hpp" />
@@ -139,6 +141,7 @@
 		<Unit filename="ProjectEuler/PE030.cpp" />
 		<Unit filename="ProjectEuler/PE_18_67.cpp" />
 		<Unit filename="ProjectEuler/projectEuler.cpp" />
+		<Unit filename="actions.cpp" />
 		<Unit filename="algorithm.cpp" />
 		<Unit filename="any.cpp" />
 		<Unit filename="container/reserve_if_supported.cpp" />
