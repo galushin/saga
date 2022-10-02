@@ -20,6 +20,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch2/catch_amalgamated.hpp>
 
 // Используемые возможности
+#include <saga/actions/sort.hpp>
 #include <saga/cursor/cartesian_product.hpp>
 #include <saga/cursor/enumerate.hpp>
 #include <saga/cursor/indices.hpp>
@@ -1678,7 +1679,7 @@ TEST_CASE("PE 022")
     auto names = ::read_quoted_comma_separated_from_file("ProjectEuler/p022_names.txt");
 
     // Отсортировать
-    saga::sort(saga::cursor::all(names));
+    names |= saga::actions::sort;
 
     REQUIRE(names[938 - 1] == "COLIN");
 
@@ -2063,7 +2064,7 @@ TEST_CASE("PE 032")
                 break;
             }
 
-            saga::sort(saga::cursor::all(str));
+            str |= saga::actions::sort;
 
             if(str == "123456789")
             {
@@ -2465,7 +2466,7 @@ namespace
     {
         static const auto all_digits = std::string("123456789");
 
-        saga::sort(saga::cursor::all(str));
+        str |= saga::actions::sort;
 
         return all_digits.compare(0, str.size(), str) == 0;
     }
@@ -3232,13 +3233,11 @@ namespace
     template <class IntType>
     bool PE_052_check(IntType num, IntType max_mult)
     {
-        auto str_1 = std::to_string(num);
-        saga::sort(saga::cursor::all(str_1));
+        auto const str_1 = std::to_string(num) | saga::actions::sort;
 
         for(auto mult : saga::cursor::indices(2, max_mult + 1))
         {
-            auto str_k = std::to_string(num * mult);
-            saga::sort(saga::cursor::all(str_k));
+            auto const str_k = std::to_string(num * mult) | saga::actions::sort;
 
             if(str_1 != str_k)
             {
@@ -3555,8 +3554,7 @@ namespace
             hand.cards[index].suit  = str[3*index + 1];
         }
 
-        saga::sort(saga::cursor::all(hand.cards),
-                   saga::compare_by(&poker_card::value, std::greater<>{}));
+        hand.cards |= saga::actions::sort(saga::compare_by(&poker_card::value, std::greater<>{}));
 
         return hand;
     }
@@ -3843,8 +3841,7 @@ namespace
             }
 
             auto const cube = saga::power_natural(number, 3);
-            auto str = std::to_string(cube);
-            saga::sort(saga::cursor::all(str));
+            auto const str = std::to_string(cube) | saga::actions::sort;
 
             if(str.size() > current_length)
             {

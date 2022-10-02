@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include "../saga_test.hpp"
 
 // Используемое при тестах
+#include <saga/actions/sort.hpp>
 #include <saga/cpp20/span.hpp>
 #include <saga/numeric/digits_of.hpp>
 #include <saga/optimization/test_objectives.hpp>
@@ -349,7 +350,7 @@ TEST_CASE("binary sequence to real: coverage")
             values.push_back(saga::binary_sequence_to_real<double>(saga::cursor::all(bits)));
         }
 
-        saga::sort(saga::cursor::all(values));
+        values |= saga::actions::sort;
 
         // Проверки
         REQUIRE(!values.empty());

@@ -114,6 +114,12 @@ namespace saga
 
             using std::begin;
 
+            template <class Range>
+            auto begin(std::reference_wrapper<Range> arg)
+            {
+                return begin(arg.get());
+            }
+
             struct begin_fn
             {
                 template <class Range>
@@ -128,7 +134,14 @@ namespace saga
         namespace std_end_adl
         {
             void end() = delete;
+
             using std::end;
+
+            template <class Range>
+            auto end(std::reference_wrapper<Range> arg)
+            {
+                return end(arg.get());
+            }
 
             struct end_fn
             {

@@ -15,60 +15,55 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_UTILITY_PIPEABLE_HPP_INCLUDED
-#define Z_SAGA_UTILITY_PIPEABLE_HPP_INCLUDED
+#ifndef Z_SAGA_ACTION_ACTION_CLOSURE_HPP_INCLUDED
+#define Z_SAGA_ACTION_ACTION_CLOSURE_HPP_INCLUDED
 
-/** @file saga/utility/pipeable.hpp
- @brief Функциональность для упрощения добавления конвейерного (через оператор |) синтаксиса
- создания адаптеров курсоров
+/** @file saga/actions/action_closure.hpp
+ @brief Вспомогательный класс, позволяющий использовать функциональные объекты из пространства
+ имён actions с операторами | и |=
 */
 
+#include <functional>
 #include <utility>
 
 namespace saga
 {
+namespace actions
+{
     template <class UnaryFunction>
-    class pipeable_unary
+    class action_closure
      : private UnaryFunction
     {
-        template <class Cursor>
-        constexpr friend auto operator|(Cursor cur, pipeable_unary const & pipe)
+        template <class Range>
+        friend auto operator|(Range && arg, action_closure fun)
         {
-            return pipe(std::move(cur));
+            return std::move(fun)(std::forward<Range>(arg));
         }
 
-        template <class Cursor>
-        constexpr friend auto operator|(Cursor cur, pipeable_unary && pipe)
+        template <class Range>
+        friend void operator|=(Range & arg, action_closure fun)
         {
-            return std::move(pipe)(std::move(cur));
+            std::ref(arg) | std::move(fun);
         }
 
     public:
-        constexpr explicit pipeable_unary(UnaryFunction fun)
-         : UnaryFunction(fun)
+        explicit action_closure(UnaryFunction fun)
+         : UnaryFunction(std::move(fun))
         {}
 
-        template <class Cursor>
-        constexpr auto operator()(Cursor cur) const &
-        {
-            return static_cast<UnaryFunction const&>(*this)(std::move(cur));
-        }
-
-        template <class Cursor>
-        constexpr auto operator()(Cursor cur) &&
-        {
-            return static_cast<UnaryFunction &&>(*this)(std::move(cur));
-        }
+    private:
     };
 
     template <class UnaryFunction>
-    constexpr pipeable_unary<UnaryFunction>
-    make_pipeable(UnaryFunction fun)
+    action_closure<UnaryFunction>
+    make_action_closure(UnaryFunction fun)
     {
-        return pipeable_unary<UnaryFunction>(std::move(fun));
+        return action_closure<UnaryFunction>(std::move(fun));
     }
+}
+// namespace actions
 }
 // namespace saga
 
 #endif
-// Z_SAGA_UTILITY_PIPEABLE_HPP_INCLUDED
+// Z_SAGA_ACTION_ACTION_CLOSURE_HPP_INCLUDED
