@@ -3821,6 +3821,67 @@ TEST_CASE("PE 057")
     REQUIRE(result == 153);
 }
 
+// PE 058 - Спиральные простые числа
+/* Пусть n - номер слоя
+Его длина (если считать номер слоя с нуля): 2n+1
+Угловые числа:
+(2n+1)^2
+(2n+1)^2 - 2n
+(2n+1)^2 - 4n
+(2n+1)^2 - 6n
+
+Квадрат не может быть простым числом, поэтому первое из этих чисел можно не проверять
+
+Длина диагоналей: 4 * n + 1 (на нулевом слое одно число, на остальных по 4)
+*/
+
+namespace
+{
+    template <class IntType>
+    IntType PE_058(IntType numerator, IntType denominator)
+    {
+        std::vector<IntType> primes{2, 3};
+        auto primes_limit = primes.back() + 1;
+
+        auto primes_count = IntType(0);
+
+        auto layer = IntType(1);
+        for(;; ++ layer)
+        {
+            auto num = saga::square(2 * layer + 1);
+
+            if(primes_limit < 2 * layer + 1)
+            {
+                auto new_primes = ::PE_051_primes(primes, primes_limit, saga::square(primes_limit));
+                primes.insert(primes.end(), new_primes.begin(), new_primes.end());
+
+                primes_limit = saga::square(primes_limit);
+            }
+
+            for(auto rep = 3; rep > 0; -- rep)
+            {
+                num -= 2 * layer;
+
+                primes_count += ::is_prime_sorted(num, primes, saga::unsafe_tag_t{});
+            }
+
+            auto const diagonal_length = 4 * layer + 1;
+
+            if(primes_count * denominator < diagonal_length * numerator)
+            {
+                break;
+            }
+        }
+
+        return 2 * layer + 1;
+    }
+}
+
+TEST_CASE("PE 058")
+{
+    REQUIRE(::PE_058<long long>(1, 10) == 26241);
+}
+
 // PE 062 - Кубические перестановки
 namespace
 {
