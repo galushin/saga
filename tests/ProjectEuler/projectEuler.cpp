@@ -20,6 +20,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch2/catch_amalgamated.hpp>
 
 // Используемые возможности
+#include <saga/actions/reverse.hpp>
 #include <saga/actions/sort.hpp>
 #include <saga/cursor/cartesian_product.hpp>
 #include <saga/cursor/enumerate.hpp>
@@ -1148,7 +1149,7 @@ namespace
                 this->units_.push_back(reader);
             }
 
-            saga::reverse(saga::cursor::all(this->units_));
+            this->units_ |= saga::actions::reverse;
         }
 
         // Арифметические операции
@@ -3660,7 +3661,7 @@ namespace
             for(auto counter = 50; counter > 0; -- counter)
             {
                 auto reversed = num;
-                saga::reverse(saga::cursor::all(reversed));
+                reversed |= saga::actions::reverse;
 
                 ::plus_assign_long_same_size(num, reversed, base);
 

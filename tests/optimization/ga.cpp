@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include "../saga_test.hpp"
 
 // Используемое при тестах
+#include <saga/actions/reverse.hpp>
 #include <saga/actions/sort.hpp>
 #include <saga/cpp20/span.hpp>
 #include <saga/numeric/digits_of.hpp>
@@ -247,7 +248,7 @@ TEST_CASE("binary code")
             bits.push_back(num % base);
         }
 
-        saga::reverse(saga::cursor::all(bits));
+        bits |= saga::actions::reverse;
 
         auto const result
             = saga::binary_sequence_to_integer<NotNegativeInteger>(saga::cursor::all(bits));
@@ -284,7 +285,7 @@ TEST_CASE("Gray code - generates all")
         // Преобразуем целое в двоичный код
         Digit_container code;
         saga::copy(saga::cursor::digits_of(num, 2), saga::back_inserter(code));
-        saga::reverse(saga::cursor::all(code));
+        code |= saga::actions::reverse;
 
         // Переводим Код грея в целое число
         auto const value = saga::gray_code_to_integer<Integer>(saga::cursor::all(code));
@@ -390,7 +391,7 @@ TEST_CASE("Gray code (real) - generates all")
         REQUIRE(code.size() <= dim);
 
         code.resize(dim, 0);
-        saga::reverse(saga::cursor::all(code));
+        code |= saga::actions::reverse;
 
         // Переводим Код грея в целое число
         auto const value = saga::gray_code_to_real<RealType>(saga::cursor::all(code));

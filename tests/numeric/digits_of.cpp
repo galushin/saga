@@ -23,9 +23,10 @@ SAGA -- это свободной программное обеспечение:
 #include "../saga_test.hpp"
 
 // Используемое при тестах
+#include <saga/actions/reverse.hpp>
 #include <saga/algorithm.hpp>
-#include <saga/numeric/polynomial.hpp>
 #include <saga/cursor/subrange.hpp>
+#include <saga/numeric/polynomial.hpp>
 
 // Тесты
 TEST_CASE("digits_of")
@@ -63,7 +64,7 @@ TEST_CASE("digits_of - reverse of poynomial_horner")
     {
         std::vector<int> digits;
         saga::copy(saga::cursor::digits_of(value, base.value()), saga::back_inserter(digits));
-        saga::reverse(saga::cursor::all(digits));
+        digits |= saga::actions::reverse;
 
         // Цифры в заданном диапазоне
         REQUIRE(saga::all_of(saga::cursor::all(digits)
