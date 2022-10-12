@@ -19,7 +19,7 @@ SAGA -- это свободной программное обеспечение:
 #define Z_SAGA_ACTIONS_SORT_HPP_INCLUDED
 
 /** @file saga/actions/sort.hpp
- @brief Функциональный объект, выполняющий сортировку контейнера.
+ @brief Функциональный объект, выполняющий сортировку интервала.
 */
 
 #include <saga/actions/action_closure.hpp>
@@ -32,18 +32,6 @@ namespace actions
 {
     struct sort_fn
     {
-        template <class Range>
-        friend Range operator|(Range && arg, sort_fn pipe)
-        {
-            return std::move(pipe)(std::forward<Range>(arg));
-        }
-
-        template <class Range>
-        friend void operator|=(Range & arg, sort_fn pipe)
-        {
-            std::ref(arg) | std::move(pipe);
-        }
-
         template <class Range, class Compare = std::less<>
                  , class = std::enable_if_t<saga::is_range<Range>{}>
                  , class = std::enable_if_t<!std::is_reference<Range>{}>>
@@ -66,7 +54,7 @@ namespace actions
         }
     };
 
-    constexpr auto sort = saga::actions::sort_fn{};
+    inline constexpr auto sort = saga::actions::action_closure<saga::actions::sort_fn>{};
 }
 // namespace actions
 }

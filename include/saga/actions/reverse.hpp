@@ -15,54 +15,38 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_ACTION_ACTION_CLOSURE_HPP_INCLUDED
-#define Z_SAGA_ACTION_ACTION_CLOSURE_HPP_INCLUDED
+#ifndef Z_SAGA_ACTIONS_REVERSE_HPP_INCLUDED
+#define Z_SAGA_ACTIONS_REVERSE_HPP_INCLUDED
 
-/** @file saga/actions/action_closure.hpp
- @brief Вспомогательный класс, позволяющий использовать функциональные объекты из пространства
- имён actions (со связанными параметрами) с операторами | и |=
+/** @file saga/actions/sort.hpp
+ @brief Функциональный объект, выполняющий обращение интервала.
 */
 
-#include <functional>
-#include <utility>
+#include <saga/actions/action_closure.hpp>
+#include <saga/algorithm.hpp>
+#include <saga/cursor/subrange.hpp>
 
 namespace saga
 {
 namespace actions
 {
-    template <class UnaryFunction>
-    class action_closure
-     : public UnaryFunction
+    struct reverse_fn
     {
         template <class Range>
-        friend auto operator|(Range && arg, action_closure fun)
+        Range operator()(Range && arg) const
         {
-            return std::move(fun)(std::forward<Range>(arg));
-        }
+            saga::reverse(saga::cursor::all(arg));
 
-        template <class Range>
-        friend void operator|=(Range & arg, action_closure fun)
-        {
-            std::ref(arg) | std::move(fun);
+            return arg;
         }
-
-    public:
-        template <class... Args>
-        constexpr explicit action_closure(Args &&... args)
-         : UnaryFunction(std::forward<Args>(args)...)
-        {}
     };
 
-    template <class UnaryFunction>
-    action_closure<UnaryFunction>
-    make_action_closure(UnaryFunction fun)
-    {
-        return action_closure<UnaryFunction>(std::move(fun));
-    }
+    inline constexpr auto reverse = saga::actions::action_closure<saga::actions::reverse_fn>{};
 }
 // namespace actions
 }
 // namespace saga
 
+
 #endif
-// Z_SAGA_ACTION_ACTION_CLOSURE_HPP_INCLUDED
+// Z_SAGA_ACTIONS_REVERSE_HPP_INCLUDED

@@ -17,6 +17,7 @@ SAGA -- это свободной программное обеспечение:
 
 // Тестируемый файл
 #include <saga/actions/sort.hpp>
+#include <saga/actions/reverse.hpp>
 
 // Инфраструктура тестирования
 #include "./saga_test.hpp"
@@ -26,7 +27,68 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
 
+#include <list>
+
 // Тесты
+// reverse
+TEST_CASE("actions::reverse : function")
+{
+    saga_test::property_checker << [](std::list<int> const & src_old)
+    {
+        auto src = src_old;
+
+        auto const actual = saga::actions::reverse(src);
+
+        auto const expected = [&]
+        {
+            auto result = src_old;
+            saga::reverse(saga::cursor::all(result));
+            return result;
+        }();
+
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("actions::reverse : pipes")
+{
+    saga_test::property_checker << [](std::list<int> const & src_old)
+    {
+        auto src = src_old;
+
+        auto const actual = std::move(src) | saga::actions::reverse;
+
+        auto const expected = [&]
+        {
+            auto result = src_old;
+            saga::reverse(saga::cursor::all(result));
+            return result;
+        }();
+
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("actions::reverse : pipe-assign")
+{
+    saga_test::property_checker << [](std::list<int> const & src_old)
+    {
+        auto actual = src_old;
+
+        actual |= saga::actions::reverse;
+
+        auto const expected = [&]
+        {
+            auto result = src_old;
+            saga::reverse(saga::cursor::all(result));
+            return result;
+        }();
+
+        REQUIRE(actual == expected);
+    };
+}
+
+// sort
 namespace
 {
     template <class Container, class... Args>

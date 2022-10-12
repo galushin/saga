@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch2/catch_amalgamated.hpp>
 
 // Используемые файлы
+#include <saga/actions/reverse.hpp>
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
 
@@ -85,7 +86,7 @@ TEST_CASE("reverse reverse_cursor")
     {
         auto data = data_old;
 
-        saga::reverse(saga::cursor::all(data));
+        data |= saga::actions::reverse;
 
         saga::reverse(saga::cursor::reverse(saga::cursor::all(data)));
 
