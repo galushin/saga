@@ -83,47 +83,63 @@ TEMPLATE_LIST_TEST_CASE("random_subcursor_of", "saga_test", Containers)
     };
 }
 
-TEST_CASE("equal - minimal, default predicate")
+namespace
 {
-    using Value1 = int;
-    using Value2 = long;
-
-    saga_test::property_checker
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    template <class Value1, class Value2, class... Args>
+    void check_equal_mimimal(std::vector<Value1> const & src1
+                             , std::vector<Value2> const & src2
+                             , Args... bin_pred)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         auto src1_in = saga_test::make_istringstream_from_range(src1);
         auto src2_in = saga_test::make_istringstream_from_range(src2);
 
         REQUIRE(saga::equal(saga::make_istream_cursor<Value1>(src1_in),
-                            saga::make_istream_cursor<Value2>(src2_in))
-                == std::equal(src1.begin(), src1.end(), src2.begin(), src2.end()));
+                            saga::make_istream_cursor<Value2>(src2_in), bin_pred...)
+                == std::equal(src1.begin(), src1.end(), src2.begin(), src2.end(), bin_pred...));
 
-        REQUIRE(saga::equal(saga::cursor::all(src1), saga::cursor::all(src1)));
-        REQUIRE(saga::equal(saga::cursor::all(src2), saga::cursor::all(src2)));
-    };
+        REQUIRE(saga::equal(saga::cursor::all(src1), saga::cursor::all(src1), bin_pred...));
+        REQUIRE(saga::equal(saga::cursor::all(src2), saga::cursor::all(src2), bin_pred...));
+    }
+
+    template <class Value1, class Value2, class... Args>
+    void check_equal_subcursor(std::vector<Value1> const & src1
+                               , std::vector<Value2> const & src2
+                               , Args... bin_pred)
+    {
+        static_assert(sizeof...(Args) <= 1);
+
+        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
+        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
+
+        REQUIRE(saga::equal(in1, in2, bin_pred...)
+                == std::equal(in1.begin(), in1.end(), in2.begin(), in2.end(), bin_pred...));
+
+        REQUIRE(saga::equal(in1, in1, bin_pred...));
+        REQUIRE(saga::equal(in2, in2, bin_pred...));
+    }
 }
 
-TEST_CASE("equal - minimal, custom predicate")
+TEST_CASE("equal - general")
 {
     using Value1 = int;
     using Value2 = long;
 
     saga_test::property_checker
+    << ::check_equal_mimimal<Value1, Value2>
+    << ::check_equal_subcursor<Value1, Value2>
     << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
     {
-        CAPTURE(src1, src2);
-
         auto const bin_pred = saga::equivalent_up_to([](auto const & arg) { return arg % 2; });
 
-        auto src1_in = saga_test::make_istringstream_from_range(src1);
-        auto src2_in = saga_test::make_istringstream_from_range(src2);
+        ::check_equal_mimimal(src1, src2, bin_pred);
+    }
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    {
+        auto const bin_pred = saga::equivalent_up_to([](auto const & arg) { return arg % 2; });
 
-        REQUIRE(saga::equal(saga::make_istream_cursor<Value1>(src1_in),
-                            saga::make_istream_cursor<Value2>(src2_in), bin_pred)
-                == std::equal(src1.begin(), src1.end(), src2.begin(), src2.end(), bin_pred));
-
-        REQUIRE(saga::equal(saga::cursor::all(src1), saga::cursor::all(src1), bin_pred));
-        REQUIRE(saga::equal(saga::cursor::all(src2), saga::cursor::all(src2), bin_pred));
+        ::check_equal_subcursor(src1, src2, bin_pred);
     };
 }
 
@@ -143,65 +159,6 @@ TEST_CASE("equal - custom predicate, invented true")
         auto const bin_pred = saga::equivalent_up_to(fun);
 
         REQUIRE(saga::equal(saga::cursor::all(src1), saga::cursor::all(src2), bin_pred));
-    };
-}
-
-TEST_CASE("equal: subcursor, default predicate")
-{
-    using Value1 = int;
-    using Value2 = long;
-
-    saga_test::property_checker
-    << [](std::vector<Value1> const & src1, std::list<Value2> const & src2)
-    {
-        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
-        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
-
-        REQUIRE(saga::equal(in1, in2)
-                == std::equal(in1.begin(), in1.end(), in2.begin(), in2.end()));
-
-        REQUIRE(saga::equal(in1, in1));
-        REQUIRE(saga::equal(in2, in2));
-    };
-}
-
-// @todo Аналогичный тест для произвольного предиката, нужен трассировщик для функциональных объектов
-TEST_CASE("equal: random access cursor optimization, default predicate")
-{
-    using Value = saga::regular_tracer<int>;
-
-    saga_test::property_checker << [](std::vector<Value> const & src1, Value const & value)
-    {
-        auto const src2 = [&](){ auto tmp = src1; tmp.push_back(value); return tmp; }();
-
-        REQUIRE(src2.size() != src1.size());
-
-        auto const equality_comparisons_before = Value::equality_comparisons();
-
-        REQUIRE(saga::equal(saga::cursor::all(src1), saga::cursor::all(src2)) == false);
-
-        REQUIRE(Value::equality_comparisons() == equality_comparisons_before);
-    };
-}
-
-TEST_CASE("equal: subcursor, custom predicate")
-{
-    using Value1 = int;
-    using Value2 = long;
-
-    saga_test::property_checker
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
-    {
-        auto const bin_pred = saga::equivalent_up_to([](auto const & arg) { return arg % 2; });
-
-        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
-        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
-
-        REQUIRE(saga::equal(in1, in2, bin_pred)
-                == std::equal(in1.begin(), in1.end(), in2.begin(), in2.end(), bin_pred));
-
-        REQUIRE(saga::equal(in1, in1, bin_pred));
-        REQUIRE(saga::equal(in2, in2, bin_pred));
     };
 }
 
@@ -225,6 +182,25 @@ TEST_CASE("equal - subcursor, custom predicate, invented")
 
         REQUIRE(saga::equal(in1, in2, bin_pred)
                 == std::equal(in1.begin(), in1.end(), in2.begin(), in2.end(), bin_pred));
+    };
+}
+
+// @todo Аналогичный тест для произвольного предиката, нужен трассировщик для функциональных объектов
+TEST_CASE("equal: random access cursor optimization, default predicate")
+{
+    using Value = saga::regular_tracer<int>;
+
+    saga_test::property_checker << [](std::vector<Value> const & src1, Value const & value)
+    {
+        auto const src2 = [&](){ auto tmp = src1; tmp.push_back(value); return tmp; }();
+
+        REQUIRE(src2.size() != src1.size());
+
+        auto const equality_comparisons_before = Value::equality_comparisons();
+
+        REQUIRE(saga::equal(saga::cursor::all(src1), saga::cursor::all(src2)) == false);
+
+        REQUIRE(Value::equality_comparisons() == equality_comparisons_before);
     };
 }
 
@@ -3313,83 +3289,42 @@ TEST_CASE("partition_point")
     };
 }
 
-TEST_CASE("is_sorted: default compare")
+namespace
 {
-    using Value = int;
-    using Container = std::forward_list<Value>;
-
-    saga_test::property_checker << [](Container const & src)
+    template <class Container, class... Args>
+    void check_is_sorted(Container const & src, Args... cmp)
     {
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        auto const result_std = std::is_sorted(input.begin(), input.end());
-        auto const result_saga = saga::is_sorted(input);
-
-        REQUIRE(result_saga == result_std);
-    };
-}
-
-TEST_CASE("is_sorted: default compare, sorted")
-{
-    using Value = int;
-    using Container = std::vector<Value>;
-
-    saga_test::property_checker << [](Container src)
-    {
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        std::sort(input.begin(), input.end());
-
-        REQUIRE(saga::is_sorted(input));
-    };
-}
-
-TEST_CASE("is_sorted: custom compare")
-{
-    using Value = int;
-    using Container = std::forward_list<Value>;
-
-    saga_test::property_checker << [](Container const & src)
-    {
-        auto const cmp = std::greater<>{};
+        static_assert(sizeof...(Args) <= 1);
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        auto const result_std = std::is_sorted(input.begin(), input.end(), cmp);
-        auto const result_saga = saga::is_sorted(input, cmp);
+        auto const result_std = std::is_sorted(input.begin(), input.end(), cmp...);
+        auto const result_saga = saga::is_sorted(input, cmp...);
 
         REQUIRE(result_std == result_saga);
-    };
-}
+    }
 
-TEST_CASE("is_sorted: custom compare, sorted")
-{
-    using Value = int;
-    using Container = std::vector<Value>;
-
-    saga_test::property_checker << [](Container src)
+    template <class Container, class... Args>
+    void check_is_sorted_after_sort(Container src, Args... cmp)
     {
-        auto const cmp = std::greater<>{};
+        static_assert(sizeof...(Args) <= 1);
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        std::sort(input.begin(), input.end(), cmp);
+        std::sort(input.begin(), input.end(), cmp...);
 
-        REQUIRE(saga::is_sorted(input, cmp));
-    };
-}
+        REQUIRE(saga::is_sorted(input, cmp...));
+    }
 
-TEST_CASE("is_sorted_until: default compare")
-{
-    using Value = int;
-    using Container = std::forward_list<Value>;
-
-    saga_test::property_checker << [](Container const & src)
+    template <class Container, class... Args>
+    void check_is_sorted_until(Container const & src, Args... cmp)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        auto const result_std = std::is_sorted_until(input.begin(), input.end());
-        auto const result_saga = saga::is_sorted_until(input);
+        auto const result_std = std::is_sorted_until(input.begin(), input.end(), cmp...);
+        auto const result_saga = saga::is_sorted_until(input, cmp...);
 
         CAPTURE(src);
 
@@ -3398,50 +3333,57 @@ TEST_CASE("is_sorted_until: default compare")
 
         REQUIRE(result_saga.dropped_front().begin() == src.begin());
         REQUIRE(result_saga.dropped_front().end() == result_std);
-    };
+    }
 }
 
-TEST_CASE("is_sorted_until: custom compare")
+TEST_CASE("is_sorted")
 {
     using Value = int;
     using Container = std::forward_list<Value>;
 
-    saga_test::property_checker << [](Container const & src)
+    saga_test::property_checker
+    << ::check_is_sorted<Container>
+    << ::check_is_sorted_after_sort<std::vector<Value>>
+    << [](Container const & src)
     {
-        auto const cmp = std::greater<>{};
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        auto const result_std = std::is_sorted_until(input.begin(), input.end(), cmp);
-        auto const result_saga = saga::is_sorted_until(input, cmp);
-
-        CAPTURE(src);
-
-        REQUIRE(result_saga.begin() == result_std);
-        REQUIRE(result_saga.end() == input.end());
-
-        REQUIRE(result_saga.dropped_front().begin() == src.begin());
-        REQUIRE(result_saga.dropped_front().end() == result_std);
+        ::check_is_sorted(src, std::greater<>{});
+    }
+    << [](std::vector<Value> const & src)
+    {
+        ::check_is_sorted_after_sort(src, std::greater<>{});
     };
 }
 
-TEST_CASE("merge : minimal, default compare")
+TEST_CASE("is_sorted_until")
 {
     using Value = int;
-    using Container = std::vector<Value>;
+    using Container = std::forward_list<Value>;
 
-    saga_test::property_checker << [](Container lhs, Container rhs)
+    saga_test::property_checker
+    << ::check_is_sorted_until<Container>
+    << [](Container const & src)
     {
-        std::sort(lhs.begin(), lhs.end());
-        std::sort(rhs.begin(), rhs.end());
+        auto const cmp = std::greater<>{};
 
-        CAPTURE(lhs, rhs);
+        ::check_is_sorted_until(src, cmp);
+    };
+}
+
+namespace
+{
+    template <class Container, class... Args>
+    void check_merge_minimal(Container lhs, Container rhs, Args... cmp)
+    {
+        std::sort(lhs.begin(), lhs.end(), cmp...);
+        std::sort(rhs.begin(), rhs.end(), cmp...);
+
+        using Value = typename Container::value_type;
 
         // std
         std::vector<Value> diff_std;
 
         std::merge(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
-                   , std::back_inserter(diff_std));
+                   , std::back_inserter(diff_std), cmp...);
 
         // saga
         std::vector<Value> diff_saga;
@@ -3451,187 +3393,156 @@ TEST_CASE("merge : minimal, default compare")
 
         saga::merge(saga::make_istream_cursor<Value>(lhs_in)
                     , saga::make_istream_cursor<Value>(rhs_in)
-                    , saga::back_inserter(diff_saga));
+                    , saga::back_inserter(diff_saga), cmp...);
 
         // Проверка
         REQUIRE(diff_saga == diff_std);
-    };
+    }
+
+    template <class Value, class... Args>
+    void check_merge_subcursor(std::vector<Value> in1_src, std::vector<Value> in2_src
+                               , std::vector<Value> const & out_src_old, Args... cmp)
+    {
+        static_assert(sizeof...(Args) <= 1);
+
+        // Исходные данные
+        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(in1_src));
+        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(in2_src));
+
+        std::sort(in1.begin(), in1.end(), cmp...);
+        std::sort(in2.begin(), in2.end(), cmp...);
+
+        // saga
+        std::vector<Value> out_saga(out_src_old);
+        auto const out = saga_test::random_subcursor_of(saga::cursor::all(out_saga));
+
+        auto const result = saga::merge(in1, in2, out, cmp...);
+
+        // std
+        auto out_std = out_src_old;
+
+        std::merge(in1.begin(), result.in1.begin(), in2.begin(), result.in2.begin()
+                   , saga::rebase_cursor(out, out_std).begin(), cmp...);
+
+        // Проверка
+        REQUIRE(out_saga == out_std);
+    }
 }
 
-TEST_CASE("merge : minimal, custom compare")
+TEST_CASE("merge")
 {
     using Value = int;
     using Container = std::vector<Value>;
 
-    saga_test::property_checker << [](Container lhs, Container rhs)
+    saga_test::property_checker
+    << ::check_merge_minimal<Container>
+    << ::check_merge_subcursor<Container>
+    << [](Container lhs, Container rhs)
     {
-        auto const cmp = std::greater<>{};
-
-        std::sort(lhs.begin(), lhs.end(), cmp);
-        std::sort(rhs.begin(), rhs.end(), cmp);
-
-        // std
-        std::vector<Value> diff_std;
-
-        std::merge(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
-                   , std::back_inserter(diff_std), cmp);
-
-        // saga
-        std::vector<Value> diff_saga;
-
-        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
-        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
-
-        saga::merge(saga::make_istream_cursor<Value>(lhs_in)
-                    , saga::make_istream_cursor<Value>(rhs_in)
-                    , saga::back_inserter(diff_saga), cmp);
-
-        // Проверка
-        REQUIRE(diff_saga == diff_std);
+        ::check_merge_minimal(lhs, rhs, std::greater<>{});
+    }
+    << [](Container lhs, Container rhs, std::vector<Value> const & out_src_old)
+    {
+        ::check_merge_subcursor(std::move(lhs), std::move(rhs), out_src_old, std::greater<>{});
     };
 }
 
-TEST_CASE("inplace_merge: default predicate")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> const & values_old)
+    template <class Value, class... Args>
+    void check_inplace_merge(std::vector<Value> const & values_old, Args... cmp)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         // Подготовка
         auto src = values_old;
 
         auto const input_src = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        std::sort(input_src.dropped_front().begin(), input_src.begin());
-        std::sort(input_src.begin(), input_src.end());
+        std::sort(input_src.dropped_front().begin(), input_src.begin(), cmp...);
+        std::sort(input_src.begin(), input_src.end(), cmp...);
 
         std::list<Value> values(src.begin(), src.end());
 
         auto const input = saga::rebase_cursor(input_src, values);
 
         // Выполняем
-        saga::inplace_merge(input);
+        saga::inplace_merge(input, cmp...);
 
         // Проверка
-        CAPTURE(src, values, input.dropped_front(), input);
-
         REQUIRE(saga::is_permutation(saga::cursor::all(values)
                                      , saga::cursor::all(values_old)));
 
         REQUIRE(saga::equal(input.dropped_back()
                             , saga::rebase_cursor(input, values_old).dropped_back()));
 
-        REQUIRE(std::is_sorted(input.dropped_front().begin(), input.end()));
-    };
+        REQUIRE(std::is_sorted(input.dropped_front().begin(), input.end(), cmp...));
+    }
 }
 
-TEST_CASE("inplace_merge: custom predicate")
+TEST_CASE("inplace_merge")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & values_old)
+    saga_test::property_checker
+    << check_inplace_merge<Value>
+    << [](std::vector<Value> const & values_old)
     {
         auto const cmp = saga::compare_by([](Value const & arg) { return arg % 2017; });
 
-        // Подготовка
-        auto src = values_old;
-
-        auto const input_src = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        std::sort(input_src.dropped_front().begin(), input_src.begin(), cmp);
-        std::sort(input_src.begin(), input_src.end(), cmp);
-
-        std::list<Value> values(src.begin(), src.end());
-
-        auto const input = saga::rebase_cursor(input_src, values);
-
-        // Выполняем
-        saga::inplace_merge(input, cmp);
-
-        // Проверка
-        REQUIRE(saga::is_permutation(saga::cursor::all(values)
-                                     , saga::cursor::all(values_old)));
-
-        REQUIRE(saga::equal(input.dropped_back()
-                            , saga::rebase_cursor(input, values_old).dropped_back()));
-
-        REQUIRE(std::is_sorted(input.dropped_front().begin(), input.end(), cmp));
+        check_inplace_merge(values_old, cmp);
     };
+}
+
+namespace
+{
+    template <class Value, class... Args>
+    void check_includes_minimal(std::vector<Value> in1, std::vector<Value> in2, Args... cmp)
+    {
+        static_assert(sizeof...(Args) <= 1);
+
+        std::sort(in1.begin(), in1.end(), cmp...);
+        std::sort(in2.begin(), in2.end(), cmp...);
+
+        auto in1_istream = saga_test::make_istringstream_from_range(in1);
+        auto in2_istream = saga_test::make_istringstream_from_range(in2);
+
+        REQUIRE(saga::includes(saga::make_istream_cursor<Value>(in1_istream),
+                               saga::make_istream_cursor<Value>(in2_istream), cmp...)
+                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp...));
+    }
+
+    template <class Value, class... Args>
+    void check_includes_subrange(std::vector<Value> in1_src, std::vector<Value> in2_src
+                                 , Args... cmp)
+    {
+        static_assert(sizeof...(Args) <= 1);
+
+        auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(in1_src));
+        auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(in2_src));
+
+        std::sort(in1.begin(), in1.end(), cmp...);
+        std::sort(in2.begin(), in2.end(), cmp...);
+
+        REQUIRE(saga::includes(in1, in2, cmp...)
+                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp...));
+    }
 }
 
 TEST_CASE("includes - minimal")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
+    saga_test::property_checker
+    << ::check_includes_minimal<Value>
+    << ::check_includes_subrange<Value>
+    << [](std::vector<Value> in1, std::vector<Value> in2)
     {
-        std::sort(in1.begin(), in1.end());
-        std::sort(in2.begin(), in2.end());
-
-        CAPTURE(in1, in2);
-
-        auto in1_istream = saga_test::make_istringstream_from_range(in1);
-        auto in2_istream = saga_test::make_istringstream_from_range(in2);
-
-        REQUIRE(saga::includes(saga::make_istream_cursor<Value>(in1_istream),
-                               saga::make_istream_cursor<Value>(in2_istream))
-                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end()));
-    };
-}
-
-TEST_CASE("includes - minimal, custom compare")
-{
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
+        ::check_includes_minimal(std::move(in1), std::move(in2), std::greater<>{});
+    }
+    << [](std::vector<Value> in1, std::vector<Value> in2)
     {
-        auto const cmp = std::greater<>{};
-
-        std::sort(in1.begin(), in1.end(), cmp);
-        std::sort(in2.begin(), in2.end(), cmp);
-
-        CAPTURE(in1, in2);
-
-        auto in1_istream = saga_test::make_istringstream_from_range(in1);
-        auto in2_istream = saga_test::make_istringstream_from_range(in2);
-
-        REQUIRE(saga::includes(saga::make_istream_cursor<Value>(in1_istream),
-                               saga::make_istream_cursor<Value>(in2_istream), cmp)
-                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp));
-    };
-}
-
-TEST_CASE("includes - subrange")
-{
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
-    {
-        std::sort(in1.begin(), in1.end());
-        std::sort(in2.begin(), in2.end());
-
-        CAPTURE(in1, in2);
-
-        REQUIRE(saga::includes(saga::cursor::all(in1), saga::cursor::all(in2))
-                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end()));
-    };
-}
-
-TEST_CASE("includes - subrange, custom compare")
-{
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> in1, std::vector<Value> in2)
-    {
-        auto const cmp = std::greater<>{};
-
-        std::sort(in1.begin(), in1.end(), cmp);
-        std::sort(in2.begin(), in2.end(), cmp);
-
-        CAPTURE(in1, in2);
-
-        REQUIRE(saga::includes(saga::cursor::all(in1), saga::cursor::all(in2), cmp)
-                == std::includes(in1.begin(), in1.end(), in2.begin(), in2.end(), cmp));
+        ::check_includes_subrange(std::move(in1), std::move(in2), std::greater<>{});
     };
 }
 
@@ -3655,23 +3566,23 @@ TEST_CASE("includes - always true, custom compare")
     };
 }
 
-TEST_CASE("set_difference : minimal, default compare")
+namespace
 {
-    using Value = int;
-    using Container = std::vector<Value>;
-
-    saga_test::property_checker << [](Container lhs, Container rhs)
+    template <class Container, class... Args>
+    void check_set_difference_minimal(Container lhs, Container rhs, Args... cmp)
     {
-        std::sort(lhs.begin(), lhs.end());
-        std::sort(rhs.begin(), rhs.end());
+        static_assert(sizeof...(Args) <= 1);
 
-        CAPTURE(lhs, rhs);
+        std::sort(lhs.begin(), lhs.end(), cmp...);
+        std::sort(rhs.begin(), rhs.end(), cmp...);
+
+        using Value = typename Container::value_type;
 
         // std
         std::vector<Value> diff_std;
 
         std::set_difference(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
-                            std::back_inserter(diff_std));
+                            std::back_inserter(diff_std), cmp...);
 
         // saga
         std::vector<Value> diff_saga;
@@ -3681,58 +3592,22 @@ TEST_CASE("set_difference : minimal, default compare")
 
         saga::set_difference(saga::make_istream_cursor<Value>(lhs_in),
                              saga::make_istream_cursor<Value>(rhs_in),
-                             saga::back_inserter(diff_saga));
+                             saga::back_inserter(diff_saga), cmp...);
 
         // Проверка
         REQUIRE(diff_saga == diff_std);
-    };
-}
+    }
 
-TEST_CASE("set_difference : minimal, custom compare")
-{
-    using Value = int;
-    using Container = std::vector<Value>;
-
-    saga_test::property_checker << [](Container lhs, Container rhs)
+    template <class Value, class... Args>
+    void check_set_difference_subcursor(std::vector<Value> in1_src
+                                        , std::vector<Value> in2_src
+                                        , std::vector<Value> const & out_src_old
+                                        , Args... cmp)
     {
-        auto const cmp = std::greater<>{};
+        static_assert(sizeof...(Args) <= 1);
 
-        std::sort(lhs.begin(), lhs.end(), cmp);
-        std::sort(rhs.begin(), rhs.end(), cmp);
-
-        // std
-        std::vector<Value> diff_std;
-
-        std::set_difference(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
-                            std::back_inserter(diff_std), cmp);
-
-        // saga
-        std::vector<Value> diff_saga;
-
-        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
-        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
-
-        saga::set_difference(saga::make_istream_cursor<Value>(lhs_in),
-                             saga::make_istream_cursor<Value>(rhs_in),
-                             saga::back_inserter(diff_saga), cmp);
-
-        // Проверка
-        REQUIRE(diff_saga == diff_std);
-    };
-}
-
-TEST_CASE("set_difference - subcursor, custom compare")
-{
-    using Value = long;
-
-    saga_test::property_checker
-    << [](std::vector<Value> in1_src, std::vector<Value> in2_src,
-          std::vector<Value> const & out_src_old)
-    {
-        auto const cmp = std::greater<>{};
-
-        std::sort(in1_src.begin(), in1_src.end(), cmp);
-        std::sort(in2_src.begin(), in2_src.end(), cmp);
+        std::sort(in1_src.begin(), in1_src.end(), cmp...);
+        std::sort(in2_src.begin(), in2_src.end(), cmp...);
 
         // Исходные данные
         auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(in1_src));
@@ -3742,475 +3617,389 @@ TEST_CASE("set_difference - subcursor, custom compare")
         std::vector<Value> out_saga(out_src_old);
         auto const out = saga_test::random_subcursor_of(saga::cursor::all(out_saga));
 
-        auto const result = saga::set_difference(in1, in2, out, cmp);
+        auto const result = saga::set_difference(in1, in2, out, cmp...);
 
         // std
         auto out_std = out_src_old;
 
         std::set_difference(in1.begin(), result.in.begin(), in2.begin(), in2.end()
-                            , saga::rebase_cursor(out, out_std).begin(), cmp);
+                            , saga::rebase_cursor(out, out_std).begin(), cmp...);
 
         // Проверка
         REQUIRE(out_saga == out_std);
-    };
+    }
 }
 
-TEST_CASE("set_intersection : minimal, default compare")
+TEST_CASE("set_difference")
 {
     using Value = int;
     using Container = std::vector<Value>;
-
-    saga_test::property_checker << [](Container lhs, Container rhs)
-    {
-        std::sort(lhs.begin(), lhs.end());
-        std::sort(rhs.begin(), rhs.end());
-
-        CAPTURE(lhs, rhs);
-
-        // std
-        std::vector<Value> diff_std;
-
-        std::set_intersection(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
-                             , std::back_inserter(diff_std));
-
-        // saga
-        std::vector<Value> diff_saga;
-
-        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
-        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
-
-        saga::set_intersection(saga::make_istream_cursor<Value>(lhs_in)
-                              , saga::make_istream_cursor<Value>(rhs_in)
-                              , saga::back_inserter(diff_saga));
-
-        // Проверка
-        REQUIRE(diff_saga == diff_std);
-    };
-}
-
-TEST_CASE("set_intersection : minimal, custom compare")
-{
-    using Value = int;
-    using Container = std::vector<Value>;
-
-    saga_test::property_checker << [](Container lhs, Container rhs)
-    {
-        auto const cmp = std::greater<>{};
-
-        std::sort(lhs.begin(), lhs.end(), cmp);
-        std::sort(rhs.begin(), rhs.end(), cmp);
-
-        // std
-        std::vector<Value> diff_std;
-
-        std::set_intersection(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
-                             , std::back_inserter(diff_std), cmp);
-
-        // saga
-        std::vector<Value> diff_saga;
-
-        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
-        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
-
-        saga::set_intersection(saga::make_istream_cursor<Value>(lhs_in)
-                              , saga::make_istream_cursor<Value>(rhs_in)
-                              , saga::back_inserter(diff_saga), cmp);
-
-        // Проверка
-        REQUIRE(diff_saga == diff_std);
-    };
-}
-
-TEST_CASE("set_intersection - subcursor, custom compare")
-{
-    using Value = long;
 
     saga_test::property_checker
-    << [](std::vector<Value> in1_src, std::vector<Value> in2_src,
-          std::vector<Value> const & out_src_old)
+    << ::check_set_difference_minimal<Container>
+    << ::check_set_difference_subcursor<Container>
+    << [](Container lhs, Container rhs)
     {
-        auto const cmp = std::greater<>{};
+        ::check_set_difference_minimal(std::move(lhs), std::move(rhs), std::greater<>{});
+    }
+    << [](Container lhs, Container rhs, Container const & out_src_old)
+    {
+        ::check_set_difference_subcursor(std::move(lhs), std::move(rhs)
+                                         , out_src_old, std::greater<>{});
+    };
+}
 
-        std::sort(in1_src.begin(), in1_src.end(), cmp);
-        std::sort(in2_src.begin(), in2_src.end(), cmp);
+namespace
+{
+    template <class Container, class... Args>
+    void test_set_difference_minimal(Container lhs, Container rhs, Args... cmp)
+    {
+        static_assert(sizeof...(Args) <= 1);
+
+        std::sort(lhs.begin(), lhs.end(), cmp...);
+        std::sort(rhs.begin(), rhs.end(), cmp...);
+
+        using Value = typename Container::value_type;
+
+        // std
+        std::vector<Value> diff_std;
+
+        std::set_intersection(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
+                             , std::back_inserter(diff_std), cmp...);
+
+        // saga
+        std::vector<Value> diff_saga;
+
+        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
+
+        saga::set_intersection(saga::make_istream_cursor<Value>(lhs_in)
+                              , saga::make_istream_cursor<Value>(rhs_in)
+                              , saga::back_inserter(diff_saga), cmp...);
+
+        // Проверка
+        REQUIRE(diff_saga == diff_std);
+    }
+
+    template <class Container, class... Args>
+    void test_set_difference_subcursor(Container in1_src, Container in2_src
+                                      , Container const & out_src_old, Args... cmp)
+    {
+        static_assert(sizeof...(Args) <= 1);
+
+        std::sort(in1_src.begin(), in1_src.end(), cmp...);
+        std::sort(in2_src.begin(), in2_src.end(), cmp...);
 
         // Исходные данные
         auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(in1_src));
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(in2_src));
 
         // saga
-        std::vector<Value> out_saga(out_src_old);
+        auto out_saga = out_src_old;
         auto const out = saga_test::random_subcursor_of(saga::cursor::all(out_saga));
 
-        auto const result = saga::set_intersection(in1, in2, out, cmp);
+        auto const result = saga::set_intersection(in1, in2, out, cmp...);
 
         // std
         auto out_std = out_src_old;
         std::set_intersection(in1.begin(), result.in1.begin(), in2.begin(), result.in2.begin()
-                              , saga::rebase_cursor(out, out_std).begin(), cmp);
+                              , saga::rebase_cursor(out, out_std).begin(), cmp...);
 
         // Проверка
         REQUIRE(out_saga == out_std);
-    };
+    }
 }
 
-TEST_CASE("set_symmetric_difference : minimal, default compare")
+TEST_CASE("set_intersection")
 {
     using Value = int;
     using Container = std::vector<Value>;
-
-    saga_test::property_checker << [](Container lhs, Container rhs)
-    {
-        std::sort(lhs.begin(), lhs.end());
-        std::sort(rhs.begin(), rhs.end());
-
-        CAPTURE(lhs, rhs);
-
-        // std
-        std::vector<Value> diff_std;
-
-        std::set_symmetric_difference(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
-                                      , std::back_inserter(diff_std));
-
-        // saga
-        std::vector<Value> diff_saga;
-
-        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
-        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
-
-        saga::set_symmetric_difference(saga::make_istream_cursor<Value>(lhs_in)
-                                       , saga::make_istream_cursor<Value>(rhs_in)
-                                       , saga::back_inserter(diff_saga));
-
-        // Проверка
-        REQUIRE(diff_saga == diff_std);
-    };
-}
-
-TEST_CASE("set_symmetric_difference : minimal, custom compare")
-{
-    using Value = int;
-    using Container = std::vector<Value>;
-
-    saga_test::property_checker << [](Container lhs, Container rhs)
-    {
-        auto const cmp = std::greater<>{};
-
-        std::sort(lhs.begin(), lhs.end(), cmp);
-        std::sort(rhs.begin(), rhs.end(), cmp);
-
-        // std
-        std::vector<Value> diff_std;
-
-        std::set_symmetric_difference(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
-                                      , std::back_inserter(diff_std), cmp);
-
-        // saga
-        std::vector<Value> diff_saga;
-
-        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
-        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
-
-        saga::set_symmetric_difference(saga::make_istream_cursor<Value>(lhs_in)
-                                       , saga::make_istream_cursor<Value>(rhs_in)
-                                       , saga::back_inserter(diff_saga), cmp);
-
-        // Проверка
-        REQUIRE(diff_saga == diff_std);
-    };
-}
-
-TEST_CASE("set_symmetric_difference - subcursor, custom compare")
-{
-    using Value = long;
 
     saga_test::property_checker
-    << [](std::vector<Value> in1_src, std::vector<Value> in2_src,
-          std::vector<Value> const & out_src_old)
+    << ::test_set_difference_minimal<Container>
+    << ::test_set_difference_subcursor<Container>
+    << [](Container lhs, Container rhs)
     {
-        auto const cmp = std::greater<>{};
+        ::test_set_difference_minimal(std::move(lhs), std::move(rhs), std::greater<>{});
+    }
+    << [](Container lhs, Container rhs, Container const & out_src_old)
+    {
+        ::test_set_difference_subcursor(std::move(lhs), std::move(rhs)
+                                        , out_src_old, std::greater<>{});
+    };
+}
 
-        std::sort(in1_src.begin(), in1_src.end(), cmp);
-        std::sort(in2_src.begin(), in2_src.end(), cmp);
+namespace
+{
+    template <class Container, class... Args>
+    void test_set_symmetric_difference_minimal(Container lhs, Container rhs, Args... cmp)
+    {
+        static_assert(sizeof...(Args) <= 1);
+
+        std::sort(lhs.begin(), lhs.end(), cmp...);
+        std::sort(rhs.begin(), rhs.end(), cmp...);
+
+        using Value = typename Container::value_type;
+
+        // std
+        std::vector<Value> diff_std;
+
+        std::set_symmetric_difference(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
+                                      , std::back_inserter(diff_std), cmp...);
+
+        // saga
+        std::vector<Value> diff_saga;
+
+        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
+
+        saga::set_symmetric_difference(saga::make_istream_cursor<Value>(lhs_in)
+                                       , saga::make_istream_cursor<Value>(rhs_in)
+                                       , saga::back_inserter(diff_saga), cmp...);
+
+        // Проверка
+        REQUIRE(diff_saga == diff_std);
+    }
+
+    template <class Container, class... Args>
+    void test_set_symmetric_difference_subcursor(Container in1_src, Container in2_src
+                                                 , Container const & out_src_old, Args... cmp)
+    {
+        static_assert(sizeof...(Args) <= 1);
+
+        std::sort(in1_src.begin(), in1_src.end(), cmp...);
+        std::sort(in2_src.begin(), in2_src.end(), cmp...);
 
         // Исходные данные
         auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(in1_src));
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(in2_src));
 
         // saga
-        std::vector<Value> out_saga(out_src_old);
+        auto out_saga = out_src_old;
         auto const out = saga_test::random_subcursor_of(saga::cursor::all(out_saga));
 
-        auto const result = saga::set_symmetric_difference(in1, in2, out, cmp);
+        auto const result = saga::set_symmetric_difference(in1, in2, out, cmp...);
 
         // std
         auto out_std = out_src_old;
         std::set_symmetric_difference(in1.begin(), result.in1.begin()
                                       , in2.begin(), result.in2.begin()
-                                      , saga::rebase_cursor(out, out_std).begin(), cmp);
+                                      , saga::rebase_cursor(out, out_std).begin(), cmp...);
 
         // Проверка
         REQUIRE(out_saga == out_std);
-    };
+    }
 }
 
-TEST_CASE("set_union : minimal, default compare")
+TEST_CASE("set_symmetric_difference")
 {
     using Value = int;
     using Container = std::vector<Value>;
-
-    saga_test::property_checker << [](Container lhs, Container rhs)
-    {
-        std::sort(lhs.begin(), lhs.end());
-        std::sort(rhs.begin(), rhs.end());
-
-        CAPTURE(lhs, rhs);
-
-        // std
-        std::vector<Value> diff_std;
-
-        std::set_union(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
-                       , std::back_inserter(diff_std));
-
-        // saga
-        std::vector<Value> diff_saga;
-
-        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
-        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
-
-        saga::set_union(saga::make_istream_cursor<Value>(lhs_in)
-                        , saga::make_istream_cursor<Value>(rhs_in)
-                        , saga::back_inserter(diff_saga));
-
-        // Проверка
-        REQUIRE(diff_saga == diff_std);
-    };
-}
-
-TEST_CASE("set_union : minimal, custom compare")
-{
-    using Value = int;
-    using Container = std::vector<Value>;
-
-    saga_test::property_checker << [](Container lhs, Container rhs)
-    {
-        auto const cmp = std::greater<>{};
-
-        std::sort(lhs.begin(), lhs.end(), cmp);
-        std::sort(rhs.begin(), rhs.end(), cmp);
-
-        // std
-        std::vector<Value> diff_std;
-
-        std::set_union(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
-                       , std::back_inserter(diff_std), cmp);
-
-        // saga
-        std::vector<Value> diff_saga;
-
-        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
-        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
-
-        saga::set_union(saga::make_istream_cursor<Value>(lhs_in)
-                        , saga::make_istream_cursor<Value>(rhs_in)
-                        , saga::back_inserter(diff_saga), cmp);
-
-        // Проверка
-        REQUIRE(diff_saga == diff_std);
-    };
-}
-
-TEST_CASE("set_union - subcursor, custom compare")
-{
-    using Value = long;
 
     saga_test::property_checker
-    << [](std::vector<Value> in1_src, std::vector<Value> in2_src,
-          std::vector<Value> const & out_src_old)
+    <<  ::test_set_symmetric_difference_minimal<Container>
+    << ::test_set_symmetric_difference_subcursor<Container>
+    << [](Container lhs, Container rhs)
     {
-        auto const cmp = std::greater<>{};
+        ::test_set_symmetric_difference_minimal(std::move(lhs), std::move(rhs), std::greater<>{});
+    }
+    << [](Container lhs, Container rhs, Container const & out_src_old)
+    {
+        ::test_set_symmetric_difference_subcursor(std::move(lhs), std::move(rhs)
+                                                  , out_src_old, std::greater<>{});
+    };
+}
 
-        std::sort(in1_src.begin(), in1_src.end(), cmp);
-        std::sort(in2_src.begin(), in2_src.end(), cmp);
+namespace
+{
+    template <class Container, class... Args>
+    void test_set_union_minimal(Container lhs, Container rhs, Args... cmp)
+    {
+        static_assert(sizeof...(Args) <= 1);
+
+        std::sort(lhs.begin(), lhs.end(), cmp...);
+        std::sort(rhs.begin(), rhs.end(), cmp...);
+
+        using Value = typename Container::value_type;
+
+        // std
+        std::vector<Value> diff_std;
+
+        std::set_union(lhs.begin(), lhs.end(), rhs.begin(), rhs.end()
+                       , std::back_inserter(diff_std), cmp...);
+
+        // saga
+        std::vector<Value> diff_saga;
+
+        auto lhs_in = saga_test::make_istringstream_from_range(lhs);
+        auto rhs_in = saga_test::make_istringstream_from_range(rhs);
+
+        saga::set_union(saga::make_istream_cursor<Value>(lhs_in)
+                                       , saga::make_istream_cursor<Value>(rhs_in)
+                                       , saga::back_inserter(diff_saga), cmp...);
+
+        // Проверка
+        REQUIRE(diff_saga == diff_std);
+    }
+
+    template <class Container, class... Args>
+    void test_set_union_subcursor(Container in1_src, Container in2_src
+                                  , Container const & out_src_old, Args... cmp)
+    {
+        static_assert(sizeof...(Args) <= 1);
+
+        std::sort(in1_src.begin(), in1_src.end(), cmp...);
+        std::sort(in2_src.begin(), in2_src.end(), cmp...);
 
         // Исходные данные
         auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(in1_src));
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(in2_src));
 
         // saga
-        std::vector<Value> out_saga(out_src_old);
+        auto out_saga = out_src_old;
         auto const out = saga_test::random_subcursor_of(saga::cursor::all(out_saga));
 
-        auto const result = saga::set_union(in1, in2, out, cmp);
+        auto const result = saga::set_union(in1, in2, out, cmp...);
 
         // std
         auto out_std = out_src_old;
         std::set_union(in1.begin(), result.in1.begin(), in2.begin(), result.in2.begin()
-                       , saga::rebase_cursor(out, out_std).begin(), cmp);
+                       , saga::rebase_cursor(out, out_std).begin(), cmp...);
 
         // Проверка
-        REQUIRE(out_std == out_saga);
+        REQUIRE(out_saga == out_std);
+    }
+}
+
+TEST_CASE("set_union")
+{
+    using Value = int;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker
+    <<  ::test_set_union_minimal<Container>
+    << ::test_set_union_minimal<Container>
+    << [](Container lhs, Container rhs)
+    {
+        ::test_set_union_minimal(std::move(lhs), std::move(rhs), std::greater<>{});
+    }
+    << [](Container lhs, Container rhs, Container const & out_src_old)
+    {
+        ::test_set_union_subcursor(std::move(lhs), std::move(rhs), out_src_old, std::greater<>{});
     };
 }
 
-TEST_CASE("is_heap_until - default compare")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    template <class Container, class... Args>
+    void test_is_heap_until(Container const & src, Args... cmp)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        auto const result_std = std::is_heap_until(input.begin(), input.end());
-        auto const result_saga = saga::is_heap_until(input);
+        auto const result_std = std::is_heap_until(input.begin(), input.end(), cmp...);
+        auto const result_saga = saga::is_heap_until(input, cmp...);
 
         REQUIRE(result_saga.begin() == result_std);
         REQUIRE(result_saga.end() == input.end());
 
         REQUIRE(result_saga.dropped_front().begin() == src.begin());
         REQUIRE(result_saga.dropped_front().end() == result_saga.begin());
-    };
-}
+    }
 
-TEST_CASE("is_heap_until - custom compare")
-{
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    template <class Container, class... Args>
+    void test_is_heap_until_for_heap(Container src, Args... cmp)
     {
-        auto const cmp = std::greater<>{};
+        static_assert(sizeof...(Args) <= 1);
+
+        std::make_heap(src.begin(), src.end(), cmp...);
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        auto const result_std = std::is_heap_until(input.begin(), input.end(), cmp);
-        auto const result_saga = saga::is_heap_until(input, cmp);
+        auto const result_std = std::is_heap_until(input.begin(), input.end(), cmp...);
+        auto const result_saga = saga::is_heap_until(input, cmp...);
 
         REQUIRE(result_saga.begin() == result_std);
         REQUIRE(result_saga.end() == input.end());
 
         REQUIRE(result_saga.dropped_front().begin() == src.begin());
         REQUIRE(result_saga.dropped_front().end() == result_saga.begin());
-    };
+    }
 }
 
-TEST_CASE("is_heap_until - default compare, guaranty")
+TEST_CASE("is_heap_until")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> src)
+    saga_test::property_checker
+    << ::test_is_heap_until<std::vector<Value>>
+    << ::test_is_heap_until_for_heap<std::vector<Value>>
+    << [](std::vector<Value> const & src)
     {
-        std::make_heap(src.begin(), src.end());
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        auto const result_std = std::is_heap_until(input.begin(), input.end());
-        auto const result_saga = saga::is_heap_until(input);
-
-        REQUIRE(result_saga.begin() == result_std);
-        REQUIRE(result_saga.end() == input.end());
-
-        REQUIRE(result_saga.dropped_front().begin() == src.begin());
-        REQUIRE(result_saga.dropped_front().end() == result_saga.begin());
+        ::test_is_heap_until(src, std::greater<>{});
+    }
+    << [](std::vector<Value> src)
+    {
+        ::test_is_heap_until_for_heap(std::move(src), std::greater<>{});
     };
 }
 
-TEST_CASE("is_heap_until - custom compare, guaranty")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> src)
+    template <class Container, class... Args>
+    void test_is_heap(Container const & src, Args... cmp)
     {
-        auto const cmp = std::greater<>{};
-
-        std::make_heap(src.begin(), src.end(), cmp);
+        static_assert(sizeof...(Args) <= 1);
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        auto const result_std = std::is_heap_until(input.begin(), input.end(), cmp);
-        auto const result_saga = saga::is_heap_until(input, cmp);
-
-        REQUIRE(result_saga.begin() == result_std);
-        REQUIRE(result_saga.end() == input.end());
-
-        REQUIRE(result_saga.dropped_front().begin() == src.begin());
-        REQUIRE(result_saga.dropped_front().end() == result_saga.begin());
-    };
-}
-
-TEST_CASE("is_heap - default compare")
-{
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> const & src)
-    {
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        auto const result_std = std::is_heap(input.begin(), input.end());
-        auto const result_saga = saga::is_heap(input);
+        auto const result_std = std::is_heap(input.begin(), input.end(), cmp...);
+        auto const result_saga = saga::is_heap(input, cmp...);
 
         REQUIRE(result_saga == result_std);
-    };
-}
+    }
 
-TEST_CASE("is_heap - custom compare")
-{
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    template <class Container, class... Args>
+    void test_is_heap_for_heap(Container src, Args... cmp)
     {
-        auto const cmp = std::greater<>{};
+        static_assert(sizeof...(Args) <= 1);
+
+        std::make_heap(src.begin(), src.end(), cmp...);
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        auto const result_std = std::is_heap(input.begin(), input.end(), cmp);
-        auto const result_saga = saga::is_heap(input, cmp);
+        auto const result_std = std::is_heap(input.begin(), input.end(), cmp...);
+        auto const result_saga = saga::is_heap(input, cmp...);
 
         REQUIRE(result_saga == result_std);
-    };
+    }
 }
 
-TEST_CASE("is_heap - default compare, guaranty")
+TEST_CASE("is_heap")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> src)
+    saga_test::property_checker
+    << ::test_is_heap<std::vector<Value>>
+    << ::test_is_heap_for_heap<std::vector<Value>>
+    << [](std::vector<Value> const & src)
     {
-        std::make_heap(src.begin(), src.end());
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        auto const result_std = std::is_heap(input.begin(), input.end());
-        auto const result_saga = saga::is_heap(input);
-
-        REQUIRE(result_saga == result_std);
+        ::test_is_heap(src, std::greater<>{});
+    }
+    << [](std::vector<Value> src)
+    {
+        ::test_is_heap_for_heap(std::move(src), std::greater<>{});
     };
 }
 
-TEST_CASE("is_heap - custom compare, guaranty")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> src)
+    template <class Value, class... Args>
+    void test_push_heap(std::vector<Value> src, Value const & value, Args... cmp)
     {
-        auto const cmp = std::greater<>{};
+        static_assert(sizeof...(Args) <= 1);
 
-        std::make_heap(src.begin(), src.end(), cmp);
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        auto const result_std = std::is_heap(input.begin(), input.end(), cmp);
-        auto const result_saga = saga::is_heap(input, cmp);
-
-        REQUIRE(result_saga == result_std);
-    };
-}
-
-TEST_CASE("push_heap - default compare, subcursor")
-{
-    using Value = long;
-
-    saga_test::property_checker << [](std::vector<Value> src, Value const & value)
-    {
         src.push_back(value);
 
         auto const input = saga::cursor::all(src);
@@ -4219,11 +4008,11 @@ TEST_CASE("push_heap - default compare, subcursor")
         {
             auto const src_old = src;
 
-            REQUIRE(saga::is_heap(cur.dropped_front()));
+            REQUIRE(saga::is_heap(cur.dropped_front(), cmp...));
 
             ++ cur;
 
-            saga::push_heap(cur.dropped_front());
+            saga::push_heap(cur.dropped_front(), cmp...);
 
             auto const input_src_old = saga::rebase_cursor(input, src_old);
             auto const cur_src_old = saga::rebase_cursor(cur, src_old);
@@ -4232,59 +4021,36 @@ TEST_CASE("push_heap - default compare, subcursor")
             CHECK(saga::equal(cur, cur_src_old));
             CHECK(saga::equal(cur.dropped_back(), cur_src_old.dropped_back()));
 
-            REQUIRE(saga::is_heap(cur.dropped_front()));
+            REQUIRE(saga::is_heap(cur.dropped_front(), cmp...));
 
             CHECK(saga::is_permutation(cur.dropped_front(), cur_src_old.dropped_front()));
         }
-    };
+    }
 }
 
-TEST_CASE("push_heap - custom compare, subcursor")
+TEST_CASE("push_heap")
 {
     using Value = long;
 
-    saga_test::property_checker << [](std::vector<Value> src, Value const & value)
+    saga_test::property_checker
+    << ::test_push_heap<Value>
+    << [](std::vector<Value> src, Value const & value)
     {
-        src.push_back(value);
-
-        auto const cmp = std::greater<>{};
-
-        auto const input = saga::cursor::all(src);
-
-        for(auto cur = saga::cursor::all(input); !!cur;)
-        {
-            auto const src_old = src;
-
-            REQUIRE(saga::is_heap(cur.dropped_front(), cmp));
-
-            ++ cur;
-
-            saga::push_heap(cur.dropped_front(), cmp);
-
-            auto const input_src_old = saga::rebase_cursor(input, src_old);
-            auto const cur_src_old = saga::rebase_cursor(cur, src_old);
-
-            CHECK(saga::equal(input.dropped_front(), input_src_old.dropped_front()));
-            CHECK(saga::equal(cur, cur_src_old));
-            CHECK(saga::equal(cur.dropped_back(), cur_src_old.dropped_back()));
-
-            REQUIRE(saga::is_heap(cur.dropped_front(), cmp));
-
-            CHECK(saga::is_permutation(cur.dropped_front(), cur_src_old.dropped_front()));
-        }
+        ::test_push_heap(std::move(src), value, std::greater<>{});
     };
 }
 
-TEST_CASE("make_heap - default compare")
+namespace
 {
-    using Value = long;
-
-    saga_test::property_checker << [](std::vector<Value> const & src_old)
+    template <class Value, class... Args>
+    void test_make_heap(std::vector<Value> const & src_old, Args... cmp)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         auto src = src_old;
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        saga::make_heap(input);
+        saga::make_heap(input, cmp...);
 
         CAPTURE(src_old, src);
 
@@ -4294,53 +4060,41 @@ TEST_CASE("make_heap - default compare")
         CHECK(saga::is_permutation(input, input_src_old));
         CHECK(saga::equal(input.dropped_back(), input_src_old.dropped_back()));
 
-        CHECK(saga::is_heap(input));
-    };
+        CHECK(saga::is_heap(input, cmp...));
+    }
 }
 
-TEST_CASE("make_heap - custom compare")
+TEST_CASE("make_heap")
 {
     using Value = long;
 
-    saga_test::property_checker << [](std::vector<Value> const & src_old)
+    saga_test::property_checker
+    << ::test_make_heap<Value>
+    << [](std::vector<Value> const & src_old)
     {
-        auto const cmp = std::greater<>{};
-
-        auto src = src_old;
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        saga::make_heap(input, cmp);
-
-        CAPTURE(src_old, src);
-
-        auto const input_src_old = saga::rebase_cursor(input, src_old);
-
-        CHECK(saga::equal(input.dropped_front(), input_src_old.dropped_front()));
-        CHECK(saga::is_permutation(input, input_src_old));
-        CHECK(saga::equal(input.dropped_back(), input_src_old.dropped_back()));
-
-        CHECK(saga::is_heap(input, cmp));
+        ::test_make_heap(src_old, std::greater<>{});
     };
 }
 
-TEST_CASE("pop_heap - default compare")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> src, Value value)
+    template <class Value, class... Args>
+    void test_pop_heap(std::vector<Value> src, Value value, Args... cmp)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         src.push_back(std::move(value));
 
         auto input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        saga::make_heap(input);
-        REQUIRE(saga::is_heap(input));
+        saga::make_heap(input, cmp...);
+        REQUIRE(saga::is_heap(input, cmp...));
 
         for(;!!input;)
         {
             auto const src_old = src;
 
-            saga::pop_heap(input);
+            saga::pop_heap(input, cmp...);
 
             CAPTURE(src_old, src);
 
@@ -4354,66 +4108,39 @@ TEST_CASE("pop_heap - default compare")
 
             input.drop_back();
 
-            REQUIRE(saga::is_heap(input));
+            REQUIRE(saga::is_heap(input, cmp...));
         }
-    };
+    }
 }
 
-TEST_CASE("pop_heap - custom compare")
+TEST_CASE("pop_heap")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> src, Value value)
+    saga_test::property_checker
+    << ::test_pop_heap<Value>
+    << [](std::vector<Value> src, Value value)
     {
-        src.push_back(std::move(value));
-
-        auto const cmp = std::greater<>{};
-
-        auto input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        saga::make_heap(input, cmp);
-        REQUIRE(saga::is_heap(input, cmp));
-
-        for(;!!input;)
-        {
-            auto const src_old = src;
-
-            saga::pop_heap(input, cmp);
-
-            CAPTURE(src_old, src);
-
-            auto const input_src_old = saga::rebase_cursor(input, src_old);
-
-            CHECK(saga::equal(input.dropped_front(), input_src_old.dropped_front()));
-            CHECK(saga::is_permutation(input, input_src_old));
-            CHECK(saga::equal(input.dropped_back(), input_src_old.dropped_back()));
-
-            REQUIRE(input.back() == input_src_old.front());
-
-            input.drop_back();
-
-            REQUIRE(saga::is_heap(input, cmp));
-        }
+        ::test_pop_heap(std::move(src), std::move(value), std::greater<>{});
     };
 }
 
-TEST_CASE("sort_heap - default compare")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> const & src_old)
+    template <class Value, class... Args>
+    void test_sort_heap(std::vector<Value> src_old, Args... cmp)
     {
         // Подготовка
         auto src = src_old;
         auto input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        saga::make_heap(input);
+        saga::make_heap(input, cmp...);
 
         // Алгоритм
-        saga::sort_heap(input);
+        saga::sort_heap(input, cmp...);
 
         // Проверки
-        REQUIRE(saga::is_sorted(input));
+        REQUIRE(saga::is_sorted(input, cmp...));
 
         auto const cur_src_old = saga::rebase_cursor(input, src_old);
 
@@ -4421,71 +4148,27 @@ TEST_CASE("sort_heap - default compare")
 
         REQUIRE(saga::equal(input.dropped_front(), cur_src_old.dropped_front()));
         REQUIRE(saga::equal(input.dropped_back(), cur_src_old.dropped_back()));
-    };
+    }
 }
 
-TEST_CASE("sort_heap - custom compare")
+TEST_CASE("sort_heap")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & src_old)
+    saga_test::property_checker
+    << ::test_sort_heap<Value>
+    << [](std::vector<Value> const & src_old)
     {
-        auto const cmp = std::greater<>{};
-
-        // Подготовка
-        auto src = src_old;
-        auto input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        saga::make_heap(input, cmp);
-
-        // Алгоритм
-        saga::sort_heap(input, cmp);
-
-        // Проверки
-        REQUIRE(saga::is_sorted(input, cmp));
-
-        auto const cur_src_old = saga::rebase_cursor(input, src_old);
-
-        REQUIRE(std::is_permutation(input.begin(), input.end(), cur_src_old.begin()));
-
-        REQUIRE(saga::equal(input.dropped_front(), cur_src_old.dropped_front()));
-        REQUIRE(saga::equal(input.dropped_back(), cur_src_old.dropped_back()));
+        ::test_sort_heap(src_old, std::greater<>{});
     };
 }
 
-TEST_CASE("insertion_sort - default compare")
+namespace
 {
-    using Value = long;
-
-    saga_test::property_checker << [](std::list<Value> const & values_old)
+    template <class Value, class... Args>
+    void test_insertion_sort(std::list<Value> const & values_old, Args... cmp)
     {
-        // Подготовка
-        auto values = values_old;
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
-
-        // Выполнение
-        saga::insertion_sort(input);
-
-        // Проверка
-        auto const input_old = saga::rebase_cursor(input, values_old);
-        CAPTURE(values_old, values, input_old, input);
-
-        REQUIRE(saga::is_sorted(input));
-
-        REQUIRE(saga::is_permutation(input, input_old));
-        REQUIRE(saga::equal(input.dropped_front(), input_old.dropped_front()));
-        REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
-    };
-}
-
-TEST_CASE("insertion_sort - custom compare")
-{
-    using Value = long;
-
-    saga_test::property_checker << [](std::list<Value> const & values_old)
-    {
-        auto const pred = std::greater<>{};
+        static_assert(sizeof...(Args) <= 1);
 
         // Подготовка
         auto values = values_old;
@@ -4493,53 +4176,22 @@ TEST_CASE("insertion_sort - custom compare")
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
 
         // Выполнение
-        saga::insertion_sort(input, pred);
+        saga::insertion_sort(input, cmp...);
 
         // Проверка
-        REQUIRE(saga::is_sorted(input, pred));
+        REQUIRE(saga::is_sorted(input, cmp...));
 
         auto const input_old = saga::rebase_cursor(input, values_old);
 
         REQUIRE(saga::is_permutation(input, input_old));
         REQUIRE(saga::equal(input.dropped_front(), input_old.dropped_front()));
         REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
-    };
-}
+    }
 
-TEST_CASE("sort - default compare")
-{
-    using Value = long;
-
-    saga_test::property_checker << [](std::vector<Value> const & values_old)
+    template <class Value, class... Args>
+    void test_sort(std::vector<Value> const & values_old, Args... cmp)
     {
-        // Подготовка
-        auto values = values_old;
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
-
-        // Выполнение
-        saga::sort(input);
-
-        // Проверка
-        auto const input_old = saga::rebase_cursor(input, values_old);
-        CAPTURE(values_old, values, input_old, input);
-
-        REQUIRE(saga::is_sorted(input));
-
-        REQUIRE(saga::is_permutation(input, input_old));
-        REQUIRE(saga::equal(input.dropped_front(), input_old.dropped_front()));
-        REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
-    };
-}
-
-TEST_CASE("sort - custom compare")
-{
-    using Value = long;
-
-    saga_test::property_checker << [](std::vector<Value> const & values_old)
-    {
-        auto const pred
-            = saga::compare_by([](Value const & arg) { return arg % 17; }, std::greater<>{});
+        static_assert(sizeof...(Args) <= 1);
 
         // Подготовка
         auto values = values_old;
@@ -4547,16 +4199,42 @@ TEST_CASE("sort - custom compare")
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
 
         // Выполнение
-        saga::sort(input, pred);
+        saga::sort(input, cmp...);
 
         // Проверка
-        REQUIRE(saga::is_sorted(input, pred));
+        REQUIRE(saga::is_sorted(input, cmp...));
 
         auto const input_old = saga::rebase_cursor(input, values_old);
 
         REQUIRE(saga::is_permutation(input, input_old));
         REQUIRE(saga::equal(input.dropped_front(), input_old.dropped_front()));
         REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
+    }
+}
+
+TEST_CASE("insertion_sort")
+{
+    using Value = long;
+
+    saga_test::property_checker
+    << ::test_insertion_sort<Value>
+    << [](std::list<Value> const & values_old)
+    {
+        ::test_insertion_sort(values_old, std::greater<>{});
+    };
+}
+
+TEST_CASE("sort")
+{
+    using Value = long;
+
+    saga_test::property_checker
+    << ::test_sort<Value>
+    << [](std::vector<Value> const & values_old)
+    {
+        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 17; }
+                                         , std::greater<>{});
+        ::test_sort(values_old, cmp);
     };
 }
 
@@ -4629,56 +4307,13 @@ TEST_CASE("partial_sort - custom compare")
     };
 }
 
-TEST_CASE("partial_sort_copy : minimalistic, default compare")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker
-    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
+    template <class Value, class... Args>
+    void test_partial_sort_copy_minimal(std::vector<Value> const & src
+                                        , std::vector<Value> const & dest_old, Args... cmp)
     {
-        // saga
-        auto dest_saga = dest_old;
-
-        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
-
-        auto src_saga = saga_test::make_istringstream_from_range(src);
-
-        auto const r_saga = saga::partial_sort_copy(saga::make_istream_cursor<Value>(src_saga)
-                                                    , out_saga);
-
-        // std
-        auto dest_std = dest_old;
-
-        auto const out_std = saga::rebase_cursor(out_saga, dest_std);
-
-        auto const r_std = std::partial_sort_copy(src.begin(), src.end()
-                                                  , out_std.begin(), out_std.end());
-
-        // Проверка
-        CAPTURE(src, dest_old, out_saga);
-
-        REQUIRE(dest_saga == dest_std);
-
-        if(!!out_saga)
-        {
-            REQUIRE(!r_saga.in);
-        }
-
-        REQUIRE(r_saga.out.size() == (out_std.end() - r_std));
-        REQUIRE(r_saga.out.end() == out_saga.end());
-        REQUIRE(r_saga.out.dropped_front().begin() == dest_saga.begin());
-        REQUIRE(r_saga.out.dropped_back().end() == dest_saga.end());
-    };
-}
-
-TEST_CASE("partial_sort_copy : minimalistic, custom compare")
-{
-    using Value = int;
-
-    saga_test::property_checker
-    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
-    {
-        auto const cmp = std::greater<>{};
+        static_assert(sizeof...(Args) <= 1);
 
         // saga
         auto dest_saga = dest_old;
@@ -4688,7 +4323,7 @@ TEST_CASE("partial_sort_copy : minimalistic, custom compare")
         auto src_saga = saga_test::make_istringstream_from_range(src);
 
         auto const r_saga = saga::partial_sort_copy(saga::make_istream_cursor<Value>(src_saga)
-                                                    , out_saga, cmp);
+                                                    , out_saga, cmp...);
 
         // std
         auto dest_std = dest_old;
@@ -4696,7 +4331,7 @@ TEST_CASE("partial_sort_copy : minimalistic, custom compare")
         auto const out_std = saga::rebase_cursor(out_saga, dest_std);
 
         auto const r_std = std::partial_sort_copy(src.begin(), src.end()
-                                                  , out_std.begin(), out_std.end(), cmp);
+                                                  , out_std.begin(), out_std.end(), cmp...);
 
         // Проверка
         REQUIRE(dest_saga == dest_std);
@@ -4710,16 +4345,15 @@ TEST_CASE("partial_sort_copy : minimalistic, custom compare")
         REQUIRE(r_saga.out.end() == out_saga.end());
         REQUIRE(r_saga.out.dropped_front().begin() == dest_saga.begin());
         REQUIRE(r_saga.out.dropped_back().end() == dest_saga.end());
-    };
-}
+    }
 
-TEST_CASE("partial_sort_copy : input subrange, default compare")
-{
-    using Value = int;
-
-    saga_test::property_checker
-    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
+    template <class Value, class... Args>
+    void test_partial_sort_copy_input_subcursor(std::vector<Value> const & src
+                                                , std::vector<Value> const & dest_old
+                                                , Args... cmp)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         // saga
@@ -4727,7 +4361,7 @@ TEST_CASE("partial_sort_copy : input subrange, default compare")
 
         auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
 
-        auto const r_saga = saga::partial_sort_copy(input, out_saga);
+        auto const r_saga = saga::partial_sort_copy(input, out_saga, cmp...);
 
         // std
         auto dest_std = dest_old;
@@ -4735,7 +4369,7 @@ TEST_CASE("partial_sort_copy : input subrange, default compare")
         auto const out_std = saga::rebase_cursor(out_saga, dest_std);
 
         auto const r_std = std::partial_sort_copy(input.begin(), input.end()
-                                                  , out_std.begin(), out_std.end());
+                                                  , out_std.begin(), out_std.end(), cmp...);
 
         // Проверка
         REQUIRE(dest_saga == dest_std);
@@ -4750,96 +4384,61 @@ TEST_CASE("partial_sort_copy : input subrange, default compare")
         REQUIRE(r_saga.out.end() == out_saga.end());
         REQUIRE(r_saga.out.dropped_front().begin() == dest_saga.begin());
         REQUIRE(r_saga.out.dropped_back().end() == dest_saga.end());
-    };
+    }
 }
 
-TEST_CASE("partial_sort_copy : input subrage, custom compare")
+TEST_CASE("partial_sort_copy")
 {
     using Value = int;
 
     saga_test::property_checker
+    << ::test_partial_sort_copy_minimal<Value>
+    << ::test_partial_sort_copy_input_subcursor<Value>
     << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
     {
-        auto const cmp = std::greater<>{};
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        // saga
-        auto dest_saga = dest_old;
-
-        auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
-
-        auto const r_saga = saga::partial_sort_copy(input, out_saga, cmp);
-
-        // std
-        auto dest_std = dest_old;
-
-        auto const out_std = saga::rebase_cursor(out_saga, dest_std);
-
-        auto const r_std = std::partial_sort_copy(input.begin(), input.end()
-                                                  , out_std.begin(), out_std.end(), cmp);
-
-        // Проверка
-        REQUIRE(dest_saga == dest_std);
-
-        REQUIRE(r_saga.in.begin() == (!!out_saga ? input.end() : input.begin()));
-
-        REQUIRE(r_saga.in.end() == input.end());
-        REQUIRE(r_saga.in.dropped_front().begin() == src.begin());
-        REQUIRE(r_saga.in.dropped_back().end() == src.end());
-
-        REQUIRE(r_saga.out.size() == (out_std.end() - r_std));
-        REQUIRE(r_saga.out.end() == out_saga.end());
-        REQUIRE(r_saga.out.dropped_front().begin() == dest_saga.begin());
-        REQUIRE(r_saga.out.dropped_back().end() == dest_saga.end());
+        ::test_partial_sort_copy_minimal(src, dest_old, std::greater<>{});
+    }
+    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
+    {
+        ::test_partial_sort_copy_input_subcursor(src, dest_old, std::greater<>{});
     };
 }
 
-TEST_CASE("stable_sort: default compare")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> const & values_old)
+    template <class Value, class... Args>
+    void test_stable_sort(std::vector<Value> const & values_old, Args... cmp)
     {
-        auto values = values_old;
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
-
-        saga::stable_sort(input);
-
-        // Проверки
-        auto const input_old = saga::rebase_cursor(input, values_old);
-
-        REQUIRE(saga::is_sorted(input));
-        REQUIRE(saga::is_permutation(input, input_old));
-        REQUIRE(saga::equal(input.dropped_front(), input_old.dropped_front()));
-        REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
-    };
-}
-
-TEST_CASE("stable_sort: custom compare")
-{
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> const & values_old)
-    {
-        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 2017; });
+        static_assert(sizeof...(Args) <= 1);
 
         // saga
         auto values = values_old;
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
 
-        saga::stable_sort(input, cmp);
+        saga::stable_sort(input, cmp...);
 
         // std
         auto values_std = values_old;
         auto const input_std = saga::rebase_cursor(input, values_std);
 
-        std::stable_sort(input_std.begin(), input_std.end(), cmp);
+        std::stable_sort(input_std.begin(), input_std.end(), cmp...);
 
         // Проверки
         REQUIRE(values == values_std);
+    }
+}
+
+TEST_CASE("stable_sort")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    << ::test_stable_sort<Value>
+    << [](std::vector<Value> const & values_old)
+    {
+        ::test_stable_sort(values_old
+                           , saga::compare_by([](Value const & arg) { return arg % 2017; }));
     };
 }
 
@@ -4919,26 +4518,26 @@ TEST_CASE("nth_element: custom compare")
     };
 }
 
-TEST_CASE("lower_bound: default compare")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::forward_list<Value> const & src_old, Value const & value)
+    template <class Value, class... Args>
+    void test_lower_bound(std::forward_list<Value> const & src_old
+                          , Value const & value, Args... cmp)
     {
         // Подготовка
         auto const src = [&]()
         {
             auto src = src_old;
-            src.sort();
+            src.sort(cmp...);
             return src;
         }();
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         // Выполнение
-        auto const r_std = std::lower_bound(input.begin(), input.end(), value);
+        auto const r_std = std::lower_bound(input.begin(), input.end(), value, cmp...);
 
-        auto const r_saga = saga::lower_bound(input, value);
+        auto const r_saga = saga::lower_bound(input, value, cmp...);
 
         // Проверка
         REQUIRE(r_saga.begin() == r_std);
@@ -4946,31 +4545,41 @@ TEST_CASE("lower_bound: default compare")
 
         REQUIRE(r_saga.dropped_front().begin() == src.begin());
         REQUIRE(r_saga.dropped_back().end() == src.end());
-    };
+    }
 }
 
-TEST_CASE("lower_bound: custom compare")
+TEST_CASE("lower_bound")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::forward_list<Value> const & src_old, Value const & value)
+    saga_test::property_checker
+    << ::test_lower_bound<Value>
+    << [](std::forward_list<Value> const & src_old, Value const & value)
+    {
+        ::test_lower_bound(src_old, value, std::greater<>{});
+    };
+}
+
+namespace
+{
+    template <class Value, class... Args>
+    void test_upper_bound(std::forward_list<Value> const & src_old
+                          , Value const & value, Args... cmp)
     {
         // Подготовка
-        auto cmp = std::greater<>{};
-
         auto const src = [&]()
         {
             auto src = src_old;
-            src.sort(cmp);
+            src.sort(cmp...);
             return src;
         }();
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         // Выполнение
-        auto const r_std = std::lower_bound(input.begin(), input.end(), value, cmp);
+        auto const r_std = std::upper_bound(input.begin(), input.end(), value, cmp...);
 
-        auto const r_saga = saga::lower_bound(input, value, cmp);
+        auto const r_saga = saga::upper_bound(input, value, cmp...);
 
         // Проверка
         REQUIRE(r_saga.begin() == r_std);
@@ -4978,128 +4587,42 @@ TEST_CASE("lower_bound: custom compare")
 
         REQUIRE(r_saga.dropped_front().begin() == src.begin());
         REQUIRE(r_saga.dropped_back().end() == src.end());
-    };
+    }
 }
 
-TEST_CASE("upper_bound: default compare")
+TEST_CASE("upper_bound")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::forward_list<Value> const & src_old, Value const & value)
+    saga_test::property_checker
+    << ::test_upper_bound<Value>
+    << [](std::forward_list<Value> const & src_old, Value const & value)
     {
-        // Подготовка
-        auto const src = [&]()
-        {
-            auto src = src_old;
-            src.sort();
-            return src;
-        }();
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        // Выполнение
-        auto const r_std = std::upper_bound(input.begin(), input.end(), value);
-
-        auto const r_saga = saga::upper_bound(input, value);
-
-        // Проверка
-        REQUIRE(r_saga.begin() == r_std);
-        REQUIRE(r_saga.end() == input.end());
-
-        REQUIRE(r_saga.dropped_front().begin() == src.begin());
-        REQUIRE(r_saga.dropped_back().end() == src.end());
+        ::test_upper_bound(src_old, value, std::greater<>{});
     };
 }
 
-TEST_CASE("upper_bound: custom compare")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::forward_list<Value> const & src_old, Value const & value)
-    {
-        // Подготовка
-        auto cmp = std::greater<>{};
-
-        auto const src = [&]()
-        {
-            auto src = src_old;
-            src.sort(cmp);
-            return src;
-        }();
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        // Выполнение
-        auto const r_std = std::upper_bound(input.begin(), input.end(), value, cmp);
-
-        auto const r_saga = saga::upper_bound(input, value, cmp);
-
-        // Проверка
-        REQUIRE(r_saga.begin() == r_std);
-        REQUIRE(r_saga.end() == input.end());
-
-        REQUIRE(r_saga.dropped_front().begin() == src.begin());
-        REQUIRE(r_saga.dropped_back().end() == src.end());
-    };
-}
-
-// equal_range
-TEST_CASE("equal_range: defaul compare")
-{
-    using Value = long;
-
-    saga_test::property_checker << [](std::forward_list<Value> const & src_old, Value const & value)
+    template <class Value, class... Args>
+    void test_equal_range(std::forward_list<Value> const & src_old
+                          , Value const & value, Args... cmp)
     {
         // Подготовка
         auto const src = [&]()
         {
             auto src = src_old;
-            src.sort();
+            src.sort(cmp...);
             return src;
         }();
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         // std
-        auto const r_std = std::equal_range(input.begin(), input.end(), value);
+        auto const r_std = std::equal_range(input.begin(), input.end(), value, cmp...);
 
         // saga
-        auto const r_saga = saga::equal_range(input, value);
-
-        // Проверки
-        CAPTURE(src, input);
-
-        CHECK(r_saga.begin() == r_std.first);
-        CHECK(r_saga.end() == r_std.second);
-
-        CHECK(r_saga.dropped_front().begin() == input.begin());
-        CHECK(r_saga.dropped_back().end() == input.end());
-    };
-}
-
-TEST_CASE("equal_range: custom compare")
-{
-    using Value = long;
-
-    saga_test::property_checker << [](std::forward_list<Value> const & src_old, Value const & value)
-    {
-        // Подготовка
-        auto const cmp = std::greater<>{};
-
-        auto const src = [&]()
-        {
-            auto src = src_old;
-            src.sort(cmp);
-            return src;
-        }();
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        // std
-        auto const r_std = std::equal_range(input.begin(), input.end(), value, cmp);
-
-        // saga
-        auto const r_saga = saga::equal_range(input, value, cmp);
+        auto const r_saga = saga::equal_range(input, value, cmp...);
 
         // Проверки
         REQUIRE(r_saga.begin() == r_std.first);
@@ -5107,6 +4630,19 @@ TEST_CASE("equal_range: custom compare")
 
         REQUIRE(r_saga.dropped_front().begin() == input.begin());
         REQUIRE(r_saga.dropped_back().end() == input.end());
+    }
+}
+
+// equal_range
+TEST_CASE("equal_range")
+{
+    using Value = long;
+
+    saga_test::property_checker
+    << ::test_equal_range<Value>
+    << [](std::forward_list<Value> const & src_old, Value const & value)
+    {
+        ::test_equal_range(src_old, value, std::greater<>{});
     };
 }
 

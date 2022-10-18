@@ -74,15 +74,10 @@ namespace saga
         template <class Argument, class Abs = saga::absolute_value>
         auto operator()(Argument const & arg, Abs abs_fun = Abs()) const
         {
-            auto result = abs_fun(typename Argument::value_type(0));
-
-            // @todo Заменить цикл на алгоритм (подумать, в каком имеено варианте)
-            for(auto const & each : arg)
-            {
-                result += abs_fun(each);
-            }
-
-            return result;
+            return saga::transform_reduce(saga::cursor::all(arg)
+                                          , abs_fun(typename Argument::value_type(0))
+                                          , std::plus<>{}
+                                          , abs_fun);
         }
     };
 
