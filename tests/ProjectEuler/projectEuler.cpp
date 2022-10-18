@@ -533,13 +533,13 @@ namespace
         "71636269561882670428252483600823257530420752963450";
 
     template <std::size_t Size>
-    constexpr std::size_t projectEuler_008(char const (&str)[Size], std::size_t window_width)
+    constexpr auto projectEuler_008(char const (&str)[Size], std::size_t window_width)
     {
         assert(window_width <= std::size(str));
 
         auto prod = [](auto const & window)
         {
-            return saga::accumulate(window, std::size_t{1}, std::multiplies<>{});
+            return saga::accumulate(window, std::int64_t{1}, std::multiplies<>{});
         };
 
         auto input = saga::cursor::all(str)
@@ -547,7 +547,7 @@ namespace
                    | saga::cursor::slide(window_width)
                    | saga::cursor::transform(prod);
 
-        return saga::accumulate(std::move(input), std::size_t(0), SAGA_OVERLOAD_SET(std::max));
+        return saga::accumulate(std::move(input), std::int64_t(0), SAGA_OVERLOAD_SET(std::max));
     }
 
     static_assert(::projectEuler_008(pe008_data, 4) == 5832, "");
@@ -2169,14 +2169,16 @@ TEST_CASE("PE 034")
 // PE 35: Круговые простые числа
 namespace
 {
-    bool PE_035_is_circular_prime(std::size_t prime, std::vector<std::size_t> const & primes)
+    template <class IntType>
+    bool PE_035_is_circular_prime(IntType prime, std::vector<IntType> const & primes)
     {
-        std::size_t num = std::log10(prime);
-        std::size_t const mask = std::pow(10, num);
+        IntType num = std::log10(prime);
+        auto const mask = (num == 0 ? IntType(1) : saga::power_natural(IntType(10), num));
 
         for(; num > 0; -- num)
         {
             auto last = prime % 10;
+
             prime /= 10;
             prime += mask * last;
 
@@ -2189,7 +2191,7 @@ namespace
         return true;
     }
 
-    std::size_t PE_035(std::size_t max_num)
+    auto PE_035(std::uint64_t max_num)
     {
         auto const primes = saga::primes_below(max_num);
 
