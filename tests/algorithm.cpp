@@ -4524,6 +4524,8 @@ namespace
     void test_lower_bound(std::forward_list<Value> const & src_old
                           , Value const & value, Args... cmp)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         // Подготовка
         auto const src = [&]()
         {
@@ -4566,6 +4568,8 @@ namespace
     void test_upper_bound(std::forward_list<Value> const & src_old
                           , Value const & value, Args... cmp)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         // Подготовка
         auto const src = [&]()
         {
@@ -4608,6 +4612,8 @@ namespace
     void test_equal_range(std::forward_list<Value> const & src_old
                           , Value const & value, Args... cmp)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         // Подготовка
         auto const src = [&]()
         {
@@ -4646,70 +4652,57 @@ TEST_CASE("equal_range")
     };
 }
 
-TEST_CASE("binary_search: default compare")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::forward_list<Value> const & src_old, Value const & value)
+    template <class Value, class... Args>
+    void test_binary_search(std::forward_list<Value> const & src_old
+                            , Value const & value, Args... cmp)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         // Подготовка
         auto const src = [&]()
         {
             auto src = src_old;
-            src.sort();
+            src.sort(cmp...);
             return src;
         }();
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         // Выполнение
-        auto const r_std = std::binary_search(input.begin(), input.end(), value);
+        auto const r_std = std::binary_search(input.begin(), input.end(), value, cmp...);
 
-        auto const r_saga = saga::binary_search(input, value);
-
-        // Проверка
-        REQUIRE(r_saga == r_std);
-    };
-}
-
-TEST_CASE("binary_search: custom compare")
-{
-    using Value = int;
-
-    saga_test::property_checker << [](std::forward_list<Value> const & src_old, Value const & value)
-    {
-        // Подготовка
-        auto cmp = std::greater<>{};
-
-        auto const src = [&]()
-        {
-            auto src = src_old;
-            src.sort(cmp);
-            return src;
-        }();
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        // Выполнение
-        auto const r_std = std::binary_search(input.begin(), input.end(), value, cmp);
-
-        auto const r_saga = saga::binary_search(input, value, cmp);
+        auto const r_saga = saga::binary_search(input, value, cmp...);
 
         // Проверка
         REQUIRE(r_saga == r_std);
-    };
+    }
 }
 
-TEST_CASE("min_element: default compare")
+TEST_CASE("binary_search")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::forward_list<Value> const & src)
+    saga_test::property_checker
+    << ::test_binary_search<Value>
+    << [](std::forward_list<Value> const & src_old, Value const & value)
     {
+        ::test_binary_search(src_old, value, std::greater<>{});
+    };
+}
+
+namespace
+{
+    template <class Value, class... Args>
+    void test_min_element(std::forward_list<Value> const & src, Args... cmp)
+    {
+        static_assert(sizeof...(Args) <= 1);
+
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        auto const r_std = std::min_element(input.begin(), input.end());
-        auto const r_saga = saga::min_element(input);
+        auto const r_std = std::min_element(input.begin(), input.end(), cmp...);
+        auto const r_saga = saga::min_element(input, cmp...);
 
         REQUIRE(r_saga.begin() == r_std);
         REQUIRE(r_saga.end() == input.end());
@@ -4719,83 +4712,66 @@ TEST_CASE("min_element: default compare")
 
         REQUIRE(r_saga.dropped_back().begin() == input.end());
         REQUIRE(r_saga.dropped_back().end() == src.end());
-    };
+    }
 }
 
-TEST_CASE("min_element: custom compare")
+TEST_CASE("min_element")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::forward_list<Value> const & src)
+    saga_test::property_checker
+    << ::test_min_element<Value>
+    << [](std::forward_list<Value> const & src)
     {
-        auto const cmp = std::greater<>{};
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        auto const r_std = std::min_element(input.begin(), input.end(), cmp);
-        auto const r_saga = saga::min_element(input, cmp);
-
-        REQUIRE(r_saga.begin() == r_std);
-        REQUIRE(r_saga.end() == input.end());
-
-        REQUIRE(r_saga.dropped_front().begin() == src.begin());
-        REQUIRE(r_saga.dropped_front().end() == r_std);
-
-        REQUIRE(r_saga.dropped_back().begin() == input.end());
-        REQUIRE(r_saga.dropped_back().end() == src.end());
+        ::test_min_element(src, std::greater<>{});
     };
 }
 
-TEST_CASE("max_element: default compare")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::forward_list<Value> const & src)
+    template <class Value, class... Args>
+    void test_max_element(std::forward_list<Value> const & src, Args... cmp)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        auto const r_saga = saga::max_element(input);
-        auto const r_std = std::minmax_element(input.begin(), input.end());
+        auto const r_saga = saga::max_element(input, cmp...);
+        auto const r_std = std::minmax_element(input.begin(), input.end(), cmp...);
 
         // Проверка
         REQUIRE(r_saga.begin() == r_std.second);
         REQUIRE(r_saga.end() == input.end());
         REQUIRE(r_saga.dropped_front().begin() == src.begin());
         REQUIRE(r_saga.dropped_back().end() == src.end());
-    };
+    }
 }
 
-TEST_CASE("max_element: custom compare")
+TEST_CASE("max_element")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::forward_list<Value> const & src)
+    saga_test::property_checker
+    << ::test_max_element<Value>
+    << [](std::forward_list<Value> const & src)
     {
         auto const cmp = saga::compare_by([](Value const & arg) { return arg % 5; });
 
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        auto const r_saga = saga::max_element(input, cmp);
-        auto const r_std = std::minmax_element(input.begin(), input.end(), cmp);
-
-        // Проверка
-        REQUIRE(r_saga.begin() == r_std.second);
-        REQUIRE(r_saga.end() == input.end());
-        REQUIRE(r_saga.dropped_front().begin() == src.begin());
-        REQUIRE(r_saga.dropped_back().end() == src.end());
+        ::test_max_element(src, cmp);
     };
 }
 
-TEST_CASE("minmax_element: default compare")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::forward_list<Value> const & src)
+    template <class Value, class... Args>
+    void test_minmax_element(std::forward_list<Value> const & src, Args... cmp)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        auto const r_saga = saga::minmax_element(input);
-        auto const r_std = std::minmax_element(input.begin(), input.end());
+        auto const r_saga = saga::minmax_element(input, cmp...);
+        auto const r_std = std::minmax_element(input.begin(), input.end(), cmp...);
 
         // Проверка
         REQUIRE(r_saga.min.begin() == r_std.first);
@@ -4807,32 +4783,20 @@ TEST_CASE("minmax_element: default compare")
         REQUIRE(r_saga.max.end() == input.end());
         REQUIRE(r_saga.max.dropped_front().begin() == src.begin());
         REQUIRE(r_saga.max.dropped_back().end() == src.end());
-    };
+    }
 }
 
-TEST_CASE("minmax_element: custom compare")
+TEST_CASE("minmax_element")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::forward_list<Value> const & src)
+    saga_test::property_checker
+    << ::test_minmax_element<Value>
+    << [](std::forward_list<Value> const & src)
     {
         auto const cmp = saga::compare_by([](Value const & arg) { return arg % 5; });
 
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        auto const r_saga = saga::minmax_element(input, cmp);
-        auto const r_std = std::minmax_element(input.begin(), input.end(), cmp);
-
-        // Проверка
-        REQUIRE(r_saga.min.begin() == r_std.first);
-        REQUIRE(r_saga.min.end() == input.end());
-        REQUIRE(r_saga.min.dropped_front().begin() == src.begin());
-        REQUIRE(r_saga.min.dropped_back().end() == src.end());
-
-        REQUIRE(r_saga.max.begin() == r_std.second);
-        REQUIRE(r_saga.max.end() == input.end());
-        REQUIRE(r_saga.max.dropped_front().begin() == src.begin());
-        REQUIRE(r_saga.max.dropped_back().end() == src.end());
+        ::test_minmax_element(src, cmp);
     };
 }
 
@@ -4902,33 +4866,29 @@ TEST_CASE("clamp: custom compare")
     static_assert(saga::clamp(7, 5, 3, std::greater<>{}) == 5, "");
 }
 
-TEST_CASE("is_permutation: default predicate")
+namespace
 {
-    using Value1 = int;
-    using Value2 = long;
-
-    using Container1 = std::forward_list<Value1>;
-    using Container2 = std::forward_list<Value2>;
-
-    saga_test::property_checker << [](Container1 const & src1, Container2 const & src2)
+    template <class Container1, class Container2, class... Args>
+    void test_is_permutation(Container1 const & src1, Container2 const & src2, Args... bin_pred)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         auto const cur1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
         auto const cur2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
 
         CAPTURE(src1, src2, Container1(cur1.begin(), cur1.end())
                 , Container2(cur2.begin(), cur2.end()));
 
-        REQUIRE(saga::is_permutation(cur1, cur2)
-                == std::is_permutation(cur1.begin(), cur1.end(), cur2.begin(), cur2.end()));
-    };
-}
+        REQUIRE(saga::is_permutation(cur1, cur2, bin_pred...)
+                == std::is_permutation(cur1.begin(), cur1.end()
+                                       , cur2.begin(), cur2.end(), bin_pred...));
+    }
 
-TEST_CASE("is_permutation: default predicate, always true")
-{
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> const & src1)
+    template <class Container, class... Args>
+    void test_is_permutation_always_true(Container const & src1, Args... bin_pred)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         auto const cur1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
 
         auto src2 = src1;
@@ -4936,11 +4896,11 @@ TEST_CASE("is_permutation: default predicate, always true")
 
         std::shuffle(cur2.begin(), cur2.end(), saga_test::random_engine());
 
-        REQUIRE(saga::is_permutation(cur1, cur2));
-    };
+        REQUIRE(saga::is_permutation(cur1, cur2, bin_pred...));
+    }
 }
 
-TEST_CASE("is_permutation: custom predicate")
+TEST_CASE("is_permutation")
 {
     using Value1 = int;
     using Value2 = long;
@@ -4948,244 +4908,161 @@ TEST_CASE("is_permutation: custom predicate")
     using Container1 = std::forward_list<Value1>;
     using Container2 = std::forward_list<Value2>;
 
-    saga_test::property_checker << [](Container1 const & src1, Container2 const & src2)
+    saga_test::property_checker
+    << ::test_is_permutation<Container1, Container2>
+    << ::test_is_permutation_always_true<std::vector<Value1>>
+    << [](Container1 const & src1, Container2 const & src2)
     {
         auto const bin_pred = saga::equivalent_up_to([](Value2 const & arg) { return arg % 10; });
 
-        auto const cur1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
-        auto const cur2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
+        ::test_is_permutation(src1, src2, bin_pred);
+    }
+    << [](std::vector<Value2> const & src1)
+    {
+        auto const bin_pred = saga::equivalent_up_to([](Value2 const & arg) { return arg % 10; });
 
-        CAPTURE(src1, src2, Container1(cur1.begin(), cur1.end())
-                , Container2(cur2.begin(), cur2.end()));
-
-        REQUIRE(saga::is_permutation(cur1, cur2, bin_pred)
-                == std::is_permutation(cur1.begin(), cur1.end()
-                                       , cur2.begin(), cur2.end(), bin_pred));
+        ::test_is_permutation_always_true(src1, bin_pred);
     };
 }
 
-TEST_CASE("is_permutation: custom predicate, always true")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::vector<Value> const & src1)
+    template <class Value, class... Args>
+    void test_next_permutation(std::list<Value> const & values_old, Args... cmp)
     {
-        auto const bin_pred = saga::equivalent_up_to([](Value const & arg) { return arg % 10; });
+        static_assert(sizeof...(Args) <= 1);
 
-        auto const cur1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
-
-        auto src2 = src1;
-        auto const cur2 = saga::rebase_cursor(cur1, src2);
-
-        std::shuffle(cur2.begin(), cur2.end(), saga_test::random_engine());
-
-        REQUIRE(saga::is_permutation(cur1, cur2, bin_pred));
-    };
-}
-
-TEST_CASE("next_permutation: default predicate")
-{
-    using Value = int;
-
-    saga_test::property_checker << [](std::list<Value> const & values_old)
-    {
         // saga
         auto values_saga = values_old;
 
         auto const input_saga = saga_test::random_subcursor_of(saga::cursor::all(values_saga));
 
-        auto const result_saga = saga::next_permutation(input_saga);
+        auto const result_saga = saga::next_permutation(input_saga, cmp...);
 
         // std
         auto values_std = values_old;
 
         auto const input_std = saga::rebase_cursor(input_saga, values_std);
 
-        auto const result_std = std::next_permutation(input_std.begin(), input_std.end());
+        auto const result_std = std::next_permutation(input_std.begin(), input_std.end(), cmp...);
 
         // Сравнение
-        CAPTURE(saga::rebase_cursor(input_saga, values_old), input_std, input_saga);
-        REQUIRE(saga::equal(input_saga, input_std));
-
         REQUIRE(values_saga == values_std);
         REQUIRE(result_saga == result_std);
-    };
+    }
 }
 
-TEST_CASE("next_permutation: custom predicate")
+TEST_CASE("next_permutation")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::list<Value> const & values_old)
+    saga_test::property_checker
+    << ::test_next_permutation<Value>
+    << [](std::list<Value> const & values_old)
     {
         auto const cmp = saga::compare_by([](Value const & arg) { return arg % 100; });
 
-        // saga
-        auto values_saga = values_old;
-
-        auto const input_saga = saga_test::random_subcursor_of(saga::cursor::all(values_saga));
-
-        auto const result_saga = saga::next_permutation(input_saga, cmp);
-
-        // std
-        auto values_std = values_old;
-
-        auto const input_std = saga::rebase_cursor(input_saga, values_std);
-
-        auto const result_std = std::next_permutation(input_std.begin(), input_std.end(), cmp);
-
-        // Сравнение
-        REQUIRE(values_saga == values_std);
-        REQUIRE(result_saga == result_std);
+        ::test_next_permutation(values_old, cmp);
     };
 }
 
-TEST_CASE("prev_permutation: default predicate")
+namespace
 {
-    using Value = int;
-
-    saga_test::property_checker << [](std::list<Value> const & values_old)
+    template <class Value, class... Args>
+    void test_prev_permutation(std::list<Value> const & values_old, Args... cmp)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         // saga
         auto values_saga = values_old;
 
         auto const input_saga = saga_test::random_subcursor_of(saga::cursor::all(values_saga));
 
-        auto const result_saga = saga::prev_permutation(input_saga);
+        auto const result_saga = saga::prev_permutation(input_saga, cmp...);
 
         // std
         auto values_std = values_old;
 
         auto const input_std = saga::rebase_cursor(input_saga, values_std);
 
-        auto const result_std = std::prev_permutation(input_std.begin(), input_std.end());
+        auto const result_std = std::prev_permutation(input_std.begin(), input_std.end(), cmp...);
 
         // Сравнение
-        CAPTURE(saga::rebase_cursor(input_saga, values_old), input_std, input_saga);
-        REQUIRE(saga::equal(input_saga, input_std));
-
         REQUIRE(values_saga == values_std);
         REQUIRE(result_saga == result_std);
-    };
+    }
 }
 
-TEST_CASE("prev_permutation: custom predicate")
+TEST_CASE("prev_permutation")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::list<Value> const & values_old)
+    saga_test::property_checker
+    << ::test_prev_permutation<Value>
+    << [](std::list<Value> const & values_old)
     {
         auto const cmp = saga::compare_by([](Value const & arg) { return arg % 100; });
 
-        // saga
-        auto values_saga = values_old;
-
-        auto const input_saga = saga_test::random_subcursor_of(saga::cursor::all(values_saga));
-
-        auto const result_saga = saga::prev_permutation(input_saga, cmp);
-
-        // std
-        auto values_std = values_old;
-
-        auto const input_std = saga::rebase_cursor(input_saga, values_std);
-
-        auto const result_std = std::prev_permutation(input_std.begin(), input_std.end(), cmp);
-
-        // Сравнение
-        REQUIRE(values_saga == values_std);
-        REQUIRE(result_saga == result_std);
+        ::test_prev_permutation(values_old, cmp);
     };
 }
 
-TEST_CASE("lexicographical_compare - minimal, default compare")
+namespace
 {
-    using Value1 = int;
-    using Value2 = long;
-
-    saga_test::property_checker
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    template <class Value1, class Value2, class... Args>
+    void test_lexicographical_compare_minimal(std::vector<Value1> const & src1
+                                              , std::vector<Value2> const & src2, Args... cmp)
     {
-        auto src1_in = saga_test::make_istringstream_from_range(src1);
-        auto src2_in = saga_test::make_istringstream_from_range(src2);
-
-        REQUIRE(saga::lexicographical_compare(saga::make_istream_cursor<Value1>(src1_in)
-                                              , saga::make_istream_cursor<Value2>(src2_in))
-                == std::lexicographical_compare(src1.begin(), src1.end()
-                                                , src2.begin(), src2.end()));
-
-        REQUIRE(!saga::lexicographical_compare(saga::cursor::all(src1), saga::cursor::all(src1)));
-        REQUIRE(!saga::lexicographical_compare(saga::cursor::all(src2), saga::cursor::all(src2)));
-    };
-}
-
-TEST_CASE("lexicographical_compare - minimal, custom predicate")
-{
-    using Value1 = int;
-    using Value2 = long;
-
-    saga_test::property_checker
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
-    {
-        CAPTURE(src1, src2);
-
-        auto const cmp = std::greater<>{};
+        static_assert(sizeof...(Args) <= 1);
 
         auto src1_in = saga_test::make_istringstream_from_range(src1);
         auto src2_in = saga_test::make_istringstream_from_range(src2);
 
         REQUIRE(saga::lexicographical_compare(saga::make_istream_cursor<Value1>(src1_in)
                                               , saga::make_istream_cursor<Value2>(src2_in)
-                                              , cmp)
+                                              , cmp...)
                 == std::lexicographical_compare(src1.begin(), src1.end()
-                                                , src2.begin(), src2.end(), cmp));
+                                                , src2.begin(), src2.end(), cmp...));
 
         REQUIRE(!saga::lexicographical_compare(saga::cursor::all(src1)
-                                               , saga::cursor::all(src1), cmp));
+                                               , saga::cursor::all(src1), cmp...));
         REQUIRE(!saga::lexicographical_compare(saga::cursor::all(src2)
-                                               , saga::cursor::all(src2), cmp));
-    };
-}
+                                               , saga::cursor::all(src2), cmp...));
+    }
 
-TEST_CASE("lexicographical_compare - subcursor, default compare")
-{
-    using Value1 = int;
-    using Value2 = long;
-
-    saga_test::property_checker
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    template <class Value1, class Value2, class... Args>
+    void test_lexicographical_compare_subcursor(std::vector<Value1> const & src1
+                                                , std::vector<Value2> const & src2, Args... cmp)
     {
-        auto in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
-        auto in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
-
-        REQUIRE(saga::lexicographical_compare(in1, in2)
-                == std::lexicographical_compare(in1.begin(), in1.end(), in2.begin(), in2.end()));
-
-        REQUIRE(!saga::lexicographical_compare(in1, in1));
-        REQUIRE(!saga::lexicographical_compare(in2, in2));
-    };
-}
-
-TEST_CASE("lexicographical_compare - subcursor, custom predicate")
-{
-    using Value1 = int;
-    using Value2 = long;
-
-    saga_test::property_checker
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
-    {
-        CAPTURE(src1, src2);
-
-        auto const cmp = std::greater<>{};
+        static_assert(sizeof...(Args) <= 1);
 
         auto in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
         auto in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
 
-        REQUIRE(saga::lexicographical_compare(in1, in2, cmp)
+        REQUIRE(saga::lexicographical_compare(in1, in2, cmp...)
                 == std::lexicographical_compare(in1.begin(), in1.end()
-                                                , in2.begin(), in2.end(), cmp));
+                                                , in2.begin(), in2.end(), cmp...));
 
-        REQUIRE(!saga::lexicographical_compare(in1, in1));
-        REQUIRE(!saga::lexicographical_compare(in2, in2));
+        REQUIRE(!saga::lexicographical_compare(in1, in1, cmp...));
+        REQUIRE(!saga::lexicographical_compare(in2, in2, cmp...));
+    }
+}
+
+TEST_CASE("lexicographical_compare")
+{
+    using Value1 = int;
+    using Value2 = long;
+
+    saga_test::property_checker
+    << ::test_lexicographical_compare_minimal<Value1, Value2>
+    << ::test_lexicographical_compare_subcursor<Value1, Value2>
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    {
+        ::test_lexicographical_compare_minimal(src1, src2, std::greater<>{});
+    }
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    {
+        ::test_lexicographical_compare_subcursor(src1, src2, std::greater<>{});
     };
 }
 
@@ -5314,18 +5191,36 @@ TEST_CASE("for_n: constexpr")
     static_assert(::add_via_counter(initial, num) == initial + num, "");
 }
 
-TEST_CASE("is_palindrome : subrange, default predicate")
+namespace
 {
-    using Container = std::list<int>;
-
-    saga_test::property_checker << [](Container const & values)
+    template <class Container, class... Args>
+    void test_is_palindrome(Container const & values, Args... bin_pred)
     {
+        static_assert(sizeof...(Args) <= 1);
+
         auto const src = saga_test::random_subcursor_of(saga::cursor::all(values));
 
         Container src_r(src.begin(), src.end());
         src_r.reverse();
 
-        REQUIRE(saga::is_palindrome(src) == saga::equal(src, saga::cursor::all(src_r)));
+        REQUIRE(saga::is_palindrome(src, bin_pred...)
+                == saga::equal(src, saga::cursor::all(src_r), bin_pred...));
+    }
+}
+
+TEST_CASE("is_palindrome : subrange")
+{
+    using Container = std::list<int>;
+
+    saga_test::property_checker
+    << ::test_is_palindrome<Container>
+    << [](Container const & values)
+    {
+        using Value = typename Container::value_type;
+
+        auto const bin_pred = saga::equivalent_up_to([](Value const & arg) { return arg % 5; });
+
+        ::test_is_palindrome(values, bin_pred);
     };
 }
 
@@ -5339,28 +5234,6 @@ TEST_CASE("is_palindrome: always true")
         saga::reverse_copy(saga::cursor::all(values), saga::back_inserter(values_p));
 
         REQUIRE(saga::is_palindrome(saga::cursor::all(values_p)));
-    };
-}
-
-TEST_CASE("is_palindrome : subrange, custom predicate")
-{
-    using Value = int;
-    using Container = std::list<Value>;
-
-    saga_test::property_checker << [](Container const & values)
-    {
-        auto const bin_pred = [](Value const & lhs, Value const & rhs)
-        {
-            return lhs % 5 == rhs % 5;
-        };
-
-        auto const src = saga_test::random_subcursor_of(saga::cursor::all(values));
-
-        Container src_r(src.begin(), src.end());
-        src_r.reverse();
-
-        REQUIRE(saga::is_palindrome(src, bin_pred)
-                == saga::equal(src, saga::cursor::all(src_r), bin_pred));
     };
 }
 
@@ -5401,10 +5274,8 @@ TEST_CASE("adjacent_count: custom predicate")
 
     saga_test::property_checker <<[](Container const & values)
     {
-        auto const pred = [](Value const & lhs, Value const & rhs)
-        {
-            return lhs % 3 != rhs % 3;
-        };
+        auto const pred = saga::compare_by([](Value const & arg){ return arg % 3; }
+                                          , std::not_equal_to<>{});
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
 
