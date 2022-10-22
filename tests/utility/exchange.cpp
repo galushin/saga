@@ -15,27 +15,46 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_UTILITY_EXCHANGE_HPP_INCLUDED
-#define Z_SAGA_UTILITY_EXCHANGE_HPP_INCLUDED
+// Тестируемый файл
+#include <saga/utility/exchange.hpp>
 
-/** @file saga/utility/exchange.hpp
- @brief Функция, присваивающая новое значение переменной и возвращающая её предыдущее значение
-*/
+// Инфраструктура тестирования
+#include "../saga_test.hpp"
+#include <catch2/catch_amalgamated.hpp>
 
-#include <utility>
+// Используемые в тестах
+#include <vector>
 
-namespace saga
+// Проверки
+static_assert(noexcept(saga::exchange(std::declval<int&>(), std::declval<int>())));
+
+namespace
 {
-    template <class T, class U = T>
-    constexpr T exchange(T & obj, U && new_value) noexcept(std::is_nothrow_move_constructible<T>{}
-                                                           && std::is_nothrow_assignable<T&,U>{})
+    template <bool noexcept_move_ctor, bool noexcept_move_assign>
+    struct Helper
     {
-        T old_value = std::move(obj);
-        obj = std::forward<U>(new_value);
-        return old_value;
-    }
-}
-// namespace saga
+        Helper(Helper &&) noexcept(noexcept_move_ctor);
 
-#endif
-// Z_SAGA_UTILITY_EXCHANGE_HPP_INCLUDED
+        void operator=(int) noexcept(noexcept_move_assign);
+    };
+}
+
+static_assert(noexcept(saga::exchange(std::declval<Helper<true, true>&>(), std::declval<int>())));
+static_assert(!noexcept(saga::exchange(std::declval<Helper<true, false>&>(), std::declval<int>())));
+static_assert(!noexcept(saga::exchange(std::declval<Helper<false, true>&>(), std::declval<int>())));
+static_assert(!noexcept(saga::exchange(std::declval<Helper<false, false>&>(), std::declval<int>())));
+
+TEST_CASE("exhange")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](Value const & old_value, Value const & new_value)
+    {
+        auto obj = old_value;
+
+        auto const result = saga::exchange(obj, new_value);
+
+        REQUIRE(result == old_value);
+        REQUIRE(obj == new_value);
+    };
+}
