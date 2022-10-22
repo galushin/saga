@@ -438,8 +438,6 @@ namespace
                  | saga::cursor::take_while([&](auto const & arg){return saga::square(arg) <= num;});
 
         return saga::none_of(std::move(cur), [&](auto const & arg){ return num % arg == 0;});
-
-        return true;
     }
 
     template <class IntType>
@@ -3282,8 +3280,8 @@ namespace
 
             for(auto index : saga::cursor::indices(1u, row.size()-1))
             {
-                prev_value = std::exchange(row[index]
-                                          , std::move(row[index]) + std::move(prev_value));
+                prev_value = saga::exchange(row[index]
+                                            , std::move(row[index]) + std::move(prev_value));
 
                 if(row[index] > limit_value)
                 {

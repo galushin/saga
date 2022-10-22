@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 #include <saga/type_traits.hpp>
+#include <saga/utility/exchange.hpp>
 #include <saga/utility/in_place.hpp>
 
 #include <cassert>
@@ -106,7 +107,7 @@ namespace saga
             if(other.has_value())
             {
                 other.pvtable_->move(other.storage_, this->storage_);
-                this->pvtable_ = std::exchange(other.pvtable_, nullptr);
+                this->pvtable_ = saga::exchange(other.pvtable_, nullptr);
             }
         }
 
@@ -161,7 +162,7 @@ namespace saga
                 this->reset();
 
                 rhs.pvtable_->move(rhs.storage_, this->storage_);
-                this->pvtable_ = std::exchange(rhs.pvtable_, nullptr);
+                this->pvtable_ = saga::exchange(rhs.pvtable_, nullptr);
             }
 
             return *this;
@@ -281,7 +282,7 @@ namespace saga
         template <class T>
         static void move_heap(Storage & src, Storage & dest) noexcept
         {
-            dest.ptr = std::exchange(src.ptr, nullptr);
+            dest.ptr = saga::exchange(src.ptr, nullptr);
         }
 
         template <class T>
