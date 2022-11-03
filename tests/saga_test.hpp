@@ -695,12 +695,8 @@ namespace saga_test
             break; case 8:
                 return value_type([](IntType const & lhs, IntType const &) { return lhs; });
 
-            break; case 9:
-                return value_type([](IntType const &, IntType const & rhs) { return rhs; });
-
             break; default:
-                assert(false);
-                throw std::logic_error("arbirary associative operation : unknown code");
+                return value_type([](IntType const &, IntType const & rhs) { return rhs; });
             }
         }
     };
