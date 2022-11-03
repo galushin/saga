@@ -109,22 +109,19 @@ TEST_CASE("accumulate - generic operation")
 
     static_assert(!std::is_same<Element, InitValue>{}, "");
 
-    saga_test::property_checker << [](std::vector<Element> const & container,
-                                      InitValue const & init_value)
+    saga_test::property_checker
+    << [](std::vector<Element> const & container
+          , InitValue const & init_value
+          , std::function<InitValue(InitValue const &, InitValue const &)> const & bin_op)
     {
         auto const values = saga_test::random_subcursor_of(saga::cursor::all(container));
 
-        auto const min_op = [](InitValue const & lhs, InitValue const & rhs)
-        {
-            return std::min(lhs, rhs);
-        };
-
-        auto const expected = std::accumulate(values.begin(), values.end(), init_value, min_op);
+        auto const expected = std::accumulate(values.begin(), values.end(), init_value, bin_op);
 
         auto input = saga_test::make_istringstream_from_range(values);
 
         auto const actual
-            = saga::accumulate(saga::make_istream_cursor<Element>(input), init_value, min_op);
+            = saga::accumulate(saga::make_istream_cursor<Element>(input), init_value, bin_op);
 
         REQUIRE(actual == expected);
 
@@ -220,15 +217,9 @@ TEST_CASE("adjacent_difference")
 
     saga_test::property_checker
     << ::test_adjacent_difference_minimal<Value>
+    << ::test_adjacent_difference_minimal<Value, std::function<Value(Value, Value)>>
     << ::test_adjacent_difference_subcursor<Value>
-    << [](std::vector<Value> const & src)
-    {
-        ::test_adjacent_difference_minimal(src, std::plus<>{});
-    }
-    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
-    {
-        ::test_adjacent_difference_subcursor(src, dest_old, std::plus<>{});
-    };
+    << ::test_adjacent_difference_subcursor<Value, std::function<Value(Value, Value)>>;
 }
 
 // partial sum
@@ -289,15 +280,9 @@ TEST_CASE("partial_sum")
 
     saga_test::property_checker
     << ::test_partial_sum_minimal<Value>
+    << ::test_partial_sum_minimal<Value, std::function<Value(Value, Value)>>
     << ::test_partial_sum_subcursor<Value>
-    << [](std::vector<Value> const & src)
-    {
-        ::test_partial_sum_minimal(src, std::multiplies<>{});
-    }
-    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
-    {
-        ::test_partial_sum_subcursor(src, dest_old, std::multiplies<>{});
-    };
+    << ::test_partial_sum_subcursor<Value, std::function<Value(Value, Value)>>;
 }
 
 // reduce
@@ -322,25 +307,21 @@ TEST_CASE("reduce - minimalistic")
 
     saga_test::property_checker
     << ::test_reduce_minimal<Value>
-    << [](std::vector<Value> const & src, Value const & init_value)
-    {
-        ::test_reduce_minimal(src, init_value, std::bit_xor<>{});
-    };
+    << ::test_reduce_minimal<Value, saga_test::abelian_group_operation<Value>>;
 }
 
 TEST_CASE("reduce - general, subrange")
 {
     using Value = unsigned;
 
-    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, Value const & init_value
+          , saga_test::abelian_group_operation<Value> const & bin_op)
     {
         auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        auto const bin_op = std::bit_xor<>{};
-
         REQUIRE(saga::reduce(cur, init_value, bin_op)
                 == saga::accumulate(cur, init_value, bin_op));
-
     };
 }
 
@@ -414,20 +395,17 @@ TEST_CASE("inner_product")
 
     saga_test::property_checker
     << ::test_inner_product<std::vector<Value>, std::list<bool>, Value>
-    << [](std::vector<Value> const & lhs, std::list<Value> const & rhs, Value const & init_value)
-    {
-        auto const op1 = SAGA_OVERLOAD_SET(std::min);
-        auto const op2 = SAGA_OVERLOAD_SET(std::max);
-
-        ::test_inner_product(lhs, rhs, init_value, op1, op2);
-    };
+    << ::test_inner_product<std::vector<Value>, std::list<bool>, Value>
+    << ::test_inner_product<std::vector<Value>, std::list<bool>, Value
+                           , std::function<Value(Value, Value)>
+                           , std::function<Value(Value, Value)>>;
 }
 
 TEST_CASE("inner_product - move only init value")
 {
-    saga_test::property_checker << [](std::vector<int> values,
-                                      std::list<bool> const & mask,
-                                      int const & init_value)
+    saga_test::property_checker << [](std::vector<int> values
+                                      , std::list<bool> const & mask
+                                      , int const & init_value)
     {
         auto const fun = std::bit_xor<>{};
 
@@ -536,34 +514,22 @@ TEST_CASE("inclusive_scan - general")
 
     saga_test::property_checker
     << ::test_inclusive_scan_minimal<Value>
-    << [](std::vector<Value> const & src)
-    {
-        ::test_inclusive_scan_minimal(src, std::multiplies<>{});
-    }
+    << ::test_inclusive_scan_minimal<Value, saga_test::associative_operation<Value>>
     << ::test_inclusive_scan_inplace<Value>
-    << [](std::vector<Value> const & src)
-    {
-        ::test_inclusive_scan_inplace(src, std::multiplies<>{});
-    }
-    << [](std::vector<Value> const & src, Value const & init_value)
-    {
-        ::test_inclusive_scan_inplace(src, std::multiplies<>{}, init_value);
-    }
+    << ::test_inclusive_scan_inplace<Value, saga_test::associative_operation<Value>>
+    << ::test_inclusive_scan_inplace<Value, saga_test::associative_operation<Value>, Value const &>
     << ::test_inclusive_scan_subcursor<Value>
-    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
-    {
-        ::test_inclusive_scan_subcursor(src, dest_old, std::multiplies<>{});
-    };
+    << ::test_inclusive_scan_subcursor<Value, saga_test::associative_operation<Value>>;
 }
 
 TEST_CASE("inclusive_scan - minimalistic, custom operation, init value")
 {
     using Value = unsigned;
 
-    saga_test::property_checker << [](std::list<Value> const & src, Value const & init_value)
+    saga_test::property_checker
+    << [](std::list<Value> const & src, Value const & init_value
+          , saga_test::associative_operation<Value> const & bin_op)
     {
-        auto const op = std::multiplies<>{};
-
         // Ожидаемое
         auto const src_2 = [&]
         {
@@ -571,21 +537,21 @@ TEST_CASE("inclusive_scan - minimalistic, custom operation, init value")
 
             if(!tmp.empty())
             {
-                tmp.front() = op(tmp.front(), init_value);
+                tmp.front() = bin_op(init_value, tmp.front());
             }
 
             return tmp;
         }();
 
         std::vector<Value> dest_expected;
-        saga::inclusive_scan(saga::cursor::all(src_2), saga::back_inserter(dest_expected), op);
+        saga::inclusive_scan(saga::cursor::all(src_2), saga::back_inserter(dest_expected), bin_op);
 
         // saga
         auto src_in = saga_test::make_istringstream_from_range(src);
 
         std::vector<Value> dest_saga;
         saga::inclusive_scan(saga::make_istream_cursor<Value>(src_in)
-                             , saga::back_inserter(dest_saga), op, init_value);
+                             , saga::back_inserter(dest_saga), bin_op, init_value);
 
         // Сравнение
         CAPTURE(src, init_value, src_2);
@@ -601,10 +567,9 @@ TEST_CASE("inclusive_scan - subcursor, custom operation, init_value")
     saga_test::property_checker
         << [](std::vector<Value> const & src
               , std::vector<Value> const & dest_old
-              , Value const & init_value)
+              , Value const & init_value
+              , saga_test::associative_operation<Value> const & bin_op)
     {
-        auto const op = std::multiplies<>{};
-
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         // С начальным значением
@@ -612,7 +577,7 @@ TEST_CASE("inclusive_scan - subcursor, custom operation, init_value")
 
         auto const out_saga = saga_test::random_subcursor_of(saga::cursor::all(dest_saga));
 
-        auto const result_saga = saga::inclusive_scan(input, out_saga, op, init_value);
+        auto const result_saga = saga::inclusive_scan(input, out_saga, bin_op, init_value);
 
         // Без начального значения
         auto const src_2 = [&]
@@ -621,7 +586,7 @@ TEST_CASE("inclusive_scan - subcursor, custom operation, init_value")
 
             if(!tmp.empty())
             {
-                tmp.front() = op(tmp.front(), init_value);
+                tmp.front() = bin_op(init_value, tmp.front());
             }
 
             return tmp;
@@ -630,7 +595,7 @@ TEST_CASE("inclusive_scan - subcursor, custom operation, init_value")
         auto dest_expected = dest_old;
         auto const out_2 = saga::rebase_cursor(out_saga, dest_expected);
 
-        auto const result_expected = saga::inclusive_scan(saga::cursor::all(src_2), out_2, op);
+        auto const result_expected = saga::inclusive_scan(saga::cursor::all(src_2), out_2, bin_op);
 
         // Сравнение
         CAPTURE(input, init_value, src_2);
@@ -751,21 +716,11 @@ TEST_CASE("exclusive_scan - general")
 
     saga_test::property_checker
     << ::test_exclusive_scan_minimal<Value>
-    << [](std::vector<Value> const & src, Value const & init_value)
-    {
-        ::test_exclusive_scan_minimal(src, init_value, std::multiplies<>{});
-    }
+    << ::test_exclusive_scan_minimal<Value, saga_test::associative_operation<Value>>
     << ::test_exclusive_scan_inplace<Value>
-    << [](std::vector<Value> const & src, Value const & init_value)
-    {
-        ::test_exclusive_scan_inplace(src, init_value, std::multiplies<>{});
-    }
+    << ::test_exclusive_scan_inplace<Value, saga_test::associative_operation<Value>>
     << ::test_exclusive_scan_subcursor<Value>
-    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old
-          , Value const & init_value)
-    {
-        ::test_exclusive_scan_subcursor(src, dest_old, init_value, std::multiplies<>{});
-    };
+    << ::test_exclusive_scan_subcursor<Value, saga_test::associative_operation<Value>>;
 }
 
 // transform_reduce
@@ -825,48 +780,25 @@ TEST_CASE("transform_reduce: two ranges")
 
     saga_test::property_checker
     << ::test_transform_reduce_two_ranges_minimal<Value1, Value2, Total>
-    << [](std::vector<Value1> const & lhs, std::vector<Value2> const & rhs, Total init_value)
-    {
-        auto reducer = [](Total const & x, Total const & y)
-        {
-            return std::min(x, y);
-        };
-
-        auto combiner = std::bit_xor<>{};
-
-        ::test_transform_reduce_two_ranges_minimal(lhs, rhs, init_value, reducer, combiner);
-    }
+    << ::test_transform_reduce_two_ranges_minimal<Value1, Value2, Total
+                                                 , saga_test::abelian_group_operation<Total>
+                                                 , std::function<Total(Total, Total)>>
     << ::test_transform_reduce_two_ranges_subcursor<Value1, Value2, Total>
-    << [](std::vector<Value1> const & lhs, std::vector<Value2> const & rhs, Total init_value)
-    {
-        auto reducer = [](Total const & x, Total const & y)
-        {
-            return std::min(x, y);
-        };
-
-        auto combiner = std::bit_xor<>{};
-
-        ::test_transform_reduce_two_ranges_subcursor(lhs, rhs, init_value, reducer, combiner);
-    };
+    << ::test_transform_reduce_two_ranges_subcursor<Value1, Value2, Total
+                                                   , saga_test::abelian_group_operation<Total>
+                                                   , std::function<Total(Total, Total)>>;
 }
 
 TEST_CASE("transform_reduce: one range, minimalistic")
 {
-    using Value1 = int;
-    using Value2 = long;
+    using Value1 = unsigned int;
+    using Value2 = unsigned long;
 
-    saga_test::property_checker << [](std::vector<Value1> const & src, Value2 const & init_value)
+    saga_test::property_checker
+    << [](std::vector<Value1> const & src, Value2 const & init_value
+          , std::function<Value2(Value2 const &)> const & transformer
+          , std::function<Value2(Value2 const &, Value2 const &)> const & reducer)
     {
-        auto const transformer = [](Value1 const & arg)
-        {
-            return arg % 101;
-        };
-
-        auto const reducer = [](Value2 const & lhs, Value2 const & rhs)
-        {
-            return lhs ^ rhs;
-        };
-
         // transform + reduce
         std::vector<Value2> tmp;
         saga::transform(saga::cursor::all(src), saga::back_inserter(tmp), transformer);
@@ -886,21 +818,14 @@ TEST_CASE("transform_reduce: one range, minimalistic")
 
 TEST_CASE("transform_reduce: one range, subcursors")
 {
-    using Value1 = int;
-    using Value2 = long;
+    using Value1 = unsigned int;
+    using Value2 = unsigned long;
 
-    saga_test::property_checker << [](std::vector<Value1> const & src, Value2 const & init_value)
+    saga_test::property_checker <<
+    [](std::vector<Value1> const & src, Value2 const & init_value
+       , std::function<Value1(Value1 const &)> const & transformer
+       , std::function<Value2(Value2 const &, Value2 const &)> const & reducer)
     {
-        auto const transformer = [](Value1 const & arg)
-        {
-            return arg % 101;
-        };
-
-        auto const reducer = [](Value2 const & lhs, Value2 const & rhs)
-        {
-            return lhs ^ rhs;
-        };
-
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         // transform + reduce
@@ -921,11 +846,11 @@ TEST_CASE("transform_reduce: one range, subcursors")
 TEST_CASE("transform_exclusive_scan: minimalistic")
 {
     using Value = unsigned;
-    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, Value const & init_value
+          , std::function<Value(Value const &)> const & unary_op
+          , saga_test::associative_operation<Value> const & bin_op)
     {
-        auto const unary_op = [](Value const & arg) { return arg % 10; };
-        auto const bin_op = std::multiplies<>{};
-
         // transform + exclusive_scan
         std::vector<Value> tmp;
         saga::transform(saga::cursor::all(src), saga::back_inserter(tmp), unary_op);
@@ -950,11 +875,11 @@ TEST_CASE("transform_exclusive_scan: minimalistic")
 TEST_CASE("transform_exclusive_scan: inplace")
 {
     using Value = unsigned;
-    saga_test::property_checker << [](std::vector<Value> const & src, Value const & init_value)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, Value const & init_value
+          , std::function<Value(Value const &)> const & unary_op
+          , std::function<Value(Value const &, Value const &)> const & bin_op)
     {
-        auto const unary_op = [](Value const & arg) { return arg % 10; };
-        auto const bin_op = std::multiplies<>{};
-
         // Копирование
         std::vector<Value> expected;
         saga::transform_exclusive_scan(saga::cursor::all(src), saga::back_inserter(expected)
@@ -973,13 +898,13 @@ TEST_CASE("transform_exclusive_scan: inplace")
 TEST_CASE("transform_exclusive_scan: subranges")
 {
     using Value = unsigned;
-    saga_test::property_checker << [](std::vector<Value> const & src
-                                      , std::vector<Value> const & dest_old
-                                      , Value const & init_value)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src
+          , std::vector<Value> const & dest_old
+          , Value const & init_value
+          , std::function<Value(Value const &)> const & unary_op
+          , saga_test::associative_operation<Value> const & bin_op)
     {
-        auto const unary_op = [](Value const & arg) { return arg % 10; };
-        auto const bin_op = std::multiplies<>{};
-
         // Подготовка
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
@@ -1017,15 +942,14 @@ TEST_CASE("transform_exclusive_scan: subranges")
 // transform_inclusive_scan
 namespace
 {
-    template <class Container, class... Args>
-    void test_transform_inclusive_scan_minimal(Container const & src, Args const & ... init_value)
+    template <class Container, class Value = typename Container::value_type, class... Args>
+    void
+    test_transform_inclusive_scan_minimal(Container const & src
+                                          , std::function<Value(Value const &)> const & unary_op
+                                          , saga_test::associative_operation<Value> const & bin_op
+                                          , Args const & ... init_value)
     {
         static_assert(sizeof...(Args) <= 1);
-
-        using Value = typename Container::value_type;
-
-        auto const unary_op = [](Value const & arg) { return arg % 10; };
-        auto const bin_op = std::multiplies<>{};
 
         // transform + inclusive_scan
         Container tmp;
@@ -1059,16 +983,14 @@ TEST_CASE("transform_inclusive_scan")
 
 namespace
 {
-    template <class Container, class... Args>
-    void test_transform_inclusive_scan_subcursor(Container const & src, Container const & dest_old
-                                                 , Args const & ... init_value)
+    template <class Container, class Value = typename Container::value_type, class... Args>
+    void
+    test_transform_inclusive_scan_subcursor(Container const & src, Container const & dest_old
+                                           , std::function<Value(Value const &)> const & unary_op
+                                           , saga_test::associative_operation<Value> const & bin_op
+                                           , Args const & ... init_value)
     {
         static_assert(sizeof...(Args) <= 1);
-
-        using Value = typename Container::value_type;
-
-        auto const unary_op = [](Value const & arg) { return arg % 10; };
-        auto const bin_op = std::multiplies<>{};
 
         // Подготовка
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
@@ -1113,15 +1035,14 @@ TEST_CASE("transform_inclusive_scan: subranges")
 
 namespace
 {
-    template <class Container, class... Args>
-    void test_transform_inclusive_scan_inplace(Container const & src, Args const & ... init_value)
+    template <class Container, class Value = typename Container::value_type, class... Args>
+    void
+    test_transform_inclusive_scan_inplace(Container const & src
+                                          , std::function<Value(Value const &)> const & unary_op
+                                          , std::function<Value(Value, Value)> const & bin_op
+                                          , Args const & ... init_value)
     {
         static_assert(sizeof...(Args) <= 1);
-
-        using Value = typename Container::value_type;
-
-        auto const unary_op = [](Value const & arg) { return arg % 10; };
-        auto const bin_op = std::multiplies<>{};
 
         // Копирование
         Container expected;

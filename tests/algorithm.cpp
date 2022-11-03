@@ -98,9 +98,6 @@ namespace
         REQUIRE(saga::equal(saga::make_istream_cursor<Value1>(src1_in),
                             saga::make_istream_cursor<Value2>(src2_in), bin_pred...)
                 == std::equal(src1.begin(), src1.end(), src2.begin(), src2.end(), bin_pred...));
-
-        REQUIRE(saga::equal(saga::cursor::all(src1), saga::cursor::all(src1), bin_pred...));
-        REQUIRE(saga::equal(saga::cursor::all(src2), saga::cursor::all(src2), bin_pred...));
     }
 
     template <class Value1, class Value2, class... Args>
@@ -115,9 +112,6 @@ namespace
 
         REQUIRE(saga::equal(in1, in2, bin_pred...)
                 == std::equal(in1.begin(), in1.end(), in2.begin(), in2.end(), bin_pred...));
-
-        REQUIRE(saga::equal(in1, in1, bin_pred...));
-        REQUIRE(saga::equal(in2, in2, bin_pred...));
     }
 }
 
@@ -128,19 +122,9 @@ TEST_CASE("equal - general")
 
     saga_test::property_checker
     << ::check_equal_mimimal<Value1, Value2>
+    << ::check_equal_mimimal<Value1, Value2, std::function<bool(Value1 const &, Value2 const &)>>
     << ::check_equal_subcursor<Value1, Value2>
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
-    {
-        auto const bin_pred = saga::equivalent_up_to([](auto const & arg) { return arg % 2; });
-
-        ::check_equal_mimimal(src1, src2, bin_pred);
-    }
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
-    {
-        auto const bin_pred = saga::equivalent_up_to([](auto const & arg) { return arg % 2; });
-
-        ::check_equal_subcursor(src1, src2, bin_pred);
-    };
+    << ::check_equal_subcursor<Value1, Value2, std::function<bool(Value1 const &, Value2 const &)>>;
 }
 
 TEST_CASE("equal - custom predicate, invented true")
@@ -208,10 +192,9 @@ TEST_CASE("all_of, any_of, some_of - minimal")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::function<bool(Value const &)> pred)
     {
-        auto const pred = [](Value const & x) { return x % 2 == 0; };
-
         auto src_istream_all = saga_test::make_istringstream_from_range(src);
         auto src_istream_any = saga_test::make_istringstream_from_range(src);
         auto src_istream_none = saga_test::make_istringstream_from_range(src);
@@ -231,10 +214,9 @@ TEST_CASE("all_of, any_of, some_of - subcursor")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & values)
+    saga_test::property_checker
+    << [](std::vector<Value> const & values, std::function<bool(Value const &)> pred)
     {
-        auto const pred = [](Value const & x) { return x % 2 == 0; };
-
         auto const src = saga_test::random_subcursor_of(saga::cursor::all(values));
 
         REQUIRE(saga::all_of(src, pred)  == std::all_of(src.begin(), src.end(), pred));
@@ -444,11 +426,10 @@ TEST_CASE("count - subcursor, custom binary predicate")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & values, Value const & value)
+    saga_test::property_checker
+    << [](std::vector<Value> const & values, Value const & value
+          , std::function<bool(Value const &, Value const &)> const & bin_pred)
     {
-        auto const bin_pred = [](Value const & lhs, Value const & rhs)
-            { return lhs % 2 == rhs % 2; };
-
         auto const pred = [&](Value const & arg) { return bin_pred(arg, value); };
 
         auto const src = saga_test::random_subcursor_of(saga::cursor::all(values));
@@ -462,10 +443,9 @@ TEST_CASE("count_if - minimal")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::function<bool(Value const &)> pred)
     {
-        auto const pred = [](Value const & x) { return x % 2 == 0; };
-
         auto src_istream = saga_test::make_istringstream_from_range(src);
 
         REQUIRE(saga::count_if(saga::make_istream_cursor<Value>(src_istream), pred)
@@ -477,10 +457,9 @@ TEST_CASE("count_if - subcursor")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & values)
+    saga_test::property_checker
+    << [](std::vector<Value> const & values, std::function<bool(Value const &)> pred)
     {
-        auto const pred = [](Value const & x) { return x % 2 == 0; };
-
         auto const src = saga_test::random_subcursor_of(saga::cursor::all(values));
 
         REQUIRE(saga::count_if(saga::cursor::all(src), pred)
@@ -521,23 +500,23 @@ TEST_CASE("mismatch - minimal, custom predicate")
     using Value2 = long;
 
     saga_test::property_checker
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
+    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2
+          , std::function<bool(Value1 const &, Value2 const &)> const & bin_pred)
     {
-        auto const pred = saga::equivalent_up_to([](auto const & arg) { return arg % 7; });
-
         auto src1_in = saga_test::make_istringstream_from_range(src1);
         auto src2_in = saga_test::make_istringstream_from_range(src2);
 
         auto r_saga = saga::mismatch(saga::make_istream_cursor<Value1>(src1_in)
-                                    , saga::make_istream_cursor<Value2>(src2_in), pred);
+                                    , saga::make_istream_cursor<Value2>(src2_in), bin_pred);
 
-        auto const r_std = std::mismatch(src1.begin(), src1.end(), src2.begin(), src2.end(), pred);
+        auto const r_std = std::mismatch(src1.begin(), src1.end()
+                                        ,src2.begin(), src2.end(), bin_pred);
 
         // Проверки
         REQUIRE(!r_saga.in1 == (r_std.first == src1.end()));
         REQUIRE(!r_saga.in2 == (r_std.second == src2.end()));
 
-        REQUIRE((!r_saga.in1 || !r_saga.in2 || !pred(*r_saga.in1, *r_saga.in2)));
+        REQUIRE((!r_saga.in1 || !r_saga.in2 || !bin_pred(*r_saga.in1, *r_saga.in2)));
 
         REQUIRE(saga::cursor::size(std::move(r_saga.in1)) == (src1.end() - r_std.first));
         REQUIRE(saga::cursor::size(std::move(r_saga.in2)) == (src2.end() - r_std.second));
@@ -564,10 +543,13 @@ TEST_CASE("mismatch - subcursors, default predicate")
 
 TEST_CASE("mismatch - subcursors, custom predicate")
 {
-    saga_test::property_checker <<[](std::vector<int> const & src1, std::list<long> const & src2)
-    {
-        auto const bin_pred = saga::equivalent_up_to([](auto const & arg) { return arg % 7; });
+    using Value1 = int;
+    using Value2 = long;
 
+    saga_test::property_checker
+    <<[](std::vector<Value1> const & src1, std::list<Value2> const & src2
+        , std::function<bool(Value1 const &, Value2 const &)> const & bin_pred)
+    {
         auto const in1 = saga_test::random_subcursor_of(saga::cursor::all(src1));
         auto const in2 = saga_test::random_subcursor_of(saga::cursor::all(src2));
 
@@ -644,13 +626,10 @@ TEST_CASE("find - subcursor, custom binary predicate")
 {
     using Value = long;
 
-    saga_test::property_checker << [](std::vector<Value> const & src, Value const & value)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, Value const & value
+          , std::function<bool(Value const &, Value const &)> const & bin_pred)
     {
-        auto const bin_pred = [](Value const & lhs, Value const & rhs)
-        {
-            return lhs % 5 == rhs % 5;
-        };
-
         auto const pred = [&](Value const & arg) { return bin_pred(arg, value); };
 
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
@@ -666,9 +645,9 @@ TEST_CASE("find_if - minimal")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::function<bool(Value const &)> pred)
     {
-        auto const pred = [](Value const & arg) { return arg % 4 == 0; };
         auto const r_std = std::find_if(src.begin(), src.end(), pred);
 
         auto src_istream = saga_test::make_istringstream_from_range(src);
@@ -689,10 +668,9 @@ TEST_CASE("find_if - subcursor")
 {
     using Value = long;
 
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::function<bool(Value const &)> pred)
     {
-        auto const pred = [](Value const & x) { return x % 2 == 0; };
-
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         auto const r_std = std::find_if(input.begin(), input.end(), pred);
@@ -708,9 +686,9 @@ TEST_CASE("find_if_not - minimal")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::function<bool(Value const &)> const & pred)
     {
-        auto const pred = [](Value const & arg) { return arg % 2 == 0; };
         auto const r_std = std::find_if_not(src.begin(), src.end(), pred);
 
         auto src_istream = saga_test::make_istringstream_from_range(src);
@@ -731,10 +709,9 @@ TEST_CASE("find_if_not - subcursor")
 {
     using Value = long;
 
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::function<bool(Value const &)> const & pred)
     {
-        auto const pred = [](Value const & x) { return x % 2 == 0; };
-
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         auto const r_std = std::find_if_not(input.begin(), input.end(), pred);
@@ -773,22 +750,23 @@ TEST_CASE("find_end: custom predicate, minimalistic")
     using Value = int;
 
     saga_test::property_checker
-    <<[](std::forward_list<Value> const & haystack, std::forward_list<Value> const & needle)
+    <<[](std::forward_list<Value> const & haystack, std::forward_list<Value> const & needle
+         , std::function<bool(Value const &, Value const &)> const & bin_pred)
     {
-        auto const pred = saga::equivalent_up_to([](Value const & arg) { return arg % 2;});
-
         auto const haystack_cur = saga_test::random_subcursor_of(saga::cursor::all(haystack));
         auto const needle_cur = saga_test::random_subcursor_of(saga::cursor::all(needle));
 
-        auto const r_saga = saga::find_end(haystack_cur, needle_cur, pred);
+        auto const r_saga = saga::find_end(haystack_cur, needle_cur, bin_pred);
         auto const r_std = std::find_end(haystack_cur.begin(), haystack_cur.end()
-                                         , needle_cur.begin(), needle_cur.end(), pred);
+                                         , needle_cur.begin(), needle_cur.end(), bin_pred);
 
         REQUIRE(r_saga.begin() == r_std);
+
         if(r_std != haystack_cur.end())
         {
             REQUIRE(saga::cursor::size(r_saga) == saga::cursor::size(needle_cur));
         }
+
         REQUIRE(r_saga.dropped_front().begin() == haystack_cur.begin());
         REQUIRE(r_saga.dropped_back().end() == haystack_cur.end());
     };
@@ -866,19 +844,19 @@ TEST_CASE("find_first_of - minimalistic, custom predicate")
 
         auto const needle_cur = saga_test::random_subcursor_of(saga::cursor::all(needle));
 
-        auto const pred = saga::equivalent_up_to([](Value const & arg) { return arg % 5; });
+        auto const bin_pred = saga::equivalent_up_to([](Value const & arg) { return arg % 5; });
 
         auto const r_std = std::find_first_of(haystack_src.begin(), haystack_src.end()
-                                              , needle_cur.begin(), needle_cur.end(), pred);
+                                              , needle_cur.begin(), needle_cur.end(), bin_pred);
 
         auto r_saga
-            = saga::find_first_of(saga::make_istream_cursor<Value>(haystack), needle_cur, pred);
+            = saga::find_first_of(saga::make_istream_cursor<Value>(haystack), needle_cur, bin_pred);
 
         REQUIRE(saga::cursor::size(std::move(r_saga)) == (haystack_src.end() - r_std));
 
         if(!!r_saga)
         {
-            REQUIRE(pred(*r_saga, *r_std));
+            REQUIRE(bin_pred(*r_saga, *r_std));
         }
     };
 }
@@ -916,12 +894,12 @@ TEST_CASE("find_first_of - subcursors, custom predicate")
         auto const needle_cur = saga_test::random_subcursor_of(saga::cursor::all(needle));
         auto const haystack_cur = saga_test::random_subcursor_of(saga::cursor::all(haystack));
 
-        auto const pred = saga::equivalent_up_to([](Value const & arg) { return arg % 5; });
+        auto const bin_pred = saga::equivalent_up_to([](Value const & arg) { return arg % 5; });
 
         auto const r_std = std::find_first_of(haystack_cur.begin(), haystack_cur.end()
-                                              , needle_cur.begin(), needle_cur.end(), pred);
+                                              , needle_cur.begin(), needle_cur.end(), bin_pred);
 
-        auto const r_saga = saga::find_first_of(haystack_cur, needle_cur, pred);
+        auto const r_saga = saga::find_first_of(haystack_cur, needle_cur, bin_pred);
 
         REQUIRE(r_saga.begin() == r_std);
         REQUIRE(r_saga.end() == haystack_cur.end());
@@ -931,23 +909,32 @@ TEST_CASE("find_first_of - subcursors, custom predicate")
     };
 }
 
-TEST_CASE("adjacent_find - subcursor, default predicate")
+namespace
 {
-    using Value = long;
-
-    saga_test::property_checker << [](std::forward_list<Value> const & src)
+    template <class Container, class... Args>
+    void test_adjacent_find_subcursor(Container const & src, Args ... bin_pred)
     {
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
-        auto const r_std = std::adjacent_find(input.begin(), input.end());
-        auto const r_saga = saga::adjacent_find(input);
+        auto const r_std = std::adjacent_find(input.begin(), input.end(), bin_pred...);
+        auto const r_saga = saga::adjacent_find(input, bin_pred...);
 
         REQUIRE(r_saga.begin() == r_std);
         REQUIRE(r_saga.end() == input.end());
 
         REQUIRE(r_saga.dropped_front().begin() == src.begin());
         REQUIRE(r_saga.dropped_front().end() == r_saga.begin());
-    };
+    }
+}
+
+TEST_CASE("adjacent_find - subcursor")
+{
+    using Value = long;
+
+    saga_test::property_checker
+    << ::test_adjacent_find_subcursor<std::forward_list<Value>>
+    << ::test_adjacent_find_subcursor<std::forward_list<Value>
+                                     ,std::function<bool(Value const &, Value const &)>>;
 }
 
 TEST_CASE("adjacent_find - guaranty, default predicate")
@@ -963,27 +950,6 @@ TEST_CASE("adjacent_find - guaranty, default predicate")
 
         REQUIRE(r_saga.begin() == src.begin());
         REQUIRE(r_saga.end() == src.end());
-    };
-}
-
-TEST_CASE("adjacent_find - subcursor, custom predicate")
-{
-    using Value = long;
-
-    saga_test::property_checker << [](std::forward_list<Value> const & src)
-    {
-        auto const pred = std::greater<>{};
-
-        auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
-
-        auto const r_std = std::adjacent_find(input.begin(), input.end(), pred);
-        auto const r_saga = saga::adjacent_find(input, pred);
-
-        REQUIRE(r_saga.begin() == r_std);
-        REQUIRE(r_saga.end() == input.end());
-
-        REQUIRE(r_saga.dropped_front().begin() == src.begin());
-        REQUIRE(r_saga.dropped_front().end() == r_saga.begin());
     };
 }
 
@@ -1035,16 +1001,15 @@ TEST_CASE("search: custom predicate, minimalistic")
     using Value = int;
 
     saga_test::property_checker
-    <<[](std::forward_list<Value> const & haystack, std::forward_list<Value> const & needle)
+    <<[](std::forward_list<Value> const & haystack, std::forward_list<Value> const & needle
+         , std::function<bool(Value const &, Value const &)> const & bin_pred)
     {
-        auto const pred = saga::equivalent_up_to([](Value const & arg) { return arg % 2; });
-
         auto const haystack_cur = saga_test::random_subcursor_of(saga::cursor::all(haystack));
         auto const needle_cur = saga_test::random_subcursor_of(saga::cursor::all(needle));
 
-        auto const r_saga = saga::search(haystack_cur, needle_cur, pred);
+        auto const r_saga = saga::search(haystack_cur, needle_cur, bin_pred);
         auto const r_std = std::search(haystack_cur.begin(), haystack_cur.end()
-                                       , needle_cur.begin(), needle_cur.end(), pred);
+                                       , needle_cur.begin(), needle_cur.end(), bin_pred);
 
         REQUIRE(r_saga.begin() == r_std);
         REQUIRE(saga::cursor::size(r_saga)
@@ -1114,15 +1079,13 @@ TEMPLATE_TEST_CASE("search_n: custom predicate", "search_n", std::forward_list<i
     saga_test::property_checker
     <<[](TestType const & haystack
          , saga_test::container_size<typename TestType::difference_type> const & num
-         , Value const & value)
+         , Value const & value, std::function<bool(Value const &, Value const &)> const & bin_pred)
     {
-        auto const pred = saga::equivalent_up_to([](Value const & arg) { return arg % 2; });
-
         auto const haystack_cur = saga_test::random_subcursor_of(saga::cursor::all(haystack));
 
-        auto const r_saga = saga::search_n(haystack_cur, num.value, value, pred);
+        auto const r_saga = saga::search_n(haystack_cur, num.value, value, bin_pred);
         auto const r_std = std::search_n(haystack_cur.begin(), haystack_cur.end()
-                                         , num.value, value, pred);
+                                         , num.value, value, bin_pred);
 
         REQUIRE(r_saga.begin() == r_std);
         REQUIRE(saga::cursor::size(r_saga) == (r_std == haystack_cur.end() ? 0 : num.value));
@@ -1237,10 +1200,10 @@ TEST_CASE("copy_if: minimal")
     using ValueIn = int;
     using ValueOut = long;
 
-    saga_test::property_checker << [](std::vector<ValueIn> const & src)
+    saga_test::property_checker
+    << [](std::vector<ValueIn> const & src, std::function<bool(ValueIn const &)> const & pred)
     {
         auto src_in = saga_test::make_istringstream_from_range(src);
-        auto const pred = [](ValueIn const & x) { return x % 2 == 0; };
 
         // saga
         std::vector<ValueOut> dest_saga;
@@ -1262,10 +1225,9 @@ TEST_CASE("copy_if: subcursor")
     using ValueOut = long;
 
     saga_test::property_checker
-    << [](std::vector<ValueIn> const & src, std::vector<ValueOut> const & dest_old)
+    << [](std::vector<ValueIn> const & src, std::vector<ValueOut> const & dest_old
+          , std::function<bool(ValueIn const &)> const & pred)
     {
-        auto const pred = [](ValueIn const & x) { return x % 3 == 0; };
-
         // Подынтервалы
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
@@ -2062,9 +2024,10 @@ TEST_CASE("remove: subcursor, custom binary predicate")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> src_old, Value const & value)
+    saga_test::property_checker
+    << [](std::vector<Value> src_old, Value const & value
+          , std::function<bool(Value const &, Value const &)> const & bin_pred)
     {
-        auto const bin_pred = std::less<>{};
         auto const pred = [&](Value const & arg) { return bin_pred(arg, value); };
 
         auto src_bin = src_old;
@@ -2081,10 +2044,10 @@ TEST_CASE("remove_if")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::forward_list<Value> const & src_old)
+    saga_test::property_checker
+    << [](std::forward_list<Value> const & src_old
+          , std::function<bool(Value const &)> const & pred_std)
     {
-        auto const pred_std = [](Value const & arg) { return arg % 3 == 2; };
-
         // saga
         auto src_saga = [&]()
         {
@@ -2184,10 +2147,9 @@ TEST_CASE("remove_copy_if: minimal")
 {
     using Value = long;
 
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::function<bool(Value const &)> const & pred)
     {
-        auto const pred = [](Value const & x) { return x % 2 == 0; };
-
         // saga
         auto src_saga = saga_test::make_istringstream_from_range(src);
 
@@ -2208,11 +2170,10 @@ TEST_CASE("remove_copy_if: subcursors")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & src
-                                      , std::vector<Value> const & dest_old)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old
+          , std::function<bool(Value const &)> const & pred)
     {
-        auto const pred = [&](Value const & x) { return x % 3 == 0; };
-
         // Подготовка
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
@@ -2243,10 +2204,10 @@ TEST_CASE("remove_copy: custom binary predicate")
 {
     using Value = long;
 
-    saga_test::property_checker << [](std::vector<Value> const & src, Value const & value)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, Value const & value
+          , std::function<bool(Value const &, Value const &)> const & bin_pred)
     {
-        auto const bin_pred = saga::equivalent_up_to([](Value const & arg) { return arg % 7;});
-
         auto const pred = [&](Value const & arg) {   return bin_pred(arg, value); };
 
         std::vector<Value> dest_bin;
@@ -2296,10 +2257,9 @@ TEST_CASE("replace_if")
     using NewValue = int;
 
     saga_test::property_checker
-    << [](std::forward_list<OldValue> const & src, NewValue const & new_value)
+    << [](std::forward_list<OldValue> const & src, NewValue const & new_value
+          , std::function<bool(OldValue const &)> const & pred)
     {
-        auto const pred = [](OldValue const & x) { return x % 2 == 0; };
-
         // saga
         auto src_saga = src;
 
@@ -2325,10 +2285,10 @@ TEST_CASE("replace: subcursor, custom binary predicate")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> src_old
-                                      , Value const & old_value, Value const & new_value)
+    saga_test::property_checker
+    << [](std::vector<Value> src_old, Value const & old_value, Value const & new_value
+          , std::function<bool(Value const &, Value const &)> const & bin_pred)
     {
-        auto const bin_pred = std::less<>{};
         auto const pred = [&](Value const & arg) { return bin_pred(arg, old_value); };
 
         auto src_bin = src_old;
@@ -2406,10 +2366,10 @@ TEST_CASE("replace_copy_if : minimal")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & src, Value const & new_value)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, Value const & new_value
+          , std::function<bool(Value const &)> const & pred)
     {
-        auto const pred = [](Value const & x) { return x % 2 == 0; };
-
         // saga
         auto src_saga = saga_test::make_istringstream_from_range(src);
 
@@ -2432,10 +2392,9 @@ TEST_CASE("replace_copy_if: subcursors")
 
     saga_test::property_checker << [](std::vector<Value> const & src
                                       , std::vector<Value> const & dest_old
-                                      , Value const & new_value)
+                                      , Value const & new_value
+                                      , std::function<bool(Value const &)> const & pred)
     {
-        auto const pred = [&](Value const & x) { return x % 3 == 0; };
-
         // Подготовка
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
@@ -2467,10 +2426,9 @@ TEST_CASE("replace_copy: custom binary predicate")
     using Value = long;
 
     saga_test::property_checker
-    << [](std::vector<Value> const & src, Value const & old_value, Value const & new_value)
+    << [](std::vector<Value> const & src, Value const & old_value, Value const & new_value
+          , std::function<bool(Value const &, Value const &)> const & bin_pred)
     {
-        auto const bin_pred = saga::equivalent_up_to([](Value const & arg) { return arg % 7;});
-
         auto const pred = [&](Value const & arg) {   return bin_pred(arg, old_value); };
 
         std::vector<Value> dest_bin;
@@ -2931,13 +2889,9 @@ TEST_CASE("unique_copy: minimal")
 {
     using Value = long;
 
-    saga_test::property_checker << [](std::vector<Value> const & src)
-    {
-        auto const bin_pred = [](Value const & x, Value const & y) { return x % 7 == y % 7;};
-
-        ::check_unique_copy_minimal(src);
-        ::check_unique_copy_minimal(src, std::move(bin_pred));
-    };
+    saga_test::property_checker
+    << ::check_unique_copy_minimal<Value>
+    << ::check_unique_copy_minimal<Value, std::function<bool(Value const &, Value const &)>>;
 }
 
 TEST_CASE("unique_copy - subcursors")
@@ -2958,14 +2912,10 @@ TEST_CASE("unique_copy - input to forward")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & src
-                                      , std::vector<Value> const & dest_old)
-    {
-        auto const bin_pred = [](Value const & x, Value const & y) { return x % 7 == y % 7;};
-
-        ::check_unique_copy_input_to_forward(src, dest_old);
-        ::check_unique_copy_input_to_forward(src, dest_old, bin_pred);
-    };
+    saga_test::property_checker
+    << ::check_unique_copy_input_to_forward<Value>
+    << ::check_unique_copy_input_to_forward<Value
+                                           , std::function<bool(Value const &, Value const &)>>;
 }
 
 TEST_CASE("unique: default predicate")
@@ -3069,10 +3019,9 @@ TEST_CASE("is_partitioned: minimal")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::function<bool(Value const &)> const & pred)
     {
-        auto const pred = [](Value const & arg) { return arg % 3 == 0; };
-
         auto src_in = saga_test::make_istringstream_from_range(src);
 
         REQUIRE(saga::is_partitioned(saga::make_istream_cursor<Value>(src_in), pred)
@@ -3084,10 +3033,9 @@ TEST_CASE("is_partitioned: subcursor")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::function<bool(Value const &)> const & pred)
     {
-        auto const pred = [](Value const & arg) { return arg % 3 == 0; };
-
         auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         REQUIRE(saga::is_partitioned(cur, pred)
@@ -3099,10 +3047,9 @@ TEST_CASE("is_partitioned: invented true")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> src)
+    saga_test::property_checker
+    << [](std::vector<Value> src, std::function<bool(Value const &)> const & pred)
     {
-        auto const pred = [](Value const & arg) { return arg % 3 == 0; };
-
         auto const cur = saga_test::random_subcursor_of(saga::cursor::all(src));
 
         std::partition(src.begin(), src.end(), pred);
@@ -3115,10 +3062,9 @@ TEST_CASE("partition_copy: minimal")
 {
     using Value = long;
 
-    saga_test::property_checker << [](std::vector<Value> const & src)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, std::function<bool(Value const &)> const & pred)
     {
-        auto const pred = [](auto const & x) { return x % 2 == 1; };
-
         // saga
         auto src_in = saga_test::make_istringstream_from_range(src);
 
@@ -3147,10 +3093,9 @@ TEST_CASE("partition")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::list<Value> const & src_old)
+    saga_test::property_checker
+    << [](std::list<Value> const & src_old, std::function<bool(Value const &)> const & pred)
     {
-        auto const pred = [](Value const & arg) { return arg % 2 == 1; };
-
         // saga
         auto src = src_old;
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
@@ -3178,12 +3123,12 @@ TEST_CASE("partition_copy: subcursor")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::vector<Value> const & src
-                                      , std::vector<Value> const & dest_true_old
-                                      , std::vector<Value> const & dest_false_old)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src
+         , std::vector<Value> const & dest_true_old
+         , std::vector<Value> const & dest_false_old
+         , std::function<bool(Value const &)> const & pred)
     {
-        auto const pred = [](Value const & x) { return x % 2 == 1; };
-
         // Подготовка
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(src));
 
@@ -3228,10 +3173,9 @@ TEST_CASE("stable_partition")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::list<Value> const & src_old)
+    saga_test::property_checker
+    << [](std::list<Value> const & src_old, std::function<bool(Value const &)> const & pred)
     {
-        auto const pred = [](Value const & arg) { return arg % 2 == 1; };
-
         // saga
         auto src_saga = src_old;
         auto const input_saga = saga_test::random_subcursor_of(saga::cursor::all(src_saga));
@@ -3261,11 +3205,10 @@ TEST_CASE("partition_point")
 {
     using Value = int;
 
-    saga_test::property_checker << [](std::forward_list<Value> const & src_old)
+    saga_test::property_checker
+    << [](std::forward_list<Value> const & src_old, std::function<bool(Value const &)> const & pred)
     {
         // Подготовка
-        auto const pred = [](Value const & arg) { return arg % 2 == 0; };
-
         auto const src = [&]()
         {
             auto src = src_old;
@@ -3339,19 +3282,12 @@ namespace
 TEST_CASE("is_sorted")
 {
     using Value = int;
-    using Container = std::forward_list<Value>;
 
     saga_test::property_checker
-    << ::check_is_sorted<Container>
+    << ::check_is_sorted<std::forward_list<Value>>
+    << ::check_is_sorted<std::forward_list<Value>, saga_test::strict_weak_order<Value>>
     << ::check_is_sorted_after_sort<std::vector<Value>>
-    << [](Container const & src)
-    {
-        ::check_is_sorted(src, std::greater<>{});
-    }
-    << [](std::vector<Value> const & src)
-    {
-        ::check_is_sorted_after_sort(src, std::greater<>{});
-    };
+    << ::check_is_sorted_after_sort<std::vector<Value>, saga_test::strict_weak_order<Value>>;
 }
 
 TEST_CASE("is_sorted_until")
@@ -3361,12 +3297,7 @@ TEST_CASE("is_sorted_until")
 
     saga_test::property_checker
     << ::check_is_sorted_until<Container>
-    << [](Container const & src)
-    {
-        auto const cmp = std::greater<>{};
-
-        ::check_is_sorted_until(src, cmp);
-    };
+    << ::check_is_sorted_until<Container, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -3436,15 +3367,9 @@ TEST_CASE("merge")
 
     saga_test::property_checker
     << ::check_merge_minimal<Container>
-    << ::check_merge_subcursor<Container>
-    << [](Container lhs, Container rhs)
-    {
-        ::check_merge_minimal(lhs, rhs, std::greater<>{});
-    }
-    << [](Container lhs, Container rhs, std::vector<Value> const & out_src_old)
-    {
-        ::check_merge_subcursor(std::move(lhs), std::move(rhs), out_src_old, std::greater<>{});
-    };
+    << ::check_merge_minimal<Container, saga_test::strict_weak_order<Value>>
+    << ::check_merge_subcursor<Value>
+    << ::check_merge_subcursor<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -3486,12 +3411,7 @@ TEST_CASE("inplace_merge")
 
     saga_test::property_checker
     << check_inplace_merge<Value>
-    << [](std::vector<Value> const & values_old)
-    {
-        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 2017; });
-
-        check_inplace_merge(values_old, cmp);
-    };
+    << check_inplace_merge<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -3535,15 +3455,9 @@ TEST_CASE("includes - minimal")
 
     saga_test::property_checker
     << ::check_includes_minimal<Value>
+    << ::check_includes_minimal<Value, saga_test::strict_weak_order<Value>>
     << ::check_includes_subrange<Value>
-    << [](std::vector<Value> in1, std::vector<Value> in2)
-    {
-        ::check_includes_minimal(std::move(in1), std::move(in2), std::greater<>{});
-    }
-    << [](std::vector<Value> in1, std::vector<Value> in2)
-    {
-        ::check_includes_subrange(std::move(in1), std::move(in2), std::greater<>{});
-    };
+    << ::check_includes_subrange<Value, saga_test::strict_weak_order<Value>>;
 }
 
 TEST_CASE("includes - always true, custom compare")
@@ -3637,16 +3551,9 @@ TEST_CASE("set_difference")
 
     saga_test::property_checker
     << ::check_set_difference_minimal<Container>
-    << ::check_set_difference_subcursor<Container>
-    << [](Container lhs, Container rhs)
-    {
-        ::check_set_difference_minimal(std::move(lhs), std::move(rhs), std::greater<>{});
-    }
-    << [](Container lhs, Container rhs, Container const & out_src_old)
-    {
-        ::check_set_difference_subcursor(std::move(lhs), std::move(rhs)
-                                         , out_src_old, std::greater<>{});
-    };
+    << ::check_set_difference_minimal<Container, saga_test::strict_weak_order<Value>>
+    << ::check_set_difference_subcursor<Value>
+    << ::check_set_difference_subcursor<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -3717,16 +3624,9 @@ TEST_CASE("set_intersection")
 
     saga_test::property_checker
     << ::test_set_difference_minimal<Container>
+    << ::test_set_difference_minimal<Container, saga_test::strict_weak_order<Value>>
     << ::test_set_difference_subcursor<Container>
-    << [](Container lhs, Container rhs)
-    {
-        ::test_set_difference_minimal(std::move(lhs), std::move(rhs), std::greater<>{});
-    }
-    << [](Container lhs, Container rhs, Container const & out_src_old)
-    {
-        ::test_set_difference_subcursor(std::move(lhs), std::move(rhs)
-                                        , out_src_old, std::greater<>{});
-    };
+    << ::test_set_difference_subcursor<Container, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -3797,17 +3697,10 @@ TEST_CASE("set_symmetric_difference")
     using Container = std::vector<Value>;
 
     saga_test::property_checker
-    <<  ::test_set_symmetric_difference_minimal<Container>
+    << ::test_set_symmetric_difference_minimal<Container>
+    << ::test_set_symmetric_difference_minimal<Container, saga_test::strict_weak_order<Value>>
     << ::test_set_symmetric_difference_subcursor<Container>
-    << [](Container lhs, Container rhs)
-    {
-        ::test_set_symmetric_difference_minimal(std::move(lhs), std::move(rhs), std::greater<>{});
-    }
-    << [](Container lhs, Container rhs, Container const & out_src_old)
-    {
-        ::test_set_symmetric_difference_subcursor(std::move(lhs), std::move(rhs)
-                                                  , out_src_old, std::greater<>{});
-    };
+    << ::test_set_symmetric_difference_subcursor<Container, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -3877,16 +3770,10 @@ TEST_CASE("set_union")
     using Container = std::vector<Value>;
 
     saga_test::property_checker
-    <<  ::test_set_union_minimal<Container>
     << ::test_set_union_minimal<Container>
-    << [](Container lhs, Container rhs)
-    {
-        ::test_set_union_minimal(std::move(lhs), std::move(rhs), std::greater<>{});
-    }
-    << [](Container lhs, Container rhs, Container const & out_src_old)
-    {
-        ::test_set_union_subcursor(std::move(lhs), std::move(rhs), out_src_old, std::greater<>{});
-    };
+    << ::test_set_union_minimal<Container, saga_test::strict_weak_order<Value>>
+    << ::test_set_union_subcursor<Container>
+    << ::test_set_union_subcursor<Container, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -3934,15 +3821,9 @@ TEST_CASE("is_heap_until")
 
     saga_test::property_checker
     << ::test_is_heap_until<std::vector<Value>>
+    << ::test_is_heap_until<std::vector<Value>, saga_test::strict_weak_order<Value>>
     << ::test_is_heap_until_for_heap<std::vector<Value>>
-    << [](std::vector<Value> const & src)
-    {
-        ::test_is_heap_until(src, std::greater<>{});
-    }
-    << [](std::vector<Value> src)
-    {
-        ::test_is_heap_until_for_heap(std::move(src), std::greater<>{});
-    };
+    << ::test_is_heap_until_for_heap<std::vector<Value>, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -3982,15 +3863,9 @@ TEST_CASE("is_heap")
 
     saga_test::property_checker
     << ::test_is_heap<std::vector<Value>>
+    << ::test_is_heap<std::vector<Value>, saga_test::strict_weak_order<Value>>
     << ::test_is_heap_for_heap<std::vector<Value>>
-    << [](std::vector<Value> const & src)
-    {
-        ::test_is_heap(src, std::greater<>{});
-    }
-    << [](std::vector<Value> src)
-    {
-        ::test_is_heap_for_heap(std::move(src), std::greater<>{});
-    };
+    << ::test_is_heap_for_heap<std::vector<Value>, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -4034,10 +3909,7 @@ TEST_CASE("push_heap")
 
     saga_test::property_checker
     << ::test_push_heap<Value>
-    << [](std::vector<Value> src, Value const & value)
-    {
-        ::test_push_heap(std::move(src), value, std::greater<>{});
-    };
+    << ::test_push_heap<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -4070,10 +3942,7 @@ TEST_CASE("make_heap")
 
     saga_test::property_checker
     << ::test_make_heap<Value>
-    << [](std::vector<Value> const & src_old)
-    {
-        ::test_make_heap(src_old, std::greater<>{});
-    };
+    << ::test_make_heap<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -4119,10 +3988,7 @@ TEST_CASE("pop_heap")
 
     saga_test::property_checker
     << ::test_pop_heap<Value>
-    << [](std::vector<Value> src, Value value)
-    {
-        ::test_pop_heap(std::move(src), std::move(value), std::greater<>{});
-    };
+    << ::test_pop_heap<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -4157,10 +4023,7 @@ TEST_CASE("sort_heap")
 
     saga_test::property_checker
     << ::test_sort_heap<Value>
-    << [](std::vector<Value> const & src_old)
-    {
-        ::test_sort_heap(src_old, std::greater<>{});
-    };
+    << ::test_sort_heap<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -4218,10 +4081,7 @@ TEST_CASE("insertion_sort")
 
     saga_test::property_checker
     << ::test_insertion_sort<Value>
-    << [](std::list<Value> const & values_old)
-    {
-        ::test_insertion_sort(values_old, std::greater<>{});
-    };
+    << ::test_insertion_sort<Value, saga_test::strict_weak_order<Value>>;
 }
 
 TEST_CASE("sort")
@@ -4230,12 +4090,7 @@ TEST_CASE("sort")
 
     saga_test::property_checker
     << ::test_sort<Value>
-    << [](std::vector<Value> const & values_old)
-    {
-        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 17; }
-                                         , std::greater<>{});
-        ::test_sort(values_old, cmp);
-    };
+    << ::test_sort<Value, saga_test::strict_weak_order<Value>>;
 }
 
 TEST_CASE("partial_sort - default compare")
@@ -4393,15 +4248,9 @@ TEST_CASE("partial_sort_copy")
 
     saga_test::property_checker
     << ::test_partial_sort_copy_minimal<Value>
+    << ::test_partial_sort_copy_minimal<Value, saga_test::strict_weak_order<Value>>
     << ::test_partial_sort_copy_input_subcursor<Value>
-    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
-    {
-        ::test_partial_sort_copy_minimal(src, dest_old, std::greater<>{});
-    }
-    << [](std::vector<Value> const & src, std::vector<Value> const & dest_old)
-    {
-        ::test_partial_sort_copy_input_subcursor(src, dest_old, std::greater<>{});
-    };
+    << ::test_partial_sort_copy_input_subcursor<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -4435,11 +4284,7 @@ TEST_CASE("stable_sort")
 
     saga_test::property_checker
     << ::test_stable_sort<Value>
-    << [](std::vector<Value> const & values_old)
-    {
-        ::test_stable_sort(values_old
-                           , saga::compare_by([](Value const & arg) { return arg % 2017; }));
-    };
+    << ::test_stable_sort<Value, saga_test::strict_weak_order<Value>>;
 }
 
 TEST_CASE("nth_element: default compare")
@@ -4556,10 +4401,7 @@ TEST_CASE("lower_bound")
 
     saga_test::property_checker
     << ::test_lower_bound<Value>
-    << [](std::forward_list<Value> const & src_old, Value const & value)
-    {
-        ::test_lower_bound(src_old, value, std::greater<>{});
-    };
+    << ::test_lower_bound<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -4600,10 +4442,7 @@ TEST_CASE("upper_bound")
 
     saga_test::property_checker
     << ::test_upper_bound<Value>
-    << [](std::forward_list<Value> const & src_old, Value const & value)
-    {
-        ::test_upper_bound(src_old, value, std::greater<>{});
-    };
+    << ::test_upper_bound<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -4646,10 +4485,7 @@ TEST_CASE("equal_range")
 
     saga_test::property_checker
     << ::test_equal_range<Value>
-    << [](std::forward_list<Value> const & src_old, Value const & value)
-    {
-        ::test_equal_range(src_old, value, std::greater<>{});
-    };
+    << ::test_equal_range<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -4686,10 +4522,7 @@ TEST_CASE("binary_search")
 
     saga_test::property_checker
     << ::test_binary_search<Value>
-    << [](std::forward_list<Value> const & src_old, Value const & value)
-    {
-        ::test_binary_search(src_old, value, std::greater<>{});
-    };
+    << ::test_binary_search<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -4721,10 +4554,7 @@ TEST_CASE("min_element")
 
     saga_test::property_checker
     << ::test_min_element<Value>
-    << [](std::forward_list<Value> const & src)
-    {
-        ::test_min_element(src, std::greater<>{});
-    };
+    << ::test_min_element<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -4753,12 +4583,7 @@ TEST_CASE("max_element")
 
     saga_test::property_checker
     << ::test_max_element<Value>
-    << [](std::forward_list<Value> const & src)
-    {
-        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 5; });
-
-        ::test_max_element(src, cmp);
-    };
+    << ::test_max_element<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -4792,12 +4617,7 @@ TEST_CASE("minmax_element")
 
     saga_test::property_checker
     << ::test_minmax_element<Value>
-    << [](std::forward_list<Value> const & src)
-    {
-        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 5; });
-
-        ::test_minmax_element(src, cmp);
-    };
+    << ::test_minmax_element<Value, saga_test::strict_weak_order<Value>>;
 }
 
 TEST_CASE("clamp: default compare")
@@ -4958,12 +4778,7 @@ TEST_CASE("next_permutation")
 
     saga_test::property_checker
     << ::test_next_permutation<Value>
-    << [](std::list<Value> const & values_old)
-    {
-        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 100; });
-
-        ::test_next_permutation(values_old, cmp);
-    };
+    << ::test_next_permutation<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -4999,12 +4814,7 @@ TEST_CASE("prev_permutation")
 
     saga_test::property_checker
     << ::test_prev_permutation<Value>
-    << [](std::list<Value> const & values_old)
-    {
-        auto const cmp = saga::compare_by([](Value const & arg) { return arg % 100; });
-
-        ::test_prev_permutation(values_old, cmp);
-    };
+    << ::test_prev_permutation<Value, saga_test::strict_weak_order<Value>>;
 }
 
 namespace
@@ -5052,18 +4862,15 @@ TEST_CASE("lexicographical_compare")
 {
     using Value1 = int;
     using Value2 = long;
+    using CommonValue = std::common_type_t<Value1, Value2>;
 
     saga_test::property_checker
     << ::test_lexicographical_compare_minimal<Value1, Value2>
+    << ::test_lexicographical_compare_minimal<Value1, Value2
+                                             , saga_test::strict_weak_order<CommonValue>>
     << ::test_lexicographical_compare_subcursor<Value1, Value2>
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
-    {
-        ::test_lexicographical_compare_minimal(src1, src2, std::greater<>{});
-    }
-    << [](std::vector<Value1> const & src1, std::vector<Value2> const & src2)
-    {
-        ::test_lexicographical_compare_subcursor(src1, src2, std::greater<>{});
-    };
+    << ::test_lexicographical_compare_subcursor<Value1, Value2
+                                               , saga_test::strict_weak_order<CommonValue>>;
 }
 
 TEST_CASE("lexicographical_compare - prefix")

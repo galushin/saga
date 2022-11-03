@@ -1755,7 +1755,7 @@ namespace saga
         template <class ForwardCursor, class T, class Compare = std::less<>>
         bool operator()(ForwardCursor cur, T const & value, Compare cmp = {}) const
         {
-            auto pos = saga::lower_bound_fn{}(std::move(cur), value, std::move(cmp));
+            auto pos = saga::lower_bound_fn{}(std::move(cur), value, std::ref(cmp));
 
             return !!pos && !saga::invoke(cmp, value, *pos);
         }
@@ -1820,7 +1820,7 @@ namespace saga
                     return;
                 }
 
-                this->impl(cur1.dropped_front(), num11, cur_mid.dropped_front(), std::move(cmp));
+                this->impl(cur1.dropped_front(), num11, cur_mid.dropped_front(), std::ref(cmp));
 
                 num1 = num12;
                 cur1 = std::move(cur_mid);
