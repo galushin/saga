@@ -429,6 +429,342 @@ namespace saga_test
         }
     };
 
+    template <class IntType>
+    struct arbitrary<std::function<bool(IntType const &)>
+                    , std::enable_if_t<std::is_integral<IntType>{}>>
+    {
+        using value_type = std::function<bool(IntType const &)>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            using BinPredGen = arbitrary<std::function<bool(IntType const &, IntType const &)>>;
+
+            auto bin_pred = BinPredGen::generate(generation, urbg);
+
+            auto value = arbitrary<IntType>::generate(generation, urbg);
+
+            if(generation % 2 == 0)
+            {
+                return [=](IntType const & arg) { return bin_pred(arg, value); };
+            }
+            else
+            {
+                return [=](IntType const & arg) { return bin_pred(value, arg); };
+            }
+        }
+    };
+
+    template <class IntType>
+    struct arbitrary<std::function<IntType(IntType const &)>
+                    , std::enable_if_t<std::is_integral<IntType>{}>>
+    {
+        using value_type = std::function<IntType(IntType const &)>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            using BinOpGen = arbitrary<std::function<IntType(IntType const &, IntType const &)>>;
+
+            auto bin_op = BinOpGen::generate(generation, urbg);
+
+            auto value = arbitrary<IntType>::generate(generation, urbg);
+
+            if(generation % 2 == 0)
+            {
+                return [=](IntType const & arg) { return bin_op(arg, value); };
+            }
+            else
+            {
+                return [=](IntType const & arg) { return bin_op(value, arg); };
+            }
+        }
+    };
+
+    template <class IntType, class Arg>
+    struct arbitrary<std::function<IntType(Arg, Arg)>
+                    , std::enable_if_t<std::is_unsigned<IntType>{}
+                                       && (std::is_same<Arg, IntType>{}
+                                           || std::is_same<Arg, IntType const &>{})>>
+    {
+        using value_type = std::function<IntType(Arg, Arg)>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            switch(saga_test::arbitrary<size_t>::generate(generation, urbg) % 11)
+            {
+            break; case 0:
+                return value_type(std::bit_xor<>{});
+
+            break; case 1:
+                return value_type(std::bit_or<>{});
+
+            break; case 2:
+                return value_type(std::bit_and<>{});
+
+            break; case 3:
+                return value_type([](IntType const & lhs, IntType const & rhs)
+                                  { return std::min(lhs, rhs); });
+
+            break; case 4:
+                return value_type([](IntType const & lhs, IntType const & rhs)
+                                  { return std::max(lhs, rhs); });
+
+            break; case 5:
+                return value_type(std::plus<>{});
+
+            break; case 6:
+                return value_type(std::multiplies<>{});
+
+            break; case 7:
+                {
+                    auto value = arbitrary<IntType>::generate(generation, urbg);
+
+                    return value_type([=](IntType const &, IntType const &) { return value; });
+                }
+
+            // Некоммутативные операции
+            break; case 8:
+                return value_type([](IntType const & lhs, IntType const &) { return lhs; });
+
+            break; case 9:
+                return value_type([](IntType const &, IntType const & rhs) { return rhs; });
+
+            // Не ассоциативные операции
+            break; default:
+                return value_type(std::minus<>{});
+            }
+        }
+    };
+
+    template <class IntType1, class IntType2>
+    struct arbitrary<std::function<bool(IntType1 const &, IntType2 const &)>
+                    , std::enable_if_t<std::is_integral<IntType1>{}
+                                       && std::is_integral<IntType2>{}>>
+    {
+        using value_type = std::function<bool(IntType1 const &, IntType2 const &)>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            using Distr1 = std::uniform_int_distribution<IntType1>;
+            using Distr2 = std::uniform_int_distribution<IntType2>;
+
+            auto mod_1 = Distr1(1, std::numeric_limits<IntType1>::max())(urbg);
+            auto mod_2 = Distr2(1, std::numeric_limits<IntType2>::max())(urbg);
+
+            switch(generation % 8)
+            {
+            break; case 0:
+                return value_type([=](IntType1 const & lhs, IntType2 const & rhs)
+                                  { return std::equal_to<>{}(lhs % mod_1, rhs % mod_2); });
+            break; case 1:
+                return value_type([=](IntType1 const & lhs, IntType2 const & rhs)
+                                  { return std::less<>{}(lhs % mod_1, rhs % mod_2); });
+            break; case 2:
+                return value_type([=](IntType1 const & lhs, IntType2 const & rhs)
+                                  { return std::not_equal_to<>{}(lhs % mod_1, rhs % mod_2); });
+            break; case 3:
+                return value_type([=](IntType1 const & lhs, IntType2 const & rhs)
+                                  { return std::greater<>{}(lhs % mod_1, rhs % mod_2); });
+            break; case 4:
+                return value_type([=](IntType1 const & lhs, IntType2 const & rhs)
+                                  { return std::less_equal<>{}(lhs % mod_1, rhs % mod_2); });
+            break; case 5:
+                return value_type([=](IntType1 const & lhs, IntType2 const & rhs)
+                                  { return std::greater_equal<>{}(lhs % mod_1, rhs % mod_2); });
+            break; case 6:
+                return value_type([](IntType1 const &, IntType2 const &){ return true; });
+
+            break; default:
+                return value_type([](IntType1 const &, IntType2 const &){ return false; });
+            }
+        }
+    };
+
+    template <class Value>
+    class strict_weak_order
+    {
+    friend class arbitrary<strict_weak_order>;
+
+    public:
+        using Function = std::function<bool(Value const &, Value const &)>;
+
+        bool operator()(Value const & lhs, Value const & rhs) const
+        {
+            return this->impl_(lhs, rhs);
+        }
+
+    private:
+        explicit strict_weak_order(Function fun)
+         : impl_(std::move(fun))
+        {}
+
+        Function impl_;
+    };
+
+    template <class IntType>
+    struct arbitrary<strict_weak_order<IntType>, std::enable_if_t<std::is_integral<IntType>{}>>
+    {
+        using value_type = strict_weak_order<IntType>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            auto Modulus_distr
+                = std::uniform_int_distribution<IntType> (1, std::numeric_limits<IntType>::max());
+
+            auto Modulus = Modulus_distr(urbg);
+
+            if(generation % 2 == 0)
+            {
+                return value_type([=](IntType const & lhs, IntType const & rhs)
+                                  { return std::less<>{}(lhs % Modulus, rhs % Modulus); });
+            }
+            else
+            {
+                return value_type([=](IntType const & lhs, IntType const & rhs)
+                                  { return std::greater<>{}(lhs % Modulus, rhs % Modulus); });
+            }
+        }
+    };
+
+    template <class Value>
+    class associative_operation
+    {
+    friend arbitrary<associative_operation>;
+
+    public:
+        using Function = std::function<Value(Value const &, Value const &)>;
+
+        Value operator()(Value const & lhs, Value const & rhs) const
+        {
+            return this->impl_(lhs, rhs);
+        }
+
+    private:
+        explicit associative_operation(Function fun)
+         : impl_(std::move(fun))
+        {}
+
+        Function impl_;
+    };
+
+    template <class IntType>
+    struct arbitrary<associative_operation<IntType>, std::enable_if_t<std::is_unsigned<IntType>{}>>
+    {
+        using value_type = associative_operation<IntType>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            switch(saga_test::arbitrary<size_t>::generate(generation, urbg) % 10)
+            {
+            break; case 0:
+                return value_type(std::bit_xor<>{});
+
+            break; case 1:
+                return value_type(std::bit_or<>{});
+
+            break; case 2:
+                return value_type(std::bit_and<>{});
+
+            break; case 3:
+                return value_type([](IntType const & lhs, IntType const & rhs)
+                                  { return std::min(lhs, rhs); });
+
+            break; case 4:
+                return value_type([](IntType const & lhs, IntType const & rhs)
+                                  { return std::max(lhs, rhs); });
+
+            break; case 5:
+                return value_type(std::plus<>{});
+
+            break; case 6:
+                return value_type(std::multiplies<>{});
+
+            break; case 7:
+                {
+                    auto value = arbitrary<IntType>::generate(generation, urbg);
+
+                    return value_type([=](IntType const &, IntType const &) { return value; });
+                }
+
+            // Некоммутативные операции
+            break; case 8:
+                return value_type([](IntType const & lhs, IntType const &) { return lhs; });
+
+            break; default:
+                return value_type([](IntType const &, IntType const & rhs) { return rhs; });
+            }
+        }
+    };
+
+    template <class Value>
+    class abelian_group_operation
+    {
+    friend arbitrary<abelian_group_operation>;
+
+    public:
+        using Function = std::function<Value(Value const &, Value const &)>;
+
+        Value operator()(Value const & lhs, Value const & rhs) const
+        {
+            return this->impl_(lhs, rhs);
+        }
+
+    private:
+        explicit abelian_group_operation(Function fun)
+         : impl_(std::move(fun))
+        {}
+
+        Function impl_;
+    };
+
+    template <class IntType>
+    struct arbitrary<abelian_group_operation<IntType>, std::enable_if_t<std::is_unsigned<IntType>{}>>
+    {
+        using value_type = abelian_group_operation<IntType>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            switch(saga_test::arbitrary<size_t>::generate(generation, urbg) % 8)
+            {
+            break; case 0:
+                return value_type(std::bit_xor<>{});
+
+            break; case 1:
+                return value_type(std::bit_or<>{});
+
+            break; case 2:
+                return value_type(std::bit_and<>{});
+
+            break; case 3:
+                return value_type([](IntType const & lhs, IntType const & rhs)
+                                  { return std::min(lhs, rhs); });
+
+            break; case 4:
+                return value_type([](IntType const & lhs, IntType const & rhs)
+                                  { return std::max(lhs, rhs); });
+
+            break; case 5:
+                return value_type(std::plus<>{});
+
+            break; case 6:
+                return value_type(std::multiplies<>{});
+
+            break; default:
+                {
+                    auto value = arbitrary<IntType>::generate(generation, urbg);
+
+                    return value_type([=](IntType const &, IntType const &) { return value; });
+                }
+            }
+        }
+    };
+
     namespace detail
     {
         template <class F, class Tuple, std::size_t... Indices>
