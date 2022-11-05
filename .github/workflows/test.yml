@@ -180,11 +180,11 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install GCC or Clang
-      id: install_gcc_clang
-      shell: bash
-      working-directory: ${{ env.HOME }}
-      run: |
-        sudo apt-get install -y ${{matrix.config.cc}} ${{matrix.config.cxx}}
+        id: install_gcc_clang
+        shell: bash
+        working-directory: ${{ env.HOME }}
+        run: |
+          sudo apt-get install -y ${{matrix.config.cc}} ${{matrix.config.cxx}}
       
       - name: build-and-test
         if: matrix.config.sanitize == 'none'
