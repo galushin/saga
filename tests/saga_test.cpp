@@ -21,22 +21,7 @@ SAGA -- это свободной программное обеспечение:
 // Тестовая инфраструктура
 #include <catch2/catch_amalgamated.hpp>
 
-// Вспомогательные файлы
-
 // Тесты
-TEST_CASE("saga_test::detail::function_input_iterator: operator++ without value")
-{
-    int value = 0;
-
-    auto gen = [&]() { return value++; };
-
-    auto iter = saga_test::detail::make_function_input_iterator(gen, 0);
-
-    ++ iter;
-
-    REQUIRE(*iter == 1);
-}
-
 TEST_CASE("saga_test::bounded - positive")
 {
     constexpr auto const x_min = int(13);
