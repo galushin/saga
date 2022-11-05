@@ -30,17 +30,16 @@ SAGA -- это свободной программное обеспечение:
 
 #include <array>
 #include <algorithm>
-#include <iterator>
-#include <optional>
 #include <sstream>
 #include <type_traits>
-
-// @todo Разбить на более мелкие файлы (в духе: один класс -- один файл)
 
 namespace saga_test
 {
     // Тестирование, основанное на свойствах
     using generation_t = int;
+
+    template <class T, class SFINAE = void>
+    struct arbitrary;
 
     template <class IntType = std::size_t>
     struct container_size
@@ -53,9 +52,6 @@ namespace saga_test
 
         IntType value{};
     };
-
-    template <class T, class SFINAE = void>
-    struct arbitrary;
 
     namespace detail
     {
@@ -124,70 +120,43 @@ namespace saga_test
             }
         };
 
-        template <class Generator, class Incrementable>
-        class function_input_iterator
-         : saga::operators::equality_comparable<function_input_iterator<Generator, Incrementable>>
-        {
-            friend bool operator==(function_input_iterator const & lhs,
-                                   function_input_iterator const & rhs)
-            {
-                return lhs.pos_ == rhs.pos_;
-            }
+        template <class Container>
+        struct arbitrary_sequence_container;
 
+        template <class T, class A>
+        struct arbitrary_sequence_container<std::vector<T, A>>
+        {
         public:
-            // Типы
-            using iterator_category = std::input_iterator_tag;
-            using value_type = std::decay_t<decltype(std::declval<Generator&>()())>;
-            using difference_type = Incrementable;
-            using reference = value_type const &;
-            using pointer = value_type const *;
+            using value_type = std::vector<T, A>;
 
-            // Создание и копирование
-            function_input_iterator(Generator gen, Incrementable pos)
-             : gen_(std::move(gen))
-             , pos_(std::move(pos))
-            {}
-
-            // Итератор
-            reference operator*()
+            template <class UniformRandomBitGenerator>
+            static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
             {
-                if(!this->cache_.has_value())
+                assert(generation >= 0);
+
+                using Container = value_type;
+
+                using Size = typename Container::size_type;
+                auto num = Size{arbitrary<container_size<Size>>::generate(generation, urbg)};
+
+                if(num == 0)
                 {
-                    this->cache_ = (this->gen_)();
+                    return {};
                 }
 
-                return this->cache_.value();
+                Container result;
+                result.reserve(num);
+
+                for(; num > 0; -- num)
+                {
+                    std::uniform_int_distribution<generation_t> distr(0, generation);
+                    using Element = typename Container::value_type;
+                    result.push_back(arbitrary<Element>::generate(distr(urbg), urbg));
+                }
+
+                return result;
             }
-
-            function_input_iterator & operator++()
-            {
-                if(this->cache_.has_value())
-                {
-                    this->cache_.reset();
-                }
-                else
-                {
-                    (this->gen_)();
-                }
-
-                ++ this->pos_;
-
-                return *this;
-            }
-
-        private:
-            Generator gen_{};
-            Incrementable pos_{};
-
-            std::optional<value_type> cache_;
         };
-
-        template <class Generator, class Incrementable>
-        function_input_iterator<Generator, Incrementable>
-        make_function_input_iterator(Generator gen, Incrementable pos)
-        {
-            return {std::move(gen), std::move(pos)};
-        }
 
         template <class Container>
         struct arbitrary_sequence_container
@@ -198,25 +167,14 @@ namespace saga_test
             template <class UniformRandomBitGenerator>
             static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
             {
-                assert(generation >= 0);
+                using Elem = typename Container::value_type;
 
-                using Size = typename Container::size_type;
-                auto const num = Size{arbitrary<container_size<Size>>::generate(generation, urbg)};
+                using VectorGenerator = arbitrary_sequence_container<std::vector<Elem>>;
 
-                if(num == 0)
-                {
-                    return {};
-                }
+                auto src = VectorGenerator::generate(generation, urbg);
 
-                std::uniform_int_distribution<generation_t> distr(0, generation);
-
-                using Element = typename Container::value_type;
-                auto elem_gen = [&](){ return arbitrary<Element>::generate(distr(urbg), urbg); };
-
-                auto first = ::saga_test::detail::make_function_input_iterator(elem_gen, Size{0});
-                auto last = ::saga_test::detail::make_function_input_iterator(elem_gen, num);
-
-                return value_type(std::move(first), std::move(last));
+                return Container(std::make_move_iterator(src.begin())
+                                 , std::make_move_iterator(src.end()));
             }
         };
 
@@ -767,21 +725,6 @@ namespace saga_test
 
     namespace detail
     {
-        template <class F, class Tuple, std::size_t... Indices>
-        void apply_impl(F&& f, Tuple&& t, std::index_sequence<Indices...>)
-        {
-            return std::forward<F>(f)(std::get<Indices>(std::forward<Tuple>(t))...);
-        }
-
-        template <class F, class Tuple>
-        void apply(F&& f, Tuple&& t)
-        {
-            constexpr auto const n = std::tuple_size<std::remove_reference_t<Tuple>>::value;
-
-            return saga_test::detail::apply_impl(std::forward<F>(f), std::forward<Tuple>(t),
-                                                 std::make_index_sequence<n>{});
-        }
-
         template <class... Args>
         void check_property(void(*property)(Args...))
         {
@@ -792,7 +735,7 @@ namespace saga_test
             for(auto gen = generation_t{0}; gen < max_generation; ++ gen)
             {
                 auto args = saga_test::arbitrary<Value>::generate(gen, saga_test::random_engine());
-                ::saga_test::detail::apply(property, std::move(args));
+                std::apply(property, std::move(args));
             }
         }
 
