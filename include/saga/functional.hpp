@@ -96,6 +96,14 @@ namespace saga
             {
                 return !saga::invoke(fun_, std::forward<Args>(args)...);
             }
+
+            template <class... Args>
+            auto operator()(Args&&... args) const &
+            noexcept(noexcept(!saga::invoke(fun_, std::forward<Args>(args)...)))
+            -> decltype(!saga::invoke(fun_, std::forward<Args>(args)...))
+            {
+                return !saga::invoke(fun_, std::forward<Args>(args)...);
+            }
         };
     }
     // namespace detail

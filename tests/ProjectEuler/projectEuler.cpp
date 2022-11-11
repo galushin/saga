@@ -3969,14 +3969,15 @@ namespace
     template <class IntType>
     struct PE_64_state
     {
+        IntType shift = IntType(0);
+        IntType value = IntType(0);
+        IntType denominator = IntType(1);
+
         friend bool operator==(PE_64_state const & lhs, PE_64_state const & rhs)
         {
-            return std::tie(lhs.shift, lhs.denominator)
-                    == std::tie(rhs.shift, rhs.denominator);
+            return std::tie(lhs.shift, lhs.value, lhs.denominator)
+                   == std::tie(rhs.shift, rhs.value, rhs.denominator);
         }
-
-        IntType shift = IntType(0);
-        IntType denominator = IntType(1);
     };
 
     template <class IntType>
@@ -3987,6 +3988,7 @@ namespace
         // Типы
         using reference = PE_64_state<IntType> const &;
         using difference_type = std::ptrdiff_t;
+        using cursor_category = std::input_iterator_tag;
 
         // Конструктор
         /**
@@ -3995,7 +3997,7 @@ namespace
         explicit PE_64_cursor(IntType number)
          : number_(std::move(number))
          , sqrt_floor_(std::sqrt(this->number_))
-         , state_{this->sqrt_floor_, 1}
+         , state_{this->sqrt_floor_, this->sqrt_floor_, 1}
         {}
 
         // Курсор ввода
@@ -4023,9 +4025,12 @@ namespace
                 return;
             }
 
-            auto value = (this->sqrt_floor_ + this->state_.shift) / this->state_.denominator;
+            this->state_.value = (this->sqrt_floor_ + this->state_.shift)
+                               / this->state_.denominator;
 
-            this->state_.shift = std::move(value) * this->state_.denominator - this->state_.shift;
+            this->state_.shift = this->state_.value * this->state_.denominator
+                               - std::move(this->state_.shift);
+
             assert(this->state_.shift > 0);
         }
 
@@ -4142,6 +4147,101 @@ TEST_CASE("PE 065")
 {
     REQUIRE(::PE_065(10) == 17);
     REQUIRE(::PE_065(100) == 272);
+}
+
+// PE 066 - Диофантово уравнение
+namespace
+{
+    template <class IntType>
+    std::pair<IntType, std::vector<IntType>>
+    sqrt_continued_fraction_period(IntType number)
+    {
+        auto cur = ::PE_64_cursor<IntType>(number)
+                 | saga::cursor::transform(&PE_64_state<IntType>::value);
+
+        assert(!!cur);
+
+        auto const first = *cur;
+        ++ cur;
+
+        auto const pred = [stop = 2 * first](IntType const & arg){ return arg != stop; };
+
+        std::vector<IntType> other;
+        saga::copy(cur | saga::cursor::take_while(pred), saga::back_inserter(other));
+
+
+        return {first, other};
+    }
+
+    template <class Result, class IntType>
+    Result pells_equation_minimal_solution_x(IntType number)
+    {
+        auto const sqrt_cf = ::sqrt_continued_fraction_period(number);
+
+        ::convergent<Result> conv(sqrt_cf.first);
+
+        for(auto const & each : saga::cursor::all(sqrt_cf.second))
+        {
+            conv.add(each);
+        }
+
+        if(sqrt_cf.second.size() % 2 == 0)
+        {
+            conv.add(2*sqrt_cf.first);
+
+            for(auto const & each : saga::cursor::all(sqrt_cf.second))
+            {
+                conv.add(each);
+            }
+        }
+
+        return conv.numerator();
+    }
+
+    template <class IntType>
+    IntType pells_equation_minimal_solution_x(IntType number)
+    {
+        return pells_equation_minimal_solution_x<IntType, IntType>(number);
+    }
+
+    struct is_square_fn
+    {
+        template <class IntType>
+        bool operator()(IntType const & number) const
+        {
+            return !(saga::square(static_cast<IntType>(std::sqrt(number))) < number);
+        }
+    };
+
+    template <class IntType>
+    IntType PE_066(IntType max_number)
+    {
+        assert(max_number >= 2);
+
+        auto cur = saga::cursor::indices(IntType(2), max_number+1)
+                 | saga::cursor::filter(saga::not_fn(::is_square_fn{}))
+                 | saga::cursor::transform(::pells_equation_minimal_solution_x<double, IntType>)
+                 | saga::cursor::cached1;
+
+        assert(!!cur);
+
+        return *saga::max_element(cur).base().base();
+    }
+}
+
+TEST_CASE("PE 066")
+{
+    CHECK(::pells_equation_minimal_solution_x(2) == 3);
+    CHECK(::pells_equation_minimal_solution_x(3) == 2);
+    CHECK(::pells_equation_minimal_solution_x(5) == 9);
+
+    CHECK(::pells_equation_minimal_solution_x(6) == 5);
+    CHECK(::pells_equation_minimal_solution_x(7) == 8);
+
+    CHECK(::pells_equation_minimal_solution_x(13) == 649);
+
+    CHECK(::PE_066(7) == 5);
+    CHECK(::PE_066(1000) == 661);
 }
 
 // PE 097 - Большое не-Мерсеновское простое число

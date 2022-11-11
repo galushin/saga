@@ -34,6 +34,8 @@ namespace saga
         // Типы
         using reference = cursor_reference_t<InputCursor>;
         using value_type = cursor_value_t<InputCursor>;
+        using difference_type = saga::cursor_difference_t<InputCursor>;
+        using cursor_category = std::input_iterator_tag;
 
         // Создание, копирование, уничтожение
         constexpr explicit filter_cursor(InputCursor cur, UnaryPredicate pred)

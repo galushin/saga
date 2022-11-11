@@ -39,6 +39,8 @@ namespace saga
                                             , saga::cursor_reference_t<InputCursor2>>;
         using value_type = std::common_type_t<saga::cursor_value_t<InputCursor1>
                                              , saga::cursor_value_t<InputCursor2>>;
+        using difference_type = std::common_type_t<saga::cursor_difference_t<InputCursor1>
+                                                  , saga::cursor_difference_t<InputCursor2>>;
 
         // Создание, копирование, уничтожение
         constexpr explicit set_union_cursor(InputCursor1 in1, InputCursor2 in2)
