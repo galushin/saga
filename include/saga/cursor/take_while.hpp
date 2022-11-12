@@ -38,6 +38,7 @@ namespace saga
         // Типы
         using value_type = cursor_value_t<Cursor>;
         using reference = cursor_reference_t<Cursor>;
+        using difference_type = cursor_difference_t<Cursor>;
 
         // Создание, копирование, уничтожение
         constexpr explicit take_while_cursor(Cursor cur, UnaryPredicate pred)
