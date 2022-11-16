@@ -4244,6 +4244,90 @@ TEST_CASE("PE 066")
     CHECK(::PE_066(1000) == 661);
 }
 
+// PE 068 - Магическое 5-угольное кольцо
+namespace
+{
+    using PE_068_configuration = std::vector<std::tuple<int, int, int>>;
+
+    auto PE_068_group(std::vector<int> const & numbers)
+    {
+        assert(!numbers.empty());
+        assert(numbers.size() % 2 == 0);
+
+        auto const length = numbers.size() / 2;
+
+        PE_068_configuration groups;
+
+        for(auto index : saga::cursor::indices(length))
+        {
+            groups.emplace_back(numbers[index + length], numbers[index]
+                                , numbers[(index + 1) % length]);
+        }
+
+        saga::rotate(saga::min_element(saga::cursor::all(groups)));
+
+        return groups;
+    }
+
+    bool is_magical(PE_068_configuration const & groups)
+    {
+        auto fun = [](auto const & group)
+        {
+            return std::get<0>(group) + std::get<1>(group) + std::get<2>(group);
+        };
+
+        auto value = fun(groups.front());
+
+        return saga::all_of(saga::cursor::all(groups)
+                            , [&](auto const & group) { return fun(group) == value; });
+    }
+
+    std::string PE_068(std::size_t const num, bool keep_last)
+    {
+        std::vector<int> digits(2*num);
+        saga::iota(saga::cursor::all(digits), 1);
+
+        std::string result;
+
+        auto cur = saga::cursor::all(digits);
+
+        if(keep_last)
+        {
+            cur.drop_back();
+        }
+
+        do
+        {
+            auto const groups = ::PE_068_group(digits);
+
+            if(::is_magical(groups))
+            {
+                std::ostringstream str;
+
+                for(auto const & group : groups)
+                {
+                    str << std::get<0>(group)
+                        << std::get<1>(group)
+                        << std::get<2>(group);
+                }
+
+                result = std::max(result, str.str());
+            }
+        }
+        while(saga::next_permutation(cur));
+
+        return result;
+    }
+}
+
+TEST_CASE("PE 068")
+{
+    REQUIRE(PE_068(3, false) == "432621513");
+    // Последний можно не переставлять (для 5-угольника)!
+    // Если 10 будет на втуреннем круге, то количество цифр будет 17, а не 16!
+    REQUIRE(PE_068(5, true) == "6531031914842725");
+}
+
 // PE 097 - Большое не-Мерсеновское простое число
 TEST_CASE("PE 097")
 {
