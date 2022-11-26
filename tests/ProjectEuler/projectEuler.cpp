@@ -4328,6 +4328,62 @@ TEST_CASE("PE 068")
     REQUIRE(PE_068(5, true) == "6531031914842725");
 }
 
+// PE 069 - Максимум функции Эйлера
+namespace
+{
+    template <class Quotient, class IntType>
+    IntType PE_069_scan(IntType const n_max)
+    {
+        auto const primes = saga::primes_below(n_max + 1);
+
+        std::vector<Quotient> n_over_phi(n_max, Quotient(1));
+
+        for(auto const & prime : primes)
+        {
+            auto cur = saga::cursor::drop_front_n(saga::cursor::all(n_over_phi), prime - 1)
+                     | saga::cursor::stride(prime);
+
+            saga::for_each(std::move(cur), [&](Quotient & arg)
+            {
+                arg *= Quotient(prime)/Quotient(prime - 1);
+            });
+        }
+
+        return saga::max_element(saga::cursor::all(n_over_phi)).dropped_front().size() + 1;
+    }
+
+    template <class IntType>
+    IntType PE_069_smart(IntType const n_max)
+    {
+        auto cur = ::primes_cursor<IntType>();
+
+        auto result = IntType(1);
+
+        for(;; ++ cur)
+        {
+            auto new_result = result * cur.front();
+
+            if(new_result > n_max)
+            {
+                break;
+            }
+
+            result = std::move(new_result);
+        }
+
+        return result;
+    }
+}
+
+TEST_CASE("PE 069")
+{
+    REQUIRE(PE_069_scan<double>(10) == 6);
+    REQUIRE(PE_069_scan<double>(1'000'000) == 510'510);
+
+    REQUIRE(PE_069_smart(10) == 6);
+    REQUIRE(PE_069_smart(1'000'000) == 510'510);
+}
+
 // PE 097 - Большое не-Мерсеновское простое число
 TEST_CASE("PE 097")
 {
