@@ -127,7 +127,7 @@ jobs:
             }
           - {
               name: "Linux Clang default ASAN fail-fast",
-              os: ubuntu-latest,
+              os: ubuntu-20.04,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: address,
@@ -137,7 +137,7 @@ jobs:
             }
           - {
               name: "Linux Clang default ASAN recover",
-              os: ubuntu-latest,
+              os: ubuntu-20.04,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: address,
