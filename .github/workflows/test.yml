@@ -33,6 +33,26 @@ jobs:
               CFLAGS: "-std=gnu++17",
             }
           - {
+              name: "Linux GCC default ASAN fail-fast",
+              os: ubuntu-latest,
+              CC: "gcc", 
+              CXX: "g++",
+              SANITIZE: address,
+              CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
+              LDFLAGS: "-fsanitize=address",
+              ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
+            }
+          - {
+              name: "Linux GCC default ASAN recover",
+              os: ubuntu-latest,
+              CC: "gcc", 
+              CXX: "g++",
+              SANITIZE: address,
+              CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract",
+              LDFLAGS: "-fsanitize=address",
+              ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
+            }            
+          - {
               name: "Linux GCC default UBSAN",
               os: ubuntu-latest,
               CC: "gcc", 
@@ -106,12 +126,22 @@ jobs:
               CFLAGS: "-std=c++17",
             }
           - {
-              name: "Linux Clang default ASAN",
+              name: "Linux Clang default ASAN fail-fast",
               os: ubuntu-latest,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: address,
               CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
+              LDFLAGS: "-fsanitize=address",
+              ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
+            }
+          - {
+              name: "Linux Clang default ASAN recover",
+              os: ubuntu-latest,
+              CC: "clang", 
+              CXX: "clang++",
+              SANITIZE: address,
+              CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract",
               LDFLAGS: "-fsanitize=address",
               ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
             }
