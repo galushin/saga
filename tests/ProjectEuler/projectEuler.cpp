@@ -835,8 +835,6 @@ TEST_CASE("ProjectEuler: 011")
 {
     auto const data = ::projectEuler_011_parse<long long>(pe011_data);
 
-    CAPTURE(data);
-
     CHECK(projectEuler_011(data, 4) == 70600674);
 }
 
