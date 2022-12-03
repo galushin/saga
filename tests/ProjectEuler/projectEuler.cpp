@@ -835,8 +835,6 @@ TEST_CASE("ProjectEuler: 011")
 {
     auto const data = ::projectEuler_011_parse<long long>(pe011_data);
 
-    CAPTURE(data);
-
     CHECK(projectEuler_011(data, 4) == 70600674);
 }
 
@@ -1231,7 +1229,9 @@ TEST_CASE("integer10: default ctor")
     std::ostringstream os;
     os << zero;
 
-    REQUIRE(os.str() == "0");
+    std::string const str = os.str();
+
+    REQUIRE(str == "0");
 }
 
 TEST_CASE("integer10: zero multiplication")

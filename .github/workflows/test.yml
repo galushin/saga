@@ -33,6 +33,26 @@ jobs:
               CFLAGS: "-std=gnu++17",
             }
           - {
+              name: "Linux GCC default ASAN fail-fast",
+              os: ubuntu-latest,
+              CC: "gcc", 
+              CXX: "g++",
+              SANITIZE: address,
+              CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
+              LDFLAGS: "-fsanitize=address",
+              ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
+            }
+          - {
+              name: "Linux GCC default ASAN recover",
+              os: ubuntu-latest,
+              CC: "gcc", 
+              CXX: "g++",
+              SANITIZE: address,
+              CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract",
+              LDFLAGS: "-fsanitize=address",
+              ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
+            }            
+          - {
               name: "Linux GCC default UBSAN",
               os: ubuntu-latest,
               CC: "gcc", 
@@ -52,7 +72,7 @@ jobs:
             }
           - {
               name: "Linux GCC 8",
-              os: ubuntu-latest,
+              os: ubuntu-20.04,
               CC: "gcc-8", 
               CXX: "g++-8",
               SANITIZE: none,
@@ -74,6 +94,20 @@ jobs:
               SANITIZE: none,
               CFLAGS: "-std=gnu++17",
             }
+          - {
+              name: "Linux GCC 11",
+              os: ubuntu-22.04,
+              CC: "gcc-11", 
+              CXX: "g++-11",
+              SANITIZE: none,
+            }
+          - {
+              name: "Linux GCC 12",
+              os: ubuntu-22.04,
+              CC: "gcc-12", 
+              CXX: "g++-12",
+              SANITIZE: none,
+            }            
           # Clang
           - {
               name: "Linux Clang default",
@@ -92,12 +126,22 @@ jobs:
               CFLAGS: "-std=c++17",
             }
           - {
-              name: "Linux Clang default ASAN",
-              os: ubuntu-latest,
+              name: "Linux Clang default ASAN fail-fast",
+              os: ubuntu-20.04,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: address,
               CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
+              LDFLAGS: "-fsanitize=address",
+              ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
+            }
+          - {
+              name: "Linux Clang default ASAN recover",
+              os: ubuntu-20.04,
+              CC: "clang", 
+              CXX: "clang++",
+              SANITIZE: address,
+              CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract",
               LDFLAGS: "-fsanitize=address",
               ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
             }
@@ -121,7 +165,7 @@ jobs:
             }
           - {
               name: "Linux Clang 10",
-              os: ubuntu-latest,
+              os: ubuntu-20.04,
               CC: "clang-10", 
               CXX: "clang++-10",
               SANITIZE: none,
@@ -129,7 +173,7 @@ jobs:
             }
           - {
               name: "Linux Clang 11",
-              os: ubuntu-latest,
+              os: ubuntu-20.04,
               CC: "clang-11", 
               CXX: "clang++-11",
               SANITIZE: none,
@@ -140,6 +184,22 @@ jobs:
               os: ubuntu-latest,
               CC: "clang-12", 
               CXX: "clang++-12",
+              SANITIZE: none,
+              CFLAGS: "-std=c++17",
+            }
+          - {
+              name: "Linux Clang 13",
+              os: ubuntu-22.04,
+              CC: "clang-13", 
+              CXX: "clang++-13",
+              SANITIZE: none,
+              CFLAGS: "-std=c++17",
+            }
+          - {
+              name: "Linux Clang 14",
+              os: ubuntu-22.04,
+              CC: "clang-14", 
+              CXX: "clang++-14",
               SANITIZE: none,
               CFLAGS: "-std=c++17",
             }
