@@ -31,6 +31,7 @@ namespace saga
 {
     template <class InputCursor>
     class stride_cursor
+     : saga::cursor_facade<stride_cursor<InputCursor>, saga::cursor_reference_t<InputCursor>>
     {
     public:
         // Типы
