@@ -53,3 +53,33 @@ TEST_CASE("power_natural: regression 1138")
 {
     REQUIRE(saga::power_natural(3, 5, std::plus<>{}) == 3 * 5);
 }
+
+static_assert(saga::square(4294967295U) == 1);
+static_assert(saga::is_square(1) == true);
+static_assert(saga::is_square(saga::square(4294967295U)) == true);
+
+static_assert(saga::is_square(3) == false);
+static_assert(saga::is_square(4) == true);
+
+TEST_CASE("is_square: of square")
+{
+    using Value = std::uint32_t;
+
+    saga_test::property_checker << [](Value const & number)
+    {
+        CAPTURE(number);
+
+        REQUIRE(saga::is_square(saga::square(static_cast<std::uint64_t>(number))));
+    };
+}
+
+TEST_CASE("is_square")
+{
+    using Value = unsigned long;
+
+    saga_test::property_checker << [](Value const & number)
+    {
+        REQUIRE(saga::is_square(number)
+                == (saga::square(static_cast<Value>(std::sqrt(number))) == number));
+    };
+}

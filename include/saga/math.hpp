@@ -125,6 +125,31 @@ namespace saga
     inline constexpr auto triangular_number = triangular_number_fn{};
     inline constexpr auto square_pyramidal_number = square_pyramidal_number_fn{};
     inline constexpr auto power_natural = saga::power_natural_fn{};
+
+    struct is_square_fn
+    {
+        template <class IntType>
+        constexpr bool operator()(IntType const & number) const
+        {
+            assert(number >= 0);
+
+            auto const n_mod_16 = number % 16;
+
+            if(n_mod_16 > 9)
+            {
+                return false;
+            }
+
+            if(n_mod_16 == 0 || n_mod_16 == 1 || n_mod_16 == 4 || n_mod_16 == 9)
+            {
+                return saga::square(static_cast<IntType>(std::sqrt(number))) == number;
+            }
+
+            return false;
+        }
+    };
+
+    inline constexpr auto is_square = is_square_fn{};
 }
 //namespace saga
 
