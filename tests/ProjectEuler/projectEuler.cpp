@@ -2519,7 +2519,7 @@ TEST_CASE("PE 041")
 // PE 042 - Кодированные треугольные числа
 namespace
 {
-    struct is_triangle_number_fn
+    struct is_triangular_number_fn
     {
         template <class IntType>
         bool operator()(IntType num) const
@@ -2537,10 +2537,10 @@ TEST_CASE("PE 042")
     auto const words = ::read_quoted_comma_separated_from_file("ProjectEuler/p042_words.txt");
 
     REQUIRE(::alphabetical_value("SKY") == 55);
-    REQUIRE(::is_triangle_number_fn{}(::alphabetical_value("SKY")));
+    REQUIRE(::is_triangular_number_fn{}(::alphabetical_value("SKY")));
 
     REQUIRE(saga::count_if(saga::cursor::all(words) | saga::cursor::transform(::alphabetical_value)
-                          , is_triangle_number_fn{}) == 162);
+                          , is_triangular_number_fn{}) == 162);
 }
 
 // PE 043 - Делимость под-строк
@@ -2742,11 +2742,11 @@ namespace
 
 TEST_CASE("PE 045")
 {
-    REQUIRE(::is_triangle_number_fn{}(40755));
+    REQUIRE(::is_triangular_number_fn{}(40755));
     REQUIRE(::is_pentagonal(40755));
 
     auto pred = [](auto const & num)
-        { return ::is_pentagonal(num) && ::is_triangle_number_fn{}(num); };
+        { return ::is_pentagonal(num) && ::is_triangular_number_fn{}(num); };
 
     auto cur = saga::cursor::iota(std::int64_t(1))
              | saga::cursor::transform(::hexagonal_number_fn{})
@@ -4204,22 +4204,13 @@ namespace
         return pells_equation_minimal_solution_x<IntType, IntType>(number);
     }
 
-    struct is_square_fn
-    {
-        template <class IntType>
-        bool operator()(IntType const & number) const
-        {
-            return !(saga::square(static_cast<IntType>(std::sqrt(number))) < number);
-        }
-    };
-
     template <class IntType>
     IntType PE_066(IntType max_number)
     {
         assert(max_number >= 2);
 
         auto cur = saga::cursor::indices(IntType(2), max_number+1)
-                 | saga::cursor::filter(saga::not_fn(::is_square_fn{}))
+                 | saga::cursor::filter(saga::not_fn(saga::is_square))
                  | saga::cursor::transform(::pells_equation_minimal_solution_x<double, IntType>)
                  | saga::cursor::cached1;
 
