@@ -129,7 +129,7 @@ namespace saga
     struct is_square_fn
     {
         template <class IntType>
-        constexpr bool operator()(IntType const & number) const
+        bool operator()(IntType const & number) const
         {
             assert(number >= 0);
 
