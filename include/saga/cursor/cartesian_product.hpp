@@ -83,10 +83,7 @@ namespace saga
         {
             assert(!!*this);
 
-            if(this->increment_impl(std::integral_constant<std::size_t, 1>{}))
-            {
-                std::get<0>(this->curs_).drop_front();
-            }
+            this->increment_impl(std::integral_constant<std::size_t, 0>{});
         }
 
     private:
@@ -124,17 +121,22 @@ namespace saga
 
             std::get<Index>(this->curs_).drop_front();
 
-            if(!std::get<Index>(this->curs_))
+            if constexpr(Index != 0)
             {
-                std::get<Index>(this->curs_)
-                    = std::move(std::get<Index>(this->curs_)).dropped_front();
+                if(!std::get<Index>(this->curs_))
+                {
+                    std::get<Index>(this->curs_)
+                        = std::move(std::get<Index>(this->curs_)).dropped_front();
 
-                return true;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
 
         bool increment_impl(std::integral_constant<std::size_t, sizeof...(ForwardCursors) + 1>)

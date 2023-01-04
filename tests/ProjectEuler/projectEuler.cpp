@@ -3958,6 +3958,8 @@ namespace
     int PE_061_start(std::vector<std::vector<int>> points
                      , std::vector<int> const & indices)
     {
+        assert(!points.empty());
+
         std::vector<int> path;
 
         for(auto const & start : points[0])
@@ -4036,6 +4038,7 @@ TEST_CASE("PE 061")
 
     CAPTURE(nums_3, nums_4, nums_5, nums_6, nums_7, nums_8);
 
+    REQUIRE(PE_061(nums_4) == 0);
     REQUIRE(PE_061(nums_3, nums_4, nums_5) == 8128 + 2882 + 8281);
     REQUIRE(PE_061(nums_3, nums_4, nums_5, nums_6, nums_7, nums_8) == 28684);
 }
