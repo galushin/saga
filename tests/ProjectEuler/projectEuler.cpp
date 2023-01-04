@@ -2665,13 +2665,18 @@ namespace
         return !(std::floor(x) < x);
     }
 
-    template <class IntType>
-    constexpr IntType pentagonal_number(IntType num)
+    struct pentagonal_number_fn
     {
-        assert(num >= 0);
+        template <class IntType>
+        constexpr IntType operator()(IntType num) const
+        {
+            assert(num >= 0);
 
-        return 3 * saga::triangular_number(num) - 2 * num;
-    }
+            return 3 * saga::triangular_number(num) - 2 * num;
+        }
+    };
+
+    inline constexpr auto pentagonal_number = ::pentagonal_number_fn{};
 
     template <class IntType>
     IntType PE_044()
@@ -2734,6 +2739,8 @@ namespace
             return num * (2*num - 1);
         }
     };
+
+    inline constexpr auto hexagonal_number = hexagonal_number_fn{};
 
     static_assert(saga::triangular_number(285) == 40755);
     static_assert(::pentagonal_number(165) == 40755);
@@ -3881,6 +3888,159 @@ namespace
 TEST_CASE("PE 058")
 {
     REQUIRE(::PE_058<long long>(1, 10) == 26241);
+}
+
+// PE 061 - Цикличные фигурные числа
+namespace
+{
+    template <class UnaryFunction>
+    std::vector<int>
+    PE_061_prepare(UnaryFunction fun)
+    {
+        auto cur = saga::cursor::iota(1)
+                 | saga::cursor::transform(std::move(fun));
+
+        auto cur_s = saga::find_if(std::move(cur), [](int const & num) {return num >= 1000;})
+                   | saga::cursor::take_while([](int const & num) { return num < 10000; });
+
+        std::vector<int> result;
+        saga::copy(std::move(cur_s), saga::back_inserter(result));
+
+        return result;
+    }
+
+    bool is_chained(int lhs, int rhs)
+    {
+        assert(1000 <= lhs && lhs < 10'000);
+        assert(1000 <= rhs && rhs < 10'000);
+
+        return lhs % 100 == rhs / 100;
+    }
+
+    int PE_061_recursion(std::vector<std::vector<int>> points
+                         , std::vector<int> const & indices
+                         , std::vector<int> & path)
+    {
+        assert(!path.empty());
+
+        if(path.size() == indices.size())
+        {
+            if(::is_chained(path.back(), path.front()))
+            {
+                return saga::reduce(saga::cursor::all(path));
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        for(auto const & point : points[indices[path.size()]])
+        {
+            if(::is_chained(path.back(), point))
+            {
+                path.push_back(point);
+
+                auto result = ::PE_061_recursion(points, indices, path);
+
+                path.pop_back();
+
+                if(result != 0)
+                {
+                    return result;
+                }
+            }
+        }
+
+        return 0;
+    }
+
+    int PE_061_start(std::vector<std::vector<int>> points
+                     , std::vector<int> const & indices)
+    {
+        assert(!points.empty());
+
+        std::vector<int> path;
+
+        for(auto const & start : points[0])
+        {
+            path.push_back(start);
+
+            auto result = PE_061_recursion(points, indices, path);
+
+            if(result != 0)
+            {
+                return result;
+            }
+
+            path.pop_back();
+        }
+
+        return 0;
+    }
+
+    template <class... IntVector>
+    int PE_061(IntVector const &... args)
+    {
+        std::vector<std::vector<int>> points{args...};
+
+        std::vector<int> indices(points.size());
+        saga::iota(saga::cursor::all(indices), 0);
+
+        auto tail = saga::cursor::all(indices);
+        tail.drop_front();
+
+        do
+        {
+            auto result = PE_061_start(points, indices);
+
+            if(result != 0)
+            {
+                return result;
+            }
+        }
+        while(saga::next_permutation(tail));
+
+        return 0;
+    }
+
+    struct heptagonal_number_fn
+    {
+        template <class IntType>
+        IntType operator()(IntType const & num) const
+        {
+            return 5 * saga::triangular_number(num) - 4 * num;
+        }
+    };
+
+    inline constexpr auto heptagonal_number = heptagonal_number_fn{};
+
+    struct octagonal_number_fn
+    {
+        template <class IntType>
+        IntType operator()(IntType const & num) const
+        {
+            return num * (3*num - 2);
+        }
+    };
+
+    inline constexpr auto octagonal_number = octagonal_number_fn{};
+}
+
+TEST_CASE("PE 061")
+{
+    auto const nums_3 = ::PE_061_prepare(saga::triangular_number);
+    auto const nums_4 = ::PE_061_prepare(saga::square);
+    auto const nums_5 = ::PE_061_prepare(::pentagonal_number);
+    auto const nums_6 = ::PE_061_prepare(::hexagonal_number);
+    auto const nums_7 = ::PE_061_prepare(::heptagonal_number);
+    auto const nums_8 = ::PE_061_prepare(::octagonal_number);
+
+    CAPTURE(nums_3, nums_4, nums_5, nums_6, nums_7, nums_8);
+
+    REQUIRE(PE_061(nums_4) == 0);
+    REQUIRE(PE_061(nums_3, nums_4, nums_5) == 8128 + 2882 + 8281);
+    REQUIRE(PE_061(nums_3, nums_4, nums_5, nums_6, nums_7, nums_8) == 28684);
 }
 
 // PE 062 - Кубические перестановки
