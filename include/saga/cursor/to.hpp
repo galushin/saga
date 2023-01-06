@@ -42,48 +42,61 @@ namespace cursor
             saga::reserve_if_supported(container, cur.size());
         }
 
-        template <class Container, class InputCursor
-                 , class = decltype(std::declval<Container>().push_back(*std::declval<InputCursor>()))>
-        Container to_impl(InputCursor cur, saga::priority_tag<0>)
+        template <class Container, class IndirectReadable>
+        using detect_push_back_indirect
+            = decltype(std::declval<Container>().push_back(*std::declval<IndirectReadable>()));
+
+        template <class Container, class IndirectReadable>
+        using detect_insert_indirect
+            = decltype(std::declval<Container>().insert(std::declval<Container>().begin()
+                                                       ,*std::declval<IndirectReadable>()));
+
+        template <class Container, class IndirectReadable>
+        using detect_insert_after_indirect
+            = decltype(std::declval<Container>().insert_after(std::declval<Container>().before_begin()
+                                                              , *std::declval<IndirectReadable>()));
+    }
+
+    template <class Container, class InputCursor>
+    Container to(InputCursor cur)
+    {
+        Container result;
+
+        detail::may_reserve(result, cur, saga::cursor_category_t<InputCursor>{});
+
+        if constexpr(saga::is_detected<detail::detect_push_back_indirect, Container, InputCursor>{})
         {
-            Container result;
-
-            detail::may_reserve(result, cur, saga::cursor_category_t<InputCursor>{});
-
             saga::copy(std::move(cur), saga::back_inserter(result));
-
-            return result;
         }
-
-        template <class Container, class InputCursor
-                 , class = decltype(std::declval<Container>().insert_after(std::declval<Container>().before_begin()
-                                                                      , *std::declval<InputCursor>()))>
-        Container to_impl(InputCursor cur, saga::priority_tag<1>)
+        else if constexpr(saga::is_detected<detail::detect_insert_indirect, Container
+                                           , InputCursor>{})
         {
-            Container result;
-
+            saga::copy(std::move(cur), saga::inserter(result, result.end()));
+        }
+        else if constexpr(saga::is_detected<detail::detect_insert_after_indirect, Container
+                                           , InputCursor>{})
+        {
             auto pos = result.before_begin();
 
             for(; !!cur; ++ cur)
             {
                 pos = result.insert_after(pos, *cur);
             }
-
-            return result;
         }
-    }
+        else
+        {
+            static_assert(sizeof(Container) > 0, "Unsuported container");
+        }
 
-    template <class Container, class InputCursor>
-    Container to(InputCursor cur)
-    {
-        return detail::to_impl<Container>(std::move(cur), saga::priority_tag<1>{});
+        return result;
     }
 
     template <template <class...> class Container_template, class InputCursor>
-    Container_template<saga::cursor_value_t<InputCursor>>
-    to(InputCursor cur)
+    auto to(InputCursor cur)
     {
-        using Container = Container_template<saga::cursor_value_t<InputCursor>>;
+        using Value = saga::cursor_value_t<InputCursor>;
+        using Container = decltype(Container_template(std::declval<Value const *>()
+                                                      ,std::declval<Value const *>()));
         return saga::cursor::to<Container>(std::move(cur));
     }
 
@@ -104,12 +117,9 @@ namespace cursor
         {};
 
         template <class InputCursor, template <class...> class Container_template>
-        Container_template<saga::cursor_value_t<InputCursor>>
-        operator|(InputCursor cur, to_template_fn<Container_template>)
+        auto operator|(InputCursor cur, to_template_fn<Container_template>)
         {
-            using Container = Container_template<saga::cursor_value_t<InputCursor>>;
-
-            return saga::cursor::to<Container>(std::move(cur));
+            return saga::cursor::to<Container_template>(std::move(cur));
         }
     }
     // namespace detail

@@ -193,3 +193,35 @@ TEST_CASE("cursor::to : forward_list, pipe")
         REQUIRE(saga::equal(saga::cursor::all(container), src));
     };
 }
+
+TEST_CASE("cursor::to : vector to map")
+{
+    using Type1 = int;
+    using Type2 = std::string;
+
+    saga_test::property_checker << [](std::vector<std::pair<Type1, Type2>> const & src)
+    {
+        auto const actual = saga::cursor::all(src)
+                          | saga::cursor::to<std::map>();
+
+        std::map<Type1, Type2> const expected(src.begin(), src.end());
+
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("cursor::to : map to vector")
+{
+    using Type1 = int;
+    using Type2 = std::string;
+
+    saga_test::property_checker << [](std::map<Type1, Type2> const & src)
+    {
+        auto const actual = saga::cursor::all(src)
+                          | saga::cursor::to<std::vector>();
+
+        std::vector<std::pair<Type1 const, Type2>> const expected(src.begin(), src.end());
+
+        REQUIRE(actual == expected);
+    };
+}
