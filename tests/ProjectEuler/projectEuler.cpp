@@ -30,6 +30,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/set_union.hpp>
 #include <saga/cursor/stride.hpp>
 #include <saga/cursor/take_while.hpp>
+#include <saga/cursor/to.hpp>
 #include <saga/cursor/transform.hpp>
 #include <saga/flat_set.hpp>
 #include <saga/math.hpp>
@@ -707,8 +708,8 @@ namespace
 
             std::istringstream line_in(line);
 
-            std::vector<IntType> row;
-            saga::copy(saga::make_istream_cursor<IntType>(line_in), saga::back_inserter(row));
+            auto row = saga::make_istream_cursor<IntType>(line_in)
+                     | saga::cursor::to<std::vector>();
 
             if(!row.empty())
             {
@@ -3659,11 +3660,13 @@ namespace
         template <class IntType>
         bool operator()(IntType value) const
         {
+            assert(value >= 0);
+
             using Digit = int;
             auto const base = Digit(10);
 
-            std::vector<Digit> num;
-            saga::copy(saga::cursor::digits_of(value, base), saga::back_inserter(num));
+            auto num = saga::cursor::digits_of(value, base)
+                     | saga::cursor::to<std::vector>();
 
             for(auto counter = 50; counter > 0; -- counter)
             {
@@ -3900,13 +3903,9 @@ namespace
         auto cur = saga::cursor::iota(1)
                  | saga::cursor::transform(std::move(fun));
 
-        auto cur_s = saga::find_if(std::move(cur), [](int const & num) {return num >= 1000;})
-                   | saga::cursor::take_while([](int const & num) { return num < 10000; });
-
-        std::vector<int> result;
-        saga::copy(std::move(cur_s), saga::back_inserter(result));
-
-        return result;
+        return saga::find_if(std::move(cur), [](int const & num) {return num >= 1000;})
+               | saga::cursor::take_while([](int const & num) { return num < 10000; })
+               | saga::cursor::to<std::vector>();
     }
 
     bool is_chained(int lhs, int rhs)
@@ -3984,8 +3983,8 @@ namespace
     {
         std::vector<std::vector<int>> points{args...};
 
-        std::vector<int> indices(points.size());
-        saga::iota(saga::cursor::all(indices), 0);
+        auto indices = saga::cursor::indices(0, static_cast<int>(points.size()))
+                     | saga::cursor::to<std::vector<int>>();
 
         auto tail = saga::cursor::all(indices);
         tail.drop_front();
@@ -4243,6 +4242,7 @@ namespace
     public:
         // Типы
         using cursor_category = std::input_iterator_tag;
+        using value_type = IntType;
         using reference = IntType const &;
 
         // Создание, копирование, уничтожение
@@ -4294,11 +4294,9 @@ TEST_CASE("continued fraction of e")
 
     std::vector<IntType> const expected{2, 1, 2, 1, 1, 4, 1, 1, 6, 1, 1, 8, 1, 1, 10, 1};
 
-    auto cur = ::cursor_for_continued_fraction_for_e<IntType>()
-             | saga::cursor::take(expected.size());
-
-    std::vector<IntType> actual;
-    saga::copy(std::move(cur), saga::back_inserter(actual));
+    auto const actual = ::cursor_for_continued_fraction_for_e<IntType>()
+                      | saga::cursor::take(expected.size())
+                      | saga::cursor::to<std::vector>();
 
     REQUIRE(actual == expected);
 }
@@ -4326,9 +4324,9 @@ namespace
 
         auto const pred = [stop = 2 * first](IntType const & arg){ return arg != stop; };
 
-        std::vector<IntType> other;
-        saga::copy(cur | saga::cursor::take_while(pred), saga::back_inserter(other));
-
+        auto other = cur
+                   | saga::cursor::take_while(pred)
+                   | saga::cursor::to<std::vector>();
 
         return {first, other};
     }

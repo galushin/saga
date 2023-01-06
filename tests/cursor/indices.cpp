@@ -25,6 +25,7 @@ SAGA -- это свободной программное обеспечение:
 // Вспомогательные файлы
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
+#include <saga/cursor/to.hpp>
 #include <saga/iterator.hpp>
 #include <saga/type_traits.hpp>
 
@@ -180,10 +181,8 @@ TEST_CASE("indices_of for arrays")
     std::vector<Index> ins_obj(saga::size(xs));
     std::iota(ins_obj.begin(), ins_obj.end(), Index(0));
 
-    auto indices_view = saga::cursor::indices_of(xs);
-
-    std::vector<Index> ins;
-    saga::copy(saga::cursor::all(indices_view), saga::back_inserter(ins));
+    auto const ins = saga::cursor::indices_of(xs)
+                   | saga::cursor::to<std::vector>();
 
     CHECK(ins == ins_obj);
 }

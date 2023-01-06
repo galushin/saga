@@ -26,6 +26,7 @@ SAGA -- это свободной программное обеспечение:
 // Вспомогательные файлы
 #include <saga/algorithm.hpp>
 #include <saga/cursor/istream_cursor.hpp>
+#include <saga/cursor/to.hpp>
 
 // Тесты
 TEST_CASE("take_cursor: input")
@@ -39,9 +40,8 @@ TEST_CASE("take_cursor: input")
         auto const num = saga_test::random_uniform(0, 2*values.size());
 
         // Выполнение
-        std::vector<Value> dest_saga;
-        saga::copy(saga::cursor::take(saga::make_istream_cursor<Value>(src_in), num)
-                   , saga::back_inserter(dest_saga));
+        auto const dest_saga = saga::cursor::take(saga::make_istream_cursor<Value>(src_in), num)
+                             | saga::cursor::to<std::vector>();
 
         // Проверка
         auto const n_expected = std::min(values.size(), num);

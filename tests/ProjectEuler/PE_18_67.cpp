@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/indices.hpp>
 #include <saga/cursor/istream_cursor.hpp>
 #include <saga/cursor/subrange.hpp>
+#include <saga/cursor/to.hpp>
 
 #include <fstream>
 #include <sstream>
@@ -89,8 +90,8 @@ namespace
 
             std::istringstream line_in(line);
 
-            row.clear();
-            saga::copy(saga::make_istream_cursor<IntType>(line_in), saga::back_inserter(row));
+            row = saga::make_istream_cursor<IntType>(line_in)
+                | saga::cursor::to<std::vector>();
 
             ::projectEuler_018_update(result, row);
         }
