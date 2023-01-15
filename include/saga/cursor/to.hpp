@@ -57,10 +57,10 @@ namespace cursor
                                                               , *std::declval<IndirectReadable>()));
     }
 
-    template <class Container, class InputCursor>
-    Container to(InputCursor cur)
+    template <class Container, class InputCursor, class... Args>
+    Container to(InputCursor cur, Args &&... args)
     {
-        Container result;
+        Container result(std::forward<Args>(args)...);
 
         detail::may_reserve(result, cur, saga::cursor_category_t<InputCursor>{});
 
@@ -91,13 +91,14 @@ namespace cursor
         return result;
     }
 
-    template <template <class...> class Container_template, class InputCursor>
-    auto to(InputCursor cur)
+    template <template <class...> class Container_template, class InputCursor, class... Args>
+    auto to(InputCursor cur, Args && ... args)
     {
         using Value = saga::cursor_value_t<InputCursor>;
         using Container = decltype(Container_template(std::declval<Value const *>()
-                                                      ,std::declval<Value const *>()));
-        return saga::cursor::to<Container>(std::move(cur));
+                                                      ,std::declval<Value const *>()
+                                                      , std::forward<Args>(args)...));
+        return saga::cursor::to<Container>(std::move(cur), std::forward<Args>(args)...);
     }
 
     namespace detail

@@ -69,6 +69,40 @@ TEST_CASE("cursor::to : vector<T>")
     };
 }
 
+TEST_CASE("cursor::to : set<T>, compare")
+{
+    using Value = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, saga_test::strict_weak_order<Value> const & cmp)
+    {
+        using Container = std::set<Value, saga_test::strict_weak_order<Value>>;
+
+        Container const expected(src.begin(), src.end(), cmp);
+
+        auto const actual = saga::cursor::to<Container>(saga::cursor::all(src), cmp);
+
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("cursor::to : set, compare, template")
+{
+    using Value = long;
+
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, saga_test::strict_weak_order<Value> const & cmp)
+    {
+        using Container = std::set<Value, saga_test::strict_weak_order<Value>>;
+
+        Container const expected(src.begin(), src.end(), cmp);
+
+        auto const actual = saga::cursor::to<std::set>(saga::cursor::all(src), cmp);
+
+        REQUIRE(actual == expected);
+    };
+}
+
 TEST_CASE("cursor::to : forward_list<T>")
 {
     using Value = int;
