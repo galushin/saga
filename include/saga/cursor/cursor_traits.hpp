@@ -182,6 +182,23 @@ namespace saga
     }
     //namespace cursor
 
+    namespace detail
+    {
+        template <class Type, class SFINASE = void>
+        struct is_input_cursor
+         : std::false_type
+        {};
+
+        template <class Type>
+        struct is_input_cursor<Type, std::void_t<typename Type::cursor_category>>
+         : std::is_base_of<std::input_iterator_tag, saga::cursor_category_t<Type>>
+        {};
+    }
+    // namespace detail
+
+    template <class Type>
+    using is_input_cursor = detail::is_input_cursor<Type>;
+
     template <class Cursor>
     struct is_forward_cursor
      : std::is_base_of<std::forward_iterator_tag, saga::cursor_category_t<Cursor>>

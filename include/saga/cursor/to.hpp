@@ -24,6 +24,8 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/algorithm.hpp>
 #include <saga/container/reserve_if_supported.hpp>
+#include <saga/cursor/subrange.hpp>
+#include <saga/cursor/transform.hpp>
 
 namespace saga
 {
@@ -56,62 +58,77 @@ namespace cursor
             = decltype(std::declval<Cont>().insert_after(std::declval<Cont>().before_begin()
                                                         ,*std::declval<IndirectReadable>()));
 
-        template <class Type, class SFINASE = void>
-        struct is_input_cursor
-         : std::false_type
-        {};
-
-        // @todo Улучшить диагностику
-        template <class Type>
-        struct is_input_cursor<Type, std::void_t<typename Type::cursor_category>>
-         : std::true_type
-        {};
-
         template <template <class...> class Container_template, class InputCursor, class... Args>
         using deduce_container_t
             = decltype(Container_template(std::declval<saga::cursor_value_t<InputCursor> const *>()
                                          ,std::declval<saga::cursor_value_t<InputCursor> const *>()
                                          ,std::declval<Args>()...));
+
+        template <class Container, class InputCursor, class... Args>
+        Container to_impl(InputCursor cur, Args &&... args)
+        {
+            Container result(std::forward<Args>(args)...);
+
+            detail::may_reserve(result, cur, saga::cursor_category_t<InputCursor>{});
+
+            if constexpr(saga::is_detected<detail::detect_push_back_indirect, Container
+                                          , InputCursor>{})
+            {
+                saga::copy(std::move(cur), saga::back_inserter(result));
+            }
+            else if constexpr(saga::is_detected<detail::detect_insert_indirect, Container
+                                               , InputCursor>{})
+            {
+                saga::copy(std::move(cur), saga::inserter(result, result.end()));
+            }
+            else if constexpr(saga::is_detected<detail::detect_insert_after_indirect, Container
+                                               , InputCursor>{})
+            {
+                auto pos = result.before_begin();
+
+                for(; !!cur; ++ cur)
+                {
+                    pos = result.insert_after(pos, *cur);
+                }
+            }
+            else
+            {
+                static_assert(sizeof(Container) > 0, "Unsuported container");
+            }
+
+            return result;
+        }
     }
 
     template <class Container, class InputCursor, class... Args>
     auto to(InputCursor cur, Args &&... args)
-    -> std::enable_if_t<detail::is_input_cursor<InputCursor>{}, Container>
+    -> std::enable_if_t<saga::is_input_cursor<InputCursor>{}, Container>
     {
-        Container result(std::forward<Args>(args)...);
-
-        detail::may_reserve(result, cur, saga::cursor_category_t<InputCursor>{});
-
-        if constexpr(saga::is_detected<detail::detect_push_back_indirect, Container, InputCursor>{})
+        if constexpr(std::is_convertible<saga::cursor_reference_t<InputCursor>
+                                        ,typename Container::value_type>{})
         {
-            saga::copy(std::move(cur), saga::back_inserter(result));
-        }
-        else if constexpr(saga::is_detected<detail::detect_insert_indirect, Container
-                                           , InputCursor>{})
-        {
-            saga::copy(std::move(cur), saga::inserter(result, result.end()));
-        }
-        else if constexpr(saga::is_detected<detail::detect_insert_after_indirect, Container
-                                           , InputCursor>{})
-        {
-            auto pos = result.before_begin();
-
-            for(; !!cur; ++ cur)
-            {
-                pos = result.insert_after(pos, *cur);
-            }
+                return detail::to_impl<Container>(std::move(cur), std::forward<Args>(args)...);
         }
         else
         {
-            static_assert(sizeof(Container) > 0, "Unsuported container");
-        }
+            auto fun = [](auto && item)
+            {
+                using Elem = typename Container::value_type;
 
-        return result;
+                auto item_cur = saga::cursor::all(std::forward<decltype(item)>(item));
+
+                return saga::cursor::to<Elem>(std::move(item_cur));
+            };
+
+            auto cur_tr = std::move(cur) | saga::cursor::transform(std::move(fun));
+
+            return saga::cursor::to<Container>(std::move(cur_tr), std::forward<Args>(args)...);
+        }
     }
 
     template <template <class...> class Container_template, class InputCursor, class... Args>
     auto to(InputCursor cur, Args && ... args)
-    -> std::enable_if_t<detail::is_input_cursor<InputCursor>{}
+    -> std::enable_if_t<saga::is_input_cursor<InputCursor>{}
                        ,detail::deduce_container_t<Container_template, InputCursor, Args...>>
     {
         using Container = detail::deduce_container_t<Container_template, InputCursor, Args...>;

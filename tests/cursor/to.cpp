@@ -313,3 +313,22 @@ TEST_CASE("cursor::to : set, compare, template, pipe")
         REQUIRE(actual == expected);
     };
 }
+
+#include <list>
+
+TEST_CASE("cursor::to : nested ranges")
+{
+    saga_test::property_checker << [](std::list<std::forward_list<int>> const & src)
+    {
+        auto const dest = saga::cursor::to<std::vector<std::vector<int>>>(saga::cursor::all(src));
+
+        CAPTURE(src, dest);
+
+        auto const eq_containers = [](auto const & lhs, auto const & rhs)
+        {
+            return saga::equal(saga::cursor::all(lhs), saga::cursor::all(rhs));
+        };
+
+        REQUIRE(saga::equal(saga::cursor::all(dest), saga::cursor::all(src), eq_containers));
+    };
+}
