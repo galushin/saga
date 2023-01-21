@@ -44,6 +44,7 @@ namespace saga
 
     public:
         // Типы
+        using value_type = saga::cursor_value_t<Cursor>;
         using reference = saga::cursor_reference_t<Cursor>;
         using difference_type = Difference;
         using cursor_category = saga::cursor_category_t<Cursor>;

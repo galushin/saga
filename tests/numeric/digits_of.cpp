@@ -26,6 +26,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/actions/reverse.hpp>
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
+#include <saga/cursor/to.hpp>
 #include <saga/numeric/polynomial.hpp>
 
 // Тесты
@@ -62,17 +63,17 @@ TEST_CASE("digits_of - reverse of poynomial_horner")
     saga_test::property_checker << [](NotNegativeInteger const & value
                                       , saga_test::bounded<int, 2, 100> const & base)
     {
-        std::vector<int> digits;
-        saga::copy(saga::cursor::digits_of(value, base.value()), saga::back_inserter(digits));
-        digits |= saga::actions::reverse;
+        auto const digits = saga::cursor::digits_of(value, base.value())
+                          | saga::cursor::to<std::vector>()
+                          | saga::actions::reverse;
 
         // Цифры в заданном диапазоне
         REQUIRE(saga::all_of(saga::cursor::all(digits)
                              , [&](int const & digit){ return 0 <= digit && digit < base; }));
 
         // Обратное преобразование приводит к исходному числу
-        auto const ans
-            = saga::polynomial_horner(saga::cursor::all(digits), base, NotNegativeInteger(0));
+        auto const ans = saga::polynomial_horner(saga::cursor::all(digits)
+                                                 , base, NotNegativeInteger(0));
 
         REQUIRE(ans == value);
     };

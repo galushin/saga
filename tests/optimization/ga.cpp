@@ -26,9 +26,10 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/actions/reverse.hpp>
 #include <saga/actions/sort.hpp>
 #include <saga/cpp20/span.hpp>
+#include <saga/cursor/indices.hpp>
+#include <saga/cursor/to.hpp>
 #include <saga/numeric/digits_of.hpp>
 #include <saga/optimization/test_objectives.hpp>
-#include <saga/cursor/indices.hpp>
 
 #include <valarray>
 
@@ -283,9 +284,9 @@ TEST_CASE("Gray code - generates all")
     for(auto num : saga::cursor::indices(n_max))
     {
         // Преобразуем целое в двоичный код
-        Digit_container code;
-        saga::copy(saga::cursor::digits_of(num, 2), saga::back_inserter(code));
-        code |= saga::actions::reverse;
+        auto const code = saga::cursor::digits_of(num, 2)
+                        | saga::cursor::to<Digit_container>()
+                        | saga::actions::reverse;
 
         // Переводим Код грея в целое число
         auto const value = saga::gray_code_to_integer<Integer>(saga::cursor::all(code));
@@ -385,8 +386,8 @@ TEST_CASE("Gray code (real) - generates all")
     for(auto num : saga::cursor::indices(n_max))
     {
         // Преобразуем целое в двоичный код
-        Digit_container code;
-        saga::copy(saga::cursor::digits_of(num, 2), saga::back_inserter(code));
+        auto code = saga::cursor::digits_of(num, 2)
+                  | saga::cursor::to<Digit_container>();
 
         REQUIRE(code.size() <= dim);
 

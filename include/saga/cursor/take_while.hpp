@@ -36,6 +36,7 @@ namespace saga
     {
     public:
         // Типы
+        using cursor_category = std::input_iterator_tag;
         using value_type = cursor_value_t<Cursor>;
         using reference = cursor_reference_t<Cursor>;
         using difference_type = cursor_difference_t<Cursor>;
