@@ -58,11 +58,19 @@ namespace cursor
             = decltype(std::declval<Cont>().insert_after(std::declval<Cont>().before_begin()
                                                         ,*std::declval<IndirectReadable>()));
 
+        template <template <class...> class Container_template, class InputIterator, class... Args>
+        auto deduce_container(InputIterator first, InputIterator last, Args &&... args)
+        {
+            Container_template result(first, last, std::forward<Args>(args)...);
+
+            return result;
+        }
+
         template <template <class...> class Container_template, class InputCursor, class... Args>
         using deduce_container_t
-            = decltype(Container_template(std::declval<saga::cursor_value_t<InputCursor> const *>()
-                                         ,std::declval<saga::cursor_value_t<InputCursor> const *>()
-                                         ,std::declval<Args>()...));
+            = decltype(detail::deduce_container<Container_template>(std::declval<saga::cursor_value_t<InputCursor> const *>()
+                                                                   ,std::declval<saga::cursor_value_t<InputCursor> const *>()
+                                                                   ,std::declval<Args>()...));
 
         template <class Container, class InputCursor, class... Args>
         Container to_impl(InputCursor cur, Args &&... args)
