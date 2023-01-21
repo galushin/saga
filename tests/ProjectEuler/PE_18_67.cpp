@@ -91,7 +91,7 @@ namespace
             std::istringstream line_in(line);
 
             row = saga::make_istream_cursor<IntType>(line_in)
-                | saga::cursor::to<std::vector>();
+                | saga::cursor::to<std::vector<IntType>>();
 
             ::projectEuler_018_update(result, row);
         }
