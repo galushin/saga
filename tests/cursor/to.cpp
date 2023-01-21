@@ -103,6 +103,24 @@ TEST_CASE("cursor::to : set, compare, template")
     };
 }
 
+TEST_CASE("cursor::to : explicit type conversion")
+{
+    using Value = int;
+    using OtherValue = long;
+    using Container = std::vector<OtherValue>;
+
+    saga_test::property_checker << [](saga_test::container_size<Value> num)
+    {
+        auto const src = saga::cursor::indices(num.value);
+
+        auto container = saga::cursor::to<Container>(src);
+
+        static_assert(std::is_same<decltype(container), Container>{}, "");
+
+        REQUIRE(saga::equal(saga::cursor::all(container), src));
+    };
+}
+
 TEST_CASE("cursor::to : forward_list<T>")
 {
     using Value = int;
@@ -113,42 +131,6 @@ TEST_CASE("cursor::to : forward_list<T>")
         auto const src = saga::cursor::indices(num.value);
 
         auto container = saga::cursor::to<Container>(src);
-
-        static_assert(std::is_same<decltype(container), Container>{}, "");
-
-        CAPTURE(src, container);
-
-        REQUIRE(saga::equal(saga::cursor::all(container), src));
-    };
-}
-
-TEST_CASE("cursor::to : vector<T>, pipe")
-{
-    using Value = int;
-    using Container = std::vector<Value>;
-
-    saga_test::property_checker << [](saga_test::container_size<Value> num)
-    {
-        auto const src = saga::cursor::indices(num.value);
-        auto container = src | saga::cursor::to<Container>();
-
-        static_assert(std::is_same<decltype(container), Container>{}, "");
-
-        CAPTURE(src, container);
-
-        REQUIRE(saga::equal(saga::cursor::all(container), src));
-    };
-}
-
-TEST_CASE("cursor::to : forward_list<T>, pipe")
-{
-    using Value = int;
-    using Container = std::forward_list<Value>;
-
-    saga_test::property_checker << [](saga_test::container_size<Value> num)
-    {
-        auto const src = saga::cursor::indices(num.value);
-        auto container = src | saga::cursor::to<Container>();
 
         static_assert(std::is_same<decltype(container), Container>{}, "");
 
@@ -194,6 +176,74 @@ TEST_CASE("cursor::to : forward_list")
     };
 }
 
+TEST_CASE("cursor::to : vector to map")
+{
+    using Type1 = int;
+    using Type2 = std::string;
+
+    saga_test::property_checker << [](std::vector<std::pair<Type1, Type2>> const & src)
+    {
+        auto const actual = saga::cursor::all(src)
+                          | saga::cursor::to<std::map>();
+
+        std::map<Type1, Type2> const expected(src.begin(), src.end());
+
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("cursor::to : map to vector")
+{
+    using Type1 = int;
+    using Type2 = std::string;
+
+    saga_test::property_checker << [](std::map<Type1, Type2> const & src)
+    {
+        auto const actual = saga::cursor::all(src)
+                          | saga::cursor::to<std::vector>();
+
+        std::vector<std::pair<Type1 const, Type2>> const expected(src.begin(), src.end());
+
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("cursor::to : vector<T>, pipe")
+{
+    using Value = int;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](saga_test::container_size<Value> num)
+    {
+        auto const src = saga::cursor::indices(num.value);
+        auto container = src | saga::cursor::to<Container>();
+
+        static_assert(std::is_same<decltype(container), Container>{}, "");
+
+        CAPTURE(src, container);
+
+        REQUIRE(saga::equal(saga::cursor::all(container), src));
+    };
+}
+
+TEST_CASE("cursor::to : forward_list<T>, pipe")
+{
+    using Value = int;
+    using Container = std::forward_list<Value>;
+
+    saga_test::property_checker << [](saga_test::container_size<Value> num)
+    {
+        auto const src = saga::cursor::indices(num.value);
+        auto container = src | saga::cursor::to<Container>();
+
+        static_assert(std::is_same<decltype(container), Container>{}, "");
+
+        CAPTURE(src, container);
+
+        REQUIRE(saga::equal(saga::cursor::all(container), src));
+    };
+}
+
 TEST_CASE("cursor::to : vector, pipe")
 {
     using Value = int;
@@ -228,33 +278,37 @@ TEST_CASE("cursor::to : forward_list, pipe")
     };
 }
 
-TEST_CASE("cursor::to : vector to map")
+TEST_CASE("cursor::to : set<T>, compare, pipe")
 {
-    using Type1 = int;
-    using Type2 = std::string;
+    using Value = long;
 
-    saga_test::property_checker << [](std::vector<std::pair<Type1, Type2>> const & src)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, saga_test::strict_weak_order<Value> const & cmp)
     {
-        auto const actual = saga::cursor::all(src)
-                          | saga::cursor::to<std::map>();
+        using Container = std::set<Value, saga_test::strict_weak_order<Value>>;
 
-        std::map<Type1, Type2> const expected(src.begin(), src.end());
+        Container const expected(src.begin(), src.end(), cmp);
+
+        auto const actual = saga::cursor::all(src)
+                          | saga::cursor::to<Container>(cmp);
 
         REQUIRE(actual == expected);
     };
 }
 
-TEST_CASE("cursor::to : map to vector")
+TEST_CASE("cursor::to : set, compare, template, pipe")
 {
-    using Type1 = int;
-    using Type2 = std::string;
+    using Value = long;
 
-    saga_test::property_checker << [](std::map<Type1, Type2> const & src)
+    saga_test::property_checker
+    << [](std::vector<Value> const & src, saga_test::strict_weak_order<Value> const & cmp)
     {
-        auto const actual = saga::cursor::all(src)
-                          | saga::cursor::to<std::vector>();
+        using Container = std::set<Value, saga_test::strict_weak_order<Value>>;
 
-        std::vector<std::pair<Type1 const, Type2>> const expected(src.begin(), src.end());
+        Container const expected(src.begin(), src.end(), cmp);
+
+        auto const actual = saga::cursor::all(src)
+                          | saga::cursor::to<std::set>(cmp);
 
         REQUIRE(actual == expected);
     };

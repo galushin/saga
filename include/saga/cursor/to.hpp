@@ -51,14 +51,32 @@ namespace cursor
             = decltype(std::declval<Container>().insert(std::declval<Container>().begin()
                                                        ,*std::declval<IndirectReadable>()));
 
-        template <class Container, class IndirectReadable>
+        template <class Cont, class IndirectReadable>
         using detect_insert_after_indirect
-            = decltype(std::declval<Container>().insert_after(std::declval<Container>().before_begin()
-                                                              , *std::declval<IndirectReadable>()));
+            = decltype(std::declval<Cont>().insert_after(std::declval<Cont>().before_begin()
+                                                        ,*std::declval<IndirectReadable>()));
+
+        template <class Type, class SFINASE = void>
+        struct is_input_cursor
+         : std::false_type
+        {};
+
+        // @todo Улучшить диагностику
+        template <class Type>
+        struct is_input_cursor<Type, std::void_t<typename Type::cursor_category>>
+         : std::true_type
+        {};
+
+        template <template <class...> class Container_template, class InputCursor, class... Args>
+        using deduce_container_t
+            = decltype(Container_template(std::declval<saga::cursor_value_t<InputCursor> const *>()
+                                         ,std::declval<saga::cursor_value_t<InputCursor> const *>()
+                                         ,std::declval<Args>()...));
     }
 
     template <class Container, class InputCursor, class... Args>
-    Container to(InputCursor cur, Args &&... args)
+    auto to(InputCursor cur, Args &&... args)
+    -> std::enable_if_t<detail::is_input_cursor<InputCursor>{}, Container>
     {
         Container result(std::forward<Args>(args)...);
 
@@ -93,49 +111,49 @@ namespace cursor
 
     template <template <class...> class Container_template, class InputCursor, class... Args>
     auto to(InputCursor cur, Args && ... args)
+    -> std::enable_if_t<detail::is_input_cursor<InputCursor>{}
+                       ,detail::deduce_container_t<Container_template, InputCursor, Args...>>
     {
-        using Value = saga::cursor_value_t<InputCursor>;
-        using Container = decltype(Container_template(std::declval<Value const *>()
-                                                      ,std::declval<Value const *>()
-                                                      , std::forward<Args>(args)...));
+        using Container = detail::deduce_container_t<Container_template, InputCursor, Args...>;
+
         return saga::cursor::to<Container>(std::move(cur), std::forward<Args>(args)...);
     }
 
-    namespace detail
+    template <class Container, class... Args>
+    auto to(Args &&... args)
     {
-        template <class Container>
-        struct to_fn
-        {};
-
-        template <class InputCursor, class Container>
-        Container operator|(InputCursor cur, to_fn<Container>)
+        auto fun = [t_args = std::forward_as_tuple(std::forward<Args>(args)...)](auto cur)
         {
-            return saga::cursor::to<Container>(std::move(cur));
-        }
+            auto inner = [&cur](Args &&... inner_args)
+            {
+                return saga::cursor::to<Container>(std::move(cur)
+                                                  , std::forward<Args>(inner_args)...);
+            };
 
-        template <template <class...> class Container_template>
-        struct to_template_fn
-        {};
+            return std::apply(inner, t_args);
+        };
 
-        template <class InputCursor, template <class...> class Container_template>
-        auto operator|(InputCursor cur, to_template_fn<Container_template>)
-        {
-            return saga::cursor::to<Container_template>(std::move(cur));
-        }
-    }
-    // namespace detail
-
-    template <class Container>
-    detail::to_fn<Container> to()
-    {
-        return {};
+        return saga::make_pipeable(std::move(fun));
     }
 
-    template <template <class...> class Container_template>
-    detail::to_template_fn<Container_template>
-    to()
+    template <template <class...> class Container_template, class... Args>
+    auto to(Args && ... args)
     {
-        return {};
+        auto fun = [t_args = std::forward_as_tuple(std::forward<Args>(args)...)](auto cur)
+        {
+            auto inner = [&cur](Args &&... inner_args)
+            {
+                using Container
+                    = detail::deduce_container_t<Container_template, decltype(cur), Args...>;
+
+                return saga::cursor::to<Container>(std::move(cur)
+                                                  , std::forward<Args>(inner_args)...);
+            };
+
+            return std::apply(inner, t_args);
+        };
+
+        return saga::make_pipeable(std::move(fun));
     }
 }
 // namespace cursor
