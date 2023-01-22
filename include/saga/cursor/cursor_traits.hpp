@@ -184,30 +184,31 @@ namespace saga
 
     namespace detail
     {
-        template <class Type, class SFINASE = void>
-        struct is_input_cursor
+        template <class Type, class Tag, class SFINASE = void>
+        struct is_cursor_atleast
          : std::false_type
         {};
 
-        template <class Type>
-        struct is_input_cursor<Type, std::void_t<typename Type::cursor_category>>
-         : std::is_base_of<std::input_iterator_tag, saga::cursor_category_t<Type>>
+        template <class Type, class Tag>
+        struct is_cursor_atleast<Type, Tag, std::void_t<saga::cursor_category_t<Type>>>
+         : std::is_base_of<Tag, saga::cursor_category_t<Type>>
         {};
     }
     // namespace detail
 
     template <class Type>
-    using is_input_cursor = detail::is_input_cursor<Type>;
+    using is_input_cursor = detail::is_cursor_atleast<Type, std::input_iterator_tag>;
 
-    template <class Cursor>
-    struct is_forward_cursor
-     : std::is_base_of<std::forward_iterator_tag, saga::cursor_category_t<Cursor>>
-    {};
+    template <class Type>
+    using is_forward_cursor = detail::is_cursor_atleast<Type, std::forward_iterator_tag>;
 
-    template <class Cursor>
-    struct is_random_access_cursor
-     : std::is_base_of<std::random_access_iterator_tag, saga::cursor_category_t<Cursor>>
-    {};
+    template <class Type>
+    using is_bidirectional_cursor
+        = detail::is_cursor_atleast<Type, std::bidirectional_iterator_tag>;
+
+    template <class Type>
+    using is_random_access_cursor
+        = detail::is_cursor_atleast<Type, std::random_access_iterator_tag>;
 }
 // namespace saga
 

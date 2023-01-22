@@ -149,6 +149,7 @@
 		<Unit filename="contrib/catch2/include/catch2/catch_amalgamated.cpp" />
 		<Unit filename="contrib/catch2/include/catch2/catch_amalgamated.hpp" />
 		<Unit filename="cpp20/span.cpp" />
+		<Unit filename="cursor/cursor_traits.cpp" />
 		<Unit filename="cursor/indices.cpp" />
 		<Unit filename="cursor/istream_cursor.cpp" />
 		<Unit filename="cursor/reverse.cpp" />
