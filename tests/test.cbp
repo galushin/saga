@@ -59,6 +59,7 @@
 			<Add option="-Wshadow=compatible-local" />
 			<Add directory="./contrib/catch2/include" />
 			<Add directory="../include" />
+			<Add directory="./contrib/pcg-cpp/include" />
 		</Compiler>
 		<Unit filename="../include/saga/accumulator/sum.hpp" />
 		<Unit filename="../include/saga/actions/action_closure.hpp" />
