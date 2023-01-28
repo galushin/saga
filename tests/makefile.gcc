@@ -5,7 +5,7 @@
 LD = $(CXX)
 
 
-INC =  -I./contrib/catch2/include -I../include
+INC =  -I./contrib/catch2/include -I../include -I./contrib/pcg-cpp/include
 RESINC = 
 LIBDIR = 
 LIB = 
