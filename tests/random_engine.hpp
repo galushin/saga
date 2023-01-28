@@ -21,13 +21,15 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/utility/as_const.hpp>
 #include <saga/cursor/cursor_traits.hpp>
 
+#include <pcg_random.hpp>
+
 #include <algorithm>
 #include <iterator>
 #include <random>
 
 namespace saga_test
 {
-    using random_engine_type = std::minstd_rand;
+    using random_engine_type = ::pcg64;
 
     random_engine_type & random_engine();
 
