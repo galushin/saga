@@ -497,3 +497,74 @@ TEST_CASE("span : iterators of not-empty")
         REQUIRE(s.crend() == s.crbegin() + s.size());
     };
 }
+
+TEST_CASE("span: as_bytes")
+{
+    using Element = int;
+
+    saga_test::property_checker << [](std::vector<Element> src)
+    {
+        using Span = saga::span<Element>;
+        Span const data(src);
+
+        auto const bytes = saga::as_bytes(data);
+
+        static_assert(noexcept(saga::as_bytes(data)));
+        static_assert(std::is_same<decltype(bytes), saga::span<std::byte const> const>{});
+
+        REQUIRE(static_cast<void const*>(bytes.data()) == data.data());
+        REQUIRE(bytes.size() == data.size() * sizeof(Element));
+    }
+    << [](std::array<Element, 12> src)
+    {
+        using Span = saga::span<Element, src.size()>;
+        Span const data(src);
+
+        auto const bytes = saga::as_bytes(data);
+
+        constexpr auto byte_size = data.size_bytes();
+
+        static_assert(noexcept(saga::as_bytes(data)));
+        static_assert(std::is_same<decltype(bytes)
+                                  ,saga::span<std::byte const, byte_size> const>{});
+        static_assert(bytes.extent == src.size() * sizeof(Element));
+
+        REQUIRE(static_cast<void const*>(bytes.data()) == data.data());
+        REQUIRE(bytes.size() == data.size_bytes());
+    };
+}
+
+TEST_CASE("span: as_writable_bytes")
+{
+    using Element = int;
+
+    saga_test::property_checker << [](std::vector<Element> src)
+    {
+        using Span = saga::span<Element>;
+        Span const data(src);
+
+        auto const bytes = saga::as_writable_bytes(data);
+
+        static_assert(noexcept(saga::as_writable_bytes(data)));
+        static_assert(std::is_same<decltype(bytes), saga::span<std::byte> const>{});
+
+        REQUIRE(static_cast<void*>(bytes.data()) == data.data());
+        REQUIRE(bytes.size() == data.size() * sizeof(Element));
+    }
+    << [](std::array<Element, 12> src)
+    {
+        using Span = saga::span<Element, src.size()>;
+        Span const data(src);
+
+        auto const bytes = saga::as_writable_bytes(data);
+
+        constexpr auto byte_size = data.size_bytes();
+
+        static_assert(noexcept(saga::as_writable_bytes(data)));
+        static_assert(std::is_same<decltype(bytes),saga::span<std::byte, byte_size> const>{});
+        static_assert(bytes.extent == src.size() * sizeof(Element));
+
+        REQUIRE(static_cast<void*>(bytes.data()) == data.data());
+        REQUIRE(bytes.size() == data.size_bytes());
+    };
+}

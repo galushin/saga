@@ -265,6 +265,20 @@ namespace saga
     private:
         detail::span_base<pointer, Extent> base_{};
     };
+
+    template <class ElementType, std::size_t Extent>
+    span<std::byte const, Extent == dynamic_extent ? dynamic_extent : Extent * sizeof(ElementType)>
+    as_bytes(span<ElementType, Extent> spn) noexcept
+    {
+        return {reinterpret_cast<std::byte const*>(spn.data()), spn.size_bytes()};
+    }
+
+    template <class ElementType, std::size_t Extent>
+    span<std::byte, Extent == dynamic_extent ? dynamic_extent : Extent * sizeof(ElementType)>
+    as_writable_bytes(span<ElementType, Extent> spn) noexcept
+    {
+        return {reinterpret_cast<std::byte*>(spn.data()), spn.size_bytes()};
+    }
 }
 // namespace saga
 
