@@ -204,6 +204,9 @@ namespace saga
     }
     // namespace detail
 
+#if defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 201911
+    using unreachable_sentinel_t = std::unreachable_sentinel_t;
+#else
     struct unreachable_sentinel_t
     {
         template <class T>
@@ -218,6 +221,8 @@ namespace saga
             return false;
         }
     };
+#endif
+// defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 201911
 
     struct back_insert_fn
     {
