@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
 // Используемые возможности
 #include <saga/actions/reverse.hpp>
 #include <saga/actions/sort.hpp>
+#include <saga/container/make.hpp>
 #include <saga/cursor/cartesian_product.hpp>
 #include <saga/cursor/enumerate.hpp>
 #include <saga/cursor/indices.hpp>
@@ -2020,7 +2021,7 @@ TEST_CASE("PE 031")
 {
     using IntType = std::size_t;
 
-    std::vector<IntType> const coins{1, 2, 5, 10, 20, 50, 100, 200};
+    auto const coins = saga::make_container<std::vector>(1, 2, 5, 10, 20, 50, 100, 200);
 
     auto const amount = IntType(200);
 
@@ -2550,7 +2551,7 @@ namespace
     template <class IntType>
     bool PE_043_check(IntType num)
     {
-        static std::vector<int> primes = {17, 13, 11, 7, 5, 3, 2};
+        constexpr int primes[] = {17, 13, 11, 7, 5, 3, 2};
 
         for(auto prime : primes)
         {
