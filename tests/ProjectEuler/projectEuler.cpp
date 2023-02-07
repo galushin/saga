@@ -4574,6 +4574,43 @@ TEST_CASE("PE 070")
     REQUIRE(best_num == 8319823);
 }
 
+// PE 071 - Упорядоченные дроби
+namespace
+{
+    template <class IntType>
+    IntType PE_071(IntType const & max_denom, IntType const & num, IntType const & denom)
+    {
+        assert(std::gcd(num, denom) == 1);
+
+        auto result_num = IntType(0);
+        auto result_denom = IntType(1);
+
+        for(auto const & cur_denom : saga::cursor::indices(IntType(2), max_denom + 1))
+        {
+            auto const cur_num = (num * cur_denom - 1)/ denom;
+
+            auto const g = std::gcd(cur_num, cur_denom);
+
+            if(cur_denom / g != denom)
+            {
+                if(cur_num / g * result_denom > cur_denom / g * result_num)
+                {
+                    result_num = cur_num / g;
+                    result_denom = cur_denom / g;
+                }
+            }
+        }
+
+        return result_num;
+    }
+}
+
+TEST_CASE("PE 071")
+{
+    REQUIRE(::PE_071(8, 3, 7) == 2);
+    REQUIRE(::PE_071<std::int64_t>(1'000'000, 3, 7) == 428570);
+}
+
 // PE 097 - Большое не-Мерсеновское простое число
 TEST_CASE("PE 097")
 {
