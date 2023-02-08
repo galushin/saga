@@ -863,8 +863,6 @@ namespace
     template <class IntType>
     IntType projectEuler_012(IntType num_divisors_limit)
     {
-        std::vector<IntType> divisors;
-
         for(auto num = IntType(1);; ++ num)
         {
             auto m1 = num % 2 == 0 ? num/2 : num;
@@ -4609,6 +4607,39 @@ TEST_CASE("PE 071")
 {
     REQUIRE(::PE_071(8, 3, 7) == 2);
     REQUIRE(::PE_071<std::int64_t>(1'000'000, 3, 7) == 428570);
+}
+
+// PE 072 - Подсчёт дробей
+namespace
+{
+    template <class IntType>
+    IntType PE_072(IntType const max_denom)
+    {
+        auto const primes = saga::primes_below(max_denom + 1);
+
+        std::vector<IntType> phi(max_denom + 1, 0);
+        saga::iota(saga::cursor::all(phi), 0);
+
+        for(auto const & prime : primes)
+        {
+            auto cur = saga::cursor::drop_front_n(saga::cursor::all(phi), prime)
+                     | saga::cursor::stride(prime);
+
+            saga::for_each(std::move(cur), [&](IntType & arg)
+            {
+                arg /= prime;
+                arg *= (prime - 1);
+            });
+        }
+
+        return saga::reduce(saga::cursor::all(phi)) - 1;
+    }
+}
+
+TEST_CASE("PE 072")
+{
+    REQUIRE(::PE_072(8) == 21);
+    REQUIRE(::PE_072(std::int64_t{1'000'000}) == 303'963'552'391);
 }
 
 // PE 097 - Большое не-Мерсеновское простое число
