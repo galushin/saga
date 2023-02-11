@@ -4642,6 +4642,36 @@ TEST_CASE("PE 072")
     REQUIRE(::PE_072(std::int64_t{1'000'000}) == 303'963'552'391);
 }
 
+// PE 073 - Подсчёт дробей в интервале
+namespace
+{
+    template <class IntType>
+    IntType PE_073(IntType max_denom, IntType num1, IntType denom1, IntType num2, IntType denom2)
+    {
+        auto result = IntType(0);
+
+        for(auto denom : saga::cursor::indices(2, max_denom + 1))
+        for(auto num : saga::cursor::indices(denom * num1 / denom1, denom * num2 / denom2 + 1))
+        {
+            if(std::gcd(num, denom) == 1)
+            {
+                if(num1 * denom < num * denom1 && num * denom2 < denom * num2)
+                {
+                    ++result;
+                }
+            }
+        }
+
+        return result;
+    }
+}
+
+TEST_CASE("PE 073")
+{
+    REQUIRE(::PE_073(8, 1, 3, 1, 2) == 3);
+    REQUIRE(::PE_073(12'000, 1, 3, 1, 2) == 7'295'372);
+}
+
 // PE 097 - Большое не-Мерсеновское простое число
 TEST_CASE("PE 097")
 {
