@@ -863,8 +863,6 @@ namespace
     template <class IntType>
     IntType projectEuler_012(IntType num_divisors_limit)
     {
-        std::vector<IntType> divisors;
-
         for(auto num = IntType(1);; ++ num)
         {
             auto m1 = num % 2 == 0 ? num/2 : num;
@@ -4577,6 +4575,18 @@ TEST_CASE("PE 070")
 // PE 071 - Упорядоченные дроби
 namespace
 {
+    /* Перебор осуществляется в обратном направлении, чтобы можно было сократить перебор.
+    Пусть a/b > r/s. Тогда a/b - r/s = (as-rb)/(bs) >= 1/(bs).
+    Пусть a/b - данная дробь и к текущему моменту мы нашли дробь p/q. Найдём ограничение на
+    возможную дробь r/s: p/q < r/s < a/b
+    a/b - p/q = (aq - bp)/(bq)
+    С другой стороны:
+    a/b - p/q = a/b - r/s + r/s - p/q = (as - br)/(bs) + (rq - ps)/(sq) >= 1/(bs) + 1/(sq)
+    Таким обарзом:
+    (aq - bp)/(bq) = a/b - p/q >= (b+q)/(bsq)
+    (aq - bp) >= (b+q)/s
+    s >= (b+q)/(aq - bp)
+    */
     template <class IntType>
     IntType PE_071(IntType const & max_denom, IntType const & num, IntType const & denom)
     {
@@ -4585,7 +4595,9 @@ namespace
         auto result_num = IntType(0);
         auto result_denom = IntType(1);
 
-        for(auto const & cur_denom : saga::cursor::indices(IntType(2), max_denom + 1))
+        auto min_denom = IntType(1);
+
+        for(auto cur_denom = max_denom; cur_denom >= min_denom; -- cur_denom)
         {
             auto const cur_num = (num * cur_denom - 1)/ denom;
 
@@ -4597,6 +4609,8 @@ namespace
                 {
                     result_num = cur_num / g;
                     result_denom = cur_denom / g;
+
+                    min_denom = (denom + cur_denom) / (num * cur_denom - cur_num * denom);
                 }
             }
         }
@@ -4609,6 +4623,89 @@ TEST_CASE("PE 071")
 {
     REQUIRE(::PE_071(8, 3, 7) == 2);
     REQUIRE(::PE_071<std::int64_t>(1'000'000, 3, 7) == 428570);
+}
+
+// PE 072 - Подсчёт дробей
+namespace
+{
+    template <class IntType>
+    IntType PE_072(IntType const max_denom)
+    {
+        std::vector<IntType> phi(max_denom + 1, 0);
+        saga::iota(saga::cursor::all(phi), 0);
+
+        for(auto const & num : saga::cursor::indices(2, max_denom + 1))
+        {
+            if(num == phi[num])
+            {
+                auto cur = saga::cursor::drop_front_n(saga::cursor::all(phi), num)
+                         | saga::cursor::stride(num);
+
+                saga::for_each(std::move(cur), [&](IntType & arg)
+                {
+                    arg /= num;
+                    arg *= (num - 1);
+                });
+
+                phi[num] = num - 1;
+            }
+        }
+
+        return saga::reduce(saga::cursor::all(phi)) - 1;
+    }
+}
+
+TEST_CASE("PE 072")
+{
+    REQUIRE(::PE_072(8) == 21);
+    REQUIRE(::PE_072(std::int64_t{1'000'000}) == 303'963'552'391);
+}
+
+// PE 073 - Подсчёт дробей в интервале
+namespace
+{
+    template <class IntType>
+    IntType PE_073(IntType max_denom, IntType num1, IntType denom1, IntType num2, IntType denom2)
+    {
+        assert(num2 * denom1 - num1 * denom2 == 1);
+
+        auto result = IntType(0);
+
+        std::vector<IntType> denoms;
+
+        for(;;)
+        {
+            auto med = denom1 + denom2;
+
+            if(med > max_denom)
+            {
+                if(denoms.empty())
+                {
+                    break;
+                }
+                else
+                {
+                    denom1 = denom2;
+                    denom2 = denoms.back();
+                    denoms.pop_back();
+                }
+            }
+            else
+            {
+                result += 1;
+                denoms.push_back(denom2);
+                denom2 = med;
+            }
+        }
+
+        return result;
+    }
+}
+
+TEST_CASE("PE 073")
+{
+    REQUIRE(::PE_073(8, 1, 3, 1, 2) == 3);
+    REQUIRE(::PE_073(12'000, 1, 3, 1, 2) == 7'295'372);
 }
 
 // PE 097 - Большое не-Мерсеновское простое число
