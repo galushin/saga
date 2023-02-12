@@ -1488,7 +1488,7 @@ namespace saga
         }
     };
 
-    struct insertion_sort_fn
+    struct sort_insertion_fn
     {
     private:
         template <class BidirectionalCursor, class Compare>
@@ -1640,7 +1640,7 @@ namespace saga
         {
             this->impl(input, cmp, saga::cursor::size(input));
 
-            return insertion_sort_fn{}(std::move(input), std::move(cmp));
+            return sort_insertion_fn{}(std::move(input), std::move(cmp));
         }
     };
 
@@ -2315,6 +2315,24 @@ namespace saga
         }
     };
 
+    struct sort_selection_fn
+    {
+    public:
+        template <class ForwardCursor, class Compare = std::less<>>
+        void operator()(ForwardCursor cur, Compare cmp = {}) const
+        {
+            for(; !!cur; ++ cur)
+            {
+                auto min_pos = saga::min_element_fn{}(cur, std::ref(cmp));
+
+                if(min_pos != cur)
+                {
+                    saga::cursor::swap(*cur, *min_pos);
+                }
+            }
+        }
+    };
+
     struct partial_sort_fn
     {
         template <class RandomAccessCursor, class Compare = std::less<>>
@@ -2780,7 +2798,8 @@ namespace saga
     inline constexpr auto const is_sorted = is_sorted_fn{};
     inline constexpr auto const is_sorted_until = is_sorted_until_fn{};
     inline constexpr auto const sort = sort_fn{};
-    inline constexpr auto const insertion_sort = insertion_sort_fn{};
+    inline constexpr auto const sort_insertion = sort_insertion_fn{};
+    inline constexpr auto const sort_selection = sort_selection_fn{};
     inline constexpr auto const partial_sort = partial_sort_fn{};
     inline constexpr auto const partial_sort_copy = partial_sort_copy_fn{};
     inline constexpr auto const stable_sort = stable_sort_fn{};
