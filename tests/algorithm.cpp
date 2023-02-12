@@ -4029,7 +4029,7 @@ TEST_CASE("sort_heap")
 namespace
 {
     template <class Value, class... Args>
-    void test_insertion_sort(std::list<Value> const & values_old, Args... cmp)
+    void test_sort_insertion(std::list<Value> const & values_old, Args... cmp)
     {
         static_assert(sizeof...(Args) <= 1);
 
@@ -4039,7 +4039,7 @@ namespace
         auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
 
         // Выполнение
-        saga::insertion_sort(input, cmp...);
+        saga::sort_insertion(input, cmp...);
 
         // Проверка
         REQUIRE(saga::is_sorted(input, cmp...));
@@ -4073,15 +4073,38 @@ namespace
         REQUIRE(saga::equal(input.dropped_front(), input_old.dropped_front()));
         REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
     }
+
+    template <class Value, class... Args>
+    void test_sort_selection(std::vector<Value> const & values_old, Args... cmp)
+    {
+        static_assert(sizeof...(Args) <= 1);
+
+        // Подготовка
+        auto values = values_old;
+
+        auto const input = saga_test::random_subcursor_of(saga::cursor::all(values));
+
+        // Выполнение
+        saga::sort_selection(input, cmp...);
+
+        // Проверка
+        REQUIRE(saga::is_sorted(input, cmp...));
+
+        auto const input_old = saga::rebase_cursor(input, values_old);
+
+        REQUIRE(saga::is_permutation(input, input_old));
+        REQUIRE(saga::equal(input.dropped_front(), input_old.dropped_front()));
+        REQUIRE(saga::equal(input.dropped_back(), input_old.dropped_back()));
+    }
 }
 
-TEST_CASE("insertion_sort")
+TEST_CASE("sort_insertion")
 {
     using Value = long;
 
     saga_test::property_checker
-    << ::test_insertion_sort<Value>
-    << ::test_insertion_sort<Value, saga_test::strict_weak_order<Value>>;
+    << ::test_sort_insertion<Value>
+    << ::test_sort_insertion<Value, saga_test::strict_weak_order<Value>>;
 }
 
 TEST_CASE("sort")
@@ -4091,6 +4114,15 @@ TEST_CASE("sort")
     saga_test::property_checker
     << ::test_sort<Value>
     << ::test_sort<Value, saga_test::strict_weak_order<Value>>;
+}
+
+TEST_CASE("sort_selection")
+{
+    using Value = int;
+
+    saga_test::property_checker
+    << ::test_sort_selection<Value>
+    << ::test_sort_selection<Value, saga_test::strict_weak_order<Value>>;
 }
 
 TEST_CASE("partial_sort - default compare")
