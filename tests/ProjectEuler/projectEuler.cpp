@@ -1815,9 +1815,43 @@ namespace
     };
 
     template <class ForwardCursor>
+    ForwardCursor collision_point(ForwardCursor slow)
+    {
+        if(!slow)
+        {
+            return slow;
+        }
+
+        auto fast = slow;
+        ++ fast;
+
+        for(;;)
+        {
+            if(!fast || *slow == *fast)
+            {
+                return fast;
+            }
+
+            ++ slow;
+            ++ fast;
+
+            if(!fast)
+            {
+                return fast;
+            }
+
+            ++ fast;
+        }
+
+        return fast;
+    }
+
+    template <class ForwardCursor>
     saga::cursor_difference_t<ForwardCursor>
     cycle_length(ForwardCursor slow)
     {
+        slow = ::collision_point(slow);
+
         if(!slow)
         {
             return saga::cursor_difference_t<ForwardCursor>(0);
@@ -1826,31 +1860,7 @@ namespace
         auto fast = slow;
         ++ fast;
 
-        for(;;)
-        {
-            if(!fast)
-            {
-                return saga::cursor_difference_t<ForwardCursor>(0);
-            }
-
-            if(*slow == *fast)
-            {
-                break;
-            }
-
-            ++ slow;
-            ++ fast;
-
-            if(!fast)
-            {
-                return saga::cursor_difference_t<ForwardCursor>(0);
-            }
-
-            ++ fast;
-        }
-
         auto result = saga::cursor_difference_t<ForwardCursor>(1);
-        ++ fast;
 
         for(; !(*fast == *slow); ++ fast, ++ result)
         {}
@@ -2118,7 +2128,7 @@ TEST_CASE("PE 033")
 namespace
 {
     template <class IntType>
-    constexpr std::array<IntType, 10> PE_034_factorials_table()
+    constexpr std::array<IntType, 10> digits_factorials_table()
     {
         std::array<IntType, 10> factorials{1};
 
@@ -2132,9 +2142,9 @@ namespace
     }
 
     template <class IntType>
-    IntType PE_034_digits_factorial_sum(IntType num)
+    IntType digits_factorial_sum(IntType num)
     {
-        constexpr auto factorials = ::PE_034_factorials_table<IntType>();
+        static constexpr auto factorials = ::digits_factorials_table<IntType>();
 
         return saga::transform_reduce(saga::cursor::digits_of(num), IntType(0)
                                       , std::plus<>{}
@@ -2148,7 +2158,7 @@ namespace
         // Можно показать, что если количество цифр больше 7, то сумма факториалов цифр всегда
         // меньше самого этого числа
         auto numbers = saga::cursor::indices(IntType(10), saga::power_natural(IntType(10), 7));
-        auto pred = [](IntType num) { return num == PE_034_digits_factorial_sum(num); };
+        auto pred = [](IntType num) { return num == digits_factorial_sum(num); };
 
         return saga::reduce(saga::cursor::filter(std::move(numbers), pred));
     }
@@ -2156,10 +2166,10 @@ namespace
 
 TEST_CASE("PE 034")
 {
-    REQUIRE(::PE_034_digits_factorial_sum(1) == 1);
-    REQUIRE(::PE_034_digits_factorial_sum(2) == 2);
-    REQUIRE(::PE_034_digits_factorial_sum(145) == 145);
-    REQUIRE(::PE_034_digits_factorial_sum(40585) == 40585);
+    REQUIRE(::digits_factorial_sum(1) == 1);
+    REQUIRE(::digits_factorial_sum(2) == 2);
+    REQUIRE(::digits_factorial_sum(145) == 145);
+    REQUIRE(::digits_factorial_sum(40585) == 40585);
 
     REQUIRE(PE_034() == 40730);
 }
@@ -4706,6 +4716,93 @@ TEST_CASE("PE 073")
 {
     REQUIRE(::PE_073(8, 1, 3, 1, 2) == 3);
     REQUIRE(::PE_073(12'000, 1, 3, 1, 2) == 7'295'372);
+}
+
+// PE 074 - Цепи факториалов цифр
+namespace
+{
+    template <class IntType>
+    std::vector<IntType>
+    PE_074_lengths(IntType n_max)
+    {
+        std::vector<IntType> lengths(n_max, -1);
+
+        for(auto const & cur_num : saga::cursor::indices(n_max))
+        {
+            if(lengths[cur_num] != -1)
+            {
+                continue;
+            }
+
+            // Строим орбиту
+            std::vector<IntType> history;
+
+            auto num = cur_num;
+            auto repeat_index = history.size();
+
+            for(;; num = ::digits_factorial_sum<IntType>(num))
+            {
+                if(num < n_max && lengths[num] != -1)
+                {
+                    break;
+                }
+
+                auto pos = saga::find(saga::cursor::all(history), num);
+                if(!!pos)
+                {
+                    repeat_index = pos.dropped_front().size();
+                    break;
+                }
+
+                history.push_back(num);
+            }
+
+            if(num < n_max && lengths[num] != -1)
+            {
+                auto cur_length = lengths[num] + 1;
+                for(; !history.empty(); history.pop_back(), ++ cur_length)
+                {
+                    if(history.back() < n_max)
+                    {
+                        lengths[history.back()] = cur_length;
+                    }
+                }
+            }
+            else
+            {
+                for(auto index : saga::cursor::indices_of(history))
+                {
+                    if(history[index] < n_max)
+                    {
+                        lengths[history[index]] = (index < repeat_index)
+                                                ? history.size() - index
+                                                : history.size() - repeat_index;
+                    }
+                }
+            }
+        }
+
+        return lengths;
+    }
+}
+
+TEST_CASE("PE 074")
+{
+    using IntType = int;
+
+    auto const n_max = IntType(1'000'000);
+
+    auto const lengths = ::PE_074_lengths(n_max);
+
+    REQUIRE(lengths[0] == 1);
+    REQUIRE(lengths[145] == 1);
+    REQUIRE(lengths[169] == 3);
+    REQUIRE(lengths[871] == 2);
+    REQUIRE(lengths[872] == 2);
+    REQUIRE(lengths[69] == 5);
+
+    REQUIRE(*saga::max_element(saga::cursor::all(lengths)) == 60);
+    REQUIRE(saga::count(saga::cursor::all(lengths), 60) == 402);
 }
 
 // PE 097 - Большое не-Мерсеновское простое число
