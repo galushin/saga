@@ -187,6 +187,36 @@ namespace saga
     {
         return saga::argument_reverser<std::decay_t<Function>>(std::move(fun));
     }
+
+    // get_element
+    namespace detail
+    {
+        namespace get_element_fn_adl
+        {
+            template <class T>
+            void get(T &&) = delete;
+
+            using std::get;
+
+            template <std::size_t Index>
+            struct get_element_fn
+            {
+                template <class TupleLike>
+                constexpr decltype(auto) operator()(TupleLike && arg) const
+                noexcept(noexcept(get<Index>(std::forward<TupleLike>(arg))))
+                {
+                    return get<Index>(std::forward<TupleLike>(arg));
+                }
+            };
+        }
+    }
+    // namespace detail
+
+    template <std::size_t Index>
+    inline constexpr auto get_element = detail::get_element_fn_adl::get_element_fn<Index>{};
+
+    inline constexpr auto get_key = get_element<0>;
+    inline constexpr auto get_value = get_element<1>;
 }
 
 #endif

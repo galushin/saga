@@ -255,3 +255,54 @@ TEST_CASE("reverse_args")
     constexpr auto cmp = std::greater<>{};
     static_assert(saga::f_transpose(cmp)(5, 7) == cmp(7, 5), "");
 }
+
+// get_element, get_key, get_value
+#include <variant>
+
+TEST_CASE("get_element, get_key, get_value : const pair")
+{
+    using Pair = std::pair<long, std::string>;
+
+    {
+        constexpr std::pair<char, long> obj{'a', 13};
+        static_assert(saga::get_key(obj) == std::get<0>(obj));
+        static_assert(saga::get_value(obj) == std::get<1>(obj));
+    }
+
+    static_assert(!noexcept(saga::get_key(std::declval<std::variant<int, std::string>>())));
+
+    saga_test::property_checker <<[](Pair const & obj)
+    {
+        REQUIRE(saga::get_key(obj) == obj.first);
+        REQUIRE(saga::get_value(obj) == obj.second);
+
+        REQUIRE(saga::get_element<0>(obj) == obj.first);
+        REQUIRE(saga::get_element<1>(obj) == obj.second);
+
+        static_assert(noexcept(saga::get_key(obj)));
+    };
+}
+
+TEST_CASE("get_element, get_key, get_value : non-const pair")
+{
+    using Type3 = char;
+    using Tuple = std::tuple<long, std::string, Type3>;
+
+    saga_test::property_checker <<[](Tuple obj, Type3 const & new_value_2)
+    {
+        auto const old_obj = obj;
+
+        REQUIRE(saga::get_key(obj) == std::get<0>(obj));
+        REQUIRE(saga::get_value(obj) == std::get<1>(obj));
+
+        REQUIRE(saga::get_element<0>(obj) == std::get<0>(obj));
+        REQUIRE(saga::get_element<1>(obj) == std::get<1>(obj));
+        REQUIRE(saga::get_element<2>(obj) == std::get<2>(obj));
+
+        saga::get_element<2>(obj) = new_value_2;
+
+        REQUIRE(saga::get_element<0>(obj) == std::get<0>(old_obj));
+        REQUIRE(saga::get_element<1>(obj) == std::get<1>(old_obj));
+        REQUIRE(saga::get_element<2>(obj) == new_value_2);
+    };
+}
