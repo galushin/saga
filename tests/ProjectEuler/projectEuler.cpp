@@ -4805,6 +4805,41 @@ TEST_CASE("PE 074")
     REQUIRE(saga::count(saga::cursor::all(lengths), 60) == 402);
 }
 
+// PE 075 - Особые целочисленные прямоугольные треугольники
+TEST_CASE("PE 075")
+{
+    using IntType = std::int64_t;
+
+    auto const L_max = IntType(1'500'000);
+
+    std::vector<IntType> counter(L_max + 1, 0);
+
+    auto const n_max = IntType(std::sqrt(L_max / 2));
+
+    for(auto n_cur : saga::cursor::indices(IntType(2), n_max))
+    {
+        auto const m_max = std::min(n_cur, L_max / 2 / n_cur - n_cur + 1);
+
+        for(auto m_cur = 1 + (n_cur % 2); m_cur < m_max; m_cur += 2)
+        {
+            if(std::gcd(n_cur, m_cur) == 1)
+            {
+                auto const L_cur = 2 * n_cur * (m_cur + n_cur);
+
+                for(auto L = L_cur; L <= L_max; L += L_cur)
+                {
+                    counter[L] += 1;
+                }
+            }
+        }
+    }
+
+    REQUIRE(counter.at(20) == 0);
+    REQUIRE(counter.at(120) == 3);
+
+    REQUIRE(saga::count(saga::cursor::all(counter), 1) == 161667);
+}
+
 // PE 097 - Большое не-Мерсеновское простое число
 TEST_CASE("PE 097")
 {
