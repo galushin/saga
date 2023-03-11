@@ -459,6 +459,12 @@ namespace
          : primes_(1, IntType(2))
         {}
 
+        primes_cursor(primes_cursor const &) = delete;
+        primes_cursor(primes_cursor &&) = default;
+
+        primes_cursor & operator=(primes_cursor const &) = delete;
+        primes_cursor & operator=(primes_cursor &&) = default;
+
         // Курсор ввода
         bool operator!() const
         {
@@ -484,6 +490,12 @@ namespace
 
                 num += ((num % 6 == 1) ? 4 : 2);
             }
+        }
+
+        // Дополнительные свойства
+        Container const & primes() const
+        {
+            return this->primes_;
         }
 
     private:
@@ -2025,26 +2037,35 @@ TEST_CASE("PE 029")
 }
 
 // PE 031: Суммы монет
+namespace
+{
+    template <class IntType, class Range>
+    IntType summations_count(IntType number, Range addends)
+    {
+        assert(number > 0);
+
+        std::vector<IntType> counts(number + 1, 0);
+        counts.front() = 1;
+
+        for(auto max_addend : addends)
+        {
+            for(auto num : saga::cursor::indices(max_addend, number + 1))
+            {
+                counts[num] += counts[num - max_addend];
+            }
+        }
+
+        return counts.back();
+    }
+}
+
 TEST_CASE("PE 031")
 {
     using IntType = std::size_t;
 
     auto const coins = saga::make_container<std::vector>(1, 2, 5, 10, 20, 50, 100, 200);
 
-    auto const amount = IntType(200);
-
-    std::vector<IntType> ways(amount+1, 0);
-    ways.front() = 1;
-
-    for(auto coin : saga::cursor::all(coins))
-    {
-        for(auto index : saga::cursor::indices(0u, ways.size() - coin))
-        {
-            ways[index + coin] += ways[index];
-        }
-    }
-
-    REQUIRE(ways.back() == 73682);
+    REQUIRE(::summations_count(IntType(200), coins) == 73682);
 }
 
 // PE 032: Панцифирные произведения
@@ -4838,6 +4859,125 @@ TEST_CASE("PE 075")
     REQUIRE(counter.at(120) == 3);
 
     REQUIRE(saga::count(saga::cursor::all(counter), 1) == 161667);
+}
+
+// PE 076 - Подсчёт композиций
+namespace
+{
+    template <class IntType>
+    IntType summations_count(IntType number)
+    {
+        return summations_count(std::move(number), saga::cursor::indices(IntType(1), number));
+    }
+}
+
+TEST_CASE("PE 076")
+{
+    REQUIRE(::summations_count(5) == 6);
+    REQUIRE(::summations_count(std::int64_t(100)) == 190569291);
+}
+
+// PE 077 - Композиций простых чисел
+namespace
+{
+    template <class IntType>
+    IntType PE_077(IntType limit)
+    {
+        auto primes_cur = ::primes_cursor<IntType>();
+
+        // ways[i][j] количество способов представить число j в виде суммы первых i простых чисел
+        // ways[i][j] = ways[i-1][j] + ways[i][j - prime[i-1]]
+        std::vector<std::vector<IntType>> ways;
+
+        // В виде нуля первых простых чисел можно представить только ноль
+        ways.emplace_back(1, 1);
+
+        for(auto num = IntType(1); ways.back().back() <= limit; ++ num)
+        {
+            ways.front().push_back(0);
+
+            for(auto index : saga::cursor::indices(1u, ways.size()))
+            {
+                ways[index].push_back(ways[index-1].back());
+
+                auto const prime = primes_cur.primes()[index - 1];
+
+                if(num >= prime)
+                {
+                    ways[index].back() += ways[index][num - prime];
+                }
+            }
+
+            if(num == *primes_cur)
+            {
+                ways.emplace_back(ways.back());
+                ways.back().back() += 1;
+
+                ++ primes_cur;
+            }
+        }
+
+        return ways.back().size() - 1;
+    }
+}
+
+TEST_CASE("PE 077")
+{
+    using IntType = std::int64_t;
+
+    REQUIRE(::summations_count(IntType(10), saga::primes_below(IntType(10))) == 5);
+
+    REQUIRE(PE_077(IntType(5'000)) == 71);
+}
+
+// PE 078 - Разбиение монет
+namespace
+{
+    template <class IntType>
+    IntType PE_078_euler()
+    {
+        std::vector<IntType> ways{1};
+
+        for(auto num = IntType(1); ways.back() != 0; ++ num)
+        {
+            ways.emplace_back(0);
+
+            for(auto k = IntType(1);; ++ k)
+            {
+                auto const m1 = num - k * (3 * k - 1) / 2;
+                auto const m2 = num - k * (3 * k + 1) / 2;
+
+                auto const sign = (k % 2 == 0) ? -1 : 1;
+
+                if(m1 >= 0)
+                {
+                    ways.back() += sign * ways[m1];
+                }
+
+                if(m2 >= 0)
+                {
+                    ways.back() += sign * ways[m2];
+                }
+
+                if(m1 < 0 && m2 < 0)
+                {
+                    break;
+                }
+            }
+
+            ways.back() %= 1'000'000;
+        }
+
+        assert(!ways.empty());
+        return ways.size() - 1;
+    }
+}
+
+TEST_CASE("PE 078")
+{
+    using IntType = std::int64_t;
+
+    REQUIRE(::PE_078_euler<IntType>() == 55374);
 }
 
 // PE 097 - Большое не-Мерсеновское простое число
