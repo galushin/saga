@@ -459,6 +459,12 @@ namespace
          : primes_(1, IntType(2))
         {}
 
+        primes_cursor(primes_cursor const &) = delete;
+        primes_cursor(primes_cursor &&) = default;
+
+        primes_cursor & operator=(primes_cursor const &) = delete;
+        primes_cursor & operator=(primes_cursor &&) = default;
+
         // Курсор ввода
         bool operator!() const
         {
@@ -484,6 +490,12 @@ namespace
 
                 num += ((num % 6 == 1) ? 4 : 2);
             }
+        }
+
+        // Дополнительные свойства
+        Container const & primes() const
+        {
+            return this->primes_;
         }
 
     private:
@@ -4863,6 +4875,59 @@ TEST_CASE("PE 076")
 {
     REQUIRE(::summations_count(5) == 6);
     REQUIRE(::summations_count(std::int64_t(100)) == 190569291);
+}
+
+// PE 077 - Композиций простых чисел
+namespace
+{
+    template <class IntType>
+    IntType PE_077(IntType limit)
+    {
+        auto primes_cur = ::primes_cursor<IntType>();
+
+        // ways[i][j] количество способов представить число j в виде суммы первых i простых чисел
+        // ways[i][j] = ways[i-1][j] + ways[i][j - prime[i-1]]
+        std::vector<std::vector<IntType>> ways;
+
+        // В виде нуля первых простых чисел можно представить только ноль
+        ways.emplace_back(1, 1);
+
+        for(auto num = IntType(1); ways.back().back() <= limit; ++ num)
+        {
+            ways.front().push_back(0);
+
+            for(auto index : saga::cursor::indices(1u, ways.size()))
+            {
+                ways[index].push_back(ways[index-1].back());
+
+                auto const prime = primes_cur.primes()[index - 1];
+
+                if(num >= prime)
+                {
+                    ways[index].back() += ways[index][num - prime];
+                }
+            }
+
+            if(num == *primes_cur)
+            {
+                ways.emplace_back(ways.back());
+                ways.back().back() += 1;
+
+                ++ primes_cur;
+            }
+        }
+
+        return ways.back().size() - 1;
+    }
+}
+
+TEST_CASE("PE 077")
+{
+    using IntType = std::int64_t;
+
+    REQUIRE(::summations_count(IntType(10), saga::primes_below(IntType(10))) == 5);
+
+    REQUIRE(PE_077(IntType(5'000)) == 71);
 }
 
 // PE 097 - Большое не-Мерсеновское простое число
