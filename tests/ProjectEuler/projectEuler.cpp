@@ -4930,6 +4930,56 @@ TEST_CASE("PE 077")
     REQUIRE(PE_077(IntType(5'000)) == 71);
 }
 
+// PE 078 - Разбиение монет
+namespace
+{
+    template <class IntType>
+    IntType PE_078_euler()
+    {
+        std::vector<IntType> ways{1};
+
+        for(auto num = IntType(1); ways.back() != 0; ++ num)
+        {
+            ways.emplace_back(0);
+
+            for(auto k = IntType(1);; ++ k)
+            {
+                auto const m1 = num - k * (3 * k - 1) / 2;
+                auto const m2 = num - k * (3 * k + 1) / 2;
+
+                auto const sign = (k % 2 == 0) ? -1 : 1;
+
+                if(m1 >= 0)
+                {
+                    ways.back() += sign * ways[m1];
+                }
+
+                if(m2 >= 0)
+                {
+                    ways.back() += sign * ways[m2];
+                }
+
+                if(m1 < 0 && m2 < 0)
+                {
+                    break;
+                }
+            }
+
+            ways.back() %= 1'000'000;
+        }
+
+        assert(!ways.empty());
+        return ways.size() - 1;
+    }
+}
+
+TEST_CASE("PE 078")
+{
+    using IntType = std::int64_t;
+
+    REQUIRE(::PE_078_euler<IntType>() == 55374);
+}
+
 // PE 097 - Большое не-Мерсеновское простое число
 TEST_CASE("PE 097")
 {
