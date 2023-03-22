@@ -1009,6 +1009,26 @@ namespace
 
 namespace
 {
+    template <class IntType>
+    IntType from_chars_whole(char const * first, char const * last)
+    {
+        assert(first != last);
+
+        auto reader = IntType(0);
+        auto result = std::from_chars(first, last, reader);
+
+        assert(result.ptr == last);
+        assert(result.ec == std::errc{});
+
+        return reader;
+    }
+
+    template <class IntType>
+    IntType from_string_whole(std::string_view str)
+    {
+        return ::from_chars_whole<IntType>(str.data(), str.data() + str.size());
+    }
+
     class integer10
     {
         // Равенство
@@ -1095,7 +1115,6 @@ namespace
                 carry += new_unit / unit_base;
             }
 
-            // @todo Можно ли вообще не вносить ненулевые элементы?
             while(!result.units_.empty() && result.units_.back() == 0)
             {
                 assert(!result.units_.empty());
@@ -1145,16 +1164,13 @@ namespace
 
             this->units_.reserve(units_count);
 
-            auto start = tail_size * 0;
-            auto finish = tail_size;
+            auto first = str.data();
+            auto last = str.data() + (tail_size == 0 ? digits_per_unit : tail_size);
+            auto const stop = str.data() + str.size();
 
-            for(; start != str.size(); start = finish, finish += digits_per_unit)
+            for(; first != stop; first = last, last += digits_per_unit)
             {
-                auto reader = Unit(0);
-                auto result = std::from_chars(str.data() + start, str.data() + finish, reader);
-                assert(result.ptr == str.data() + finish);
-
-                this->units_.push_back(reader);
+                this->units_.push_back(::from_chars_whole<Unit>(first, last));
             }
 
             this->units_ |= saga::actions::reverse;
@@ -2352,8 +2368,6 @@ TEST_CASE("PE 037")
 }
 
 // PE 038: Панцифровые кратные
-#include <charconv>
-
 namespace
 {
     template <class IntType>
@@ -2372,13 +2386,7 @@ namespace
 
         if(saga::is_permutation(saga::cursor::all(str), saga::cursor::all(all_digits)))
         {
-            auto value = IntType(0);
-
-            auto result = std::from_chars(str.data(), str.data() + str.size(), value);
-
-            assert(result.ptr == str.data() + str.size());
-
-            return value;
+            return ::from_string_whole<IntType>(str);
         }
         else
         {
@@ -2523,9 +2531,8 @@ namespace
 
             do
             {
-                auto num = IntType(0);
-
-                std::from_chars(str.data() + str.size() - cur.size(), str.data() + str.size(), num);
+                auto num = ::from_chars_whole<IntType>(str.data() + str.size() - cur.size()
+                                                      ,str.data() + str.size());
 
                 if(::is_prime_sorted(num, primes, saga::unsafe_tag_t{}) && num > IntType(1))
                 {
@@ -2642,26 +2649,22 @@ namespace
     }
 
     template <class IntType>
-    IntType PE_043_6th_digit(std::string arg, int digit)
+    IntType PE_043_6th_digit(std::string arg, char digit)
     {
-        constexpr auto n_half = 5;
+        assert(std::isdigit(digit));
 
-        auto to_number = [&](std::string const & str)
+        auto to_number = [&](std::string str)
         {
             assert(str.size() == 9);
 
-            auto num = IntType(0);
-            std::from_chars(str.data(), str.data() + n_half, num);
+            constexpr auto n_half = 5;
 
-            num = 10 * num + digit;
+            str.insert(str.begin() + n_half, digit);
 
-            auto num2 = IntType(0);
-            std::from_chars(str.data() + n_half, str.data() + str.size(), num2);
-
-            return saga::power_natural(10, str.size() - n_half) * num + num2;
+            return ::from_string_whole<IntType>(str);
         };
 
-        auto cur = ::permutations(arg)
+        auto cur = ::permutations(std::move(arg))
                  | saga::cursor::transform(to_number)
                  | saga::cursor::filter(::PE_043_check<IntType>);
 
@@ -2678,8 +2681,8 @@ TEST_CASE("PE 043")
     using IntType = std::remove_const_t<decltype(expected)>;
     static_assert(std::is_integral<IntType>{});
 
-    auto const total = ::PE_043_6th_digit<IntType>("123456789", 0)
-                     + ::PE_043_6th_digit<IntType>("102346789", 5);
+    auto const total = ::PE_043_6th_digit<IntType>("123456789", '0')
+                     + ::PE_043_6th_digit<IntType>("102346789", '5');
 
     REQUIRE(total == expected);
 }
