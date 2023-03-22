@@ -1115,7 +1115,6 @@ namespace
                 carry += new_unit / unit_base;
             }
 
-            // @todo Можно ли вообще не вносить ненулевые элементы?
             while(!result.units_.empty() && result.units_.back() == 0)
             {
                 assert(!result.units_.empty());
@@ -2650,7 +2649,7 @@ namespace
     }
 
     template <class IntType>
-    IntType PE_043_6th_digit(std::string const arg, char digit)
+    IntType PE_043_6th_digit(std::string arg, char digit)
     {
         assert(std::isdigit(digit));
 
@@ -2665,7 +2664,7 @@ namespace
             return ::from_string_whole<IntType>(str);
         };
 
-        auto cur = ::permutations(arg)
+        auto cur = ::permutations(std::move(arg))
                  | saga::cursor::transform(to_number)
                  | saga::cursor::filter(::PE_043_check<IntType>);
 
