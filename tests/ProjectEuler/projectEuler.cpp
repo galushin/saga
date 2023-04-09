@@ -4983,6 +4983,111 @@ TEST_CASE("PE 078")
     REQUIRE(::PE_078_euler<IntType>() == 55374);
 }
 
+// PE 081 - Суммы по маршрутам: два варианта
+namespace
+{
+    template <class IntType>
+    IntType path_sum_two_ways(std::vector<std::vector<IntType>> table)
+    {
+        assert(!table.empty());
+        auto const n_rows = table.size();
+        auto const n_cols = table.front().size();
+
+        saga::partial_sum(saga::cursor::all(table.front())
+                         ,saga::cursor::all(table.front()));
+
+        for(auto row : saga::cursor::indices(1, n_rows))
+        {
+            table[row].front() += table[row-1].front();
+
+            assert(table[row].size() == n_cols);
+
+            for(auto col : saga::cursor::indices(1, n_cols))
+            {
+                table[row][col] += std::min(table[row - 1][col], table[row][col - 1]);
+            }
+        }
+
+        return table.back().back();
+    }
+
+    template <class IntType, class IStream>
+    std::vector<IntType>
+    read_csv_line(IStream & input)
+    {
+        std::vector<IntType> result;
+
+        auto num = IntType();
+        input >> num;
+
+        for(; !!input;)
+        {
+            result.push_back(std::move(num));
+
+            auto reader = input.get();
+
+            if(!input || reader == '\n')
+            {
+                break;
+            }
+
+            assert(reader == ',');
+
+            input >> num;
+        }
+
+
+        return result;
+    }
+
+    template <class IntType, class IStream>
+    std::vector<std::vector<IntType>>
+    read_csv(IStream & input)
+    {
+        std::vector<std::vector<IntType>> table;
+
+        for(; !!input;)
+        {
+            auto row = ::read_csv_line<IntType>(input);
+
+            if(!row.empty())
+            {
+                table.push_back(std::move(row));
+            }
+        }
+
+        return table;
+    }
+}
+
+TEST_CASE("PE 081")
+{
+    {
+        std::vector<std::vector<int>> const table_1
+        {
+             {131, 673, 234, 103, 18}
+            ,{201, 96,  342, 965, 150}
+            ,{630, 803, 746, 422, 111}
+            ,{537, 699, 497, 121, 956}
+            ,{805, 732, 624, 37, 331}
+        };
+
+        REQUIRE(path_sum_two_ways(table_1) == 2427);
+    }
+    {
+        std::ifstream file("ProjectEuler/p081_matrix.txt");
+
+        REQUIRE(file);
+
+        auto const table_2 = ::read_csv<int>(file);
+
+        REQUIRE(table_2.size() == 80);
+        REQUIRE(table_2.front().size() == 80);
+
+        REQUIRE(path_sum_two_ways(table_2) == 427337);
+    }
+}
+
 // PE 097 - Большое не-Мерсеновское простое число
 TEST_CASE("PE 097")
 {
