@@ -5133,10 +5133,29 @@ namespace
         return finishes;
     }
 
-    // @todo Попробовать оптимизировать: хранить число в виде списка цифр
-    template <class IntType>
-    IntType PE_094_square_digit_chains(IntType num_max)
+    template <class Container>
+    void PE_092_increment(Container & num)
     {
+        auto carry = typename Container::value_type(1);
+
+        for(auto & item : num)
+        {
+            item += carry;
+
+            carry = item / 10;
+            item %= 10;
+        }
+
+        if(carry > 0)
+        {
+            num.emplace_back(1);
+        }
+    }
+
+    template <class IntType>
+    IntType PE_092_square_digit_chains(IntType num_max)
+    {
+        // Числа, у которых сумма квадратов цифр может привышать само число
         auto const n_digits = IntType(std::log10(num_max)) + 1;
         auto const num_full = saga::square(9) * n_digits + 1;
 
@@ -5146,12 +5165,22 @@ namespace
 
         auto result = saga::count(saga::cursor::all(finishes), finish_to_count);
 
-        auto const pred = [&](auto const & num)
-        {
-            return finishes[::sum_of_digits_squares(num)] == finish_to_count;
-        };
+        // Остальные числа
+        using Vector = std::vector<IntType>;
 
-        result += saga::count_if(saga::cursor::indices(num_full, num_max), pred);
+        auto const num_max_vector = saga::cursor::digits_of(num_max)
+                                  | saga::cursor::to<Vector>();
+
+        auto num_vector = saga::cursor::digits_of(num_full)
+                        | saga::cursor::to<Vector>();
+
+        for(; num_vector != num_max_vector; ::PE_092_increment(num_vector))
+        {
+            auto const value = saga::transform_reduce(saga::cursor::all(num_vector)
+                                                     ,IntType(0), std::plus<>{}, saga::square);
+
+            result += (finishes[value] == finish_to_count);
+        }
 
         return result;
     }
@@ -5177,7 +5206,7 @@ TEST_CASE("PE 092")
     REQUIRE(::sum_of_digits_squares(37) == 58);
     REQUIRE(::sum_of_digits_squares(58) == 89);
 
-    REQUIRE(PE_094_square_digit_chains(std::int32_t{10'000'000}) == 8581146);
+    REQUIRE(PE_092_square_digit_chains(std::int32_t{10'000'000}) == 8581146);
 }
 
 // PE 097 - Большое не-Мерсеновское простое число
