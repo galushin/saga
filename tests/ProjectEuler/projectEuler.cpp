@@ -5088,6 +5088,127 @@ TEST_CASE("PE 081")
     }
 }
 
+// PE 092 - Цепочки квадратов цифр
+namespace
+{
+    template <class IntType>
+    IntType sum_of_digits_squares(IntType num)
+    {
+        return saga::transform_reduce(saga::cursor::digits_of(num)
+                                     ,IntType(0), std::plus<>{}, saga::square);
+    }
+
+    template <class IntType, class Container>
+    void update_sum_of_digits_squares_chain(IntType start, Container & finishes)
+    {
+        std::vector<IntType> chain;
+
+        for(; finishes.at(start) == 0;)
+        {
+            chain.push_back(start);
+
+            start = ::sum_of_digits_squares(std::move(start));
+        }
+
+        auto finish_value = finishes[start];
+
+        for(auto each : chain)
+        {
+            finishes[each] = finish_value;
+        }
+    }
+
+    template <class IntType>
+    std::vector<IntType> square_digit_chains_full(IntType num_max)
+    {
+        std::vector<IntType> finishes(num_max, 0);
+        finishes[1] = 1;
+        finishes[89] = 89;
+
+        for(auto num : saga::cursor::indices(IntType{1}, num_max))
+        {
+            ::update_sum_of_digits_squares_chain(num, finishes);
+        }
+
+        return finishes;
+    }
+
+    template <class Container>
+    void PE_092_increment(Container & num)
+    {
+        auto carry = typename Container::value_type(1);
+
+        for(auto & item : num)
+        {
+            item += carry;
+
+            carry = item / 10;
+            item %= 10;
+        }
+
+        if(carry > 0)
+        {
+            num.emplace_back(1);
+        }
+    }
+
+    template <class IntType>
+    IntType PE_092_square_digit_chains(IntType num_max)
+    {
+        // Числа, у которых сумма квадратов цифр может привышать само число
+        auto const n_digits = IntType(std::log10(num_max)) + 1;
+        auto const num_full = saga::square(9) * n_digits + 1;
+
+        auto const finishes = square_digit_chains_full(num_full);
+
+        auto const finish_to_count = IntType(89);
+
+        auto result = saga::count(saga::cursor::all(finishes), finish_to_count);
+
+        // Остальные числа
+        using Vector = std::vector<IntType>;
+
+        auto const num_max_vector = saga::cursor::digits_of(num_max)
+                                  | saga::cursor::to<Vector>();
+
+        auto num_vector = saga::cursor::digits_of(num_full)
+                        | saga::cursor::to<Vector>();
+
+        for(; num_vector != num_max_vector; ::PE_092_increment(num_vector))
+        {
+            auto const value = saga::transform_reduce(saga::cursor::all(num_vector)
+                                                     ,IntType(0), std::plus<>{}, saga::square);
+
+            result += (finishes[value] == finish_to_count);
+        }
+
+        return result;
+    }
+}
+
+TEST_CASE("PE 092")
+{
+    // Суммы квадратов цифр
+    REQUIRE(::sum_of_digits_squares(1) == 1);
+
+    REQUIRE(::sum_of_digits_squares(44) == 32);
+    REQUIRE(::sum_of_digits_squares(32) == 13);
+    REQUIRE(::sum_of_digits_squares(13) == 10);
+    REQUIRE(::sum_of_digits_squares(10) == 1);
+
+    REQUIRE(::sum_of_digits_squares(85) == 89);
+    REQUIRE(::sum_of_digits_squares(89) == 145);
+    REQUIRE(::sum_of_digits_squares(145) == 42);
+    REQUIRE(::sum_of_digits_squares(42) == 20);
+    REQUIRE(::sum_of_digits_squares(20) == 4);
+    REQUIRE(::sum_of_digits_squares(4) == 16);
+    REQUIRE(::sum_of_digits_squares(16) == 37);
+    REQUIRE(::sum_of_digits_squares(37) == 58);
+    REQUIRE(::sum_of_digits_squares(58) == 89);
+
+    REQUIRE(PE_092_square_digit_chains(std::int32_t{10'000'000}) == 8581146);
+}
+
 // PE 097 - Большое не-Мерсеновское простое число
 TEST_CASE("PE 097")
 {
