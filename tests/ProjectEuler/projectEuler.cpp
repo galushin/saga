@@ -5270,10 +5270,9 @@ TEST_CASE("PE 099")
 
     using ValueAndIndex = std::pair<double, int>;
 
-    auto const result = saga::transform_reduce(std::move(input), saga::cursor::iota(1)
-                                              ,ValueAndIndex{0, 0}
-                                              ,SAGA_OVERLOAD_SET(std::max)
-                                              ,SAGA_OVERLOAD_SET(std::make_pair));
+    auto const result
+        = saga::transform_reduce(std::move(input), saga::cursor::iota(1), ValueAndIndex{0, 0}
+                                ,SAGA_OVERLOAD_SET(std::max), SAGA_OVERLOAD_SET(std::make_pair));
 
     REQUIRE(result.second == 709);
 }
