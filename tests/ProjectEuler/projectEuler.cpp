@@ -5232,3 +5232,48 @@ TEST_CASE("PE 097")
 
     REQUIRE(result % Mod == 8'739'992'577);
 }
+
+// PE 099 - Наибольшая степенное выражение
+namespace
+{
+    struct base_exponent_pair
+    {
+        long base = 0;
+        long exponent = 0;
+    };
+
+    std::istream & operator>>(std::istream & input, base_exponent_pair & obj)
+    {
+        input >> obj.base;
+
+        auto sep = input.get();
+
+        input >> obj.exponent;
+
+        if(input)
+        {
+            assert(sep == ',');
+        }
+
+        return input;
+    }
+}
+
+TEST_CASE("PE 099")
+{
+    std::ifstream file("ProjectEuler/p099_base_exp.txt");
+
+    auto bep_log = [](::base_exponent_pair const & obj) {return obj.exponent * std::log(obj.base);};
+
+    auto input = saga::make_istream_cursor<::base_exponent_pair>(file)
+               | saga::cursor::transform(bep_log);
+
+    using ValueAndIndex = std::pair<double, int>;
+
+    auto const result = saga::transform_reduce(std::move(input), saga::cursor::iota(1)
+                                              ,ValueAndIndex{0, 0}
+                                              ,SAGA_OVERLOAD_SET(std::max)
+                                              ,SAGA_OVERLOAD_SET(std::make_pair));
+
+    REQUIRE(result.second == 709);
+}
