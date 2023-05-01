@@ -5088,6 +5088,75 @@ TEST_CASE("PE 081")
     }
 }
 
+// PE 087 - Тройки степеней простых чисел
+namespace
+{
+    template <class IntType>
+    auto PE_087_prime_power_triplets(IntType n_limit)
+    {
+        auto const primes = saga::primes_below(IntType(std::sqrt(n_limit) + 1));
+
+        auto const pred = [=](IntType const & arg) { return arg < n_limit; };
+
+        auto const squares = saga::cursor::all(primes)
+                           | saga::cursor::transform(saga::square)
+                           | saga::cursor::to<std::vector<IntType>>();
+
+        auto const cubes = saga::cursor::all(primes)
+                         | saga::cursor::transform([](IntType const & arg)
+                                                   { return saga::power_natural(arg, 3); })
+                         | saga::cursor::take_while(pred)
+                         | saga::cursor::to<std::vector<IntType>>();
+
+        auto const forths = saga::cursor::all(primes)
+                          | saga::cursor::transform([](IntType const & arg)
+                                                    { return saga::power_natural(arg, 4); })
+                          | saga::cursor::take_while(pred)
+                          | saga::cursor::to<std::vector<IntType>>();
+
+        std::set<IntType> result;
+
+        for(auto const & arg3 : forths)
+        for(auto const & arg2 : cubes)
+        {
+            auto sum_2 = arg2 + arg3;
+
+            if(sum_2 >= n_limit)
+            {
+                break;
+            }
+
+            for(auto const & arg1 : squares)
+            {
+                auto sum_3 = arg1 + sum_2;
+
+                if(sum_3 < n_limit)
+                {
+                    result.insert(result.end(), std::move(sum_3));
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        return result;
+    }
+}
+
+TEST_CASE("PE 087")
+{
+    auto const pe_087_50 = ::PE_087_prime_power_triplets(50);
+
+    std::set<int> const pe_087_50_expected{28, 33, 47, 49};
+
+    CHECK(pe_087_50 == pe_087_50_expected);
+
+    auto const pe_087 = ::PE_087_prime_power_triplets(std::int64_t(50'000'000));
+    REQUIRE(pe_087.size() == 1'097'343);
+}
+
 // PE 092 - Цепочки квадратов цифр
 namespace
 {
