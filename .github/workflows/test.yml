@@ -198,7 +198,7 @@ jobs:
             }
           - {
               name: "Linux Clang 12",
-              os: ubuntu-latest,
+              os: ubuntu-20.04,
               CC: "clang-12", 
               CXX: "clang++-12",
               SANITIZE: none,
@@ -234,7 +234,7 @@ jobs:
               CC: "clang-14", 
               CXX: "clang++-14",
               SANITIZE: none,
-              CFLAGS: "-std=c++2b",
+              CFLAGS: "-std=c++23",
             }
 
     steps:
