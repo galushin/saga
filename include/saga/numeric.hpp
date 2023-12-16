@@ -380,7 +380,7 @@ namespace saga
                 return out;
             }
 
-            auto const N_seive = (n_max - 3)/2;
+            auto const N_seive = (n_max - 2)/2;
 
             Seive seive(N_seive, true);
 

@@ -1133,3 +1133,22 @@ TEST_CASE("nth_permutation: default compare")
 
     REQUIRE(perms.size() == n_perm);
 }
+
+TEST_CASE("primes_below: regression #1258")
+{
+    CHECK(saga::primes_below(1) == std::vector<int>{});
+    CHECK(saga::primes_below(2) == std::vector<int>{});
+    CHECK(saga::primes_below(3) == std::vector{2});
+    CHECK(saga::primes_below(4) == std::vector{2, 3});
+    CHECK(saga::primes_below(5) == std::vector{2, 3});
+    CHECK(saga::primes_below(6) == std::vector{2, 3, 5});
+    CHECK(saga::primes_below(7) == std::vector{2, 3, 5});
+    CHECK(saga::primes_below(8) == std::vector{2, 3, 5, 7});
+    CHECK(saga::primes_below(9) == std::vector{2, 3, 5, 7});
+    CHECK(saga::primes_below(10) == std::vector{2, 3, 5, 7});
+    CHECK(saga::primes_below(11) == std::vector{2, 3, 5, 7});
+
+    CHECK(saga::primes_below(41) == std::vector{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37});
+    CHECK(saga::primes_below(42) == std::vector{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41});
+    CHECK(saga::primes_below(43) == std::vector{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41});
+}
