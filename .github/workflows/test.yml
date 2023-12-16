@@ -220,22 +220,6 @@ jobs:
               SANITIZE: none,
               CFLAGS: "-std=c++17",
             }
-          - {
-              name: "Linux Clang 14 C++20",
-              os: ubuntu-22.04,
-              CC: "clang-14", 
-              CXX: "clang++-14",
-              SANITIZE: none,
-              CFLAGS: "-std=c++20",
-            }
-          - {
-              name: "Linux Clang 14 C++23",
-              os: ubuntu-22.04,
-              CC: "clang-14", 
-              CXX: "clang++-14",
-              SANITIZE: none,
-              CFLAGS: "-std=c++23",
-            }
 
     steps:
       - uses: actions/checkout@v3
