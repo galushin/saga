@@ -250,7 +250,7 @@ jobs:
 
       - name: Install Compiler
         id: install_compiler
-        if: startsWith(matrix.os, 'ubuntu')
+        if: startsWith(matrix.config.os, 'ubuntu')
         shell: bash
         working-directory: ${{ env.HOME }}
         run: |
