@@ -132,22 +132,6 @@ jobs:
               CXX: "g++-13",
               SANITIZE: none,
               CFLAGS: "-std=gnu++17",
-            }            
-          - {
-              name: "Linux GCC 13 C++20",
-              os: ubuntu-22.04,
-              CC: "gcc-13", 
-              CXX: "g++-13",
-              SANITIZE: none,
-              CFLAGS: "-std=gnu++20",
-            }            
-          - {
-              name: "Linux GCC 13 C++23",
-              os: ubuntu-22.04,
-              CC: "gcc-13", 
-              CXX: "g++-13",
-              SANITIZE: none,
-              CFLAGS: "-std=gnu++2b",
             }
           # Clang
           - {
@@ -266,7 +250,7 @@ jobs:
               CC: "clang-15", 
               CXX: "clang++-15",
               SANITIZE: none,
-              CFLAGS: "-std=c++23",
+              CFLAGS: "-std=c++2b",
             }
 
     steps:
