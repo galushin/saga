@@ -253,7 +253,7 @@ jobs:
         shell: bash
         working-directory: ${{ env.HOME }}
         run: |
-          sudo apt update
+          sudo apt-get update
           if [ ${{ matrix.config.cc }} == gcc ] sudo apt-get install -y ${{ matrix.config.cc }} ${{ matrix.config.cxx }}
       
       - name: build-and-test
