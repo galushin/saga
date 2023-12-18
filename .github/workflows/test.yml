@@ -250,11 +250,12 @@ jobs:
 
       - name: Install Compiler
         id: install_compiler
+        if: startsWith(matrix.os, 'ubuntu')
         shell: bash
         working-directory: ${{ env.HOME }}
         run: |
           sudo apt-get update
-          if [ ${{ matrix.config.cc }} == gcc ] sudo apt-get install -y ${{ matrix.config.cc }} ${{ matrix.config.cxx }}
+          if [ ${{ matrix.config.cc }} == gcc- ]; sudo apt-get install -y ${{ matrix.config.cc }} ${{ matrix.config.cxx }} fi
       
       - name: build-and-test
         if: matrix.config.sanitize == 'none'
