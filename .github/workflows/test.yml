@@ -193,6 +193,7 @@ jobs:
               os: ubuntu-20.04,
               CC: "clang-10", 
               CXX: "clang++-10",
+              LLVM: "llvm-10",
               SANITIZE: none,
               CFLAGS: "-std=c++17",
             }
@@ -201,6 +202,7 @@ jobs:
               os: ubuntu-20.04,
               CC: "clang-11", 
               CXX: "clang++-11",
+              LLVM: "llvm-11",
               SANITIZE: none,
               CFLAGS: "-std=c++17",
             }
@@ -209,6 +211,7 @@ jobs:
               os: ubuntu-20.04,
               CC: "clang-12", 
               CXX: "clang++-12",
+              LLVM: "llvm-12",
               SANITIZE: none,
               CFLAGS: "-std=c++17",
             }
@@ -217,6 +220,7 @@ jobs:
               os: ubuntu-22.04,
               CC: "clang-13", 
               CXX: "clang++-13",
+              LLVM: "llvm-13",
               SANITIZE: none,
               CFLAGS: "-std=c++17",
             }
@@ -225,6 +229,7 @@ jobs:
               os: ubuntu-22.04,
               CC: "clang-14", 
               CXX: "clang++-14",
+              LLVM: "llvm-14",
               SANITIZE: none,
               CFLAGS: "-std=c++17",
             }
@@ -233,6 +238,7 @@ jobs:
               os: ubuntu-22.04,
               CC: "clang-15", 
               CXX: "clang++-15",
+              LLVM: "llvm-15",
               SANITIZE: none,
               CFLAGS: "-std=c++17",
             }
@@ -241,6 +247,7 @@ jobs:
               os: ubuntu-22.04,
               CC: "clang-15", 
               CXX: "clang++-15",
+              LLVM: "llvm-15",
               SANITIZE: none,
               CFLAGS: "-std=c++20",
             }
@@ -248,13 +255,23 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install GCC 8
-        id: install_gcc_8
-        if: ( matrix.config.CXX == 'g++-8' )
+      - name: Install GCC
+        id: install_gcc
+        if: startsWith(matrix.config.os, 'ubuntu') && startsWith(matrix.config.cc, 'gcc-')
         shell: bash
         working-directory: ${{ env.HOME }}
         run: |
-          sudo apt-get install -y gcc-8 g++-8
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.config.cc }} ${{ matrix.config.cxx }}
+
+      - name: Install Clang
+        id: install_clang
+        if: startsWith(matrix.config.os, 'ubuntu') && startsWith(matrix.config.cc, 'clang-')
+        shell: bash
+        working-directory: ${{ env.HOME }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.config.cc }} ${{ matrix.config.llvm }}        
       
       - name: build-and-test
         if: matrix.config.sanitize == 'none'
