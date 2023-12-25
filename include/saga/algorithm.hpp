@@ -542,7 +542,7 @@ namespace saga
         {
             for(; !!out && num > 0; -- num)
             {
-                out << gen();
+                out << saga::invoke(gen);
             }
 
             return out;
