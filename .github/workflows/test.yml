@@ -125,14 +125,6 @@ jobs:
               SANITIZE: none,
               CFLAGS: "-std=gnu++2b",
             }
-          - {
-              name: "Linux GCC 13 C++17",
-              os: ubuntu-22.04,
-              CC: "gcc-13", 
-              CXX: "g++-13",
-              SANITIZE: none,
-              CFLAGS: "-std=gnu++17",
-            }
           # Clang
           - {
               name: "Linux Clang default",
