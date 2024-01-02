@@ -1,4 +1,4 @@
-/* (c) 2022 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2022-2024 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -30,12 +30,13 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/filter.hpp>
 #include <saga/cursor/set_union.hpp>
 #include <saga/cursor/stride.hpp>
-#include <saga/cursor/take_while.hpp>
 #include <saga/cursor/to.hpp>
 #include <saga/cursor/transform.hpp>
 #include <saga/flat_set.hpp>
 #include <saga/math.hpp>
 #include <saga/numeric.hpp>
+#include <saga/numeric/is_prime.hpp>
+#include <saga/numeric/primes_cursor.hpp>
 #include <saga/pipes/filter.hpp>
 #include <saga/pipes/for_each.hpp>
 #include <saga/pipes/transform.hpp>
@@ -425,89 +426,12 @@ static_assert(::projectEuler_006_pipes(100) == 25164150, "");
 // PE 007: 10001 Простое число
 namespace
 {
-    /** @brief Определяет, является ли число @c num простым
-    @pre primes содержит все простые числа, не превосходящие <tt> sqrt(num) </tt>, упорядоченные
-    по возрастанию
-    */
-    template <class IntType, class Container>
-    bool is_prime_sorted(IntType const num, Container const & primes, saga::unsafe_tag_t)
-    {
-        SAGA_ASSERT_AUDIT(saga::is_sorted(saga::cursor::all(primes)));
-
-        assert(num >= 0);
-
-        auto cur = saga::cursor::all(primes)
-                 | saga::cursor::take_while([&](auto const & arg){return saga::square(arg) <= num;});
-
-        return saga::none_of(std::move(cur), [&](auto const & arg){ return num % arg == 0;});
-    }
-
-    template <class IntType>
-    class primes_cursor
-     : saga::cursor_facade<primes_cursor<IntType>, IntType const &>
-    {
-        using Container = std::vector<IntType>;
-
-    public:
-        // Типы
-        using cursor_category = std::input_iterator_tag;
-        using difference_type = typename Container::difference_type;
-        using reference = IntType const &;
-
-        // Создание, копирование, уничтожение
-        primes_cursor()
-         : primes_(1, IntType(2))
-        {}
-
-        primes_cursor(primes_cursor const &) = delete;
-        primes_cursor(primes_cursor &&) = default;
-
-        primes_cursor & operator=(primes_cursor const &) = delete;
-        primes_cursor & operator=(primes_cursor &&) = default;
-
-        // Курсор ввода
-        bool operator!() const
-        {
-            return false;
-        }
-
-        reference front() const
-        {
-            return this->primes_.back();
-        }
-
-        void drop_front()
-        {
-            auto num = this->primes_.back() + 1 + this->primes_.back() % 2;
-
-            for(;;)
-            {
-                if(::is_prime_sorted(num, this->primes_, saga::unsafe_tag_t{}))
-                {
-                    this->primes_.push_back(num);
-                    break;
-                }
-
-                num += ((num % 6 == 1) ? 4 : 2);
-            }
-        }
-
-        // Дополнительные свойства
-        Container const & primes() const
-        {
-            return this->primes_;
-        }
-
-    private:
-        Container primes_;
-    };
-
     template <class IntType>
     IntType projectEuler_007(IntType const count)
     {
         assert(count > 0);
 
-        return saga::cursor::drop_front_n(::primes_cursor<IntType>(), count - 1).front();
+        return saga::cursor::drop_front_n(saga::primes_cursor<IntType>(), count - 1)->back();
     }
 }
 
@@ -2330,14 +2254,14 @@ namespace
 TEST_CASE("PE 037")
 {
     using IntType = long;
-    auto primes_cur = ::primes_cursor<IntType>();
+    auto primes_cur = saga::primes_cursor<IntType>();
 
     // Левые подстроки-кандидаты
     std::vector<IntType> lefts;
 
-    for(; *primes_cur < 10; ++primes_cur)
+    for(; primes_cur->back() < 10; ++primes_cur)
     {
-        lefts.push_back(*primes_cur);
+        lefts.push_back(primes_cur->back());
     }
 
     // Правые подстроки кандидаты
@@ -2348,7 +2272,7 @@ TEST_CASE("PE 037")
 
     for(; results.size() < 11; ++primes_cur)
     {
-        auto const num = *primes_cur;
+        auto const num = primes_cur->back();
 
         if(saga::binary_search(saga::cursor::all(rights), ::trunc_right(num)))
         {
@@ -2534,7 +2458,7 @@ namespace
                 auto num = ::from_chars_whole<IntType>(str.data() + str.size() - cur.size()
                                                       ,str.data() + str.size());
 
-                if(::is_prime_sorted(num, primes, saga::unsafe_tag_t{}) && num > IntType(1))
+                if(saga::is_prime_sorted(num, primes, saga::unsafe_tag_t{}) && num > IntType(1))
                 {
                     return num;
                 }
@@ -2831,7 +2755,7 @@ TEST_CASE("PE 046")
 
     for(;; num += 2)
     {
-        if(::is_prime_sorted(num, primes, saga::unsafe_tag_t{}))
+        if(saga::is_prime_sorted(num, primes, saga::unsafe_tag_t{}))
         {
             primes.push_back(num);
         }
@@ -3906,7 +3830,7 @@ namespace
             {
                 num -= 2 * layer;
 
-                primes_count += ::is_prime_sorted(num, primes, saga::unsafe_tag_t{});
+                primes_count += saga::is_prime_sorted(num, primes, saga::unsafe_tag_t{});
             }
 
             auto const diagonal_length = 4 * layer + 1;
@@ -4537,13 +4461,13 @@ namespace
     template <class IntType>
     IntType PE_069_smart(IntType const n_max)
     {
-        auto cur = ::primes_cursor<IntType>();
+        auto cur = saga::primes_cursor<IntType>();
 
         auto result = IntType(1);
 
         for(;; ++ cur)
         {
-            auto new_result = result * cur.front();
+            auto new_result = result * cur->back();
 
             if(new_result > n_max)
             {
@@ -4886,7 +4810,7 @@ namespace
     template <class IntType>
     IntType PE_077(IntType limit)
     {
-        auto primes_cur = ::primes_cursor<IntType>();
+        auto primes_cur = saga::primes_cursor<IntType>();
 
         // ways[i][j] количество способов представить число j в виде суммы первых i простых чисел
         // ways[i][j] = ways[i-1][j] + ways[i][j - prime[i-1]]
@@ -4903,7 +4827,7 @@ namespace
             {
                 ways[index].push_back(ways[index-1].back());
 
-                auto const prime = primes_cur.primes()[index - 1];
+                auto const prime = primes_cur.front()[index - 1];
 
                 if(num >= prime)
                 {
@@ -4911,7 +4835,7 @@ namespace
                 }
             }
 
-            if(num == *primes_cur)
+            if(num == primes_cur->back())
             {
                 ways.emplace_back(ways.back());
                 ways.back().back() += 1;

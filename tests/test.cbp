@@ -107,7 +107,9 @@
 		<Unit filename="../include/saga/math/probability.hpp" />
 		<Unit filename="../include/saga/numeric.hpp" />
 		<Unit filename="../include/saga/numeric/digits_of.hpp" />
+		<Unit filename="../include/saga/numeric/is_prime.hpp" />
 		<Unit filename="../include/saga/numeric/polynomial.hpp" />
+		<Unit filename="../include/saga/numeric/primes_cursor.hpp" />
 		<Unit filename="../include/saga/optimization/evaluated_solution.hpp" />
 		<Unit filename="../include/saga/optimization/ga.hpp" />
 		<Unit filename="../include/saga/optimization/ga/crossover/ga_boolean_crossover_one_point.hpp" />
