@@ -32,3 +32,11 @@ static_assert(!saga::in_order(2, 1));
 static_assert(!saga::out_of_order(1, 2));
 static_assert(!saga::out_of_order(1, 1));
 static_assert( saga::out_of_order(2, 1));
+
+static_assert(!saga::in_order(1, 2, std::greater<>{}));
+static_assert( saga::in_order(1, 1, std::greater<>{}));
+static_assert( saga::in_order(2, 1, std::greater<>{}));
+
+static_assert( saga::out_of_order(1, 2, std::greater<>{}));
+static_assert(!saga::out_of_order(1, 1, std::greater<>{}));
+static_assert(!saga::out_of_order(2, 1, std::greater<>{}));
