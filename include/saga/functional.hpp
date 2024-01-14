@@ -98,7 +98,7 @@ namespace saga
             }
 
             template <class... Args>
-            auto operator()(Args&&... args) const &
+            constexpr auto operator()(Args&&... args) const &
             noexcept(noexcept(!saga::invoke(fun_, std::forward<Args>(args)...)))
             -> decltype(!saga::invoke(fun_, std::forward<Args>(args)...))
             {
@@ -109,7 +109,7 @@ namespace saga
     // namespace detail
 
     template <class F>
-    auto not_fn(F && f) -> detail::not_fn_t<std::decay_t<F>>
+    constexpr auto not_fn(F && f) -> detail::not_fn_t<std::decay_t<F>>
     {
         return { std::forward<F>(f)};
     }
