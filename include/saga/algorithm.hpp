@@ -22,6 +22,8 @@ SAGA -- это свободной программное обеспечение:
  @brief Аналоги алгоритмов STL, работающие с курсорами и интервалами
 */
 
+// @todo Отсортировать список?
+#include <saga/compare.hpp>
 #include <saga/pipes/for_each.hpp>
 #include <saga/algorithm/copy.hpp>
 #include <saga/pipes/partition.hpp>
@@ -1502,7 +1504,7 @@ namespace saga
             auto read = write;
             read.drop_back();
 
-            if(!read || !saga::invoke(cmp, write.back(), read.back()))
+            if(!read || saga::in_order(read.back(), write.back(), cmp))
             {
                 return;
             }
@@ -1512,7 +1514,7 @@ namespace saga
             write = read;
             read.drop_back();
 
-            for(; !!read && saga::invoke(cmp, temp, read.back());)
+            for(; !!read && saga::out_of_order(read.back(), temp, cmp);)
             {
                 write.back() = std::move(read.back());
                 write = read;
@@ -1548,27 +1550,27 @@ namespace saga
 
             using Distance = saga::cursor_difference_t<RandomAccessCursor>;
 
-            auto pos0 = Distance{0};
-            auto pos1 = Distance{num - 1};
+            auto pos_first = Distance{0};
+            auto pos_last = Distance{num - 1};
 
-            if(saga::invoke(cmp, cur[pos1], cur[pos0]))
+            if(saga::out_of_order(cur[pos_first], cur[pos_last], cmp))
             {
-                saga::cursor::swap(pos0, pos1);
+                saga::cursor::swap(pos_first, pos_last);
             }
 
-            auto const pos2 = num / 2;
+            auto const pos_mid = num / 2;
 
-            if(saga::invoke(cmp, cur[pos2], cur[pos0]))
+            if(saga::out_of_order(cur[pos_first], cur[pos_mid], cmp))
             {
-                return pos0;
+                return pos_first;
             }
-            else if(saga::invoke(cmp, cur[pos1], cur[pos2]))
+            else if(saga::out_of_order(cur[pos_mid], cur[pos_last], cmp))
             {
-                return pos1;
+                return pos_last;
             }
             else
             {
-                return pos2;
+                return pos_mid;
             }
         }
 
@@ -1656,7 +1658,7 @@ namespace saga
             {
                 if(total == 2)
                 {
-                    if(saga::invoke(cmp, input[1], input[0]))
+                    if(saga::out_of_order(input[0], input[1], cmp))
                     {
                         saga::cursor::swap(input[0], input[1]);
                     }
@@ -1706,7 +1708,7 @@ namespace saga
         ForwardCursor operator()(ForwardCursor cur, T const & value, Compare cmp = {}) const
         {
             auto pred = [&](auto && arg)
-                { return saga::invoke(cmp, std::forward<decltype(arg)>(arg), value); };
+                { return saga::out_of_order(value, std::forward<decltype(arg)>(arg), cmp); };
 
             return saga::partition_point_fn{}(std::move(cur), std::move(pred));
         }
@@ -1718,7 +1720,7 @@ namespace saga
         ForwardCursor operator()(ForwardCursor cur, T const & value, Compare cmp = {}) const
         {
             auto pred = [&](auto && arg)
-                { return !saga::invoke(cmp, value, std::forward<decltype(arg)>(arg)); };
+                { return saga::in_order(std::forward<decltype(arg)>(arg), value, cmp); };
 
             return saga::partition_point_fn{}(std::move(cur), std::move(pred));
         }
@@ -1757,7 +1759,7 @@ namespace saga
         {
             auto pos = saga::lower_bound_fn{}(std::move(cur), value, std::ref(cmp));
 
-            return !!pos && !saga::invoke(cmp, value, *pos);
+            return !!pos && saga::in_order(*pos, value, cmp);
         }
     };
 
@@ -1773,7 +1775,7 @@ namespace saga
         {
             for(; !!in1 && !!in2 && !!out; )
             {
-                if(saga::invoke(cmp, *in2, *in1))
+                if(saga::out_of_order(*in1, *in2, cmp))
                 {
                     out << *in2;
                     ++ in2;
@@ -2204,18 +2206,18 @@ namespace saga
                 return input;
             }
 
-            auto result = input;
+            auto min_pos = input;
             ++ input;
 
             for(; !!input; ++input)
             {
-                if(saga::invoke(cmp, *input, *result))
+                if(saga::out_of_order(*min_pos, *input, cmp))
                 {
-                    result = input;
+                    min_pos = input;
                 }
             }
 
-            return result;
+            return min_pos;
         }
     };
 
@@ -2262,12 +2264,12 @@ namespace saga
                     saga::cursor::swap(pos1, pos2);
                 }
 
-                if(saga::invoke(cmp, *pos1, *result.min))
+                if(saga::out_of_order(*result.min, *pos1, cmp))
                 {
                     result.min = pos1;
                 }
 
-                if(!saga::invoke(cmp, *pos2, *result.max))
+                if(saga::in_order(*result.max, *pos2, cmp))
                 {
                     result.max = pos2;
                 }
@@ -2278,11 +2280,11 @@ namespace saga
 
             if(!!input)
             {
-                if(saga::invoke(cmp, *input, *result.min))
+                if(saga::out_of_order(*result.min, *input, cmp))
                 {
                     result.min = input;
                 }
-                else if(!saga::invoke(cmp, *input, *result.max))
+                else if(saga::in_order(*result.max, *input, cmp))
                 {
                     result.max = input;
                 }
@@ -2300,11 +2302,11 @@ namespace saga
         {
             void(!cmp(low, high) ? void(0) : assert(!cmp(high, low)));
 
-            if(saga::invoke(cmp, value, low))
+            if(saga::out_of_order(low, value, cmp))
             {
                 return low;
             }
-            else if(saga::invoke(cmp, high, value))
+            else if(saga::out_of_order(value, high, cmp))
             {
                 return high;
             }
@@ -2473,13 +2475,13 @@ namespace saga
         {
             for(; !!cur1 && !!cur2; ++cur1, (void)++cur2)
             {
-                if(saga::invoke(cmp, *cur1, *cur2))
-                {
-                    return true;
-                }
-                else if(saga::invoke(cmp, *cur2, *cur1))
+                if(saga::out_of_order(*cur1, *cur2, cmp))
                 {
                     return false;
+                }
+                else if(saga::out_of_order(*cur2, *cur1, cmp))
+                {
+                    return true;
                 }
             }
 

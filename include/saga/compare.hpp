@@ -1,4 +1,4 @@
-/* (c) 2022-2024 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2024 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -15,50 +15,32 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_ACTIONS_SORT_HPP_INCLUDED
-#define Z_SAGA_ACTIONS_SORT_HPP_INCLUDED
+#ifndef Z_SAGA_COMPARE_HPP_INCLUDED
+#define Z_SAGA_COMPARE_HPP_INCLUDED
 
-/** @file saga/actions/sort.hpp
- @brief Функциональный объект, выполняющий сортировку интервала.
+/** @file saga/compare.hpp
+ @brief Функциональность, связанная с функциями сравнения
 */
 
-#include <saga/actions/action_closure.hpp>
-#include <saga/algorithm.hpp>
-#include <saga/cursor/subrange.hpp>
+#include <saga/functional.hpp>
 
 namespace saga
 {
-namespace actions
-{
-    struct sort_fn
+    struct out_of_order_fn
     {
-        template <class Range, class Compare = std::less<>
-                 , class = std::enable_if_t<saga::is_range<Range>{}>
-                 , class = std::enable_if_t<!std::is_reference<Range>{}>>
-        Range operator()(Range && arg, Compare cmp = {}) const
+        template <class T1, class T2, class Compare = std::less<>>
+        constexpr bool operator()(T1 && lhs, T2 && rhs, Compare && cmp = {}) const
         {
-            saga::sort(saga::cursor::all(arg), std::move(cmp));
-
-            return arg;
-        }
-
-        template <class Compare, class = std::enable_if_t<!saga::is_range<Compare>{}>>
-        auto operator()(Compare cmp) const
-        {
-            auto fun = [cmp = std::move(cmp)](auto && arg)
-            {
-                return sort_fn{}(std::forward<decltype(arg)>(arg), cmp);
-            };
-
-            return saga::actions::make_action_closure(std::move(fun));
+            return saga::invoke(std::forward<Compare>(cmp)
+                               ,std::forward<T2>(rhs)
+                               ,std::forward<T1>(lhs));
         }
     };
 
-    inline constexpr auto sort = saga::actions::action_closure<saga::actions::sort_fn>{};
-}
-// namespace actions
+    inline constexpr auto const out_of_order = out_of_order_fn{};
+    inline constexpr auto const in_order = saga::not_fn(out_of_order);
 }
 // namespace saga
 
 #endif
-// Z_SAGA_ACTIONS_SORT_HPP_INCLUDED
+// Z_SAGA_COMPARE_HPP_INCLUDED

@@ -69,6 +69,7 @@
 		<Unit filename="../include/saga/algorithm/find_if.hpp" />
 		<Unit filename="../include/saga/algorithm/result_types.hpp" />
 		<Unit filename="../include/saga/assert.hpp" />
+		<Unit filename="../include/saga/compare.hpp" />
 		<Unit filename="../include/saga/container/make.hpp" />
 		<Unit filename="../include/saga/container/reserve_if_supported.hpp" />
 		<Unit filename="../include/saga/cpp20/span.hpp" />
@@ -147,6 +148,7 @@
 		<Unit filename="ProjectEuler/projectEuler.cpp" />
 		<Unit filename="actions.cpp" />
 		<Unit filename="algorithm.cpp" />
+		<Unit filename="compare.cpp" />
 		<Unit filename="container/make.cpp" />
 		<Unit filename="container/reserve_if_supported.cpp" />
 		<Unit filename="contrib/catch2/include/catch2/catch_amalgamated.cpp" />
