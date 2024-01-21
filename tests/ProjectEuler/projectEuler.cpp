@@ -249,10 +249,12 @@ namespace
     template <class IntType>
     constexpr void PE_003_step(IntType & num, IntType divisor, IntType & max_divisor)
     {
-        while(num % divisor == 0)
+        auto num_old = num;
+        num = saga::remove_factor(num, divisor);
+
+        if(num != num_old)
         {
             max_divisor = divisor;
-            num /= divisor;
         }
     }
 
@@ -498,19 +500,6 @@ TEST_CASE("ProjectEuler: 008")
 // PE 009: Особая Пифагорова тройка
 namespace
 {
-    // @todo Обобщить, чтобы можно было использовать в PE 003
-    // Может быть передавать действие как дополнительный аргумент?
-    template <class IntType>
-    IntType remove_factor(IntType num, IntType factor)
-    {
-        for(; num % factor == 0;)
-        {
-            num /= factor;
-        }
-
-        return num;
-    }
-
     template <class IntType>
     constexpr IntType projectEuler_009_simple(IntType sum)
     {
@@ -539,7 +528,7 @@ namespace
         {
             if(sum_2 % m == 0)
             {
-                auto const sum_m = ::remove_factor(sum_2, 2);
+                auto const sum_m = saga::remove_factor(sum_2, 2);
 
                 for(auto k = m + 1 + (m % 2); k < 2*m && k <= sum_m; k += 2)
                 {

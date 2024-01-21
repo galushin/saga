@@ -150,6 +150,22 @@ namespace saga
     };
 
     inline constexpr auto is_square = is_square_fn{};
+
+    struct remove_factor_fn
+    {
+        template <class IntType>
+        constexpr IntType operator()(IntType num, IntType factor) const
+        {
+            for(; num % factor == 0;)
+            {
+                num /= factor;
+            }
+
+            return num;
+        }
+    };
+
+    inline constexpr auto remove_factor = remove_factor_fn{};
 }
 //namespace saga
 
