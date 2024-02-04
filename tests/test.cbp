@@ -73,6 +73,7 @@
 		<Unit filename="../include/saga/container/make.hpp" />
 		<Unit filename="../include/saga/container/reserve_if_supported.hpp" />
 		<Unit filename="../include/saga/cpp20/span.hpp" />
+		<Unit filename="../include/saga/cursor/by_line.hpp" />
 		<Unit filename="../include/saga/cursor/cached1.hpp" />
 		<Unit filename="../include/saga/cursor/cartesian_product.hpp" />
 		<Unit filename="../include/saga/cursor/cursor_facade.hpp" />
@@ -143,7 +144,6 @@
 		<Unit filename="../include/saga/utility/pipeable.hpp" />
 		<Unit filename="../include/saga/utility/with_old_value.hpp" />
 		<Unit filename="ProjectEuler/PE030.cpp" />
-		<Unit filename="ProjectEuler/PE_18_67.cpp" />
 		<Unit filename="ProjectEuler/p081_matrix.txt" />
 		<Unit filename="ProjectEuler/projectEuler.cpp" />
 		<Unit filename="actions.cpp" />
@@ -154,6 +154,7 @@
 		<Unit filename="contrib/catch2/include/catch2/catch_amalgamated.cpp" />
 		<Unit filename="contrib/catch2/include/catch2/catch_amalgamated.hpp" />
 		<Unit filename="cpp20/span.cpp" />
+		<Unit filename="cursor/by_line.cpp" />
 		<Unit filename="cursor/cursor_traits.cpp" />
 		<Unit filename="cursor/indices.cpp" />
 		<Unit filename="cursor/istream_cursor.cpp" />
