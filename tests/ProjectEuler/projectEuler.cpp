@@ -630,9 +630,11 @@ namespace
     std::vector<std::vector<IntType>>
     projectEuler_011_parse(std::istream & src_in)
     {
-        return saga::cursor::by_line(src_in)
-               | saga::cursor::transform(string_to_vector<IntType>)
-               | saga::cursor::to<std::vector>();
+        std::vector<std::vector<IntType>> result;
+        saga::transform(saga::cursor::by_line(src_in)
+                       ,saga::back_inserter(result)
+                       ,string_to_vector<IntType>);
+        return result;
     }
 
     template <class IntType>
