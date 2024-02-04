@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/actions/reverse.hpp>
 #include <saga/actions/sort.hpp>
 #include <saga/container/make.hpp>
+#include <saga/cursor/by_line.hpp>
 #include <saga/cursor/cartesian_product.hpp>
 #include <saga/cursor/enumerate.hpp>
 #include <saga/cursor/indices.hpp>
@@ -616,34 +617,22 @@ namespace
         "20 73 35 29 78 31 90 01 74 31 49 71 48 86 81 16 23 57 05 54\n"
         "01 70 54 71 83 51 54 69 16 92 33 48 61 43 52 01 89 19 67 48";
 
+    template <class T>
+    std::vector<T> string_to_vector(std::string const & line)
+    {
+        std::istringstream line_in(line);
+
+        return saga::make_istream_cursor<T>(line_in)
+               | saga::cursor::to<std::vector>();
+    }
+
     template <class IntType>
     std::vector<std::vector<IntType>>
     projectEuler_011_parse(std::istream & src_in)
     {
-        std::vector<std::vector<IntType>> data;
-
-        std::string line;
-        for(; src_in;)
-        {
-            std::getline(src_in, line);
-
-            if(!src_in)
-            {
-                break;
-            }
-
-            std::istringstream line_in(line);
-
-            auto row = saga::make_istream_cursor<IntType>(line_in)
-                     | saga::cursor::to<std::vector>();
-
-            if(!row.empty())
-            {
-                data.push_back(std::move(row));
-            }
-        }
-
-        return data;
+        return saga::cursor::by_line(src_in)
+               | saga::cursor::transform(string_to_vector<IntType>)
+               | saga::cursor::to<std::vector>();
     }
 
     template <class IntType>
@@ -1434,6 +1423,85 @@ TEST_CASE("PE 017")
 
     CHECK(::projectEuler_017(5) == 19);
     CHECK(::projectEuler_017(1000) == 21124);
+}
+
+// PE 018: Путь наибольшей суммы (часть I)
+namespace
+{
+    static std::string pe018_sample_data{
+        "3\n"
+        "7 4\n"
+        "2 4 6\n"
+        "8 5 9 3"};
+
+    static std::string pe018_data{
+        "75\n"
+        "95 64\n"
+        "17 47 82\n"
+        "18 35 87 10\n"
+        "20 04 82 47 65\n"
+        "19 01 23 75 03 34\n"
+        "88 02 77 73 07 63 67\n"
+        "99 65 04 28 06 16 70 92\n"
+        "41 41 26 56 83 40 80 70 33\n"
+        "41 48 72 33 47 32 37 16 94 29\n"
+        "53 71 44 65 25 43 91 52 97 51 14\n"
+        "70 11 33 28 77 73 17 78 39 68 17 57\n"
+        "91 71 52 38 17 14 91 43 58 50 27 29 48\n"
+        "63 66 04 68 89 53 67 30 73 16 69 87 40 31\n"
+        "04 62 98 27 23 09 70 98 73 93 38 53 60 04 23"};
+
+    template <class Vector>
+    Vector projectEuler_018_update(Vector & result, Vector && row)
+    {
+        assert(row.size() == result.size() + 1);
+
+        if(row.size() > 1)
+        {
+            row.front() += result.front();
+            row.back() += result.back();
+
+            for(auto index : saga::cursor::indices(1u, result.size()))
+            {
+                row[index] += std::max(result[index-1], result[index]);
+            }
+        }
+
+        result.swap(row);
+
+        return result;
+    }
+
+    template <class IntType>
+    IntType projectEuler_018(std::istream & src_in)
+    {
+        std::vector<IntType> result;
+        auto update = [&result](std::string const & line)
+        {
+            ::projectEuler_018_update(result, ::string_to_vector<IntType>(line));
+        };
+
+        saga::for_each(saga::cursor::by_line(src_in), update);
+
+        assert(!result.empty());
+
+        return saga::max_element(saga::cursor::all(result)).front();
+    }
+
+
+    template <class IntType>
+    IntType projectEuler_018_string(std::string const & text)
+    {
+        std::istringstream istr(text);
+
+        return ::projectEuler_018<IntType>(istr);
+    }
+}
+
+TEST_CASE("PE 018")
+{
+    REQUIRE(projectEuler_018_string<int>(pe018_sample_data) == 23);
+    REQUIRE(projectEuler_018_string<int>(pe018_data) == 1074);
 }
 
 // PE 019 Подсчёт числа воскресений
@@ -3531,22 +3599,8 @@ namespace
 
         assert(!!file);
 
-        auto result = std::size_t(0);
-
-        std::string reader;
-        for(;file;)
-        {
-            std::getline(file, reader);
-
-            if(reader.size() == 0)
-            {
-                break;
-            }
-
-            result += PE_054_line(reader);
-        }
-
-        return result;
+        return saga::transform_reduce(saga::cursor::by_line(file), std::size_t(0)
+                                     , std::plus<>{}, PE_054_line);
     }
 }
 
@@ -4337,6 +4391,16 @@ TEST_CASE("PE 066")
 
     CHECK(::PE_066(7) == 5);
     CHECK(::PE_066(1000) == 661);
+}
+
+// PE 067: Путь наибольшей суммы (часть II)
+TEST_CASE("PE 067")
+{
+    std::ifstream file("ProjectEuler/p067_triangle.txt");
+
+    REQUIRE(!!file);
+
+    REQUIRE(::projectEuler_018<int>(file) == 7273);
 }
 
 // PE 068 - Магическое 5-угольное кольцо
