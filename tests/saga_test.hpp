@@ -554,12 +554,21 @@ namespace saga_test
             return this->impl_(lhs, rhs);
         }
 
+        friend bool operator==(strict_weak_order const & lhs, strict_weak_order const & rhs)
+        {
+            return lhs.id_ == rhs.id_;
+        }
+
     private:
-        explicit strict_weak_order(Function fun)
+        using id_type = std::ptrdiff_t;
+
+        explicit strict_weak_order(Function fun, id_type id)
          : impl_(std::move(fun))
+         , id_(id)
         {}
 
         Function impl_;
+        id_type id_ = 0;
     };
 
     template <class IntType>
@@ -574,16 +583,19 @@ namespace saga_test
                 = std::uniform_int_distribution<IntType> (1, std::numeric_limits<IntType>::max());
 
             auto Modulus = Modulus_distr(urbg);
+            auto id = Modulus ^ generation;
 
             if(generation % 2 == 0)
             {
                 return value_type([=](IntType const & lhs, IntType const & rhs)
-                                  { return std::less<>{}(lhs % Modulus, rhs % Modulus); });
+                                  { return std::less<>{}(lhs % Modulus, rhs % Modulus); }
+                                  , id);
             }
             else
             {
                 return value_type([=](IntType const & lhs, IntType const & rhs)
-                                  { return std::greater<>{}(lhs % Modulus, rhs % Modulus); });
+                                  { return std::greater<>{}(lhs % Modulus, rhs % Modulus); }
+                                 , id);
             }
         }
     };
