@@ -300,3 +300,8 @@ TEST_CASE("flat_set: container constructor")
         // @todo Проверить распределитель памяти и функция сравнения
     };
 }
+
+static_assert(std::is_constructible<saga::flat_set<int, saga_test::strict_weak_order<int>>
+                                   ,saga_test::strict_weak_order<int>>{});
+static_assert(!std::is_convertible<saga_test::strict_weak_order<int>
+                                  ,saga::flat_set<int, saga_test::strict_weak_order<int>>>{});

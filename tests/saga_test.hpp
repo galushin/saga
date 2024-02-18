@@ -252,7 +252,7 @@ namespace saga_test
             }
             else
             {
-                return std::uniform_int_distribution<char>(32, 126)(urbg);
+                return std::uniform_int_distribution<int>(32, 126)(urbg);
             }
         }
     };

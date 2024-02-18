@@ -37,7 +37,6 @@ SAGA -- это свободной программное обеспечение:
 namespace saga
 {
     // @todo Проверить, что итераторы с произвольным доступом
-    // @todo Проверить требования к контейнерам ([container.reqmts])
     // @todo Проверить требования к обратимым контейнерам ([container.rev.reqmts])
     // @todo Проверить дополнительные требования к контейнерам ([container.opt.reqmts]).
     /* @todo Проверить требования к ассоциативным контейнерам ([associative.reqmts]), кроме
@@ -103,8 +102,7 @@ namespace saga
         // @todo Конструктор с отсортированным контейнером и распределителем памяти
 
         // @todo Покрыть тестами
-        // @todo Должно быть explicit
-        flat_set(key_compare cmp)
+        explicit flat_set(key_compare cmp)
          : Compare(std::move(cmp))
          , data_()
         {}
