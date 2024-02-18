@@ -25,9 +25,9 @@ jobs:
               CFLAGS: "-std=gnu++17",
             }
           - {
-              name: "MacOS GCC default",
+              name: "MacOS GCC 12",
               os: macos-latest,
-              CC: "gcc", 
+              CC: "gcc-12", 
               CXX: "g++",
               SANITIZE: none,
               CFLAGS: "-std=gnu++17",
@@ -69,14 +69,6 @@ jobs:
               SANITIZE: float-cast-overflow,
               CFLAGS:  "-std=gnu++17 -fsanitize=float-cast-overflow -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=float-cast-overflow",
-            }
-          - {
-              name: "Linux GCC 8",
-              os: ubuntu-20.04,
-              CC: "gcc-8", 
-              CXX: "g++-8",
-              SANITIZE: none,
-              CFLAGS: "-std=gnu++17",
             }
           - {
               name: "Linux GCC 9",
@@ -136,7 +128,7 @@ jobs:
             }
           - {
               name: "MacOS Clang default",
-              os: macos-latest,
+              os: macos-13,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: none,
