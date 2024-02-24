@@ -197,7 +197,7 @@ namespace saga_test
             static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg
                                        , std::index_sequence<Ints...>)
             {
-                return value_type(arbitrary<std::tuple_element_t<Ints, value_type>>::generate(generation, urbg)...);
+                return value_type(arbitrary<std::decay_t<std::tuple_element_t<Ints, value_type>>>::generate(generation, urbg)...);
             }
 
             template <class UniformRandomBitGenerator>

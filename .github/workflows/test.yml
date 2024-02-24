@@ -28,7 +28,7 @@ jobs:
               name: "MacOS GCC 12",
               os: macos-13,
               CC: "gcc-12", 
-              CXX: "g++",
+              CXX: "g++-12",
               SANITIZE: none,
               CFLAGS: "-std=gnu++17",
             }
