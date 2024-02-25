@@ -71,6 +71,14 @@ jobs:
               LDFLAGS: "-fsanitize=float-cast-overflow",
             }
           - {
+              name: "Linux GCC 8",
+              os: ubuntu-20.04,
+              CC: "gcc-8", 
+              CXX: "g++-8",
+              SANITIZE: none,
+              CFLAGS: "-std=gnu++17",
+            }
+          - {
               name: "Linux GCC 9",
               os: ubuntu-latest,
               CC: "gcc-9", 
@@ -128,7 +136,7 @@ jobs:
             }
           - {
               name: "MacOS Clang default",
-              os: macos-13,
+              os: macos-latest,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: none,
@@ -237,7 +245,7 @@ jobs:
             }
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install GCC
         id: install_gcc

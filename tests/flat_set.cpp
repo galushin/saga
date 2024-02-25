@@ -23,7 +23,6 @@ SAGA -- это свободной программное обеспечение:
 #include <catch2/catch_amalgamated.hpp>
 
 // Используемые возможности
-#include <memory_resource>
 #include <deque>
 
 namespace
@@ -75,21 +74,22 @@ static_assert(std::is_same<typename saga::flat_set<int, std::greater<>
                                                   ,std::deque<int>>::container_type
                           ,std::deque<int>>{});
 
-// @todo Тесты должны быть с явно указанным типом контейнера и случайной функцией сравнения
-
 // Базовые тесты, на которые мы полагаемся позже
 TEST_CASE("flat_set: constructor from elements, compare and allocator")
 {
     using Element = int;
     using Compare = saga_test::strict_weak_order<Element>;
-    using Allocator = std::pmr::polymorphic_allocator<Element>;
+    using Allocator = std::allocator<Element>;
     using Container = std::deque<Element, Allocator>;
     using FlatSet = saga::flat_set<Element, Compare, Container>;
 
+
     saga_test::property_checker << [](std::vector<Element> const & src, Compare cmp)
     {
-        std::pmr::monotonic_buffer_resource mbr;
-        Allocator alloc(std::addressof(mbr));
+        // @todo static_assert(!std::allocator_traits<Allocator>::is_always_equal{});
+        // @todo Чем-то инициализировать распределитель, чтобы проверка на равенство имела смысл
+        // Возможно, потребуется специальный распределитель памяти для тестов
+        Allocator alloc;
 
         std::set<Element, Compare> const expected(src.begin(), src.end(), cmp);
 
@@ -121,12 +121,12 @@ TEST_CASE("flat_set: equality")
         REQUIRE(lhs == lhs);
         REQUIRE(rhs == rhs);
         REQUIRE((lhs == rhs) == saga::equal(saga::cursor::all(lhs), saga::cursor::all(rhs)));
-        REQUIRE((rhs == lhs) == (lhs == rhs));
+        REQUIRE((rhs == lhs) == saga::equal(saga::cursor::all(lhs), saga::cursor::all(rhs)));
 
         REQUIRE(!(lhs != lhs));
         REQUIRE(!(rhs != rhs));
         REQUIRE((lhs != rhs) == !(lhs == rhs));
-        REQUIRE((rhs != lhs) == (lhs != rhs));
+        REQUIRE((rhs != lhs) == !(lhs == rhs));
     };
 }
 
