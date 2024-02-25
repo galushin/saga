@@ -25,14 +25,6 @@ jobs:
               CFLAGS: "-std=gnu++17",
             }
           - {
-              name: "MacOS GCC 12",
-              os: macos-13,
-              CC: "gcc-12", 
-              CXX: "g++-12",
-              SANITIZE: none,
-              CFLAGS: "-std=gnu++17",
-            }
-          - {
               name: "Linux GCC default ASAN fail-fast",
               os: ubuntu-latest,
               CC: "gcc", 

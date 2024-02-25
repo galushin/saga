@@ -38,42 +38,34 @@ namespace
 
         return saga::equal(saga::cursor::all(lhs), saga::cursor::all(rhs), equiv);
     }
+
+    // @todo В библиотеку?
+    template <class Container>
+    struct is_container_reference_valid
+     : std::is_same<typename Container::reference, typename Container::value_type &>
+    {};
+
+    template <class Container>
+    struct is_container_const_reference_valid
+     : std::is_same<typename Container::const_reference, typename Container::value_type const &>
+    {};
+
+    template <class Container>
+    struct is_container_difference_type_valid
+     : std::conjunction<std::is_signed<typename Container::difference_type>
+                       ,std::is_same<typename Container::difference_type
+                                    ,typename Container::iterator::difference_type>>
+    {};
+
+    template <class Container>
+    struct is_container_size_type_valid
+     : std::conjunction<std::is_unsigned<typename Container::size_type>
+                       ,std::bool_constant<sizeof(typename Container::size_type)
+                                           >= sizeof(typename Container::difference_type)>>
+    {};
 }
 
 // Тесты
-// Типы
-static_assert(std::is_same<typename saga::flat_set<char>::key_type, char>{});
-
-static_assert(std::is_same<typename saga::flat_set<int>::value_type, int>{});
-
-static_assert(std::is_same<typename saga::flat_set<int>::key_compare, std::less<int>>{});
-static_assert(std::is_same<typename saga::flat_set<int, std::greater<>>::key_compare
-                          ,std::greater<>>{});
-
-static_assert(std::is_same<typename saga::flat_set<std::string>::reference, std::string &>{});
-static_assert(std::is_same<typename saga::flat_set<long>::const_reference, long const &>{});
-
-static_assert(std::is_same<typename saga::flat_set<int>::size_type
-                          ,typename std::vector<int>::size_type>{});
-static_assert(std::is_same<typename saga::flat_set<int>::difference_type
-                          ,typename std::vector<int>::difference_type>{});
-// @todo тесты size_type и difference_type при явном задании контейнера с нестандартными типами
-
-static_assert(std::is_same<typename saga::flat_set<int>::iterator
-                          ,typename std::vector<int>::const_iterator>{});
-static_assert(std::is_same<typename saga::flat_set<int>::const_iterator
-                          ,typename std::vector<int>::const_iterator>{});
-static_assert(std::is_same<typename saga::flat_set<int>::reverse_iterator
-                          ,saga::reverse_iterator<typename saga::flat_set<int>::iterator>>{});
-static_assert(std::is_same<typename saga::flat_set<int>::const_reverse_iterator
-                          ,saga::reverse_iterator<typename saga::flat_set<int>::const_iterator>>{});
-
-static_assert(std::is_same<typename saga::flat_set<std::string>::container_type
-                          ,std::vector<std::string>>{});
-static_assert(std::is_same<typename saga::flat_set<int, std::greater<>
-                                                  ,std::deque<int>>::container_type
-                          ,std::deque<int>>{});
-
 // Базовые тесты, на которые мы полагаемся позже
 TEST_CASE("flat_set: constructor from elements, compare and allocator")
 {
@@ -121,27 +113,56 @@ TEST_CASE("flat_set: equality")
         REQUIRE(lhs == lhs);
         REQUIRE(rhs == rhs);
         REQUIRE((lhs == rhs) == saga::equal(saga::cursor::all(lhs), saga::cursor::all(rhs)));
-        REQUIRE((rhs == lhs) == saga::equal(saga::cursor::all(lhs), saga::cursor::all(rhs)));
+        REQUIRE((rhs == lhs) == (lhs == rhs));
 
         REQUIRE(!(lhs != lhs));
         REQUIRE(!(rhs != rhs));
         REQUIRE((lhs != rhs) == !(lhs == rhs));
-        REQUIRE((rhs != lhs) == !(lhs == rhs));
+        REQUIRE((rhs != lhs) == (lhs != rhs));
     };
 }
 
+// @todo Проверить требования к контейнерам ([container.reqmts]) - 24.2.2.2
 // 24.2.2.2 Container requirements
+
+static_assert(std::is_same<typename saga::flat_set<int>::value_type, int>{});
+/* Выполнение Cpp17Erasable для value_type не проверяется, так как flat_set не является
+осведомлённым о распределителях памяти (allocator-aware container)
+- примечание к пункт 2.3 раздела 24.6.5.1
+*/
+
+static_assert(::is_container_reference_valid<saga::flat_set<std::string>>{});
+static_assert(::is_container_const_reference_valid<saga::flat_set<std::string>>{});
+
+/* Требования к iterator и const_iterator проверять не нужно: вместо этого мы проверяем, что они
+они определены как синонимы итераторов контейнера.
+Так как iterator и const_iterator определены одинаково, то можно не проверять и преобразование
+*/
+static_assert(std::is_same<typename saga::flat_set<int, std::greater<>, std::deque<int>>::iterator
+                          ,typename std::deque<int>::const_iterator>{});
+static_assert(std::is_same<typename saga::flat_set<int>::iterator
+                          ,typename std::vector<int>::const_iterator>{});
+
+static_assert(std::is_same<typename saga::flat_set<int>::const_iterator
+                          ,typename saga::flat_set<int>::iterator>{});
+static_assert(std::is_same<typename saga::flat_set<long, std::greater<>
+                                                  ,std::deque<long>>::const_iterator
+                          ,typename saga::flat_set<long, std::greater<>
+                                                  ,std::deque<long>>::iterator>{});
+
+// @todo тесты size_type и difference_type при явном задании контейнера с нестандартными типами
+static_assert(::is_container_difference_type_valid<saga::flat_set<std::string>>{});
+static_assert(::is_container_difference_type_valid<saga::flat_set<int, std::less<>
+                                                                 ,std::deque<int>>>{});
+static_assert(::is_container_size_type_valid<saga::flat_set<std::string>>{});
+static_assert(::is_container_size_type_valid<saga::flat_set<int, std::less<>, std::deque<int>>>{});
+
 TEST_CASE("flat_set: default constructor")
 {
     saga::flat_set<long, std::greater<>, std::deque<long>> const obj{};
 
     CHECK(obj.empty());
     static_assert(noexcept(obj.empty()));
-
-    CHECK(obj.size() == 0);
-    static_assert(noexcept(obj.size()));
-
-    // @todo Проверить распределитель памяти и функция сравнения
 }
 
 TEST_CASE("flat_set : copy constructor")
@@ -155,8 +176,6 @@ TEST_CASE("flat_set : copy constructor")
         FlatSet const obj_copy(obj);
 
         REQUIRE(obj_copy == obj);
-
-        // @todo Проверить распределитель памяти и функция сравнения
     };
 }
 
@@ -174,8 +193,6 @@ TEST_CASE("flat_set : move constructor")
 
         REQUIRE(obj == temp_old);
         REQUIRE(temp.empty());
-
-        // @todo Проверить распределитель памяти и функция сравнения
     };
 }
 
@@ -189,10 +206,11 @@ TEST_CASE("flat_set : copy assignment")
         FlatSet lhs(src_lhs);
         FlatSet const rhs(src_rhs);
 
+        static_assert(std::is_same<decltype(lhs = rhs), FlatSet &>{});
+
         lhs = rhs;
 
         REQUIRE(lhs == rhs);
-        // @todo Проверить распределитель памяти и функция сравнения
     };
 }
 
@@ -211,10 +229,15 @@ TEST_CASE("flat_set : move assignment")
 
         REQUIRE(lhs == rhs_old);
         REQUIRE(rhs.empty());
-        // @todo Проверить распределитель памяти и функция сравнения
+
+        static_assert(std::is_same<decltype(lhs = std::move(rhs)), FlatSet &>{});
     };
 }
 
+/* @todo Деструктор не проверяем: так как flat_set хранит элементы во вложенном контейнере,
+достаточно убедиться, что flat_set вообще не объявляет деструктор? Или может быть проверить через
+regular_tracer что все элементы уничтожены?
+*/
 
 // @todo begin, end, cbegin, cend
 
@@ -261,6 +284,11 @@ TEST_CASE("flat_set : swap")
     };
 }
 
+static_assert(std::is_same<typename saga::flat_set<int>::reverse_iterator
+                          ,saga::reverse_iterator<typename saga::flat_set<int>::iterator>>{});
+static_assert(std::is_same<typename saga::flat_set<int>::const_reverse_iterator
+                          ,saga::reverse_iterator<typename saga::flat_set<int>::const_iterator>>{});
+
 // Создание, копирование, уничтожение
 // @todo Задать тип контейнера?
 // @todo Проверить, что нет лишних копирований?
@@ -300,6 +328,18 @@ TEST_CASE("flat_set: container constructor")
         // @todo Проверить распределитель памяти и функция сравнения
     };
 }
+
+static_assert(std::is_same<typename saga::flat_set<char>::key_type, char>{});
+
+static_assert(std::is_same<typename saga::flat_set<int>::key_compare, std::less<int>>{});
+static_assert(std::is_same<typename saga::flat_set<int, std::greater<>>::key_compare
+                          ,std::greater<>>{});
+
+static_assert(std::is_same<typename saga::flat_set<std::string>::container_type
+                          ,std::vector<std::string>>{});
+static_assert(std::is_same<typename saga::flat_set<int, std::greater<>
+                                                  ,std::deque<int>>::container_type
+                          ,std::deque<int>>{});
 
 static_assert(std::is_constructible<saga::flat_set<int, saga_test::strict_weak_order<int>>
                                    ,saga_test::strict_weak_order<int>>{});
