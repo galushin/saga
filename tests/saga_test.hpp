@@ -121,10 +121,11 @@ namespace saga_test
         };
 
         template <class Container>
-        struct arbitrary_sequence_container;
+        struct arbitrary_container;
 
+        // @todo Поддержка распределителей памяти без конструктора без аргументов
         template <class T, class A>
-        struct arbitrary_sequence_container<std::vector<T, A>>
+        struct arbitrary_container<std::vector<T, A>>
         {
         public:
             using value_type = std::vector<T, A>;
@@ -159,7 +160,7 @@ namespace saga_test
         };
 
         template <class Container>
-        struct arbitrary_sequence_container
+        struct arbitrary_container
         {
         public:
             using value_type = Container;
@@ -169,7 +170,7 @@ namespace saga_test
             {
                 using Elem = typename Container::value_type;
 
-                using VectorGenerator = arbitrary_sequence_container<std::vector<Elem>>;
+                using VectorGenerator = arbitrary_container<std::vector<Elem>>;
 
                 auto src = VectorGenerator::generate(generation, urbg);
 
@@ -179,12 +180,13 @@ namespace saga_test
         };
 
         template <typename T, class SFINAE = void>
-        struct is_sequence_container
+        struct is_container
          : std::false_type
         {};
 
         template <typename T>
-        struct is_sequence_container<T, std::void_t<typename T::value_type, typename T::iterator>>
+        struct is_container<T, std::void_t<typename T::value_type, typename T::size_type
+                                          ,typename T::iterator>>
          : std::is_constructible<T, typename T::value_type const *, typename T::value_type const *>
         {};
 
@@ -267,9 +269,10 @@ namespace saga_test
      : detail::arbitrary_real<T>
     {};
 
+    // @todo Нужна ли специализированная генерация для ассоциативных и последовательных контейнеров?
     template <class T>
-    struct arbitrary<T, std::enable_if_t<detail::is_sequence_container<T>::value>>
-     : detail::arbitrary_sequence_container<T>
+    struct arbitrary<T, std::enable_if_t<detail::is_container<T>::value>>
+     : detail::arbitrary_container<T>
     {};
 
     template <class T, std::size_t N>

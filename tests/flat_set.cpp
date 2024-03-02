@@ -65,23 +65,92 @@ namespace
     {};
 }
 
+// @todo В библиотеку?
+namespace saga_test
+{
+    template <class T>
+    struct allocator_with_tag
+     : std::allocator<T>
+    {
+        using Base = std::allocator<T>;
+
+        using is_always_equal = std::false_type;
+
+        template <class Other>
+        struct rebind
+        {
+            using other = allocator_with_tag<Other>;
+        };
+
+        template <class Other>
+        allocator_with_tag(allocator_with_tag<Other> const & other) noexcept
+         : Base(other)
+         , tag(other.tag)
+        {}
+
+        using tag_type = int;
+
+        allocator_with_tag() = default;
+
+        explicit allocator_with_tag(tag_type arg)
+         : tag(arg)
+        {}
+
+        tag_type tag = 0;
+
+        friend bool operator==(allocator_with_tag const & lhs, allocator_with_tag const & rhs)
+        {
+            return lhs.tag == rhs.tag
+                    && static_cast<Base const &>(lhs) == static_cast<Base const &>(rhs);
+        }
+
+        friend bool operator!=(allocator_with_tag const & lhs, allocator_with_tag const & rhs)
+        {
+            return !(lhs == rhs);
+        }
+    };
+
+    template <class T>
+    struct arbitrary<allocator_with_tag<T>>
+    {
+        using value_type = allocator_with_tag<T>;
+
+        template <class UniformRandomBitGenerator>
+        static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg)
+        {
+            using Arg = typename value_type::tag_type;
+
+            return value_type(saga_test::arbitrary<Arg>::generate(generation, urbg));
+        }
+    };
+}
+
+TEST_CASE("allocator_with_tag")
+{
+    using Element = std::string;
+    using Allocator = saga_test::allocator_with_tag<Element>;
+
+    saga_test::property_checker << [](Allocator::tag_type tag_lhs, Allocator::tag_type tag_rhs)
+    {
+        REQUIRE((Allocator(tag_lhs) == Allocator(tag_rhs)) == (tag_lhs == tag_rhs));
+        REQUIRE((Allocator(tag_lhs) != Allocator(tag_rhs)) == (tag_lhs != tag_rhs));
+    };
+}
+
 // Тесты
 // Базовые тесты, на которые мы полагаемся позже
 TEST_CASE("flat_set: constructor from elements, compare and allocator")
 {
     using Element = int;
     using Compare = saga_test::strict_weak_order<Element>;
-    using Allocator = std::allocator<Element>;
+    using Allocator = saga_test::allocator_with_tag<Element>;
     using Container = std::deque<Element, Allocator>;
     using FlatSet = saga::flat_set<Element, Compare, Container>;
 
-
-    saga_test::property_checker << [](std::vector<Element> const & src, Compare cmp)
+    saga_test::property_checker
+    << [](std::vector<Element> const & src, Compare const & cmp, Allocator const & alloc)
     {
-        // @todo static_assert(!std::allocator_traits<Allocator>::is_always_equal{});
-        // @todo Чем-то инициализировать распределитель, чтобы проверка на равенство имела смысл
-        // Возможно, потребуется специальный распределитель памяти для тестов
-        Allocator alloc;
+        static_assert(!std::allocator_traits<Allocator>::is_always_equal{});
 
         std::set<Element, Compare> const expected(src.begin(), src.end(), cmp);
 
@@ -239,7 +308,61 @@ TEST_CASE("flat_set : move assignment")
 regular_tracer что все элементы уничтожены?
 */
 
-// @todo begin, end, cbegin, cend
+TEST_CASE("flat_set: begin, end")
+{
+    using Element = long;
+    using Compare = saga_test::strict_weak_order<Element>;
+    using FlatSet = saga::flat_set<Element, Compare>;
+
+    using Allocator = saga_test::allocator_with_tag<Element>;
+    static_assert(!std::allocator_traits<Allocator>::is_always_equal{});
+
+    using Container = std::vector<Element, Allocator>;
+
+    saga_test::property_checker
+    << [](Container const & elems, Compare const & cmp, Allocator const & alloc)
+    {
+        std::set<Element, Compare> const expected(elems.begin(), elems.end(), cmp);
+        FlatSet actual(elems.begin(), elems.end(), cmp, alloc);
+
+        static_assert(std::is_same<decltype(actual.begin()), FlatSet::iterator>{});
+        static_assert(std::is_same<decltype(actual.end()), FlatSet::iterator>{});
+
+        REQUIRE(std::equal(actual.begin(), actual.end()
+                          ,expected.begin(), expected.end()));
+
+        REQUIRE(actual.cbegin() == std::as_const(actual).begin());
+        REQUIRE(actual.cend() == std::as_const(actual).end());
+    };
+}
+
+TEST_CASE("flat_set: begin, end, cbegin, cend - constant")
+{
+    using Element = long;
+    using Compare = saga_test::strict_weak_order<Element>;
+    using FlatSet = saga::flat_set<Element, Compare>;
+
+    using Allocator = saga_test::allocator_with_tag<Element>;
+    static_assert(!std::allocator_traits<Allocator>::is_always_equal{});
+
+    using Container = std::vector<Element, Allocator>;
+
+    saga_test::property_checker
+    << [](Container const & elems, Compare const & cmp, Allocator const & alloc)
+    {
+        std::set<Element, Compare> const expected(elems.begin(), elems.end(), cmp);
+        FlatSet const actual(elems.begin(), elems.end(), cmp, alloc);
+
+        static_assert(std::is_same<decltype(actual.begin()), FlatSet::iterator>{});
+        static_assert(std::is_same<decltype(actual.end()), FlatSet::iterator>{});
+
+        REQUIRE(std::equal(actual.begin(), actual.end()
+                          ,expected.begin(), expected.end()));
+
+        REQUIRE(actual.cbegin() == std::as_const(actual).begin());
+        REQUIRE(actual.cend() == std::as_const(actual).end());
+    };
+}
 
 // @todo operator<=>
 

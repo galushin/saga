@@ -176,6 +176,19 @@ namespace saga
             return this->data_.end();
         }
 
+
+        // @todo Должно быть noexcept
+        const_iterator cbegin() const
+        {
+            return this->begin();
+        }
+
+        // @todo Должно быть noexcept
+        const_iterator cend() const
+        {
+            return this->end();
+        }
+
         // Размер и ёмкость
         [[nodiscard]] bool empty() const noexcept
         {
