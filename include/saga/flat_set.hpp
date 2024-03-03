@@ -200,7 +200,11 @@ namespace saga
             return this->data_.size();
         }
 
-        // @todo max_size
+        // @todo Должен быть noexcept
+        size_type max_size() const
+        {
+            return this->data_.max_size();
+        }
 
         // Модифицирующие операции
         iterator insert(const_iterator, value_type && value)
@@ -250,10 +254,30 @@ namespace saga
             return saga::equal(saga::cursor::all(lhs), saga::cursor::all(rhs));
         }
 
-        // @todo Обойтиьс без явного определения?
+        friend bool operator<(flat_set const & lhs, flat_set const & rhs)
+        {
+            return saga::lexicographical_compare(saga::cursor::all(lhs), saga::cursor::all(rhs));
+        }
+
+        // @todo Определить следующие операции через фасад?
         friend bool operator!=(flat_set const & lhs, flat_set const & rhs)
         {
             return !(lhs == rhs);
+        }
+
+        friend bool operator>(flat_set const & lhs, flat_set const & rhs)
+        {
+            return rhs < lhs;
+        }
+
+        friend bool operator<=(flat_set const & lhs, flat_set const & rhs)
+        {
+            return !(rhs < lhs);
+        }
+
+        friend bool operator>=(flat_set const & lhs, flat_set const & rhs)
+        {
+            return !(lhs < rhs);
         }
 
         friend void swap(flat_set & lhs, flat_set & rhs) noexcept

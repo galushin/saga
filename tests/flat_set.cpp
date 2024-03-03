@@ -24,6 +24,7 @@ SAGA -- это свободной программное обеспечение:
 
 // Используемые возможности
 #include <deque>
+#include <set>
 
 namespace
 {
@@ -75,6 +76,7 @@ namespace saga_test
         using Base = std::allocator<T>;
 
         using is_always_equal = std::false_type;
+        using propagate_on_container_swap = std::true_type;
 
         template <class Other>
         struct rebind
@@ -123,6 +125,13 @@ namespace saga_test
             return value_type(saga_test::arbitrary<Arg>::generate(generation, urbg));
         }
     };
+
+    template <class AssocContainer>
+    bool deep_equal_associative_container(AssocContainer const & lhs, AssocContainer const & rhs)
+    {
+        return lhs == rhs && lhs.value_comp() == rhs.value_comp()
+               && lhs.get_allocator() == rhs.get_allocator();
+    }
 }
 
 TEST_CASE("allocator_with_tag")
@@ -166,6 +175,34 @@ TEST_CASE("flat_set: constructor from elements, compare and allocator")
 
         REQUIRE(actual.get_allocator() == alloc);
         static_assert(noexcept(actual.get_allocator()));
+    };
+}
+
+// @todo Возможно, перенести в тест saga_test
+TEST_CASE("flat_set: deep equality - for test")
+{
+    using Element = unsigned;
+    using Compare = saga_test::strict_weak_order<Element>;
+
+    using Allocator = saga_test::allocator_with_tag<Element>;
+    static_assert(!std::allocator_traits<Allocator>::is_always_equal{});
+
+    using Container = std::vector<Element, Allocator>;
+    using FlatSet = saga::flat_set<Element, Compare, Container>;
+
+    saga_test::property_checker
+    << [](Container const & elems_lhs, Compare const & cmp_lhs, Allocator const & alloc_lhs
+         ,Container const & elems_rhs, Compare const & cmp_rhs, Allocator const & alloc_rhs)
+    {
+        FlatSet const lhs(elems_lhs.begin(), elems_lhs.end(), cmp_lhs, alloc_lhs);
+        FlatSet const rhs(elems_rhs.begin(), elems_rhs.end(), cmp_rhs, alloc_rhs);
+
+        REQUIRE(saga_test::deep_equal_associative_container(lhs, lhs));
+        REQUIRE(saga_test::deep_equal_associative_container(rhs, rhs));
+        REQUIRE(saga_test::deep_equal_associative_container(lhs, rhs)
+                == (lhs == rhs
+                    && lhs.value_comp() == rhs.value_comp()
+                    && lhs.get_allocator() == rhs.get_allocator()));
     };
 }
 
@@ -234,6 +271,7 @@ TEST_CASE("flat_set: default constructor")
     static_assert(noexcept(obj.empty()));
 }
 
+// @todo Настройка функции сравнения и распределителя памяти
 TEST_CASE("flat_set : copy constructor")
 {
     using FlatSet = saga::flat_set<long>;
@@ -248,6 +286,7 @@ TEST_CASE("flat_set : copy constructor")
     };
 }
 
+// @todo Настройка функции сравнения и распределителя памяти
 TEST_CASE("flat_set : move constructor")
 {
     using FlatSet = saga::flat_set<long>;
@@ -265,6 +304,7 @@ TEST_CASE("flat_set : move constructor")
     };
 }
 
+// @todo Настройка функции сравнения и распределителя памяти
 TEST_CASE("flat_set : copy assignment")
 {
     using FlatSet = saga::flat_set<std::string>;
@@ -283,6 +323,7 @@ TEST_CASE("flat_set : copy assignment")
     };
 }
 
+// @todo Настройка функции сравнения и распределителя памяти
 TEST_CASE("flat_set : move assignment")
 {
     using FlatSet = saga::flat_set<long>;
@@ -303,21 +344,21 @@ TEST_CASE("flat_set : move assignment")
     };
 }
 
-/* @todo Деструктор не проверяем: так как flat_set хранит элементы во вложенном контейнере,
-достаточно убедиться, что flat_set вообще не объявляет деструктор? Или может быть проверить через
-regular_tracer что все элементы уничтожены?
+/* Деструктор не проверяем: так как flat_set хранит элементы во вложенном контейнере,
+достаточно убедиться, что flat_set вообще не объявляет деструктор?
 */
+// @todo проверить через regular_tracer что все элементы уничтожены?
 
-TEST_CASE("flat_set: begin, end")
+TEST_CASE("flat_set: begin, end, cbegin, cend")
 {
     using Element = long;
     using Compare = saga_test::strict_weak_order<Element>;
-    using FlatSet = saga::flat_set<Element, Compare>;
 
     using Allocator = saga_test::allocator_with_tag<Element>;
     static_assert(!std::allocator_traits<Allocator>::is_always_equal{});
 
     using Container = std::vector<Element, Allocator>;
+    using FlatSet = saga::flat_set<Element, Compare, Container>;
 
     saga_test::property_checker
     << [](Container const & elems, Compare const & cmp, Allocator const & alloc)
@@ -340,12 +381,13 @@ TEST_CASE("flat_set: begin, end, cbegin, cend - constant")
 {
     using Element = long;
     using Compare = saga_test::strict_weak_order<Element>;
-    using FlatSet = saga::flat_set<Element, Compare>;
 
     using Allocator = saga_test::allocator_with_tag<Element>;
     static_assert(!std::allocator_traits<Allocator>::is_always_equal{});
 
     using Container = std::vector<Element, Allocator>;
+
+    using FlatSet = saga::flat_set<Element, Compare, Container>;
 
     saga_test::property_checker
     << [](Container const & elems, Compare const & cmp, Allocator const & alloc)
@@ -364,11 +406,37 @@ TEST_CASE("flat_set: begin, end, cbegin, cend - constant")
     };
 }
 
-// @todo operator<=>
+// @todo operator<=>: пока определяем операторы, доступные в C++17
+TEST_CASE("flat_set: comparisons")
+{
+    using Element = long;
+    using Compare = saga_test::strict_weak_order<Element>;
+
+    using Allocator = saga_test::allocator_with_tag<Element>;
+    static_assert(!std::allocator_traits<Allocator>::is_always_equal{});
+
+    using Container = std::vector<Element, Allocator>;
+    using FlatSet = saga::flat_set<Element, Compare, Container>;
+
+    saga_test::property_checker
+    << [](Container const & elems_lhs, Compare const & cmp_lhs, Allocator const & alloc_lhs
+         ,Container const & elems_rhs, Compare const & cmp_rhs, Allocator const & alloc_rhs)
+    {
+        FlatSet const lhs(elems_lhs.begin(), elems_lhs.end(), cmp_lhs, alloc_lhs);
+        FlatSet const rhs(elems_rhs.begin(), elems_rhs.end(), cmp_rhs, alloc_rhs);
+
+        CAPTURE(lhs, rhs);
+        REQUIRE((lhs < rhs) == std::lexicographical_compare(lhs.begin(), lhs.end()
+                                                           ,rhs.begin(), rhs.end()));
+        REQUIRE((lhs > rhs) == (rhs < lhs));
+        REQUIRE((lhs <= rhs) == !(lhs > rhs));
+        REQUIRE((lhs >= rhs) == !(lhs < rhs));
+    };
+}
 
 // Равенство проверено ранее
 
-// @todo swap
+// swap
 namespace
 {
     template <class T>
@@ -377,13 +445,23 @@ namespace
 
 TEST_CASE("flat_set : swap")
 {
-    using FlatSet = saga::flat_set<long>;
-    using Container = FlatSet::container_type;
+    using Element = long;
+    using Compare = saga_test::strict_weak_order<Element>;
 
-    saga_test::property_checker << [](Container const & src_lhs, Container const & src_rhs)
+    using Allocator = saga_test::allocator_with_tag<Element>;
+    static_assert(!std::allocator_traits<Allocator>::is_always_equal{});
+    // @todo тест, когда это не выполняется
+    static_assert(std::allocator_traits<Allocator>::propagate_on_container_swap{});
+
+    using Container = std::vector<Element, Allocator>;
+    using FlatSet = saga::flat_set<Element, Compare, Container>;
+
+    saga_test::property_checker
+    << [](Container const & elems_lhs, Compare const & cmp_lhs, Allocator const & alloc_lhs
+         ,Container const & elems_rhs, Compare const & cmp_rhs, Allocator const & alloc_rhs)
     {
-        FlatSet const lhs_old(src_lhs);
-        FlatSet const rhs_old(src_rhs);
+        FlatSet const lhs_old(elems_lhs.begin(), elems_lhs.end(), cmp_lhs, alloc_lhs);
+        FlatSet const rhs_old(elems_rhs.begin(), elems_rhs.end(), cmp_rhs, alloc_rhs);
 
         auto lhs = lhs_old;
         auto rhs = rhs_old;
@@ -392,19 +470,97 @@ TEST_CASE("flat_set : swap")
         lhs.swap(rhs);
         static_assert(noexcept(lhs.swap(rhs)));
 
-        REQUIRE(lhs == rhs_old);
-        REQUIRE(rhs == lhs_old);
-
-        // @todo Проверить, что обменяны распределитель памяти и функция сравнения
+        REQUIRE(saga_test::deep_equal_associative_container(lhs, rhs_old));
+        REQUIRE(saga_test::deep_equal_associative_container(rhs, lhs_old));
 
         // @todo Константная сложность
         swap(lhs, rhs);
         static_assert(noexcept(swap(lhs, rhs)));
 
-        REQUIRE(lhs == lhs_old);
-        REQUIRE(rhs == rhs_old);
-        // @todo Проверить, что обменяны распределитель памяти и функция сравнения
+        REQUIRE(saga_test::deep_equal_associative_container(lhs, lhs_old));
+        REQUIRE(saga_test::deep_equal_associative_container(rhs, rhs_old));
     };
+}
+
+// @todo size, max_size, empty - константная сложность
+TEST_CASE("flat_set: size, empty")
+{
+    using Element = long;
+    using Compare = saga_test::strict_weak_order<Element>;
+
+    using Allocator = saga_test::allocator_with_tag<Element>;
+    static_assert(!std::allocator_traits<Allocator>::is_always_equal{});
+
+    using Container = std::vector<Element, Allocator>;
+
+    using FlatSet = saga::flat_set<Element, Compare, Container>;
+
+    saga_test::property_checker
+    << [](Container const & elems, Compare const & cmp, Allocator const & alloc)
+    {
+        FlatSet const obj(elems.begin(), elems.end(), cmp, alloc);
+
+        REQUIRE(obj.size()
+                == static_cast<FlatSet::size_type>(std::distance(obj.begin(), obj.end())));
+
+        REQUIRE(obj.size() <= obj.max_size());
+        REQUIRE(obj.max_size() == elems.max_size());
+
+        REQUIRE(obj.empty() == (obj.begin() == obj.end()));
+
+        static_assert(std::is_same<decltype(obj.size()), typename FlatSet::size_type>{});
+        static_assert(std::is_same<decltype(obj.max_size()), typename FlatSet::size_type>{});
+        static_assert(std::is_same<decltype(obj.empty()), bool>{});
+
+        FlatSet const obj0(elems.end(), elems.end(), cmp, alloc);
+
+        REQUIRE(obj0.size() == 0);
+        REQUIRE(obj0.empty());
+    };
+}
+
+// @todo limited_allocator в библиотеку
+namespace saga_test
+{
+    template <class T, std::ptrdiff_t Max_size>
+    class limited_allocator
+    {
+    public:
+        using value_type = T;
+        using pointer = value_type *;
+        using size_type = std::size_t;
+
+        template <class Other>
+        struct rebind
+        {
+            using other = limited_allocator<Other, Max_size>;
+        };
+
+        size_type max_size() const
+        {
+            return Max_size;
+        }
+
+        void deallocate(pointer, size_type)
+        {
+            // @todo Настоящая реализация, эта подходит пока мы фактически не выделяем память
+        }
+    };
+}
+
+TEST_CASE("flat_set: max_size with limited allocator")
+{
+    using Element = long;
+    using Compare = std::greater<>;
+
+    constexpr std::size_t allocator_max_size = 42;
+    using Allocator = saga_test::limited_allocator<Element, allocator_max_size>;
+
+    using Container = std::vector<Element, Allocator>;
+
+    saga::flat_set<Element, Compare, Container> const obj{};
+
+    REQUIRE(obj.max_size() == allocator_max_size);
 }
 
 static_assert(std::is_same<typename saga::flat_set<int>::reverse_iterator
