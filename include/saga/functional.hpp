@@ -119,6 +119,8 @@ namespace saga
     class comparer_by
     {
     public:
+        comparer_by() = default;
+
         constexpr explicit comparer_by(Projection proj, Compare cmp)
          : data_(std::move(proj), std::move(cmp))
         {}

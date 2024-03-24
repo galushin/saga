@@ -56,6 +56,7 @@
 			<Add option="-Wnull-dereference" />
 			<Add option="-Wformat=2" />
 			<Add option="-Wshadow=compatible-local" />
+			<Add option="-Wno-non-template-friend" />
 			<Add directory="./contrib/catch2/include" />
 			<Add directory="../include" />
 			<Add directory="./contrib/pcg-cpp/include" />
@@ -164,6 +165,7 @@
 		<Unit filename="cursor/to.cpp" />
 		<Unit filename="expected.cpp" />
 		<Unit filename="expected/unexpected.cpp" />
+		<Unit filename="flat_set.cpp" />
 		<Unit filename="functional.cpp" />
 		<Unit filename="iterator.cpp" />
 		<Unit filename="iterator/reverse.cpp" />

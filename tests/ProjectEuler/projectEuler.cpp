@@ -5093,7 +5093,7 @@ namespace
                           | saga::cursor::take_while(pred)
                           | saga::cursor::to<std::vector<IntType>>();
 
-        std::set<IntType> result;
+        std::vector<IntType> result;
 
         for(auto const & arg3 : forths)
         for(auto const & arg2 : cubes)
@@ -5111,7 +5111,7 @@ namespace
 
                 if(sum_3 < n_limit)
                 {
-                    result.insert(result.end(), std::move(sum_3));
+                    result.push_back(std::move(sum_3));
                 }
                 else
                 {
@@ -5119,6 +5119,11 @@ namespace
                 }
             }
         }
+
+        auto cur = saga::cursor::all(result);
+        saga::sort(cur);
+        cur = saga::unique(std::move(cur));
+        result.erase(cur.begin(), cur.end());
 
         return result;
     }
@@ -5128,7 +5133,7 @@ TEST_CASE("PE 087")
 {
     auto const pe_087_50 = ::PE_087_prime_power_triplets(50);
 
-    std::set<int> const pe_087_50_expected{28, 33, 47, 49};
+    std::vector<int> const pe_087_50_expected{28, 33, 47, 49};
 
     CHECK(pe_087_50 == pe_087_50_expected);
 
