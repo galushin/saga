@@ -163,7 +163,7 @@ namespace saga
         }
 
         // Итераторы
-        // @todo Определить все функции
+        // @todo Определить все функции: точно нужна константная и неконстантная версии?
         // @todo Должно быть noexcept
         const_iterator begin() const
         {
@@ -176,7 +176,6 @@ namespace saga
             return this->data_.end();
         }
 
-
         // @todo Должно быть noexcept
         const_iterator cbegin() const
         {
@@ -187,6 +186,30 @@ namespace saga
         const_iterator cend() const
         {
             return this->end();
+        }
+
+        // @todo Должно быть noexcept
+        const_reverse_iterator rbegin() const
+        {
+            return const_reverse_iterator(this->end());
+        }
+
+        // @todo Должно быть noexcept
+        const_reverse_iterator rend() const
+        {
+            return const_reverse_iterator(this->begin());
+        }
+
+        // @todo Должно быть noexcept
+        const_reverse_iterator crbegin() const
+        {
+            return this->rbegin();
+        }
+
+        // @todo Должно быть noexcept
+        const_reverse_iterator crend() const
+        {
+            return this->rend();
         }
 
         // Размер и ёмкость

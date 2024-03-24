@@ -126,10 +126,11 @@ namespace saga_test
         }
     };
 
-    template <class AssocContainer>
-    bool deep_equal_associative_container(AssocContainer const & lhs, AssocContainer const & rhs)
+    template <class AssocContainer1, class AssocContainer2>
+    bool deep_equal_associative_container(AssocContainer1 const & lhs, AssocContainer2 const & rhs)
     {
-        return lhs == rhs && lhs.value_comp() == rhs.value_comp()
+        return saga::equal(saga::cursor::all(lhs), saga::cursor::all(rhs))
+               && lhs.value_comp() == rhs.value_comp()
                && lhs.get_allocator() == rhs.get_allocator();
     }
 }
@@ -228,7 +229,6 @@ TEST_CASE("flat_set: equality")
     };
 }
 
-// @todo Проверить требования к контейнерам ([container.reqmts]) - 24.2.2.2
 // 24.2.2.2 Container requirements
 
 static_assert(std::is_same<typename saga::flat_set<int>::value_type, int>{});
@@ -244,6 +244,7 @@ static_assert(::is_container_const_reference_valid<saga::flat_set<std::string>>{
 они определены как синонимы итераторов контейнера.
 Так как iterator и const_iterator определены одинаково, то можно не проверять и преобразование
 */
+// @todo Проверки типов итераторов при явном задании контейнера с нестандартными типами
 static_assert(std::is_same<typename saga::flat_set<int, std::greater<>, std::deque<int>>::iterator
                           ,typename std::deque<int>::const_iterator>{});
 static_assert(std::is_same<typename saga::flat_set<int>::iterator
@@ -256,7 +257,7 @@ static_assert(std::is_same<typename saga::flat_set<long, std::greater<>
                           ,typename saga::flat_set<long, std::greater<>
                                                   ,std::deque<long>>::iterator>{});
 
-// @todo тесты size_type и difference_type при явном задании контейнера с нестандартными типами
+// @todo Проверки size_type и difference_type при явном задании контейнера с нестандартными типами
 static_assert(::is_container_difference_type_valid<saga::flat_set<std::string>>{});
 static_assert(::is_container_difference_type_valid<saga::flat_set<int, std::less<>
                                                                  ,std::deque<int>>>{});
@@ -524,6 +525,7 @@ namespace saga_test
 {
     template <class T, std::ptrdiff_t Max_size>
     class limited_allocator
+     : public std::allocator<T>
     {
     public:
         using value_type = T;
@@ -541,10 +543,7 @@ namespace saga_test
             return Max_size;
         }
 
-        void deallocate(pointer, size_type)
-        {
-            // @todo Настоящая реализация, эта подходит пока мы фактически не выделяем память
-        }
+        // @todo Настоящая реализация выделения и освобождения памяти ограниченного размера
     };
 }
 
@@ -563,10 +562,75 @@ TEST_CASE("flat_set: max_size with limited allocator")
     REQUIRE(obj.max_size() == allocator_max_size);
 }
 
+// @todo Требования пунктов 65-69
+
+// 24.2.2.3 Reversible container requirements
+// @todo Обыные итераторы должны быть двунаправленными или произвольного доступа
+
+// Используем saga::reverse_iterator вместо std::reverse_iterator
+// Так как itertor bи const_iterator совпадают, то обратные их версии совпадают
+// @todo Задание типа распределителя памяти и функции сравнения
 static_assert(std::is_same<typename saga::flat_set<int>::reverse_iterator
                           ,saga::reverse_iterator<typename saga::flat_set<int>::iterator>>{});
 static_assert(std::is_same<typename saga::flat_set<int>::const_reverse_iterator
-                          ,saga::reverse_iterator<typename saga::flat_set<int>::const_iterator>>{});
+                          ,typename saga::flat_set<int>::reverse_iterator>{});
+
+TEST_CASE("flat_set: rbegin, rend, crbegin, crend - for non-constant")
+{
+    using Element = long;
+    using Compare = saga_test::strict_weak_order<Element>;
+
+    using Allocator = saga_test::allocator_with_tag<Element>;
+    static_assert(!std::allocator_traits<Allocator>::is_always_equal{});
+
+    using Container = std::vector<Element, Allocator>;
+    using FlatSet = saga::flat_set<Element, Compare, Container>;
+
+    saga_test::property_checker
+    << [](Container const & elems, Compare const & cmp, Allocator const & alloc)
+    {
+        std::set<Element, Compare> const expected(elems.begin(), elems.end(), cmp);
+        FlatSet actual(elems.begin(), elems.end(), cmp, alloc);
+
+        static_assert(std::is_same<decltype(actual.rbegin()), FlatSet::reverse_iterator>{});
+        static_assert(std::is_same<decltype(actual.rend()), FlatSet::reverse_iterator>{});
+
+        REQUIRE(std::equal(actual.rbegin(), actual.rend()
+                          ,expected.rbegin(), expected.rend()));
+
+        REQUIRE(actual.crbegin() == std::as_const(actual).rbegin());
+        REQUIRE(actual.crend() == std::as_const(actual).rend());
+    };
+}
+
+TEST_CASE("flat_set: begin, end, cbegin, cend - for constant")
+{
+    using Element = long;
+    using Compare = saga_test::strict_weak_order<Element>;
+
+    using Allocator = saga_test::allocator_with_tag<Element>;
+    static_assert(!std::allocator_traits<Allocator>::is_always_equal{});
+
+    using Container = std::vector<Element, Allocator>;
+
+    using FlatSet = saga::flat_set<Element, Compare, Container>;
+
+    saga_test::property_checker
+    << [](Container const & elems, Compare const & cmp, Allocator const & alloc)
+    {
+        std::set<Element, Compare> const expected(elems.begin(), elems.end(), cmp);
+        FlatSet const actual(elems.begin(), elems.end(), cmp, alloc);
+
+        static_assert(std::is_same<decltype(actual.rbegin()), FlatSet::reverse_iterator>{});
+        static_assert(std::is_same<decltype(actual.rend()), FlatSet::reverse_iterator>{});
+
+        REQUIRE(std::equal(actual.rbegin(), actual.rend()
+                          ,expected.rbegin(), expected.rend()));
+
+        REQUIRE(actual.crbegin() == std::as_const(actual).rbegin());
+        REQUIRE(actual.crend() == std::as_const(actual).rend());
+    };
+}
 
 // Создание, копирование, уничтожение
 // @todo Задать тип контейнера?
@@ -575,33 +639,21 @@ TEST_CASE("flat_set: container constructor")
 {
     using Element = long;
 
-    struct mod_7_t
-    {
-        auto operator()(Element const & num) const { return num % 7; }
-    };
-
-    auto cmp = saga::compare_by(mod_7_t{}, std::greater<>{});
-    using Compare = decltype(cmp);
-
+    using Compare = std::greater<>;
     using FlatSet = saga::flat_set<Element, Compare>;
     using Container = FlatSet::container_type;
 
     static_assert(std::is_constructible<FlatSet, Container>{});
     static_assert(!std::is_convertible<Container, FlatSet>{});
 
-    saga_test::property_checker << [](Container const & src)
+    saga_test::property_checker
+    << [](Container const & src)
     {
         FlatSet const actual(src);
         std::set<Element, Compare> const expected(src.begin(), src.end());
 
         CAPTURE(actual, expected);
-
-        auto const equiv = [cmp = Compare()](Element const & lhs, Element const & rhs)
-        {
-            return !cmp(lhs, rhs) && !cmp(rhs, lhs);
-        };
-
-        REQUIRE(std::equal(actual.begin(), actual.end(), expected.begin(), expected.end(), equiv));
+        REQUIRE(::is_equivalent_by_compare(actual, expected, Compare()));
         REQUIRE(actual.empty() == expected.empty());
 
         // @todo Проверить распределитель памяти и функция сравнения
