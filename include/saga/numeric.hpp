@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/cursor_traits.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/functional.hpp>
+#include <saga/utility/exchange.hpp>
 
 #include <functional>
 #include <utility>
@@ -300,6 +301,39 @@ namespace saga
         }
     };
 
+    template <class IntType>
+    struct extended_gcd_result
+    {
+        IntType gcd = 0;
+        IntType first = 0;
+        IntType second = 0;
+    };
+
+    struct extended_gcd_euclidean_fn
+    {
+        template <class IntType1, class IntType2>
+        constexpr
+        extended_gcd_result<std::common_type_t<IntType1, IntType2>>
+        operator()(IntType1 lhs, IntType2 rhs) const
+        {
+            using Result = std::common_type_t<IntType1, IntType2>;
+            auto x_0 = Result(0);
+            auto x_1 = Result(1);
+            auto y_0 = Result(1);
+            auto y_1 = Result(0);
+
+            for(; lhs != IntType1(0);)
+            {
+                auto qoutient = rhs / lhs;
+                rhs = saga::exchange(lhs, rhs % lhs);
+                y_0 = saga::exchange(y_1, y_0 - qoutient * y_1);
+                x_0 = saga::exchange(x_1, x_0 - qoutient * x_1);
+            }
+
+            return {std::move(rhs), std::move(x_0), std::move(y_0)};
+        }
+    };
+
     struct lcm_fn
     {
         template <class IntType1, class IntType2>
@@ -473,6 +507,7 @@ namespace saga
 
     inline constexpr auto const gcd = gcd_fn{};
     inline constexpr auto const lcm = lcm_fn{};
+    inline constexpr auto const extended_gcd_euclidean = extended_gcd_euclidean_fn{};
 
     inline constexpr auto const mark_eratosthenes_seive = mark_eratosthenes_seive_fn{};
     inline constexpr auto const eratosthenes_seive = eratosthenes_seive_fn{};
