@@ -1088,6 +1088,32 @@ TEST_CASE("gcd : functional object")
     };
 }
 
+TEST_CASE("extended gcd")
+{
+    using Value1 = std::uint32_t;
+    using Value2 = std::uint64_t;
+
+    static_assert(sizeof(Value2) > sizeof(Value1), "");
+    static_assert(std::is_unsigned<Value1>{});
+    static_assert(std::is_unsigned<Value2>{});
+
+    saga_test::property_checker <<[](Value1 const & lhs, Value1 const & rhs)
+    {
+        auto const result = saga::extended_gcd_euclidean(lhs, Value2(rhs));
+
+        REQUIRE(result.gcd == saga::gcd(lhs, Value2(rhs)));
+        REQUIRE(result.gcd == result.first * lhs + result.second * rhs);
+    };
+
+    {
+        constexpr auto lhs = 6;
+        constexpr auto rhs = 10;
+        constexpr auto result = saga::extended_gcd_euclidean(lhs, rhs);
+        static_assert(result.gcd == std::gcd(lhs, rhs));
+        static_assert(result.gcd == lhs * result.first + rhs * result.second);
+    }
+}
+
 TEST_CASE("lcm : functional object")
 {
     using Value1 = int;
