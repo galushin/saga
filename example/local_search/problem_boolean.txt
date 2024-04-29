@@ -1,6 +1,0 @@
-<problem>
-    <boolean_dimension>20</boolean_dimension>
-    <plugin>sampleDll.dll</plugin>
-    <objective>manhattan_norm_boolean</objective>
-    <goal>max</goal>
-</problem>
