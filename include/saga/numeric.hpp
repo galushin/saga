@@ -446,6 +446,31 @@ namespace saga
         }
     };
 
+    struct euler_phi_below_fn
+    {
+        template <class IntType>
+        std::vector<IntType>
+        operator()(IntType n_max) const
+        {
+            auto const primes = saga::primes_below_fn{}(n_max);
+
+            std::vector<IntType> result(n_max);
+
+            saga::iota_fn{}(saga::cursor::all(result), IntType(0));
+
+            for(auto const & prime : primes)
+            {
+                for(auto num = prime; num < n_max; num += prime)
+                {
+                    result[num] /= prime;
+                    result[num] *= (prime - 1);
+                }
+            }
+
+            return result;
+        }
+    };
+
     struct factoriadic_fn
     {
         template <class Size, class OutputCursor>
@@ -513,6 +538,7 @@ namespace saga
     inline constexpr auto const eratosthenes_seive = eratosthenes_seive_fn{};
     inline constexpr auto const copy_primes_below = copy_primes_below_fn{};
     inline constexpr auto const primes_below = primes_below_fn{};
+    inline constexpr auto const euler_phi_below = euler_phi_below_fn{};
 
     inline constexpr auto const nth_permutation = nth_permutation_fn{};
 }
