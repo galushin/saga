@@ -1771,8 +1771,8 @@ namespace
         auto fib_str = ::make_fibonacci_sequence(::integer10(1), ::integer10(1))
                      | saga::cursor::transform(to_str);
 
-        auto cur = saga::find_if(std::move(saga::cursor::enumerate(fib_str)),
-                            [&](auto const & elem) {return elem.value.size() >= digits;});
+        auto cur = saga::find_if(std::move(saga::cursor::enumerate(fib_str))
+                                ,[&](auto const & elem) {return elem.value.size() >= digits;});
         assert(!!cur);
 
         return cur.front().index + 1;
