@@ -1090,25 +1090,29 @@ TEST_CASE("gcd : functional object")
 
 TEST_CASE("extended gcd")
 {
-    using Value1 = std::uint32_t;
-    using Value2 = std::uint64_t;
+    using Value1 = std::int32_t;
+    using Value2 = std::int16_t;
+    using Common = std::int64_t;
 
-    static_assert(sizeof(Value2) > sizeof(Value1), "");
-    static_assert(std::is_unsigned<Value1>{});
-    static_assert(std::is_unsigned<Value2>{});
+    static_assert(sizeof(Common) >= 2*sizeof(Value1), "");
+    static_assert(sizeof(Common) >= 2*sizeof(Value2), "");
+    static_assert(std::is_signed<Value1>{});
+    static_assert(std::is_signed<Value2>{});
 
-    saga_test::property_checker <<[](Value1 const & lhs, Value1 const & rhs)
+    saga_test::property_checker <<[](Value1 const & lhs, Value2 const & rhs)
     {
-        auto const result = saga::extended_gcd_euclidean(lhs, Value2(rhs));
+        auto const result = saga::gcd_extended_euclidean(lhs, rhs);
 
-        REQUIRE(result.gcd == saga::gcd(lhs, Value2(rhs)));
-        REQUIRE(result.gcd == result.first * lhs + result.second * rhs);
+        CAPTURE(lhs, rhs, result.gcd, result.first, result.second);
+
+        REQUIRE(result.gcd == saga::gcd(Common(lhs), Common(rhs)));
+        REQUIRE(result.gcd == result.first * Common(lhs) + result.second * Common(rhs));
     };
 
     {
-        constexpr auto lhs = 6;
-        constexpr auto rhs = 10;
-        constexpr auto result = saga::extended_gcd_euclidean(lhs, rhs);
+        constexpr auto lhs = -6;
+        constexpr auto rhs = -10;
+        constexpr auto result = saga::gcd_extended_euclidean(lhs, rhs);
         static_assert(result.gcd == std::gcd(lhs, rhs));
         static_assert(result.gcd == lhs * result.first + rhs * result.second);
     }

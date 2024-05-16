@@ -309,20 +309,28 @@ namespace saga
         IntType second = 0;
     };
 
-    struct extended_gcd_euclidean_fn
+    struct gcd_extended_euclidean_fn
     {
-        template <class IntType1, class IntType2>
-        constexpr
-        extended_gcd_result<std::common_type_t<IntType1, IntType2>>
-        operator()(IntType1 lhs, IntType2 rhs) const
+    private:
+        template <class IntType>
+        static constexpr IntType abs_impl(IntType num)
         {
-            using Result = std::common_type_t<IntType1, IntType2>;
-            auto x_0 = Result(0);
-            auto x_1 = Result(1);
-            auto y_0 = Result(1);
-            auto y_1 = Result(0);
+            return num < 0 ? - num : num;
+        }
 
-            for(; lhs != IntType1(0);)
+        template <class IntType>
+        static constexpr extended_gcd_result<IntType> gcd_impl(IntType lhs, IntType rhs)
+        {
+            static_assert(std::is_signed<IntType>{});
+            assert(lhs >= 0);
+            assert(rhs >= 0);
+
+            auto x_0 = IntType(0);
+            auto x_1 = IntType(1);
+            auto y_0 = IntType(1);
+            auto y_1 = IntType(0);
+
+            for(; lhs != IntType(0);)
             {
                 auto qoutient = rhs / lhs;
                 rhs = saga::exchange(lhs, rhs % lhs);
@@ -331,6 +339,28 @@ namespace saga
             }
 
             return {std::move(rhs), std::move(x_0), std::move(y_0)};
+        }
+
+    public:
+        template <class IntType1, class IntType2>
+        constexpr
+        extended_gcd_result<std::common_type_t<IntType1, IntType2>>
+        operator()(IntType1 lhs, IntType2 rhs) const
+        {
+            using Result = std::common_type_t<IntType1, IntType2>;
+
+            auto result = this->gcd_impl<Result>(this->abs_impl<Result>(lhs)
+                                                ,this->abs_impl<Result>(rhs));
+
+            if(lhs < 0)
+            {
+                result.first = -result.first;
+            }
+            if(rhs < 0)
+            {
+                result.second = -result.second;
+            }
+            return result;
         }
     };
 
@@ -532,7 +562,7 @@ namespace saga
 
     inline constexpr auto const gcd = gcd_fn{};
     inline constexpr auto const lcm = lcm_fn{};
-    inline constexpr auto const extended_gcd_euclidean = extended_gcd_euclidean_fn{};
+    inline constexpr auto const gcd_extended_euclidean = gcd_extended_euclidean_fn{};
 
     inline constexpr auto const mark_eratosthenes_seive = mark_eratosthenes_seive_fn{};
     inline constexpr auto const eratosthenes_seive = eratosthenes_seive_fn{};
