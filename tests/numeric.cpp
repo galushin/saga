@@ -1090,18 +1090,25 @@ TEST_CASE("gcd : functional object")
 
 TEST_CASE("extended gcd")
 {
-    using Value1 = std::int32_t;
-    using Value2 = std::int16_t;
+    using Source1 = std::int8_t;
+    using Source2 = std::int16_t;
+    using Arg1 = std::int16_t;
+    using Arg2 = std::int32_t;
+
     using Common = std::int64_t;
 
-    static_assert(sizeof(Common) >= 2*sizeof(Value1), "");
-    static_assert(sizeof(Common) >= 2*sizeof(Value2), "");
-    static_assert(std::is_signed<Value1>{});
-    static_assert(std::is_signed<Value2>{});
+    static_assert(sizeof(Arg1) >= 2*sizeof(Source1), "");
+    static_assert(sizeof(Arg2) >= 2*sizeof(Source2), "");
+    static_assert(sizeof(Common) >= 2*sizeof(Arg1), "");
+    static_assert(sizeof(Common) >= 2*sizeof(Arg2), "");
 
-    saga_test::property_checker <<[](Value1 const & lhs, Value2 const & rhs)
+    static_assert(!std::is_same<Arg1, Arg2>{});
+    static_assert(std::is_signed<Arg1>{});
+    static_assert(std::is_signed<Arg2>{});
+
+    saga_test::property_checker <<[](Source1 const & lhs, Source2 const & rhs)
     {
-        auto const result = saga::gcd_extended_euclidean(lhs, rhs);
+        auto const result = saga::gcd_extended_euclidean(Arg1(lhs), Arg2(rhs));
 
         CAPTURE(lhs, rhs, result.gcd, result.first, result.second);
 

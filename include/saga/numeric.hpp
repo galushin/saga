@@ -356,10 +356,12 @@ namespace saga
             {
                 result.first = -result.first;
             }
+
             if(rhs < 0)
             {
                 result.second = -result.second;
             }
+
             return result;
         }
     };
