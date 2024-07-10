@@ -1,4 +1,4 @@
-/* (c) 2020-2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2020-2024 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -30,24 +30,30 @@ TEST_CASE("as_const")
     using Type = int;
 
     {
+        // as_const - функциональный объект
+        constexpr auto const as_const = saga::as_const;
+
         constexpr Type const obj = 42;
 
-        static_assert(obj == saga::as_const(obj), "");
+        static_assert(obj == as_const(obj), "");
     }
 
     saga_test::property_checker <<
     [](Type obj)
     {
+        // as_const - функциональный объект
+        constexpr auto const as_const = saga::as_const;
+
         static_assert(!std::is_const<Type>{}, "");
 
-        auto && c_obj = saga::as_const(obj);
+        auto && c_obj = as_const(obj);
 
-        static_assert(noexcept(saga::as_const(obj)), "");
+        static_assert(noexcept(as_const(obj)), "");
         static_assert(std::is_same<decltype(c_obj), Type const &>{}, "");
 
         REQUIRE(std::addressof(c_obj) == std::addressof(obj));
 
-        auto && cc_obj = saga::as_const(c_obj);
+        auto && cc_obj = as_const(c_obj);
         REQUIRE(std::addressof(cc_obj) == std::addressof(obj));
     };
 }
