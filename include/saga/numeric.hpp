@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/cursor_traits.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/functional.hpp>
+#include <saga/utility/exchange.hpp>
 
 #include <functional>
 #include <utility>
@@ -300,6 +301,71 @@ namespace saga
         }
     };
 
+    template <class IntType>
+    struct extended_gcd_result
+    {
+        IntType gcd = 0;
+        IntType first = 0;
+        IntType second = 0;
+    };
+
+    struct gcd_extended_euclidean_fn
+    {
+    private:
+        template <class IntType>
+        static constexpr IntType abs_impl(IntType num)
+        {
+            return num < 0 ? - num : num;
+        }
+
+        template <class IntType>
+        static constexpr extended_gcd_result<IntType> gcd_impl(IntType lhs, IntType rhs)
+        {
+            static_assert(std::is_signed<IntType>{});
+            assert(lhs >= 0);
+            assert(rhs >= 0);
+
+            auto x_0 = IntType(0);
+            auto x_1 = IntType(1);
+            auto y_0 = IntType(1);
+            auto y_1 = IntType(0);
+
+            for(; lhs != IntType(0);)
+            {
+                auto qoutient = rhs / lhs;
+                rhs = saga::exchange(lhs, rhs % lhs);
+                y_0 = saga::exchange(y_1, y_0 - qoutient * y_1);
+                x_0 = saga::exchange(x_1, x_0 - qoutient * x_1);
+            }
+
+            return {std::move(rhs), std::move(x_0), std::move(y_0)};
+        }
+
+    public:
+        template <class IntType1, class IntType2>
+        constexpr
+        extended_gcd_result<std::common_type_t<IntType1, IntType2>>
+        operator()(IntType1 lhs, IntType2 rhs) const
+        {
+            using Result = std::common_type_t<IntType1, IntType2>;
+
+            auto result = this->gcd_impl<Result>(this->abs_impl<Result>(lhs)
+                                                ,this->abs_impl<Result>(rhs));
+
+            if(lhs < 0)
+            {
+                result.first = -result.first;
+            }
+
+            if(rhs < 0)
+            {
+                result.second = -result.second;
+            }
+
+            return result;
+        }
+    };
+
     struct lcm_fn
     {
         template <class IntType1, class IntType2>
@@ -412,6 +478,31 @@ namespace saga
         }
     };
 
+    struct euler_phi_below_fn
+    {
+        template <class IntType>
+        std::vector<IntType>
+        operator()(IntType n_max) const
+        {
+            auto const primes = saga::primes_below_fn{}(n_max);
+
+            std::vector<IntType> result(n_max);
+
+            saga::iota_fn{}(saga::cursor::all(result), IntType(0));
+
+            for(auto const & prime : primes)
+            {
+                for(auto num = prime; num < n_max; num += prime)
+                {
+                    result[num] /= prime;
+                    result[num] *= (prime - 1);
+                }
+            }
+
+            return result;
+        }
+    };
+
     struct factoriadic_fn
     {
         template <class Size, class OutputCursor>
@@ -473,11 +564,13 @@ namespace saga
 
     inline constexpr auto const gcd = gcd_fn{};
     inline constexpr auto const lcm = lcm_fn{};
+    inline constexpr auto const gcd_extended_euclidean = gcd_extended_euclidean_fn{};
 
     inline constexpr auto const mark_eratosthenes_seive = mark_eratosthenes_seive_fn{};
     inline constexpr auto const eratosthenes_seive = eratosthenes_seive_fn{};
     inline constexpr auto const copy_primes_below = copy_primes_below_fn{};
     inline constexpr auto const primes_below = primes_below_fn{};
+    inline constexpr auto const euler_phi_below = euler_phi_below_fn{};
 
     inline constexpr auto const nth_permutation = nth_permutation_fn{};
 }

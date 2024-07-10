@@ -1771,8 +1771,8 @@ namespace
         auto fib_str = ::make_fibonacci_sequence(::integer10(1), ::integer10(1))
                      | saga::cursor::transform(to_str);
 
-        auto cur = saga::find_if(std::move(saga::cursor::enumerate(fib_str)),
-                            [&](auto const & elem) {return elem.value.size() >= digits;});
+        auto cur = saga::find_if(std::move(saga::cursor::enumerate(fib_str))
+                                ,[&](auto const & elem) {return elem.value.size() >= digits;});
         assert(!!cur);
 
         return cur.front().index + 1;
@@ -4495,20 +4495,16 @@ namespace
     template <class Quotient, class IntType>
     IntType PE_069_scan(IntType const n_max)
     {
-        auto const primes = saga::primes_below(n_max + 1);
+        auto const phi = saga::euler_phi_below(n_max);
+        assert(phi.size() == static_cast<size_t>(n_max));
+        assert(phi[0] == 0);
 
-        std::vector<Quotient> n_over_phi(n_max, Quotient(1));
+        std::vector<Quotient> n_over_phi;
 
-        for(auto const & prime : primes)
-        {
-            auto cur = saga::cursor::drop_front_n(saga::cursor::all(n_over_phi), prime - 1)
-                     | saga::cursor::stride(prime);
-
-            saga::for_each(std::move(cur), [&](Quotient & arg)
-            {
-                arg *= Quotient(prime)/Quotient(prime - 1);
-            });
-        }
+        saga::transform(saga::cursor::indices(IntType(1), n_max)
+                       ,saga::cursor::drop_front_n(saga::cursor::all(phi), 1)
+                       ,saga::back_inserter(n_over_phi)
+                       ,std::divides<Quotient>{});
 
         return saga::max_element(saga::cursor::all(n_over_phi)).dropped_front().size() + 1;
     }
@@ -4641,28 +4637,13 @@ TEST_CASE("PE 071")
 // PE 072 - Подсчёт дробей
 namespace
 {
+    /* Число правильных дробей для каждого знаменателя равно функции Эйлера от этого знаменателя.
+    1/1 = 1 - не является правильно дробью
+    */
     template <class IntType>
     IntType PE_072(IntType const max_denom)
     {
-        std::vector<IntType> phi(max_denom + 1, 0);
-        saga::iota(saga::cursor::all(phi), 0);
-
-        for(auto const & num : saga::cursor::indices(2, max_denom + 1))
-        {
-            if(num == phi[num])
-            {
-                auto cur = saga::cursor::drop_front_n(saga::cursor::all(phi), num)
-                         | saga::cursor::stride(num);
-
-                saga::for_each(std::move(cur), [&](IntType & arg)
-                {
-                    arg /= num;
-                    arg *= (num - 1);
-                });
-
-                phi[num] = num - 1;
-            }
-        }
+        auto const phi = saga::euler_phi_below(max_denom + 1);
 
         return saga::reduce(saga::cursor::all(phi)) - 1;
     }

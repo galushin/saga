@@ -59,7 +59,7 @@ namespace saga_test
         struct arbitrary_integer
         {
         public:
-            using value_type = T;
+            using value_type = std::decay_t<T>;
 
             template <class UniformRandomBitGenerator>
             static T generate(generation_t generation, UniformRandomBitGenerator & urbg)
@@ -90,7 +90,7 @@ namespace saga_test
         struct arbitrary_real
         {
         public:
-            using value_type = T;
+            using value_type = std::decay_t<T>;
 
             template <class UniformRandomBitGenerator>
             static T generate(generation_t generation, UniformRandomBitGenerator & urbg)
