@@ -121,10 +121,11 @@ namespace saga_test
         };
 
         template <class Container>
-        struct arbitrary_sequence_container;
+        struct arbitrary_container;
 
+        // @todo Поддержка распределителей памяти без конструктора без аргументов
         template <class T, class A>
-        struct arbitrary_sequence_container<std::vector<T, A>>
+        struct arbitrary_container<std::vector<T, A>>
         {
         public:
             using value_type = std::vector<T, A>;
@@ -159,7 +160,7 @@ namespace saga_test
         };
 
         template <class Container>
-        struct arbitrary_sequence_container
+        struct arbitrary_container
         {
         public:
             using value_type = Container;
@@ -169,7 +170,7 @@ namespace saga_test
             {
                 using Elem = typename Container::value_type;
 
-                using VectorGenerator = arbitrary_sequence_container<std::vector<Elem>>;
+                using VectorGenerator = arbitrary_container<std::vector<Elem>>;
 
                 auto src = VectorGenerator::generate(generation, urbg);
 
@@ -179,12 +180,13 @@ namespace saga_test
         };
 
         template <typename T, class SFINAE = void>
-        struct is_sequence_container
+        struct is_container
          : std::false_type
         {};
 
         template <typename T>
-        struct is_sequence_container<T, std::void_t<typename T::value_type, typename T::iterator>>
+        struct is_container<T, std::void_t<typename T::value_type, typename T::size_type
+                                          ,typename T::iterator>>
          : std::is_constructible<T, typename T::value_type const *, typename T::value_type const *>
         {};
 
@@ -197,7 +199,7 @@ namespace saga_test
             static value_type generate(generation_t generation, UniformRandomBitGenerator & urbg
                                        , std::index_sequence<Ints...>)
             {
-                return value_type(arbitrary<std::tuple_element_t<Ints, value_type>>::generate(generation, urbg)...);
+                return value_type(arbitrary<std::decay_t<std::tuple_element_t<Ints, value_type>>>::generate(generation, urbg)...);
             }
 
             template <class UniformRandomBitGenerator>
@@ -267,9 +269,10 @@ namespace saga_test
      : detail::arbitrary_real<T>
     {};
 
+    // @todo Нужна ли специализированная генерация для ассоциативных и последовательных контейнеров?
     template <class T>
-    struct arbitrary<T, std::enable_if_t<detail::is_sequence_container<T>::value>>
-     : detail::arbitrary_sequence_container<T>
+    struct arbitrary<T, std::enable_if_t<detail::is_container<T>::value>>
+     : detail::arbitrary_container<T>
     {};
 
     template <class T, std::size_t N>
@@ -554,12 +557,21 @@ namespace saga_test
             return this->impl_(lhs, rhs);
         }
 
+        friend bool operator==(strict_weak_order const & lhs, strict_weak_order const & rhs)
+        {
+            return lhs.id_ == rhs.id_;
+        }
+
     private:
-        explicit strict_weak_order(Function fun)
+        using id_type = std::ptrdiff_t;
+
+        explicit strict_weak_order(Function fun, id_type id)
          : impl_(std::move(fun))
+         , id_(id)
         {}
 
         Function impl_;
+        id_type id_ = 0;
     };
 
     template <class IntType>
@@ -574,16 +586,19 @@ namespace saga_test
                 = std::uniform_int_distribution<IntType> (1, std::numeric_limits<IntType>::max());
 
             auto Modulus = Modulus_distr(urbg);
+            auto id = Modulus ^ generation;
 
             if(generation % 2 == 0)
             {
                 return value_type([=](IntType const & lhs, IntType const & rhs)
-                                  { return std::less<>{}(lhs % Modulus, rhs % Modulus); });
+                                  { return std::less<>{}(lhs % Modulus, rhs % Modulus); }
+                                  , id);
             }
             else
             {
                 return value_type([=](IntType const & lhs, IntType const & rhs)
-                                  { return std::greater<>{}(lhs % Modulus, rhs % Modulus); });
+                                  { return std::greater<>{}(lhs % Modulus, rhs % Modulus); }
+                                 , id);
             }
         }
     };
