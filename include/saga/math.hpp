@@ -184,7 +184,7 @@ namespace saga
         {
             assert(num != 0);
 
-            return [num](IntType const & arg) { return arg % num == 0; };
+            return [num](auto const & arg) { return arg % num == 0; };
         }
     };
 

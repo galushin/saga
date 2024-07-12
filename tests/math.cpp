@@ -97,8 +97,10 @@ TEST_CASE("is_even and is_odd")
 
 TEST_CASE("is_divisible_by")
 {
-    using Value1 = long;
-    using Value2 = unsigned;
+    using Value1 = std::int64_t;
+    using Value2 = std::uint32_t;
+
+    static_assert(sizeof(Value1) > sizeof(Value2));
 
     saga_test::property_checker << [](Value1 const & lhs, Value2 const & rhs)
     {
