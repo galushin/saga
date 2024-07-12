@@ -1,4 +1,4 @@
-/* (c) 2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2021-2024 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -21,6 +21,8 @@ SAGA -- это свободной программное обеспечение:
 /** @file saga/math.hpp
  @brief Функциональность, связанная с математикой, общего назначения
 */
+
+#include <saga/functional.hpp>
 
 #include <cmath>
 #include <cassert>
@@ -166,6 +168,31 @@ namespace saga
     };
 
     inline constexpr auto remove_factor = remove_factor_fn{};
+
+    struct is_divisible_by_fn
+    {
+        template <class IntType1, class IntType2>
+        constexpr bool operator()(IntType1 const & lhs, IntType2 const & rhs) const
+        {
+            assert(rhs != 0);
+
+            return lhs % rhs == 0;
+        }
+
+        template <class IntType>
+        constexpr auto operator()(IntType num) const
+        {
+            assert(num != 0);
+
+            return [num](IntType const & arg) { return arg % num == 0; };
+        }
+    };
+
+    inline constexpr auto is_divisible_by = saga::is_divisible_by_fn{};
+
+    inline constexpr auto is_even = saga::is_divisible_by(2);
+    inline constexpr auto is_odd = saga::not_fn(saga::is_even);
+
 }
 //namespace saga
 
