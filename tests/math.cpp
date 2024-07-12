@@ -1,4 +1,4 @@
-/* (c) 2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2021-2024 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -75,4 +75,46 @@ TEST_CASE("is_square")
         REQUIRE(saga::is_square(number)
                 == (saga::square(static_cast<Value>(std::sqrt(number))) == number));
     };
+}
+
+TEST_CASE("is_even and is_odd")
+{
+    using Value = long;
+
+    saga_test::property_checker << [](Value const & number)
+    {
+        CAPTURE(number);
+        REQUIRE(saga::is_even(number) == (number % 2 == 0));
+        REQUIRE(saga::is_odd(number) == (number % 2 != 0));
+    };
+
+    static_assert(saga::is_even(4));
+    static_assert(!saga::is_even(17));
+
+    static_assert(!saga::is_odd(4));
+    static_assert(saga::is_odd(17));
+}
+
+TEST_CASE("is_divisible_by")
+{
+    using Value1 = std::int64_t;
+    using Value2 = std::uint32_t;
+
+    static_assert(sizeof(Value1) > sizeof(Value2));
+
+    saga_test::property_checker << [](Value1 const & lhs, Value2 const & rhs)
+    {
+        if(rhs != 0)
+        {
+            CAPTURE(lhs, rhs);
+            REQUIRE(saga::is_divisible_by(lhs, rhs) == (lhs % rhs == 0));
+
+            auto const pred = saga::is_divisible_by(rhs);
+
+            REQUIRE(pred(lhs) == saga::is_divisible_by(lhs, rhs));
+        }
+    };
+
+    static_assert(saga::is_divisible_by(4, 2));
+    static_assert(!saga::is_divisible_by(17, 3));
 }

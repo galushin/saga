@@ -58,7 +58,7 @@ namespace
 
         for(auto num : saga::cursor::indices(n_max))
         {
-            if(num % 3 == 0 || num % 5 == 0)
+            if(saga::is_divisible_by(num, 3) || saga::is_divisible_by(num, 5))
             {
                 result += num;
             }
@@ -207,7 +207,7 @@ namespace
     constexpr IntType projectEuler_002_take_while_after_filter_input(IntType n_max)
     {
         auto input = ::fibonacci_sequence<IntType>(1, 2)
-                   | saga::cursor::filter([](IntType const & arg) { return arg % 2 == 0; })
+                   | saga::cursor::filter(saga::is_even)
                    | saga::cursor::take_while([&](IntType const & arg) { return arg <= n_max; });
 
         return saga::reduce(std::move(input), IntType{0});
@@ -218,7 +218,7 @@ namespace
     {
         auto input = ::fibonacci_sequence<IntType>(1, 2)
                    | saga::cursor::take_while([=](IntType const & arg) { return arg <= n_max; })
-                   | saga::cursor::filter([](IntType const & arg) { return arg % 2 == 0; });
+                   | saga::cursor::filter(saga::is_even);
 
         return saga::reduce(std::move(input), IntType{0});
     }
@@ -231,8 +231,7 @@ namespace
 
         auto result = IntType{0};
         auto accumulator = [&result](IntType const & arg) { result += arg; };
-        auto output = saga::pipes::filter(saga::pipes::for_each(accumulator)
-                                          , [](IntType const & arg) { return arg % 2 == 0; });
+        auto output = saga::pipes::filter(saga::pipes::for_each(accumulator), saga::is_even);
 
         saga::copy(std::move(input), std::move(output));
 
@@ -527,13 +526,13 @@ namespace
 
         for(auto m : saga::cursor::indices(2, mlimit))
         {
-            if(sum_2 % m == 0)
+            if(saga::is_divisible_by(sum_2, m))
             {
                 auto const sum_m = saga::remove_factor(sum_2, 2);
 
                 for(auto k = m + 1 + (m % 2); k < 2*m && k <= sum_m; k += 2)
                 {
-                    if(sum_m % k == 0 && std::gcd(k, m) == 1)
+                    if(saga::is_divisible_by(sum_m, k) && std::gcd(k, m) == 1)
                     {
                         auto const d = sum_2  / (k*m);
                         auto const n = k - m;
@@ -766,7 +765,7 @@ namespace
 
         for(auto d = IntType(1); d*d <= value; ++ d)
         {
-            if(value % d == 0)
+            if(saga::is_divisible_by(value, d))
             {
                 result += 1;
                 result += (value / d != d);
@@ -781,8 +780,8 @@ namespace
     {
         for(auto num = IntType(1);; ++ num)
         {
-            auto m1 = num % 2 == 0 ? num/2 : num;
-            auto m2 = num % 2 == 0 ? num + 1 : (num + 1)/2;
+            auto m1 = saga::is_even(num) ? num/2 : num;
+            auto m2 = saga::is_even(num) ? num + 1 : (num + 1)/2;
 
             auto div_count = ::divisors_count(m1) * ::divisors_count(m2);
 
@@ -1219,7 +1218,7 @@ namespace
     template <class IntType>
     auto collatz_transform(IntType value)
     {
-        return (value % 2 == 0) ? value / 2 : 3*value+1;
+        return saga::is_even(value) ? value / 2 : 3*value+1;
     }
 
     template <class IntType>
@@ -1511,7 +1510,8 @@ namespace
 {
     bool is_leap(int year)
     {
-        return (year % 4 == 0) - (year % 100 == 0 && year % 400 != 0);
+        return saga::is_divisible_by(year, 4)
+               - (saga::is_divisible_by(year, 100) && !saga::is_divisible_by(year, 400));
     }
 
     int days_in_month(int month, int year)
@@ -2249,7 +2249,7 @@ namespace
     template <class IntType, class Base>
     constexpr bool is_palindrome_in_base(IntType const num, Base base)
     {
-        return (num % base != 0) && ::reverse_number(num, base) == num;
+        return !saga::is_divisible_by(num, base) && ::reverse_number(num, base) == num;
     }
 
     template <class IntType, class Base>
@@ -2574,7 +2574,7 @@ namespace
 
         for(auto prime : primes)
         {
-            if((num % 1000) % prime != 0)
+            if(!saga::is_divisible_by(num % 1000, prime))
             {
                 return false;
             }
@@ -2845,14 +2845,11 @@ namespace
                 break;
             }
 
-            if(num % *cur == 0)
+            if(saga::is_divisible_by(num, *cur))
             {
                 result += 1;
 
-                while(num % *cur == 0)
-                {
-                    num /= *cur;
-                }
+                num = saga::remove_factor(num, *cur);
             }
         }
 
@@ -3102,7 +3099,7 @@ namespace
             return {};
         }
 
-        first += (first % 2 == 0);
+        first += saga::is_even(first);
 
         // num = first + index * 2
         // index = (num - first) / 2
@@ -3121,7 +3118,7 @@ namespace
 
             auto num = first + prime - (first % prime);
 
-            num += prime * (num % 2 == 0);
+            num += prime * saga::is_even(num);
 
             saga::mark_eratosthenes_seive(saga::cursor::drop_front_n(cur, (num - first)/2)
                                           , prime);
@@ -4177,7 +4174,7 @@ namespace
             auto denom = this->number_ - saga::square(this->state_.shift);
 
             assert(this->state_.denominator != 0);
-            assert(denom % this->state_.denominator == 0);
+            assert(saga::is_divisible_by(denom, this->state_.denominator));
 
             this->state_.denominator = std::move(denom) / this->state_.denominator;
 
@@ -4210,7 +4207,7 @@ namespace
     template <class IntType>
     std::size_t PE_064(IntType num)
     {
-        auto pred = [](auto const & arg) { return ::square_root_cycle_length(arg) % 2 == 1; };
+        auto pred = [](auto const & arg) { return saga::is_odd(::square_root_cycle_length(arg)); };
 
         return saga::count_if(saga::cursor::indices(IntType(2), num + 1), pred);
     }
@@ -4345,7 +4342,7 @@ namespace
             conv.add(each);
         }
 
-        if(sqrt_cf.second.size() % 2 == 0)
+        if(saga::is_even(sqrt_cf.second.size()))
         {
             conv.add(2*sqrt_cf.first);
 
@@ -4413,7 +4410,7 @@ namespace
     auto PE_068_group(std::vector<int> const & numbers)
     {
         assert(!numbers.empty());
-        assert(numbers.size() % 2 == 0);
+        assert(saga::is_even(numbers.size()));
 
         auto const length = numbers.size() / 2;
 
@@ -4910,7 +4907,7 @@ namespace
                 auto const m1 = num - k * (3 * k - 1) / 2;
                 auto const m2 = num - k * (3 * k + 1) / 2;
 
-                auto const sign = (k % 2 == 0) ? -1 : 1;
+                auto const sign = saga::is_even(k) ? -1 : 1;
 
                 if(m1 >= 0)
                 {
