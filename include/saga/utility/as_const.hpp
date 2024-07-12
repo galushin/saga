@@ -1,4 +1,4 @@
-/* (c) 2020-2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2020-2024 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -19,22 +19,29 @@ SAGA -- это свободной программное обеспечение:
 #define Z_SAGA_UTILITY_AS_CONST_HPP_INCLUDED
 
 /** @file saga/utility/as_const.hpp
- @brief Реализация функции @c as_const из C++17 для систем, где она недоступна. Описана в
+ @brief Реализация шаблона функции @c as_const из C++17 для систем, где она недоступна. Описана в
  http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0007r1.html
+
+ Для более удобного использования в алгоритмах реализована как функциональный объект
 */
 
 #include <type_traits>
 
 namespace saga
 {
-    template <class T>
-    constexpr std::add_const_t<T> & as_const(T & arg) noexcept
+    struct as_const_fn
     {
-        return arg;
-    }
+        template <class T>
+        constexpr std::add_const_t<T> & operator()(T & arg) const noexcept
+        {
+            return arg;
+        }
 
-    template <class T>
-    void as_const(T const &&) = delete;
+        template <class T>
+        void operator()(T const &&) = delete;
+    };
+
+    inline constexpr auto const as_const = saga::as_const_fn{};
 }
 // namespace saga
 
