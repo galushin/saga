@@ -153,17 +153,29 @@ namespace saga
 
     inline constexpr auto is_square = is_square_fn{};
 
+    template <class IntType, class Size = std::ptrdiff_t>
+    struct remove_factor_result
+    {
+        IntType value;
+        Size multiplicity;
+    };
+
     struct remove_factor_fn
     {
         template <class IntType>
-        constexpr IntType operator()(IntType num, IntType factor) const
+        constexpr
+        remove_factor_result<IntType>
+        operator()(IntType num, IntType factor) const
         {
+            std::ptrdiff_t multiplicity = 0;
+
             for(; num % factor == 0;)
             {
+                ++ multiplicity;
                 num /= factor;
             }
 
-            return num;
+            return remove_factor_result<IntType>{num, multiplicity};
         }
     };
 
