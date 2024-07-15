@@ -249,10 +249,11 @@ namespace
     template <class IntType>
     constexpr void PE_003_step(IntType & num, IntType divisor, IntType & max_divisor)
     {
-        auto num_old = num;
-        num = saga::remove_factor(num, divisor);
+        auto result = saga::remove_factor(num, divisor);
 
-        if(num != num_old)
+        num = result.value;
+
+        if(result.multiplicity > 0)
         {
             max_divisor = divisor;
         }
@@ -528,7 +529,7 @@ namespace
         {
             if(saga::is_divisible_by(sum_2, m))
             {
-                auto const sum_m = saga::remove_factor(sum_2, 2);
+                auto const sum_m = saga::remove_factor(sum_2, 2).value;
 
                 for(auto k = m + 1 + (m % 2); k < 2*m && k <= sum_m; k += 2)
                 {
@@ -2838,19 +2839,12 @@ namespace
 
         auto result = saga::cursor_difference_t<Cursor>(0);
 
-        for(; !!cur; ++cur)
+        for(; !!cur && saga::square(*cur) <= num; ++cur)
         {
-            if(saga::square(*cur) > num)
-            {
-                break;
-            }
+            auto remove_result = saga::remove_factor(num, *cur);
 
-            if(saga::is_divisible_by(num, *cur))
-            {
-                result += 1;
-
-                num = saga::remove_factor(num, *cur);
-            }
+            num = remove_result.value;
+            result += (remove_result.multiplicity > 0);
         }
 
         // Может быть не более одного простого делителя больше sqrt(num)
