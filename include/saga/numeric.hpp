@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/cursor_traits.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/functional.hpp>
+#include <saga/math.hpp>
 #include <saga/utility/exchange.hpp>
 
 #include <functional>
@@ -503,6 +504,57 @@ namespace saga
         }
     };
 
+    template <class IntType>
+    class multiplies_modulo
+    {
+    public:
+        constexpr explicit multiplies_modulo(IntType mod)
+         : mod_(std::move(mod))
+        {}
+
+        constexpr IntType operator()(IntType const & lhs, IntType const & rhs) const
+        {
+            return lhs * rhs % this->mod_;
+        }
+
+    private:
+        IntType mod_;
+    };
+
+    struct legendre_symbol_fn
+    {
+        /** @brief Вычичление символа Лежандра
+
+        @pre prime -- простое
+        */
+        template <class IntType>
+        constexpr
+        IntType operator()(IntType num, IntType const & prime) const
+        {
+            num %= prime;
+
+            if(num == 0)
+            {
+                return IntType(0);
+            }
+
+            if(prime == IntType(2))
+            {
+                return IntType(1);
+            }
+
+            auto answer = saga::power_natural_fn{}(num, (prime - IntType(1))/IntType(2)
+                                                  , saga::multiplies_modulo<IntType>(prime));
+
+            if(answer == prime - IntType(1))
+            {
+                return IntType(-1);
+            }
+
+            return answer;
+        }
+    };
+
     struct factoriadic_fn
     {
         template <class Size, class OutputCursor>
@@ -571,6 +623,7 @@ namespace saga
     inline constexpr auto const copy_primes_below = copy_primes_below_fn{};
     inline constexpr auto const primes_below = primes_below_fn{};
     inline constexpr auto const euler_phi_below = euler_phi_below_fn{};
+    inline constexpr auto const legendre_symbol = legendre_symbol_fn{};
 
     inline constexpr auto const nth_permutation = nth_permutation_fn{};
 }

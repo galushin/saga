@@ -28,6 +28,9 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/indices.hpp>
 #include <saga/cursor/istream_cursor.hpp>
 #include <saga/cursor/subrange.hpp>
+#include <saga/cursor/to.hpp>
+#include <saga/cursor/transform.hpp>
+#include <saga/math.hpp>
 #include <saga/utility/functional_macro.hpp>
 
 #include <list>
@@ -1189,4 +1192,55 @@ TEST_CASE("primes_below: regression #1258")
     CHECK(saga::primes_below(41) == std::vector{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37});
     CHECK(saga::primes_below(42) == std::vector{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41});
     CHECK(saga::primes_below(43) == std::vector{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41});
+}
+
+
+
+TEST_CASE("legendre_symbol")
+{
+    {
+        static_assert(saga::legendre_symbol(0, 5) == 0);
+        static_assert(saga::legendre_symbol(10, 5) == 0);
+
+        static_assert(saga::legendre_symbol(0, 2) == 0);
+        static_assert(saga::legendre_symbol(1, 2) == 1);
+
+        static_assert(saga::legendre_symbol(0, 3) == 0);
+        static_assert(saga::legendre_symbol(1, 3) == 1);
+        static_assert(saga::legendre_symbol(2, 3) == -1);
+    }
+
+    using IntType = int;
+
+    auto const primes = saga::primes_below(IntType(1'000));
+
+    for(auto const & prime : primes)
+    {
+        auto const square_modulo = [prime](IntType arg)
+        {
+            return saga::square(arg) % prime;
+        };
+
+        auto const quads = saga::cursor::indices(IntType(1), prime)
+                         | saga::cursor::transform(square_modulo)
+                         | saga::cursor::to<std::set>();
+
+        for(auto const & num : saga::cursor::indices(0, 10*prime))
+        {
+            CAPTURE(prime, num);
+
+            if(num % prime == 0)
+            {
+                REQUIRE(saga::legendre_symbol(num, prime) == 0);
+            }
+            else if(quads.find(num % prime) != quads.end())
+            {
+                REQUIRE(saga::legendre_symbol(num, prime) == 1);
+            }
+            else
+            {
+                REQUIRE(saga::legendre_symbol(num, prime) == -1);
+            }
+        }
+    }
 }
