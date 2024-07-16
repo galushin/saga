@@ -63,8 +63,10 @@
 		</Compiler>
 		<Unit filename="../include/saga/accumulator/sum.hpp" />
 		<Unit filename="../include/saga/actions/action_closure.hpp" />
+		<Unit filename="../include/saga/actions/erase.hpp" />
 		<Unit filename="../include/saga/actions/reverse.hpp" />
 		<Unit filename="../include/saga/actions/sort.hpp" />
+		<Unit filename="../include/saga/actions/unique.hpp" />
 		<Unit filename="../include/saga/algorithm.hpp" />
 		<Unit filename="../include/saga/algorithm/copy.hpp" />
 		<Unit filename="../include/saga/algorithm/find_if.hpp" />
