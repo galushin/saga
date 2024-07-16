@@ -30,6 +30,8 @@ SAGA -- это свободной программное обеспечение:
  @todo Подумать как интегрировать курсоры saga
 */
 
+#include <saga/actions/unique.hpp>
+#include <saga/actions/sort.hpp>
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/iterator/reverse.hpp>
@@ -84,17 +86,7 @@ namespace saga
          : Compare()
          , data_(std::move(src))
         {
-            auto cur = saga::cursor::all(this->data_);
-            saga::sort(cur, this->cmp_ref());
-
-            // @todo Оптимизация: мы знаем, что вторая часть конъюнкции всегда истина после sort
-            auto equiv = [&](const_reference lhs, const_reference rhs)
-            {
-                return !this->cmp_ref()(lhs, rhs) && !this->cmp_ref()(rhs, lhs);
-            };
-
-            cur = saga::unique(cur, equiv);
-            this->data_.erase(cur.begin(), cur.end());
+            this->unique_private();
         }
 
         // @todo Конструктор с контейнером и распределителем памяти
@@ -122,17 +114,7 @@ namespace saga
             // @todo Должно быть this->insert(std::move(first), std::move(last)); вместо всего кода
             this->data_.insert(this->data_.end(), std::move(first), std::move(last));
 
-            auto cur = saga::cursor::all(this->data_);
-            saga::sort(cur, this->cmp_ref());
-
-            // @todo Оптимизация: мы знаем, что вторая часть конъюнкции всегда истина после sort
-            auto equiv = [&](const_reference lhs, const_reference rhs)
-            {
-                return !this->cmp_ref()(lhs, rhs) && !this->cmp_ref()(rhs, lhs);
-            };
-
-            cur = saga::unique(cur, equiv);
-            this->data_.erase(cur.begin(), cur.end());
+            this->unique_private();
         }
 
         // @todo Конструктор из пары итераторов и распределителя памяти
@@ -317,6 +299,17 @@ namespace saga
         value_compare & cmp_ref()
         {
             return *this;
+        }
+
+        void unique_private()
+        {
+            // @todo Оптимизация: мы знаем, что вторая часть конъюнкции всегда истина после sort
+            auto equiv = [&](const_reference lhs, const_reference rhs)
+            {
+                return !this->cmp_ref()(lhs, rhs) && !this->cmp_ref()(rhs, lhs);
+            };
+
+            this->data_ |= saga::actions::sort(this->cmp_ref()) | saga::actions::unique(equiv);
         }
 
         KeyContainer data_;

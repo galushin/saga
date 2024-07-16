@@ -5092,12 +5092,7 @@ namespace
             }
         }
 
-        auto cur = saga::cursor::all(result);
-        saga::sort(cur);
-        cur = saga::unique(std::move(cur));
-        result.erase(cur.begin(), cur.end());
-
-        return result;
+        return std::move(result) | saga::actions::sort | saga::actions::unique;
     }
 }
 

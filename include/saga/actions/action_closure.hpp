@@ -23,6 +23,8 @@ SAGA -- это свободной программное обеспечение:
  имён actions (со связанными параметрами) с операторами | и |=
 */
 
+#include <saga/ranges.hpp>
+
 #include <functional>
 #include <utility>
 
@@ -31,10 +33,22 @@ namespace saga
 namespace actions
 {
     template <class UnaryFunction>
+    class action_closure;
+
+    template <class UnaryFunction>
+    action_closure<UnaryFunction>
+    make_action_closure(UnaryFunction fun)
+    {
+        return action_closure<UnaryFunction>(std::move(fun));
+    }
+
+    template <class UnaryFunction>
     class action_closure
      : public UnaryFunction
     {
-        template <class Range>
+        template <class Range
+                 ,class = std::enable_if_t<saga::is_range<Range>{}>
+                 ,class = std::enable_if_t<!std::is_reference<Range>{}>>
         friend auto operator|(Range && arg, action_closure fun)
         {
             return std::move(fun)(std::forward<Range>(arg));
@@ -46,19 +60,21 @@ namespace actions
             std::ref(arg) | std::move(fun);
         }
 
+        template <class OtherUnaryFunction>
+        friend auto operator|(action_closure lhs, action_closure<OtherUnaryFunction> rhs)
+        {
+            auto fun = [lhs = std::move(lhs), rhs = std::move(rhs)](auto && arg)
+                { return rhs(lhs(std::forward<decltype(arg)>(arg))); };
+
+            return saga::actions::make_action_closure(std::move(fun));
+        }
+
     public:
         template <class... Args>
         constexpr explicit action_closure(Args &&... args)
          : UnaryFunction(std::forward<Args>(args)...)
         {}
     };
-
-    template <class UnaryFunction>
-    action_closure<UnaryFunction>
-    make_action_closure(UnaryFunction fun)
-    {
-        return action_closure<UnaryFunction>(std::move(fun));
-    }
 }
 // namespace actions
 }

@@ -16,6 +16,7 @@ SAGA -- это свободной программное обеспечение:
 */
 
 // Тестируемый файл
+#include <saga/actions/unique.hpp>
 #include <saga/actions/sort.hpp>
 #include <saga/actions/reverse.hpp>
 
@@ -192,6 +193,104 @@ TEST_CASE("actions::sort : custom compare, pipe-assign")
             saga::sort(saga::cursor::all(result), cmp);
             return result;
         }();
+
+        REQUIRE(actual == expected);
+    };
+}
+
+// unique
+namespace
+{
+    template <class Container, class... Args>
+    void test_actions_unique_function(Container const & src_old, Args... args)
+    {
+        auto src = src_old;
+
+        auto const actual = saga::actions::unique(std::move(src), args...);
+
+        auto const expected = [&]
+        {
+            auto result = src_old;
+            result.erase(std::unique(result.begin(), result.end(), args...), result.end());
+            return result;
+        }();
+
+        REQUIRE(actual == expected);
+    }
+}
+
+TEST_CASE("actions::unique : function")
+{
+    using Value = int;
+    using Binary_predicate = std::function<bool(Value const &, Value const &)>;
+
+    saga_test::property_checker
+        << [](std::vector<Value> const & src_old, Binary_predicate const & bin_pred)
+    {
+        ::test_actions_unique_function(src_old);
+        ::test_actions_unique_function(src_old, bin_pred);
+    };
+}
+
+TEST_CASE("actions::unique : default compare, pipes")
+{
+    using Value = std::string;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](Container const & src)
+    {
+        auto const actual = Container(src) | saga::actions::unique;
+
+        auto const expected = saga::actions::unique(Container(src));
+
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("actions::unique : custom compare, pipes")
+{
+    using Value = int;
+    using Container = std::vector<Value>;
+    using BinaryPredicate = std::function<bool(Value const &, Value const &)>;
+
+    saga_test::property_checker << [](Container const & src, BinaryPredicate bin_pred)
+    {
+        auto const actual = Container(src) | saga::actions::unique(bin_pred);
+
+        auto const expected = saga::actions::unique(Container(src), bin_pred);
+
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("actions::unique : default compare, pipes-assign")
+{
+    using Value = std::string;
+    using Container = std::vector<Value>;
+
+    saga_test::property_checker << [](Container const & src)
+    {
+        auto actual = src;
+        actual |= saga::actions::unique;
+
+        auto const expected = saga::actions::unique(Container(src));
+
+        REQUIRE(actual == expected);
+    };
+}
+
+TEST_CASE("actions::unique : custom compare, pipes-assign")
+{
+    using Value = long;
+    using Container = std::vector<Value>;
+    using BinaryPredicate = std::function<bool(Value const &, Value const &)>;
+
+    saga_test::property_checker << [](Container const & src, BinaryPredicate bin_pred)
+    {
+        auto actual = src;
+        actual |= saga::actions::unique(bin_pred);
+
+        auto const expected = saga::actions::unique(Container(src), bin_pred);
 
         REQUIRE(actual == expected);
     };

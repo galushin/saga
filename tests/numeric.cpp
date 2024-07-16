@@ -1,4 +1,4 @@
-/* (c) 2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2021-2024 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch2/catch_amalgamated.hpp>
 
 // Вспомогательные возможности, используемые в тестах
+#include <saga/actions/unique.hpp>
 #include <saga/algorithm.hpp>
 #include <saga/cursor/indices.hpp>
 #include <saga/cursor/istream_cursor.hpp>
@@ -1166,7 +1167,7 @@ TEST_CASE("nth_permutation: default compare")
     REQUIRE(perms.size() == n_perm);
     REQUIRE(saga::is_sorted(saga::cursor::all(perms)));
 
-    perms.erase(saga::unique(saga::cursor::all(perms)).begin(), perms.end());
+    perms |= saga::actions::unique;
 
     REQUIRE(perms.size() == n_perm);
 }
