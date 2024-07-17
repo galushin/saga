@@ -124,14 +124,13 @@ namespace saga
 
     struct power_semigroup_fn
     {
-        // @todo Тест для явно заданной операции
-        // @todo Тест для явно заданной "единицы"
         template <class IntType, class Power, class BinaryOperation = std::multiplies<>>
-        constexpr IntType operator()(IntType base, Power power, BinaryOperation bin_op = {}) const
+        constexpr IntType operator()(IntType base, Power power
+                                    ,BinaryOperation bin_op = {}, IntType unit = IntType(1)) const
         {
             if(power == 0)
             {
-                return IntType(1);
+                return unit;
             }
 
             return power_natural_fn{}(std::move(base), std::move(power), std::move(bin_op));
