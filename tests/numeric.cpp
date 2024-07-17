@@ -1194,8 +1194,6 @@ TEST_CASE("primes_below: regression #1258")
     CHECK(saga::primes_below(43) == std::vector{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41});
 }
 
-
-
 TEST_CASE("legendre_symbol")
 {
     {
@@ -1240,6 +1238,29 @@ TEST_CASE("legendre_symbol")
             else
             {
                 REQUIRE(saga::legendre_symbol(num, prime) == -1);
+            }
+        }
+    }
+}
+
+TEST_CASE("sqrt_modulo_prime")
+{
+    using IntType = int;
+
+    auto const primes = saga::primes_below(IntType(1'000));
+
+    for(auto const & prime : primes)
+    {
+        for(auto const & expected : saga::cursor::indices(0, prime))
+        {
+            auto const num = saga::square(expected) % prime;
+
+            if(saga::legendre_symbol(num, prime) != -1)
+            {
+                auto const actual = saga::sqrt_modulo_prime(num, prime, saga::unsafe_tag_t{});
+
+                CAPTURE(prime, expected, num, actual);
+                REQUIRE(saga::square(actual) % prime == num);
             }
         }
     }
