@@ -23,6 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/cursor_traits.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/functional.hpp>
+#include <saga/math.hpp>
 #include <saga/utility/exchange.hpp>
 
 #include <functional>
@@ -503,6 +504,154 @@ namespace saga
         }
     };
 
+    template <class IntType>
+    class multiplies_modulo
+    {
+    public:
+        constexpr explicit multiplies_modulo(IntType mod)
+         : mod_(std::move(mod))
+        {}
+
+        constexpr IntType operator()(IntType const & lhs, IntType const & rhs) const
+        {
+            return lhs * rhs % this->mod_;
+        }
+
+    private:
+        IntType mod_;
+    };
+
+    struct legendre_symbol_fn
+    {
+        /** @brief Вычичление символа Лежандра
+
+        @pre prime -- простое
+        */
+        template <class IntType>
+        constexpr
+        IntType operator()(IntType num, IntType const & prime) const
+        {
+            num %= prime;
+
+            if(num == 0)
+            {
+                return IntType(0);
+            }
+
+            if(prime == IntType(2))
+            {
+                return IntType(1);
+            }
+
+            auto answer = saga::power_natural_fn{}(num, (prime - IntType(1))/IntType(2)
+                                                  , saga::multiplies_modulo<IntType>(prime));
+
+            if(answer == prime - IntType(1))
+            {
+                return IntType(-1);
+            }
+
+            return answer;
+        }
+    };
+
+    struct sqrt_modulo_prime_fn
+    {
+        /** @brief Вычисление квадратного корня по простому модулю
+        @pre prime - простое число
+        @pre num - квадратичный вычет по модулю @c prime
+        */
+        template <class IntType>
+        IntType operator()(IntType num, IntType prime, unsafe_tag_t) const
+        {
+            if(prime == 2)
+            {
+                return num % prime;
+            }
+
+            num %= prime;
+
+            auto const mult = saga::multiplies_modulo<IntType>(prime);
+
+            if(prime % 4 == 3)
+            {
+                return saga::power_natural(num, (prime + 1) / 4, mult);
+            }
+
+            auto const [Q, S] = saga::remove_factor(prime - 1, IntType(2));
+
+            auto M = S;
+            auto const z = this->find_nonresidue(prime);
+            auto c = saga::power_natural(z, Q, mult);
+            auto t = saga::power_natural(num, Q, mult);
+            auto R = saga::power_natural(num, (Q+1)/2, mult);
+
+            for(;;)
+            {
+                if(t == 0)
+                {
+                    return IntType(0);
+                }
+
+                if(t == 1)
+                {
+                    return R;
+                }
+
+                auto const i = this->find_index(t, M, prime);
+
+                auto const b
+                    = saga::power_natural(c, saga::power_semigroup(IntType(2), M - i - 1), mult);
+
+                M = i;
+                c = saga::square(b, mult);
+                t = mult(t, c);
+                R = mult(R, b);
+            }
+        }
+
+    private:
+        template <class IntType>
+        static IntType find_nonresidue(IntType prime)
+        {
+            assert(prime > 2);
+
+            auto answer = IntType(2);
+
+            for(; answer < prime; ++ answer)
+            {
+                if(saga::legendre_symbol_fn{}(answer, prime) == -1)
+                {
+                    return answer;
+                }
+            }
+
+            // Если prime > 2 -- простое, то квадратичных невычетов половина
+            assert(false);
+            return answer;
+        }
+
+        template <class IntType>
+        static IntType find_index(IntType t, IntType M, IntType prime)
+        {
+            auto index = IntType(1);
+
+            for(; index < M; ++ index)
+            {
+                t = saga::square(t) % prime;
+
+                if(t == 1)
+                {
+                    return index;
+                }
+            }
+
+            assert(false);
+            return index;
+        }
+
+    };
+
     struct factoriadic_fn
     {
         template <class Size, class OutputCursor>
@@ -571,6 +720,8 @@ namespace saga
     inline constexpr auto const copy_primes_below = copy_primes_below_fn{};
     inline constexpr auto const primes_below = primes_below_fn{};
     inline constexpr auto const euler_phi_below = euler_phi_below_fn{};
+    inline constexpr auto const legendre_symbol = legendre_symbol_fn{};
+    inline constexpr auto const sqrt_modulo_prime = sqrt_modulo_prime_fn{};
 
     inline constexpr auto const nth_permutation = nth_permutation_fn{};
 }

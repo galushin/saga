@@ -54,6 +54,20 @@ TEST_CASE("power_natural: regression 1138")
     REQUIRE(saga::power_natural(3, 5, std::plus<>{}) == 3 * 5);
 }
 
+TEST_CASE("power_semigroup")
+{
+    using Value = std::string;
+
+    saga_test::property_checker
+    << [](Value const & value, saga_test::container_size<std::size_t> repeats)
+    {
+        REQUIRE(saga::power_semigroup(value, 0, std::plus<>{}, Value("")) == Value(""));
+
+        REQUIRE(saga::power_semigroup(value, 1 + repeats, std::plus<>{}, Value(""))
+                == saga::power_natural(value, 1 + repeats, std::plus<>{}));
+    };
+}
+
 TEST_CASE("is_square: of square")
 {
     using Value = std::uint32_t;

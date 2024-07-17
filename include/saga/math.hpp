@@ -122,11 +122,27 @@ namespace saga
         }
     };
 
+    struct power_semigroup_fn
+    {
+        template <class IntType, class Power, class BinaryOperation = std::multiplies<>>
+        constexpr IntType operator()(IntType base, Power power
+                                    ,BinaryOperation bin_op = {}, IntType unit = IntType(1)) const
+        {
+            if(power == 0)
+            {
+                return unit;
+            }
+
+            return power_natural_fn{}(std::move(base), std::move(power), std::move(bin_op));
+        }
+    };
+
     inline constexpr auto abs = saga::absolute_value{};
     inline constexpr auto square = saga::square_fn{};
     inline constexpr auto triangular_number = triangular_number_fn{};
     inline constexpr auto square_pyramidal_number = square_pyramidal_number_fn{};
     inline constexpr auto power_natural = saga::power_natural_fn{};
+    inline constexpr auto power_semigroup = saga::power_semigroup_fn{};
 
     struct is_square_fn
     {
@@ -153,11 +169,11 @@ namespace saga
 
     inline constexpr auto is_square = is_square_fn{};
 
-    template <class IntType, class Size = std::ptrdiff_t>
+    template <class IntType, class Size = IntType>
     struct remove_factor_result
     {
         IntType value;
-        Size multiplicity;
+        IntType multiplicity;
     };
 
     struct remove_factor_fn
@@ -167,7 +183,7 @@ namespace saga
         remove_factor_result<IntType>
         operator()(IntType num, IntType factor) const
         {
-            std::ptrdiff_t multiplicity = 0;
+            auto multiplicity = IntType(0);
 
             for(; num % factor == 0;)
             {
