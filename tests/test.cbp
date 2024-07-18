@@ -146,7 +146,6 @@
 		<Unit filename="../include/saga/utility/operators.hpp" />
 		<Unit filename="../include/saga/utility/pipeable.hpp" />
 		<Unit filename="../include/saga/utility/with_old_value.hpp" />
-		<Unit filename="ProjectEuler/PE030.cpp" />
 		<Unit filename="ProjectEuler/p081_matrix.txt" />
 		<Unit filename="ProjectEuler/projectEuler.cpp" />
 		<Unit filename="actions.cpp" />

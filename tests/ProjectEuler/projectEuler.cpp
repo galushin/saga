@@ -81,13 +81,21 @@ namespace
                - ::sum_of_multiples_below(15, n_max);
     }
 
+    struct PE_001_predicate
+    {
+        template <class IntType>
+        constexpr bool operator()(IntType num) const
+        {
+            return num % 3 == 0 || num % 5 == 0;
+        }
+    };
+
     template <class IntType>
     IntType projectEuler_001_cursor_algorithms(IntType n_max)
     {
         std::vector<IntType> tmp;
-        saga::copy_if(saga::cursor::indices(n_max)
-                      , saga::back_inserter(tmp)
-                      , [](IntType const & num) { return num % 3 == 0 || num % 5 == 0; });
+
+        saga::copy_if(saga::cursor::indices(n_max), saga::back_inserter(tmp), PE_001_predicate{});
 
         return saga::reduce(saga::cursor::all(tmp));
     }
@@ -95,21 +103,18 @@ namespace
     template <class IntType>
     constexpr IntType projectEuler_001_cursor_algorithms_filter(IntType n_max)
     {
-        auto pred = [](IntType const & num) { return num % 3 == 0 || num % 5 == 0; };
-
-        return saga::reduce(saga::cursor::indices(n_max) | saga::cursor::filter(pred));
+        return saga::reduce(saga::cursor::indices(n_max)
+                            |saga::cursor::filter(PE_001_predicate{}));
     }
 
     template <class IntType>
     constexpr IntType projectEuler_001_smart_output_cursor(IntType n_max)
     {
-        auto pred = [](IntType const & num) { return num % 3 == 0 || num % 5 == 0; };
-
         auto result = IntType{0};
         auto accumulator = [&result](IntType const & arg) { result += arg; };
 
         saga::copy(saga::cursor::indices(n_max)
-                   , saga::pipes::filter(saga::pipes::for_each(accumulator), pred));
+                   , saga::pipes::filter(saga::pipes::for_each(accumulator), PE_001_predicate{}));
 
         return result;
     }
@@ -1290,9 +1295,6 @@ namespace
 
         return row.back();
     }
-
-    template <class IntType>
-    IntType projectEuler_015_formula(IntType const & row_count, IntType const & col_count);
 }
 
 TEST_CASE("PE 015")
@@ -1687,10 +1689,8 @@ TEST_CASE("PE 022")
 {
     REQUIRE(::alphabetical_value("COLIN") == 53);
 
-    auto names = ::read_quoted_comma_separated_from_file("ProjectEuler/p022_names.txt");
-
-    // Отсортировать
-    names |= saga::actions::sort;
+    auto const names = ::read_quoted_comma_separated_from_file("ProjectEuler/p022_names.txt")
+                     | saga::actions::sort;
 
     REQUIRE(names[938 - 1] == "COLIN");
 
@@ -1946,7 +1946,7 @@ namespace
 
 /* Мы рассматриваем числа вида n^2 + a*n + b
  |a|<1000 и |b|<=1000
- При n=|b| получаем гарантировано простое число, так что n достаточно перебирать до |b|
+ При n=|b| получаем гарантировано составное число, так что n достаточно перебирать до |b|
  Самое большое число b*b+a*b+b <= 2'001'000.
  Так что для проверки на простоту нужны только числа до sqrt(2'001'000)
 */
@@ -2034,6 +2034,40 @@ TEST_CASE("PE 029")
 {
     REQUIRE(PE_029(5) == 15);
     REQUIRE(PE_029(100) == 9183);
+}
+
+// PE 030: Суммы степеней цифр
+namespace
+{
+    template <class IntType>
+    IntType digits_powers_sum(IntType num, IntType power)
+    {
+        auto cur = saga::cursor::digits_of(std::move(num))
+                 | saga::cursor::transform([=](IntType arg)
+                                           { return saga::power_natural(arg, power); });
+
+        return saga::reduce(std::move(cur));
+    }
+
+    template <class IntType>
+    IntType PE_030(IntType power)
+    {
+        auto cur = saga::cursor::indices(10, (power + 1) * saga::power_natural(9, power))
+                 | saga::cursor::filter([=](IntType num)
+                                        {return num == ::digits_powers_sum(num, power); });
+
+        return saga::reduce(std::move(cur));
+    }
+}
+
+TEST_CASE("PE 030")
+{
+    REQUIRE(::digits_powers_sum(1634, 4) == 1634);
+    REQUIRE(::digits_powers_sum(8208, 4) == 8208);
+    REQUIRE(::digits_powers_sum(9474, 4) == 9474);
+
+    REQUIRE(::PE_030(4) == 19316);
+    REQUIRE(::PE_030(5) == 443839);
 }
 
 // PE 031: Суммы монет
