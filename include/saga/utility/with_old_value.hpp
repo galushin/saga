@@ -31,13 +31,37 @@ namespace saga
 {
     template <class T>
     class with_old_value
-     : saga::operators::equality_comparable<with_old_value<T>>
+    : saga::rel_ops::enable_adl<with_old_value<T>>
     {
         constexpr friend
         bool operator==(with_old_value const & lhs, with_old_value const & rhs)
         {
             return std::tie(lhs.value(), lhs.old_value())
                     == std::tie(rhs.value(), rhs.old_value());
+        }
+
+        constexpr friend
+        bool operator==(with_old_value const & lhs, T const & rhs)
+        {
+            return lhs.value() == rhs;
+        }
+
+        constexpr friend
+        bool operator==(T const & lhs, with_old_value const & rhs)
+        {
+            return lhs == rhs.value();
+        }
+
+        constexpr friend
+        bool operator<(with_old_value const & lhs, T const & rhs)
+        {
+            return lhs.value() < rhs;
+        }
+
+        constexpr friend
+        bool operator<(T const & lhs, with_old_value const & rhs)
+        {
+            return lhs < rhs.value();
         }
 
     public:

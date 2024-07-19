@@ -82,11 +82,46 @@ TEST_CASE("with_old_value: equality")
         obj1 = new_value1;
         obj2 = new_value2;
 
+        REQUIRE(obj1 == new_value1);
+
         REQUIRE(obj1 == obj1);
         REQUIRE(obj2 == obj2);
 
         REQUIRE((obj1 == obj2) == (value1 == value2 && new_value1 == new_value2));
         REQUIRE((obj1 != obj2) == !(obj1 == obj2));
+
+        REQUIRE((obj1 == value2) == (obj1.value() == value2));
+        REQUIRE((value2 == obj1) == (obj1 == value2));
+
+        REQUIRE((obj1 != value2) == !(obj1 == value2));
+        REQUIRE((value2 != obj1) == (obj1 != value2));
+    };
+}
+
+TEST_CASE("with_old_value: ordering")
+{
+    using Value = std::string;
+
+    saga_test::property_checker << [](Value const & value1, Value const & new_value1
+                                      , Value const & value2)
+    {
+        saga::with_old_value<Value> obj1(value1);
+
+        obj1 = new_value1;
+
+        REQUIRE(obj1 == new_value1);
+
+        REQUIRE((obj1 < value2) == (obj1.value() < value2));
+        REQUIRE((value2 < obj1) == (value2 < obj1.value()));
+
+        REQUIRE((obj1 > value2) == (value2 < obj1));
+        REQUIRE((value2 > obj1) == (obj1 < value2));
+
+        REQUIRE((obj1 <= value2) == !(value2 < obj1));
+        REQUIRE((value2 <= obj1) == !(obj1 < value2));
+
+        REQUIRE((obj1 >= value2) == !(obj1 < value2));
+        REQUIRE((value2 >= obj1) == !(value2 < obj1));
     };
 }
 
