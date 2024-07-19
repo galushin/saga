@@ -24,6 +24,7 @@ SAGA -- это свободной программное обеспечение:
 
 #include <saga/cursor/cursor_traits.hpp>
 #include <saga/cursor/cursor_facade.hpp>
+#include <saga/defs.hpp>
 #include <saga/iterator.hpp>
 #include <saga/type_traits.hpp>
 #include <saga/utility/operators.hpp>
@@ -196,6 +197,8 @@ namespace saga
         достижима из @c first
         @pre Если is_totally_ordered_with<Incrementable, Sentinel>, то <tt>first <= last</tt>
         */
+        template <class = std::enable_if_t<std::is_same<Sentinel, saga::unreachable_sentinel_t>{}
+                                           || saga::is_totally_ordered_with<Incrementable, Sentinel>{}>>
         constexpr explicit iota_cursor(Incrementable first, Sentinel last)
          : first_(std::move(first))
          , last_(std::move(last))

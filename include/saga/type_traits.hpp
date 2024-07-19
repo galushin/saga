@@ -189,7 +189,7 @@ namespace saga
     {
         template <class T, class U>
         using common_reference_helper
-            = saga::common_reference_t<std::remove_reference<T>&, std::remove_reference<U>&>;
+            = saga::common_reference_t<std::remove_reference_t<T>&, std::remove_reference_t<U>&>;
     }
     // namespace detail
 
