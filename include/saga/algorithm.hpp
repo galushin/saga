@@ -22,18 +22,21 @@ SAGA -- это свободной программное обеспечение:
  @brief Аналоги алгоритмов STL, работающие с курсорами и интервалами
 */
 
-// @todo Отсортировать список?
-#include <saga/compare.hpp>
-#include <saga/pipes/for_each.hpp>
-#include <saga/algorithm/copy.hpp>
-#include <saga/pipes/partition.hpp>
-#include <saga/algorithm/result_types.hpp>
-#include <saga/algorithm/find_if.hpp>
+// @todo По алфавиту
+#include <saga/pipes/transform.hpp>
+
 #include <saga/assert.hpp>
+#include <saga/algorithm/copy.hpp>
+#include <saga/algorithm/find_if.hpp>
+#include <saga/algorithm/result_types.hpp>
+#include <saga/compare.hpp>
 #include <saga/cursor/cursor_traits.hpp>
+#include <saga/cursor/reverse.hpp>
 #include <saga/functional.hpp>
 #include <saga/iterator.hpp>
-#include <saga/cursor/reverse.hpp>
+#include <saga/pipes/filter.hpp>
+#include <saga/pipes/for_each.hpp>
+#include <saga/pipes/partition.hpp>
 
 #include <cassert>
 #include <algorithm>
@@ -421,15 +424,10 @@ namespace saga
         copy_if_result<InputCursor, OutputCursor>
         operator()(InputCursor cur, OutputCursor out, Predicate pred) const
         {
-            for(; !!cur && !!out; ++ cur)
-            {
-                if(saga::invoke(pred, *cur))
-                {
-                    out << *cur;
-                }
-            }
+            auto result = saga::copy(std::move(cur)
+                                    ,saga::pipes::filter(std::move(out), std::move(pred)));
 
-            return {std::move(cur), std::move(out)};
+            return {std::move(result.in), std::move(result.out).base()};
         }
     };
 
@@ -1067,7 +1065,6 @@ namespace saga
     struct sample_fn
     {
     private:
-
         template <class InputCursor, class RandomAccessCursor, class URBG>
         RandomAccessCursor impl(InputCursor input, RandomAccessCursor out
                                 , cursor_difference_t<InputCursor> const num, URBG && gen
@@ -1398,10 +1395,10 @@ namespace saga
 
             input = saga::cursor::drop_front_n(std::move(input), num1);
 
-            auto const result1 = this->impl(input.dropped_front(), pred, num1);
+            auto const result1 = this->impl(input.dropped_front(), std::ref(pred), num1);
 
             input.forget_front();
-            auto const result2 = this->impl(input, pred, num - num1);
+            auto const result2 = this->impl(input, std::move(pred), num - num1);
 
             auto r_rotation
                 = saga::rotate_fn{}(detail::cursor_from_parts(result1, result2.dropped_front()));
@@ -1421,7 +1418,7 @@ namespace saga
         {
             auto const num = saga::cursor::size(input);
 
-            return this->impl(std::move(input), pred, num);
+            return this->impl(std::move(input), std::move(pred), num);
         }
     };
 
@@ -1430,7 +1427,7 @@ namespace saga
         template <class ForwardCursor, class Predicate>
         ForwardCursor operator()(ForwardCursor cur, Predicate pred) const
         {
-            SAGA_ASSERT_AUDIT(saga::is_partitioned_fn{}(cur, pred));
+            SAGA_ASSERT_AUDIT(saga::is_partitioned_fn{}(cur, std::ref(pred)));
 
             if(!cur)
             {
@@ -2654,12 +2651,10 @@ namespace saga
         unary_transform_result<InputCursor, OutputCursor>
         operator()(InputCursor input, OutputCursor output, UnaryFunction fun) const
         {
-            for(; !!input && !!output; ++input)
-            {
-                output << saga::invoke(fun, *input);
-            }
+            auto result = saga::copy(std::move(input)
+                                    ,saga::pipes::transform(std::move(output), std::move(fun)));
 
-            return {std::move(input), std::move(output)};
+            return {std::move(result).in, std::move(result).out.base()};
         }
 
         template <class InputCursor1, class InputCursor2, class OutputCursor, class BinaryFunction>

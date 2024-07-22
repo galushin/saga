@@ -18,6 +18,11 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_PIPES_TRANSFORM_HPP_INCLUDED
 #define Z_SAGA_PIPES_TRANSFORM_HPP_INCLUDED
 
+#include <saga/functional.hpp>
+#include <saga/type_traits.hpp>
+
+#include <utility>
+
 namespace saga
 {
     namespace pipes
@@ -39,7 +44,7 @@ namespace saga
             }
 
             template <class Arg
-                     , class = decltype(std::declval<OutputCursor>()
+                     , class = decltype(std::declval<OutputCursor &>()
                                         << std::declval<saga::invoke_result_t<UnaryFunction const, Arg>>())>
             constexpr transform_output_cursor &
             operator<<(Arg && arg)
@@ -47,6 +52,12 @@ namespace saga
                 this->cur_ << saga::invoke(this->fun_, std::forward<Arg>(arg));
 
                 return *this;
+            }
+
+            // Адаптер курсора
+            constexpr OutputCursor base() &&
+            {
+                return std::move(this->cur_);
             }
 
         private:
