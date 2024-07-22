@@ -42,7 +42,7 @@ namespace saga
             }
 
             template <class Arg
-                     , class = decltype(std::declval<OutputCursor>() << std::declval<Arg>())>
+                     , class = decltype(std::declval<OutputCursor &>() << std::declval<Arg>())>
             constexpr filter_output_cursor &
             operator<<(Arg && arg)
             {
@@ -55,6 +55,10 @@ namespace saga
             }
 
             // Адаптер курсора
+            OutputCursor base() &&
+            {
+                return std::get<0>(std::move(this->data_));
+            }
 
         private:
             std::tuple<OutputCursor, UnaryPredicate> data_;

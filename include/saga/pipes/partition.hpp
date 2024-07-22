@@ -48,8 +48,9 @@ namespace saga
                 return !std::get<0>(this->data_) || !std::get<1>(this->data_);
             }
 
-            template <class Arg>
-            // @todo ограничение типа
+            template <class Arg
+                     , class = decltype(std::declval<OutputCursor1&>() << std::declval<Arg>())
+                     , class = decltype(std::declval<OutputCursor2&>() << std::declval<Arg>())>
             partition_pipe &
             operator<<(Arg&& arg)
             {
