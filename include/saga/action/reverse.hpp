@@ -15,20 +15,20 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_ACTIONS_REVERSE_HPP_INCLUDED
-#define Z_SAGA_ACTIONS_REVERSE_HPP_INCLUDED
+#ifndef Z_SAGA_ACTION_REVERSE_HPP_INCLUDED
+#define Z_SAGA_ACTION_REVERSE_HPP_INCLUDED
 
-/** @file saga/actions/sort.hpp
+/** @file saga/action/sort.hpp
  @brief Функциональный объект, выполняющий обращение интервала.
 */
 
-#include <saga/actions/action_closure.hpp>
+#include <saga/action/action_closure.hpp>
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
 
 namespace saga
 {
-namespace actions
+namespace action
 {
     struct reverse_fn
     {
@@ -41,12 +41,12 @@ namespace actions
         }
     };
 
-    inline constexpr auto reverse = saga::actions::action_closure<saga::actions::reverse_fn>{};
+    inline constexpr auto reverse = saga::action::action_closure<saga::action::reverse_fn>{};
 }
-// namespace actions
+// namespace action
 }
 // namespace saga
 
 
 #endif
-// Z_SAGA_ACTIONS_REVERSE_HPP_INCLUDED
+// Z_SAGA_ACTION_REVERSE_HPP_INCLUDED

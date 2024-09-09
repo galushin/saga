@@ -23,7 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch2/catch_amalgamated.hpp>
 
 // Вспомогательные файлы
-#include <saga/actions/reverse.hpp>
+#include <saga/action/reverse.hpp>
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/cursor/to.hpp>
@@ -40,7 +40,7 @@ TEST_CASE("polynomial_horner for binary code")
 
         auto const bits = saga::cursor::digits_of(value, base)
                         | saga::cursor::to<std::vector<bool>>()
-                        | saga::actions::reverse;
+                        | saga::action::reverse;
 
         auto const result = saga::polynomial_horner(saga::cursor::all(bits)
                                                     , base, NotNegativeInteger(0));

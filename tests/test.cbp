@@ -62,11 +62,11 @@
 			<Add directory="./contrib/pcg-cpp/include" />
 		</Compiler>
 		<Unit filename="../include/saga/accumulator/sum.hpp" />
-		<Unit filename="../include/saga/actions/action_closure.hpp" />
-		<Unit filename="../include/saga/actions/erase.hpp" />
-		<Unit filename="../include/saga/actions/reverse.hpp" />
-		<Unit filename="../include/saga/actions/sort.hpp" />
-		<Unit filename="../include/saga/actions/unique.hpp" />
+		<Unit filename="../include/saga/action/action_closure.hpp" />
+		<Unit filename="../include/saga/action/erase.hpp" />
+		<Unit filename="../include/saga/action/reverse.hpp" />
+		<Unit filename="../include/saga/action/sort.hpp" />
+		<Unit filename="../include/saga/action/unique.hpp" />
 		<Unit filename="../include/saga/algorithm.hpp" />
 		<Unit filename="../include/saga/algorithm/copy.hpp" />
 		<Unit filename="../include/saga/algorithm/find_if.hpp" />
@@ -148,7 +148,7 @@
 		<Unit filename="../include/saga/utility/with_old_value.hpp" />
 		<Unit filename="ProjectEuler/p081_matrix.txt" />
 		<Unit filename="ProjectEuler/projectEuler.cpp" />
-		<Unit filename="actions.cpp" />
+		<Unit filename="action.cpp" />
 		<Unit filename="algorithm.cpp" />
 		<Unit filename="compare.cpp" />
 		<Unit filename="container/make.cpp" />

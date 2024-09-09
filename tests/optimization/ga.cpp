@@ -23,8 +23,8 @@ SAGA -- это свободной программное обеспечение:
 #include "../saga_test.hpp"
 
 // Используемое при тестах
-#include <saga/actions/reverse.hpp>
-#include <saga/actions/sort.hpp>
+#include <saga/action/reverse.hpp>
+#include <saga/action/sort.hpp>
 #include <saga/cpp20/span.hpp>
 #include <saga/cursor/indices.hpp>
 #include <saga/cursor/to.hpp>
@@ -249,7 +249,7 @@ TEST_CASE("binary code")
             bits.push_back(num % base);
         }
 
-        bits |= saga::actions::reverse;
+        bits |= saga::action::reverse;
 
         auto const result
             = saga::binary_sequence_to_integer<NotNegativeInteger>(saga::cursor::all(bits));
@@ -286,7 +286,7 @@ TEST_CASE("Gray code - generates all")
         // Преобразуем целое в двоичный код
         auto const code = saga::cursor::digits_of(num, 2)
                         | saga::cursor::to<Digit_container>()
-                        | saga::actions::reverse;
+                        | saga::action::reverse;
 
         // Переводим Код грея в целое число
         auto const value = saga::gray_code_to_integer<Integer>(saga::cursor::all(code));
@@ -352,7 +352,7 @@ TEST_CASE("binary sequence to real: coverage")
             values.push_back(saga::binary_sequence_to_real<double>(saga::cursor::all(bits)));
         }
 
-        values |= saga::actions::sort;
+        values |= saga::action::sort;
 
         // Проверки
         REQUIRE(!values.empty());
@@ -392,7 +392,7 @@ TEST_CASE("Gray code (real) - generates all")
         REQUIRE(code.size() <= dim);
 
         code.resize(dim, 0);
-        code |= saga::actions::reverse;
+        code |= saga::action::reverse;
 
         // Переводим Код грея в целое число
         auto const value = saga::gray_code_to_real<RealType>(saga::cursor::all(code));
