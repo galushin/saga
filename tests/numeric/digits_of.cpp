@@ -23,7 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include "../saga_test.hpp"
 
 // Используемое при тестах
-#include <saga/actions/reverse.hpp>
+#include <saga/action/reverse.hpp>
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/cursor/to.hpp>
@@ -65,7 +65,7 @@ TEST_CASE("digits_of - reverse of poynomial_horner")
     {
         auto const digits = saga::cursor::digits_of(value, base.value())
                           | saga::cursor::to<std::vector>()
-                          | saga::actions::reverse;
+                          | saga::action::reverse;
 
         // Цифры в заданном диапазоне
         REQUIRE(saga::all_of(saga::cursor::all(digits)

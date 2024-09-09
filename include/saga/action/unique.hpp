@@ -15,21 +15,21 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_ACTIONS_UNIQUE_HPP_INCLUDED
-#define Z_SAGA_ACTIONS_UNIQUE_HPP_INCLUDED
+#ifndef Z_SAGA_ACTION_UNIQUE_HPP_INCLUDED
+#define Z_SAGA_ACTION_UNIQUE_HPP_INCLUDED
 
-/** @file saga/actions/unique.hpp
+/** @file saga/action/unique.hpp
  @brief Функциональный объект, выполняющий сортировку интервала.
 */
 
-#include <saga/actions/erase.hpp>
-#include <saga/actions/action_closure.hpp>
+#include <saga/action/erase.hpp>
+#include <saga/action/action_closure.hpp>
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
 
 namespace saga
 {
-namespace actions
+namespace action
 {
     struct unique_fn
     {
@@ -41,7 +41,7 @@ namespace actions
             auto to_erase = saga::unique(saga::cursor::all(arg), std::move(bin_pred));
             assert(to_erase.end() == saga::end(arg));
 
-            saga::actions::erase(arg, to_erase.begin(), to_erase.end());
+            saga::action::erase(arg, to_erase.begin(), to_erase.end());
 
             return std::move(arg);
         }
@@ -55,15 +55,15 @@ namespace actions
                 return unique_fn{}(std::forward<decltype(arg)>(arg), bin_pred);
             };
 
-            return saga::actions::make_action_closure(std::move(fun));
+            return saga::action::make_action_closure(std::move(fun));
         }
     };
 
-    inline constexpr auto unique = saga::actions::action_closure<unique_fn>{};
+    inline constexpr auto unique = saga::action::action_closure<unique_fn>{};
 }
-// namespace actions
+// namespace action
 }
 // namespace saga
 
 #endif
-// Z_SAGA_ACTIONS_UNIQUE_HPP_INCLUDED
+// Z_SAGA_ACTION_UNIQUE_HPP_INCLUDED

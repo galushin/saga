@@ -20,8 +20,8 @@ SAGA -- это свободной программное обеспечение:
 #include <catch2/catch_amalgamated.hpp>
 
 // Используемые возможности
-#include <saga/actions/reverse.hpp>
-#include <saga/actions/sort.hpp>
+#include <saga/action/reverse.hpp>
+#include <saga/action/sort.hpp>
 #include <saga/container/make.hpp>
 #include <saga/cursor/by_line.hpp>
 #include <saga/cursor/cartesian_product.hpp>
@@ -1082,7 +1082,7 @@ namespace
                 this->units_.push_back(::from_chars_whole<Unit>(first, last));
             }
 
-            this->units_ |= saga::actions::reverse;
+            this->units_ |= saga::action::reverse;
         }
 
         // Арифметические операции
@@ -1690,7 +1690,7 @@ TEST_CASE("PE 022")
     REQUIRE(::alphabetical_value("COLIN") == 53);
 
     auto const names = ::read_quoted_comma_separated_from_file("ProjectEuler/p022_names.txt")
-                     | saga::actions::sort;
+                     | saga::action::sort;
 
     REQUIRE(names[938 - 1] == "COLIN");
 
@@ -2128,7 +2128,7 @@ TEST_CASE("PE 032")
                 break;
             }
 
-            str |= saga::actions::sort;
+            str |= saga::action::sort;
 
             if(str == "123456789")
             {
@@ -2524,7 +2524,7 @@ namespace
     {
         static const auto all_digits = std::string("123456789");
 
-        str |= saga::actions::sort;
+        str |= saga::action::sort;
 
         return all_digits.compare(0, str.size(), str) == 0;
     }
@@ -3283,11 +3283,11 @@ namespace
     template <class IntType>
     bool PE_052_check(IntType num, IntType max_mult)
     {
-        auto const str_1 = std::to_string(num) | saga::actions::sort;
+        auto const str_1 = std::to_string(num) | saga::action::sort;
 
         for(auto mult : saga::cursor::indices(2, max_mult + 1))
         {
-            auto const str_k = std::to_string(num * mult) | saga::actions::sort;
+            auto const str_k = std::to_string(num * mult) | saga::action::sort;
 
             if(str_1 != str_k)
             {
@@ -3604,7 +3604,7 @@ namespace
             hand.cards[index].suit  = str[3*index + 1];
         }
 
-        hand.cards |= saga::actions::sort(saga::compare_by(&poker_card::value, std::greater<>{}));
+        hand.cards |= saga::action::sort(saga::compare_by(&poker_card::value, std::greater<>{}));
 
         return hand;
     }
@@ -3698,7 +3698,7 @@ namespace
             for(auto counter = 50; counter > 0; -- counter)
             {
                 auto reversed = num;
-                reversed |= saga::actions::reverse;
+                reversed |= saga::action::reverse;
 
                 ::plus_assign_long_same_size(num, reversed, base);
 
@@ -4089,7 +4089,7 @@ namespace
             }
 
             auto const cube = saga::power_natural(number, 3);
-            auto const str = std::to_string(cube) | saga::actions::sort;
+            auto const str = std::to_string(cube) | saga::action::sort;
 
             if(str.size() > current_length)
             {
@@ -5126,7 +5126,7 @@ namespace
             }
         }
 
-        return std::move(result) | saga::actions::sort | saga::actions::unique;
+        return std::move(result) | saga::action::sort | saga::action::unique;
     }
 }
 

@@ -16,9 +16,9 @@ SAGA -- это свободной программное обеспечение:
 */
 
 // Тестируемый файл
-#include <saga/actions/unique.hpp>
-#include <saga/actions/sort.hpp>
-#include <saga/actions/reverse.hpp>
+#include <saga/action/unique.hpp>
+#include <saga/action/sort.hpp>
+#include <saga/action/reverse.hpp>
 
 // Инфраструктура тестирования
 #include "./saga_test.hpp"
@@ -32,13 +32,13 @@ SAGA -- это свободной программное обеспечение:
 
 // Тесты
 // reverse
-TEST_CASE("actions::reverse : function")
+TEST_CASE("action::reverse : function")
 {
     saga_test::property_checker << [](std::list<int> const & src_old)
     {
         auto src = src_old;
 
-        auto const actual = saga::actions::reverse(src);
+        auto const actual = saga::action::reverse(src);
 
         auto const expected = [&]
         {
@@ -51,13 +51,13 @@ TEST_CASE("actions::reverse : function")
     };
 }
 
-TEST_CASE("actions::reverse : pipes")
+TEST_CASE("action::reverse : pipes")
 {
     saga_test::property_checker << [](std::list<int> const & src_old)
     {
         auto src = src_old;
 
-        auto const actual = std::move(src) | saga::actions::reverse;
+        auto const actual = std::move(src) | saga::action::reverse;
 
         auto const expected = [&]
         {
@@ -70,13 +70,13 @@ TEST_CASE("actions::reverse : pipes")
     };
 }
 
-TEST_CASE("actions::reverse : pipe-assign")
+TEST_CASE("action::reverse : pipe-assign")
 {
     saga_test::property_checker << [](std::list<int> const & src_old)
     {
         auto actual = src_old;
 
-        actual |= saga::actions::reverse;
+        actual |= saga::action::reverse;
 
         auto const expected = [&]
         {
@@ -93,11 +93,11 @@ TEST_CASE("actions::reverse : pipe-assign")
 namespace
 {
     template <class Container, class... Args>
-    void test_actions_sort(Container const & src_old, Args... args)
+    void test_action_sort(Container const & src_old, Args... args)
     {
         auto src = src_old;
 
-        auto const actual = saga::actions::sort(std::move(src), args...);
+        auto const actual = saga::action::sort(std::move(src), args...);
 
         auto const expected = [&]
         {
@@ -110,22 +110,22 @@ namespace
     }
 }
 
-TEST_CASE("actions::sort : function")
+TEST_CASE("action::sort : function")
 {
     saga_test::property_checker << [](std::vector<int> const & src_old)
     {
-        ::test_actions_sort(src_old);
-        ::test_actions_sort(src_old, std::greater<>{});
+        ::test_action_sort(src_old);
+        ::test_action_sort(src_old, std::greater<>{});
     };
 }
 
-TEST_CASE("actions::sort : default compare, pipes")
+TEST_CASE("action::sort : default compare, pipes")
 {
     saga_test::property_checker << [](std::vector<int> const & src_old)
     {
         auto src = src_old;
 
-        auto const actual = std::move(src) | saga::actions::sort;
+        auto const actual = std::move(src) | saga::action::sort;
 
         auto const expected = [&]
         {
@@ -138,7 +138,7 @@ TEST_CASE("actions::sort : default compare, pipes")
     };
 }
 
-TEST_CASE("actions::sort : custom compare, pipes")
+TEST_CASE("action::sort : custom compare, pipes")
 {
     saga_test::property_checker << [](std::vector<int> const & src_old)
     {
@@ -146,7 +146,7 @@ TEST_CASE("actions::sort : custom compare, pipes")
 
         auto src = src_old;
 
-        auto const actual = std::move(src) | saga::actions::sort(cmp);
+        auto const actual = std::move(src) | saga::action::sort(cmp);
 
         auto const expected = [&]
         {
@@ -159,12 +159,12 @@ TEST_CASE("actions::sort : custom compare, pipes")
     };
 }
 
-TEST_CASE("actions::sort : default compare, pipes-assign")
+TEST_CASE("action::sort : default compare, pipes-assign")
 {
     saga_test::property_checker << [](std::vector<int> const & src_old)
     {
         auto actual = src_old;
-        actual |= saga::actions::sort;
+        actual |= saga::action::sort;
 
         auto const expected = [&]
         {
@@ -177,7 +177,7 @@ TEST_CASE("actions::sort : default compare, pipes-assign")
     };
 }
 
-TEST_CASE("actions::sort : custom compare, pipe-assign")
+TEST_CASE("action::sort : custom compare, pipe-assign")
 {
     saga_test::property_checker << [](std::vector<int> const & src_old)
     {
@@ -185,7 +185,7 @@ TEST_CASE("actions::sort : custom compare, pipe-assign")
 
         auto actual = src_old;
 
-        actual |= saga::actions::sort(cmp);
+        actual |= saga::action::sort(cmp);
 
         auto const expected = [&]
         {
@@ -202,11 +202,11 @@ TEST_CASE("actions::sort : custom compare, pipe-assign")
 namespace
 {
     template <class Container, class... Args>
-    void test_actions_unique_function(Container const & src_old, Args... args)
+    void test_action_unique_function(Container const & src_old, Args... args)
     {
         auto src = src_old;
 
-        auto const actual = saga::actions::unique(std::move(src), args...);
+        auto const actual = saga::action::unique(std::move(src), args...);
 
         auto const expected = [&]
         {
@@ -219,7 +219,7 @@ namespace
     }
 }
 
-TEST_CASE("actions::unique : function")
+TEST_CASE("action::unique : function")
 {
     using Value = int;
     using Binary_predicate = std::function<bool(Value const &, Value const &)>;
@@ -227,27 +227,27 @@ TEST_CASE("actions::unique : function")
     saga_test::property_checker
         << [](std::vector<Value> const & src_old, Binary_predicate const & bin_pred)
     {
-        ::test_actions_unique_function(src_old);
-        ::test_actions_unique_function(src_old, bin_pred);
+        ::test_action_unique_function(src_old);
+        ::test_action_unique_function(src_old, bin_pred);
     };
 }
 
-TEST_CASE("actions::unique : default compare, pipes")
+TEST_CASE("action::unique : default compare, pipes")
 {
     using Value = std::string;
     using Container = std::vector<Value>;
 
     saga_test::property_checker << [](Container const & src)
     {
-        auto const actual = Container(src) | saga::actions::unique;
+        auto const actual = Container(src) | saga::action::unique;
 
-        auto const expected = saga::actions::unique(Container(src));
+        auto const expected = saga::action::unique(Container(src));
 
         REQUIRE(actual == expected);
     };
 }
 
-TEST_CASE("actions::unique : custom compare, pipes")
+TEST_CASE("action::unique : custom compare, pipes")
 {
     using Value = int;
     using Container = std::vector<Value>;
@@ -255,15 +255,15 @@ TEST_CASE("actions::unique : custom compare, pipes")
 
     saga_test::property_checker << [](Container const & src, BinaryPredicate bin_pred)
     {
-        auto const actual = Container(src) | saga::actions::unique(bin_pred);
+        auto const actual = Container(src) | saga::action::unique(bin_pred);
 
-        auto const expected = saga::actions::unique(Container(src), bin_pred);
+        auto const expected = saga::action::unique(Container(src), bin_pred);
 
         REQUIRE(actual == expected);
     };
 }
 
-TEST_CASE("actions::unique : default compare, pipes-assign")
+TEST_CASE("action::unique : default compare, pipes-assign")
 {
     using Value = std::string;
     using Container = std::vector<Value>;
@@ -271,15 +271,15 @@ TEST_CASE("actions::unique : default compare, pipes-assign")
     saga_test::property_checker << [](Container const & src)
     {
         auto actual = src;
-        actual |= saga::actions::unique;
+        actual |= saga::action::unique;
 
-        auto const expected = saga::actions::unique(Container(src));
+        auto const expected = saga::action::unique(Container(src));
 
         REQUIRE(actual == expected);
     };
 }
 
-TEST_CASE("actions::unique : custom compare, pipes-assign")
+TEST_CASE("action::unique : custom compare, pipes-assign")
 {
     using Value = long;
     using Container = std::vector<Value>;
@@ -288,9 +288,9 @@ TEST_CASE("actions::unique : custom compare, pipes-assign")
     saga_test::property_checker << [](Container const & src, BinaryPredicate bin_pred)
     {
         auto actual = src;
-        actual |= saga::actions::unique(bin_pred);
+        actual |= saga::action::unique(bin_pred);
 
-        auto const expected = saga::actions::unique(Container(src), bin_pred);
+        auto const expected = saga::action::unique(Container(src), bin_pred);
 
         REQUIRE(actual == expected);
     };

@@ -23,7 +23,7 @@ SAGA -- это свободной программное обеспечение:
 #include <catch2/catch_amalgamated.hpp>
 
 // Вспомогательные возможности, используемые в тестах
-#include <saga/actions/unique.hpp>
+#include <saga/action/unique.hpp>
 #include <saga/algorithm.hpp>
 #include <saga/cursor/indices.hpp>
 #include <saga/cursor/istream_cursor.hpp>
@@ -1170,7 +1170,7 @@ TEST_CASE("nth_permutation: default compare")
     REQUIRE(perms.size() == n_perm);
     REQUIRE(saga::is_sorted(saga::cursor::all(perms)));
 
-    perms |= saga::actions::unique;
+    perms |= saga::action::unique;
 
     REQUIRE(perms.size() == n_perm);
 }

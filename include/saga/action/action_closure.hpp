@@ -18,9 +18,9 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_ACTION_ACTION_CLOSURE_HPP_INCLUDED
 #define Z_SAGA_ACTION_ACTION_CLOSURE_HPP_INCLUDED
 
-/** @file saga/actions/action_closure.hpp
+/** @file saga/action/action_closure.hpp
  @brief Вспомогательный класс, позволяющий использовать функциональные объекты из пространства
- имён actions (со связанными параметрами) с операторами | и |=
+ имён action (со связанными параметрами) с операторами | и |=
 */
 
 #include <saga/ranges.hpp>
@@ -30,7 +30,7 @@ SAGA -- это свободной программное обеспечение:
 
 namespace saga
 {
-namespace actions
+namespace action
 {
     template <class UnaryFunction>
     class action_closure;
@@ -66,7 +66,7 @@ namespace actions
             auto fun = [lhs = std::move(lhs), rhs = std::move(rhs)](auto && arg)
                 { return rhs(lhs(std::forward<decltype(arg)>(arg))); };
 
-            return saga::actions::make_action_closure(std::move(fun));
+            return saga::action::make_action_closure(std::move(fun));
         }
 
     public:
@@ -76,7 +76,7 @@ namespace actions
         {}
     };
 }
-// namespace actions
+// namespace action
 }
 // namespace saga
 

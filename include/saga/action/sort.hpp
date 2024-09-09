@@ -1,4 +1,4 @@
-/* (c) 2024 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2022-2024 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -15,39 +15,50 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_ACTIONS_ERASE_HPP_INCLUDED
-#define Z_SAGA_ACTIONS_ERASE_HPP_INCLUDED
+#ifndef Z_SAGA_ACTION_SORT_HPP_INCLUDED
+#define Z_SAGA_ACTION_SORT_HPP_INCLUDED
 
-/** @file saga/actions/erase.hpp
- @brief Функциональный объект, выполняющий удаление подинтервала.
+/** @file saga/action/sort.hpp
+ @brief Функциональный объект, выполняющий сортировку интервала.
 */
 
-#include <saga/actions/action_closure.hpp>
+#include <saga/action/action_closure.hpp>
+#include <saga/algorithm.hpp>
+#include <saga/cursor/subrange.hpp>
 
 namespace saga
 {
-namespace actions
+namespace action
 {
-    struct erase_fn
+    struct sort_fn
     {
-        template <class Range, class Iterator, class Sentinel>
-        auto operator()(Range & arg, Iterator first, Sentinel last) const
+        template <class Range, class Compare = std::less<>
+                 , class = std::enable_if_t<saga::is_range<Range>{}>
+                 , class = std::enable_if_t<!std::is_reference<Range>{}>>
+        Range operator()(Range && arg, Compare cmp = {}) const
         {
-            return arg.erase(first, last);
+            saga::sort(saga::cursor::all(arg), std::move(cmp));
+
+            return arg;
         }
 
-        template <class Range, class Iterator, class Sentinel>
-        auto operator()(std::reference_wrapper<Range> & arg, Iterator first, Sentinel last) const
+        template <class Compare, class = std::enable_if_t<!saga::is_range<Compare>{}>>
+        auto operator()(Compare cmp) const
         {
-            return (*this)(arg.get(), first, last);
+            auto fun = [cmp = std::move(cmp)](auto && arg)
+            {
+                return sort_fn{}(std::forward<decltype(arg)>(arg), cmp);
+            };
+
+            return saga::action::make_action_closure(std::move(fun));
         }
     };
 
-    inline constexpr auto erase = saga::actions::action_closure<erase_fn>{};
+    inline constexpr auto sort = saga::action::action_closure<saga::action::sort_fn>{};
 }
-// namespace actions
+// namespace action
 }
 // namespace saga
 
 #endif
-// Z_SAGA_ACTIONS_ERASE_HPP_INCLUDED
+// Z_SAGA_ACTION_SORT_HPP_INCLUDED

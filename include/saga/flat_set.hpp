@@ -30,8 +30,8 @@ SAGA -- это свободной программное обеспечение:
  @todo Подумать как интегрировать курсоры saga
 */
 
-#include <saga/actions/unique.hpp>
-#include <saga/actions/sort.hpp>
+#include <saga/action/unique.hpp>
+#include <saga/action/sort.hpp>
 #include <saga/algorithm.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/iterator/reverse.hpp>
@@ -309,7 +309,7 @@ namespace saga
                 return !this->cmp_ref()(lhs, rhs) && !this->cmp_ref()(rhs, lhs);
             };
 
-            this->data_ |= saga::actions::sort(this->cmp_ref()) | saga::actions::unique(equiv);
+            this->data_ |= saga::action::sort(this->cmp_ref()) | saga::action::unique(equiv);
         }
 
         KeyContainer data_;
