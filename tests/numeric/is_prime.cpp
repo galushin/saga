@@ -15,39 +15,19 @@ SAGA -- это свободной программное обеспечение:
 обеспечение. Если это не так, см. https://www.gnu.org/licenses/.
 */
 
-#ifndef Z_SAGA_NUMERIC_IS_PRIME_HPP_INCLUDED
-#define Z_SAGA_NUMERIC_IS_PRIME_HPP_INCLUDED
+// Тестируемый файл
+#include <saga/numeric/is_prime.hpp>
 
-#include <saga/algorithm.hpp>
-#include <saga/cursor/subrange.hpp>
-#include <saga/cursor/take_while.hpp>
-#include <saga/defs.hpp>
-#include <saga/math.hpp>
+//Инфраструктура тестирования
+#include <catch2/catch_amalgamated.hpp>
 
-namespace saga
+// Используемое при тестах
+#include <saga/numeric.hpp>
+
+// Тесты
+TEST_CASE("is_prime_sorted : 1 is not prime - regression 1350")
 {
-    /** @brief Определяет, является ли число @c num простым
-    @pre primes содержит все простые числа, не превосходящие <tt> sqrt(num) </tt>, упорядоченные
-    по возрастанию
-    */
-    template <class IntType, class Container>
-    bool is_prime_sorted(IntType const num, Container const & primes, saga::unsafe_tag_t)
-    {
-        SAGA_ASSERT_AUDIT(saga::is_sorted(saga::cursor::all(primes)));
+    auto const primes = saga::primes_below(10);
 
-        assert(num >= 0);
-
-        if(num == IntType(1))
-        {
-            return false;
-        }
-
-        auto cur = saga::cursor::all(primes)
-                 | saga::cursor::take_while([&](auto const & arg){return saga::square(arg)<=num;});
-
-        return saga::none_of(std::move(cur), [&](auto const & arg){ return num % arg == 0;});
-    }
+    REQUIRE(saga::is_prime_sorted(1, primes, saga::unsafe_tag_t{}) == false);
 }
-
-#endif
-// Z_SAGA_NUMERIC_IS_PRIME_HPP_INCLUDED
