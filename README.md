@@ -1,7 +1,7 @@
 # SAGA
 Основные и численные алгоритмы на [![Standard](https://img.shields.io/badge/c%2B%2B-17/20/23-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
 
-Статус основной ветки: [![Статус тестов основной ветки](https://github.com/galushin/saga/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/galushin/saga/actions/workflows/test.yml) 
+Статус основной ветки: [![Статус тестов основной ветки](https://github.com/galushin/saga/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/galushin/saga/actions/workflows/test.yml)
 
 Покрытие кода тестами: [![codecov](https://codecov.io/gh/galushin/saga/branch/master/graph/badge.svg?token=3Z2XR38NJT)](https://codecov.io/gh/galushin/saga)
 
