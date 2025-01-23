@@ -1,4 +1,4 @@
-/* (c) 2019-2021 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2019-2025 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -18,9 +18,11 @@ SAGA -- это свободной программное обеспечение:
 #ifndef Z_SAGA_NUMERIC_HPP_INCLUDED
 #define Z_SAGA_NUMERIC_HPP_INCLUDED
 
+
 #include <saga/algorithm/result_types.hpp>
 #include <saga/algorithm.hpp>
 #include <saga/cursor/cursor_traits.hpp>
+#include <saga/cursor/indices.hpp>
 #include <saga/cursor/subrange.hpp>
 #include <saga/functional.hpp>
 #include <saga/math.hpp>
@@ -504,6 +506,33 @@ namespace saga
         }
     };
 
+    struct inverses_modulo_prime_fn
+    {
+        /** @brief Вычисление обратных по простому модулю для всех отстатков по этому модулю
+
+        @pre prime -- простое число
+        @return Индексируемый контейнер, элементы которого содержат обратные по простому модулю к
+        соответствующему индексу. Значение для нулевого элемента не определено.
+        */
+        template <class IntType>
+        std::vector<IntType>
+        operator()(IntType prime) const
+        {
+            assert(prime > 1);
+
+            std::vector<IntType> result(prime, 0);
+
+            result[1] = 1;
+
+            for(auto num : saga::cursor::indices(std::size_t(2), result.size()))
+            {
+                result[num] = (prime / num) * (prime - result[prime % num]) % prime;
+            }
+
+            return result;
+        }
+    };
+
     template <class IntType>
     class multiplies_modulo
     {
@@ -720,6 +749,7 @@ namespace saga
     inline constexpr auto const copy_primes_below = copy_primes_below_fn{};
     inline constexpr auto const primes_below = primes_below_fn{};
     inline constexpr auto const euler_phi_below = euler_phi_below_fn{};
+    inline constexpr auto const inverses_modulo_prime = inverses_modulo_prime_fn{};
     inline constexpr auto const legendre_symbol = legendre_symbol_fn{};
     inline constexpr auto const sqrt_modulo_prime = sqrt_modulo_prime_fn{};
 

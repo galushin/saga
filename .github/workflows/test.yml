@@ -18,7 +18,7 @@ jobs:
           # GCC
           - {
               name: "Linux GCC default",
-              os: ubuntu-latest,
+              os: ubuntu-22.04,
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: none,
