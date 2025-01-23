@@ -1,4 +1,4 @@
-/* (c) 2021-2024 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2021-2025 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -1262,6 +1262,28 @@ TEST_CASE("sqrt_modulo_prime")
                 CAPTURE(prime, expected, num, actual);
                 REQUIRE(saga::square(actual) % prime == num);
             }
+        }
+    }
+}
+
+TEST_CASE("inverses modulo prime")
+{
+    using IntType = long;
+
+    auto const primes = saga::primes_below(IntType(200));
+
+    for(auto prime : primes)
+    {
+        auto const inverses = saga::inverses_modulo_prime(prime);
+
+        REQUIRE(inverses.size() == std::size_t(prime));
+
+        for(auto num : saga::cursor::indices(IntType(1), prime))
+        {
+            CAPTURE(num, inverses[num], prime);
+            REQUIRE(inverses[num] > 0);
+            REQUIRE(inverses[num] < prime);
+            REQUIRE((num * inverses[num]) % prime == 1);
         }
     }
 }
