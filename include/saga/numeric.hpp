@@ -491,7 +491,7 @@ namespace saga
 
             saga::iota_fn{}(saga::cursor::all(result), IntType(0));
 
-            for(auto cur = IntType(2); cur <= n_max; ++ cur)
+            for(auto cur : saga::cursor::indices(IntType(2), n_max))
             {
                 if(cur == result[cur])
                 {
