@@ -487,18 +487,18 @@ namespace saga
         std::vector<IntType>
         operator()(IntType n_max) const
         {
-            auto const primes = saga::primes_below_fn{}(n_max);
-
             std::vector<IntType> result(n_max);
 
             saga::iota_fn{}(saga::cursor::all(result), IntType(0));
 
-            for(auto const & prime : primes)
+            for(auto cur = IntType(2); cur <= n_max; ++ cur)
             {
-                for(auto num = prime; num < n_max; num += prime)
+                if(cur == result[cur])
                 {
-                    result[num] /= prime;
-                    result[num] *= (prime - 1);
+                    for(auto num = cur; num < n_max; num += cur)
+                    {
+                        result[num] -= result[num] / cur;
+                    }
                 }
             }
 
