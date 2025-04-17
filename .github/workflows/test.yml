@@ -64,7 +64,7 @@ jobs:
             }
           - {
               name: "Linux GCC 8",
-              os: ubuntu-24.04,
+              os: ubuntu-22.04,
               CC: "gcc-8", 
               CXX: "g++-8",
               SANITIZE: none,
@@ -136,7 +136,7 @@ jobs:
             }
           - {
               name: "Linux Clang default ASAN fail-fast",
-              os: ubuntu-24.04,
+              os: ubuntu-22.04,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: address,
@@ -146,7 +146,7 @@ jobs:
             }
           - {
               name: "Linux Clang default ASAN recover",
-              os: ubuntu-24.04,
+              os: ubuntu-22.04,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: address,
@@ -174,7 +174,7 @@ jobs:
             }
           - {
               name: "Linux Clang 10",
-              os: ubuntu-24.04,
+              os: ubuntu-22.04,
               CC: "clang-10", 
               CXX: "clang++-10",
               LLVM: "llvm-10",
@@ -183,7 +183,7 @@ jobs:
             }
           - {
               name: "Linux Clang 11",
-              os: ubuntu-24.04,
+              os: ubuntu-22.04,
               CC: "clang-11", 
               CXX: "clang++-11",
               LLVM: "llvm-11",
@@ -192,7 +192,7 @@ jobs:
             }
           - {
               name: "Linux Clang 12",
-              os: ubuntu-24.04,
+              os: ubuntu-22.04,
               CC: "clang-12", 
               CXX: "clang++-12",
               LLVM: "llvm-12",
