@@ -63,14 +63,6 @@ jobs:
               LDFLAGS: "-fsanitize=float-cast-overflow",
             }
           - {
-              name: "Linux GCC 8",
-              os: ubuntu-22.04,
-              CC: "gcc-8", 
-              CXX: "g++-8",
-              SANITIZE: none,
-              CFLAGS: "-std=gnu++17",
-            }
-          - {
               name: "Linux GCC 9",
               os: ubuntu-latest,
               CC: "gcc-9", 
@@ -171,15 +163,6 @@ jobs:
               SANITIZE: float-cast-overflow,
               CFLAGS:  "-std=c++17 -fsanitize=float-cast-overflow -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=float-cast-overflow",
-            }
-          - {
-              name: "Linux Clang 10",
-              os: ubuntu-22.04,
-              CC: "clang-10", 
-              CXX: "clang++-10",
-              LLVM: "llvm-10",
-              SANITIZE: none,
-              CFLAGS: "-std=c++17",
             }
           - {
               name: "Linux Clang 11",
