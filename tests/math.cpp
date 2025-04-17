@@ -132,3 +132,26 @@ TEST_CASE("is_divisible_by")
     static_assert(saga::is_divisible_by(4, 2));
     static_assert(!saga::is_divisible_by(17, 3));
 }
+
+TEST_CASE("isqrt")
+{
+    static_assert(noexcept(saga::isqrt(0)));
+
+    saga_test::property_checker << [](std::uint16_t const & num_seed)
+    {
+        auto const num = std::uint32_t(num_seed);
+
+        auto const num_sqrt = saga::isqrt(num);
+
+        REQUIRE(saga::square(num_sqrt) <= num);
+        REQUIRE(saga::square(num_sqrt + 1) >= num);
+    };
+
+    static_assert(saga::isqrt(0) == 0);
+    static_assert(saga::isqrt(1) == 1);
+    static_assert(saga::isqrt(2) == 1);
+    static_assert(saga::isqrt(81) == 9);
+
+    static_assert(saga::isqrt(4503599761588224) == 67108864);
+    REQUIRE(saga::isqrt(4503599761588224) == 67108864);
+}
