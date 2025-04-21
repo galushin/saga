@@ -117,10 +117,11 @@ jobs:
               CFLAGS: "-std=c++17",
             }
           - {
-              name: "Linux Clang default ASAN",
+              name: "Linux Clang ASAN",
               os: ubuntu-22.04,
-              CC: "clang", 
-              CXX: "clang++",
+              CC: "clang-11", 
+              CXX: "clang++-11",
+              LLVM: "llvm-11",
               SANITIZE: address,
               CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=address",
