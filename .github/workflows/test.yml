@@ -25,22 +25,12 @@ jobs:
               CFLAGS: "-std=gnu++17",
             }
           - {
-              name: "Linux GCC default ASAN fail-fast",
+              name: "Linux GCC default ASAN",
               os: ubuntu-latest,
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: address,
               CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
-              LDFLAGS: "-fsanitize=address",
-              ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
-            }
-          - {
-              name: "Linux GCC default ASAN recover",
-              os: ubuntu-latest,
-              CC: "gcc", 
-              CXX: "g++",
-              SANITIZE: address,
-              CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract",
               LDFLAGS: "-fsanitize=address",
               ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
             }            
@@ -61,14 +51,6 @@ jobs:
               SANITIZE: float-cast-overflow,
               CFLAGS:  "-std=gnu++17 -fsanitize=float-cast-overflow -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=float-cast-overflow",
-            }
-          - {
-              name: "Linux GCC 8",
-              os: ubuntu-20.04,
-              CC: "gcc-8", 
-              CXX: "g++-8",
-              SANITIZE: none,
-              CFLAGS: "-std=gnu++17",
             }
           - {
               name: "Linux GCC 9",
@@ -135,22 +117,12 @@ jobs:
               CFLAGS: "-std=c++17",
             }
           - {
-              name: "Linux Clang default ASAN fail-fast",
-              os: ubuntu-20.04,
+              name: "Linux Clang default ASAN",
+              os: ubuntu-22.04,
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: address,
               CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
-              LDFLAGS: "-fsanitize=address",
-              ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
-            }
-          - {
-              name: "Linux Clang default ASAN recover",
-              os: ubuntu-20.04,
-              CC: "clang", 
-              CXX: "clang++",
-              SANITIZE: address,
-              CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract",
               LDFLAGS: "-fsanitize=address",
               ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
             }
@@ -173,17 +145,8 @@ jobs:
               LDFLAGS: "-fsanitize=float-cast-overflow",
             }
           - {
-              name: "Linux Clang 10",
-              os: ubuntu-20.04,
-              CC: "clang-10", 
-              CXX: "clang++-10",
-              LLVM: "llvm-10",
-              SANITIZE: none,
-              CFLAGS: "-std=c++17",
-            }
-          - {
               name: "Linux Clang 11",
-              os: ubuntu-20.04,
+              os: ubuntu-22.04,
               CC: "clang-11", 
               CXX: "clang++-11",
               LLVM: "llvm-11",
@@ -192,7 +155,7 @@ jobs:
             }
           - {
               name: "Linux Clang 12",
-              os: ubuntu-20.04,
+              os: ubuntu-22.04,
               CC: "clang-12", 
               CXX: "clang++-12",
               LLVM: "llvm-12",
