@@ -119,9 +119,9 @@ jobs:
           - {
               name: "Linux Clang ASAN",
               os: ubuntu-22.04,
-              CC: "clang-11", 
-              CXX: "clang++-11",
-              LLVM: "llvm-11",
+              CC: "clang-12", 
+              CXX: "clang++-12",
+              LLVM: "llvm-12",
               SANITIZE: address,
               CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=address",
