@@ -528,7 +528,7 @@ namespace
     {
         auto const sum_2 = sum / 2;
 
-        auto const mlimit = std::max(2, static_cast<IntType>(std::sqrt(sum)+1));
+        auto const mlimit = std::max(IntType(2), saga::isqrt(sum)+1);
 
         for(auto m : saga::cursor::indices(2, mlimit))
         {
@@ -1952,7 +1952,7 @@ namespace
 */
 TEST_CASE("PE 027")
 {
-    auto const primes = saga::primes_below(static_cast<int>(std::sqrt(2'001'000)));
+    auto const primes = saga::primes_below(saga::isqrt(2'001'000));
 
     REQUIRE(PE_027_count(1, 41, primes) == 40);
     REQUIRE(PE_027_count(-79, 1601, primes) == 80);
@@ -2541,7 +2541,7 @@ namespace
             str.push_back('0' + digits);
         }
 
-        auto const primes = saga::primes_below(IntType(std::sqrt(std::stoi(str)))+1);
+        auto const primes = saga::primes_below(saga::isqrt(std::stoi(str))+1);
 
         for(auto cur = saga::cursor::all(str); !!cur; ++ cur)
         {
@@ -4182,7 +4182,7 @@ namespace
         */
         explicit PE_64_cursor(IntType number)
          : number_(std::move(number))
-         , sqrt_floor_(std::sqrt(this->number_))
+         , sqrt_floor_(saga::isqrt(this->number_))
          , state_{this->sqrt_floor_, this->sqrt_floor_, 1}
         {}
 
@@ -4823,7 +4823,7 @@ TEST_CASE("PE 075")
 
     std::vector<IntType> counter(L_max + 1, 0);
 
-    auto const n_max = IntType(std::sqrt(L_max / 2));
+    auto const n_max = saga::isqrt(L_max / 2);
 
     for(auto n_cur : saga::cursor::indices(IntType(2), n_max))
     {
@@ -5079,7 +5079,7 @@ namespace
     template <class IntType>
     auto PE_087_prime_power_triplets(IntType n_limit)
     {
-        auto const primes = saga::primes_below(IntType(std::sqrt(n_limit) + 1));
+        auto const primes = saga::primes_below(saga::isqrt(n_limit) + 1);
 
         auto const pred = [=](IntType const & arg) { return arg < n_limit; };
 

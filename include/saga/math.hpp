@@ -213,7 +213,7 @@ namespace saga
 
             if(n_mod_16 == 0 || n_mod_16 == 1 || n_mod_16 == 4 || n_mod_16 == 9)
             {
-                return saga::square(static_cast<IntType>(std::sqrt(number))) == number;
+                return saga::square(saga::isqrt_fn{}(number)) == number;
             }
 
             return false;
