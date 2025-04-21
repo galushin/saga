@@ -144,6 +144,59 @@ namespace saga
     inline constexpr auto power_natural = saga::power_natural_fn{};
     inline constexpr auto power_semigroup = saga::power_semigroup_fn{};
 
+    struct isqrt_fn
+    {
+        template <class IntType
+                 ,class = std::enable_if_t<std::is_integral<IntType>{} && !std::is_void<IntType>{}>>
+        constexpr IntType operator()(IntType num) const noexcept
+        {
+            assert(num >= 0);
+
+            if (num <= IntType{1})
+            {
+                return num;
+            }
+
+            IntType current{0};
+            IntType next = isqrt_fn::init_guess(num);
+
+            do
+            {
+                current = next;
+                next = IntType((current + num / current) >> 1);
+            }
+            while (next < current);
+
+            return current;
+        }
+
+    private:
+        template <class IntType>
+        static constexpr int bit_width(IntType num)
+        {
+#if defined(__cpp_lib_int_pow2) && __cpp_lib_int_pow2 >= 202002L
+            return std::bit_width(num);
+#else
+            int answer = 0;
+
+            for(; num > 0; num /= 2)
+            {
+                ++ answer;
+            }
+
+            return answer;
+#endif
+        }
+
+        template <class IntType>
+        static constexpr IntType init_guess(IntType num)
+        {
+            using UIntType = std::make_unsigned_t<IntType>;
+
+            return IntType(IntType{1} << ((isqrt_fn::bit_width(UIntType(num - 1)) + 1) >> 1));
+        }
+    };
+
     struct is_square_fn
     {
         template <class IntType>
@@ -220,6 +273,8 @@ namespace saga
 
     inline constexpr auto is_even = saga::is_divisible_by(2);
     inline constexpr auto is_odd = saga::not_fn(saga::is_even);
+
+    inline constexpr auto isqrt = saga::isqrt_fn{};
 
 }
 //namespace saga
