@@ -10,7 +10,7 @@ on:
 
 jobs:
   gcov:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
         env:
           CC: "gcc"
           CXX: "g++"
-          CFLAGS: "-std=gnu++17 -g -fprofile-arcs -ftest-coverage -O0"
+          CFLAGS: "-std=gnu++20 -g -fprofile-arcs -ftest-coverage -O0"
           LDFLAGS: "-lgcov"
           
         run: |

@@ -17,12 +17,12 @@ jobs:
         config:
           # GCC
           - {
-              name: "Linux GCC default",
+              name: "Linux GCC default Ubuntu-22.04",
               os: ubuntu-22.04,
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: none,
-              CFLAGS: "-std=gnu++17",
+              CFLAGS: "-std=gnu++20",
             }
           - {
               name: "Linux GCC default ASAN",
@@ -30,7 +30,7 @@ jobs:
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: address,
-              CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
+              CFLAGS:  "-std=c++20 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=address",
               ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
             }            
@@ -40,7 +40,7 @@ jobs:
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: UB,
-              CFLAGS:  "-std=gnu++17 -fsanitize=undefined -fno-sanitize-recover=all",
+              CFLAGS:  "-std=gnu++20 -fsanitize=undefined -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=undefined",
             }
           - {
@@ -70,14 +70,14 @@ jobs:
             }
           - {
               name: "Linux GCC 11",
-              os: ubuntu-22.04,
+              os: ubuntu-latest,
               CC: "gcc-11", 
               CXX: "g++-11",
               SANITIZE: none,
             }
           - {
               name: "Linux GCC 12 C++17",
-              os: ubuntu-22.04,
+              os: ubuntu-latest,
               CC: "gcc-12", 
               CXX: "g++-12",
               SANITIZE: none,
@@ -85,7 +85,7 @@ jobs:
             }            
           - {
               name: "Linux GCC 12 C++20",
-              os: ubuntu-22.04,
+              os: ubuntu-latest,
               CC: "gcc-12", 
               CXX: "g++-12",
               SANITIZE: none,
@@ -93,7 +93,7 @@ jobs:
             }            
           - {
               name: "Linux GCC 12 C++23",
-              os: ubuntu-22.04,
+              os: ubuntu-latest,
               CC: "gcc-12", 
               CXX: "g++-12",
               SANITIZE: none,
@@ -106,7 +106,7 @@ jobs:
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: none,
-              CFLAGS: "-std=c++17",
+              CFLAGS: "-std=c++20",
             }
           - {
               name: "MacOS Clang default",
@@ -114,7 +114,7 @@ jobs:
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: none,
-              CFLAGS: "-std=c++17",
+              CFLAGS: "-std=c++20",
             }
           - {
               name: "Linux Clang ASAN",
@@ -133,7 +133,7 @@ jobs:
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: UB,
-              CFLAGS:  "-std=c++17 -fsanitize=undefined -fno-sanitize-recover=all",
+              CFLAGS:  "-std=c++20 -fsanitize=undefined -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=undefined",
             }
           - {
@@ -142,7 +142,7 @@ jobs:
               CC: "clang", 
               CXX: "clang++",
               SANITIZE: float-cast-overflow,
-              CFLAGS:  "-std=c++17 -fsanitize=float-cast-overflow -fno-sanitize-recover=all",
+              CFLAGS:  "-std=c++20 -fsanitize=float-cast-overflow -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=float-cast-overflow",
             }
           - {
@@ -174,7 +174,7 @@ jobs:
             }
           - {
               name: "Linux Clang 14 C++17",
-              os: ubuntu-22.04,
+              os: ubuntu-latest,
               CC: "clang-14", 
               CXX: "clang++-14",
               LLVM: "llvm-14",
@@ -191,11 +191,38 @@ jobs:
               CFLAGS: "-std=c++17",
             }
           - {
-              name: "Linux Clang 15 C++20",
-              os: ubuntu-22.04,
-              CC: "clang-15", 
-              CXX: "clang++-15",
-              LLVM: "llvm-15",
+              name: "Linux Clang 16 C++20",
+              os: ubuntu-latest,
+              CC: "clang-16", 
+              CXX: "clang++-16",
+              LLVM: "llvm-16",
+              SANITIZE: none,
+              CFLAGS: "-std=c++20",
+            }
+          - {
+              name: "Linux Clang 17 C++20",
+              os: ubuntu-latest,
+              CC: "clang-17", 
+              CXX: "clang++-17",
+              LLVM: "llvm-17",
+              SANITIZE: none,
+              CFLAGS: "-std=c++20",
+            }
+          - {
+              name: "Linux Clang 18 C++20",
+              os: ubuntu-latest,
+              CC: "clang-18", 
+              CXX: "clang++-18",
+              LLVM: "llvm-18",
+              SANITIZE: none,
+              CFLAGS: "-std=c++20",
+            }
+          - {
+              name: "Linux Clang 19 C++20",
+              os: ubuntu-latest,
+              CC: "clang-19", 
+              CXX: "clang++-19",
+              LLVM: "llvm-19",
               SANITIZE: none,
               CFLAGS: "-std=c++20",
             }
