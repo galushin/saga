@@ -40,7 +40,7 @@ jobs:
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: UB,
-              CFLAGS:  "-std=gnu++20 -fsanitize=undefined -fno-sanitize-recover=all",
+              CFLAGS:  "-std=gnu++17 -fsanitize=undefined -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=undefined",
             }
           - {
