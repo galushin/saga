@@ -35,9 +35,9 @@ jobs:
               ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
             }            
           - {
-              name: "Linux GCC default UBSAN",
+              name: "Linux GCC 12 UBSAN",
               os: ubuntu-latest,
-              CC: "gcc", 
+              CC: "gcc-12", 
               CXX: "g++",
               SANITIZE: UB,
               CFLAGS:  "-std=gnu++20 -fsanitize=undefined -fno-sanitize-recover=all",
