@@ -22,13 +22,10 @@ SAGA -- это свободной программное обеспечение:
  @brief Аналоги алгоритмов STL, работающие с курсорами и интервалами
 */
 
-// @todo По алфавиту
-#include <saga/pipes/transform.hpp>
-
-#include <saga/assert.hpp>
 #include <saga/algorithm/copy.hpp>
 #include <saga/algorithm/find_if.hpp>
 #include <saga/algorithm/result_types.hpp>
+#include <saga/assert.hpp>
 #include <saga/compare.hpp>
 #include <saga/cursor/cursor_traits.hpp>
 #include <saga/cursor/reverse.hpp>
@@ -37,6 +34,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/pipes/filter.hpp>
 #include <saga/pipes/for_each.hpp>
 #include <saga/pipes/partition.hpp>
+#include <saga/pipes/transform.hpp>
 
 #include <cassert>
 #include <algorithm>
