@@ -168,7 +168,7 @@ namespace saga
         span<element_type, dynamic_extent>
         first(size_type count) const
         {
-            assert(0 <= count && count <= this->size());
+            assert(count <= this->size());
 
             return {this->data(), count};
         }
@@ -176,7 +176,7 @@ namespace saga
         span<element_type, dynamic_extent>
         last(size_type count) const
         {
-            assert(0 <= count && count <= this->size());
+            assert(count <= this->size());
 
             return {this->data() + (this->size() - count), count};
         }
@@ -184,8 +184,8 @@ namespace saga
         span<element_type, dynamic_extent>
         subspan(size_type offset, size_type count = dynamic_extent) const
         {
-            assert(0 <= offset && offset <= this->size());
-            assert(count == saga::dynamic_extent || (0 <= count && offset + count <= this->size()));
+            assert(offset <= this->size());
+            assert(count == saga::dynamic_extent || offset + count <= this->size());
 
             auto const actual_count = (count == dynamic_extent) ? this->size() - offset : count;
 
@@ -211,7 +211,7 @@ namespace saga
         // Доступ к элементам
         reference operator[](size_type index) const
         {
-            assert(0 <= index && index < this->size());
+            assert(index < this->size());
 
             return *(this->data() + index);
         }
@@ -263,6 +263,7 @@ namespace saga
         }
 
     private:
+        static_assert(std::is_unsigned<size_type>{}, "Or we need to check wheater is not negative");
         detail::span_base<pointer, Extent> base_{};
     };
 

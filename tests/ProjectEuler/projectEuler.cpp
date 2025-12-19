@@ -556,8 +556,7 @@ namespace
         return 0;
     }
 
-    // @note требуется constexpr sqrt
-    // static_assert(::projectEuler_009_fast(1000) == 31875000, "");
+    static_assert(::projectEuler_009_fast(1000) == 31875000, "");
 }
 
 TEST_CASE("ProjectEuler: 009")
@@ -1003,7 +1002,7 @@ namespace
             auto const lhs_size = lhs.units_.size();
             auto const rhs_size = rhs.units_.size();
 
-            for(auto pos : saga::cursor::indices(0*lhs_size, lhs_size + rhs_size))
+            for(auto pos : saga::cursor::indices(lhs_size + rhs_size))
             {
                 auto new_unit = carry % unit_base;
                 carry /= unit_base;

@@ -1223,7 +1223,7 @@ TEST_CASE("legendre_symbol")
                          | saga::cursor::transform(square_modulo)
                          | saga::cursor::to<std::set>();
 
-        for(auto const & num : saga::cursor::indices(0, 10*prime))
+        for(auto const & num : saga::cursor::indices(10*prime))
         {
             CAPTURE(prime, num);
 
