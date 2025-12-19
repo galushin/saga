@@ -26,7 +26,7 @@ jobs:
             }
           - {
               name: "Linux GCC default ASAN",
-              os: ubuntu-latest,
+              os: ubuntu-22.04,
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: address,
