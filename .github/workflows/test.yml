@@ -17,8 +17,8 @@ jobs:
         config:
           # GCC
           - {
-              name: "Linux GCC default Ubuntu-22.04",
-              os: ubuntu-22.04,
+              name: "Linux GCC default Ubuntu",
+              os: ubuntu-latest,
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: none,
@@ -26,7 +26,7 @@ jobs:
             }
           - {
               name: "Linux GCC default ASAN",
-              os: ubuntu-22.04,
+              os: ubuntu-latest,
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: address,
@@ -118,7 +118,7 @@ jobs:
             }
           - {
               name: "Linux Clang ASAN",
-              os: ubuntu-22.04,
+              os: ubuntu-latest,
               CC: "clang-12", 
               CXX: "clang++-12",
               LLVM: "llvm-12",
@@ -147,7 +147,7 @@ jobs:
             }
           - {
               name: "Linux Clang 11",
-              os: ubuntu-22.04,
+              os: ubuntu-latest,
               CC: "clang-11", 
               CXX: "clang++-11",
               LLVM: "llvm-11",
@@ -156,7 +156,7 @@ jobs:
             }
           - {
               name: "Linux Clang 12",
-              os: ubuntu-22.04,
+              os: ubuntu-latest,
               CC: "clang-12", 
               CXX: "clang++-12",
               LLVM: "llvm-12",
@@ -165,7 +165,7 @@ jobs:
             }
           - {
               name: "Linux Clang 13",
-              os: ubuntu-22.04,
+              os: ubuntu-latest,
               CC: "clang-13", 
               CXX: "clang++-13",
               LLVM: "llvm-13",
@@ -183,7 +183,7 @@ jobs:
             }
           - {
               name: "Linux Clang 15 C++17",
-              os: ubuntu-22.04,
+              os: ubuntu-latest,
               CC: "clang-15", 
               CXX: "clang++-15",
               LLVM: "llvm-15",
