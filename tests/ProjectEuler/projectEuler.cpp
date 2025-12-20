@@ -2716,30 +2716,17 @@ namespace
         return !(std::floor(x) < x);
     }
 
-    struct pentagonal_number_fn
-    {
-        template <class IntType>
-        constexpr IntType operator()(IntType num) const
-        {
-            assert(num >= 0);
-
-            return 3 * saga::triangular_number(num) - 2 * num;
-        }
-    };
-
-    inline constexpr auto pentagonal_number = ::pentagonal_number_fn{};
-
     template <class IntType>
     IntType PE_044()
     {
         std::vector<IntType> pentagonals;
 
-        pentagonals.push_back(::pentagonal_number(1));
+        pentagonals.push_back(saga::pentagonal_number(1));
 
         for(;;)
         {
             // Генерируем новое число
-            auto new_value = ::pentagonal_number(IntType(pentagonals.size() + 1));
+            auto new_value = saga::pentagonal_number(IntType(pentagonals.size() + 1));
 
             // Сравниваем со всеми предыдущими
             auto pred = [&new_value](IntType const & value)
@@ -2760,17 +2747,29 @@ namespace
             pentagonals.push_back(std::move(new_value));
         }
     }
+
+    static_assert(saga::pentagonal_number(0) == 0);
+    static_assert(saga::pentagonal_number(1) == 1);
+    static_assert(saga::pentagonal_number(4) == 22);
+    static_assert(saga::pentagonal_number(7) == 70);
+    static_assert(saga::pentagonal_number(8) == 92);
+    static_assert(saga::pentagonal_number(9) == 117);
+    static_assert(saga::pentagonal_number(10) == 145);
 }
+
+TEST_CASE("Pentagonal number")
+{
+    REQUIRE(saga::pentagonal_number(0) == 0);
+    REQUIRE(saga::pentagonal_number(1) == 1);
+    REQUIRE(saga::pentagonal_number(4) == 22);
+    REQUIRE(saga::pentagonal_number(7) == 70);
+    REQUIRE(saga::pentagonal_number(8) == 92);
+    REQUIRE(saga::pentagonal_number(9) == 117);
+    REQUIRE(saga::pentagonal_number(10) == 145);
+}
+
 TEST_CASE("PE 044")
 {
-    REQUIRE(::pentagonal_number(0) == 0);
-    REQUIRE(::pentagonal_number(1) == 1);
-    REQUIRE(::pentagonal_number(4) == 22);
-    REQUIRE(::pentagonal_number(7) == 70);
-    REQUIRE(::pentagonal_number(8) == 92);
-    REQUIRE(::pentagonal_number(9) == 117);
-    REQUIRE(::pentagonal_number(10) == 145);
-
     REQUIRE(::is_pentagonal(22));
     REQUIRE(::is_pentagonal(70));
     REQUIRE(::is_pentagonal(92));
@@ -2782,20 +2781,19 @@ TEST_CASE("PE 044")
 // PE 045 - Треугольное, пятиугольное и шестиугольное
 namespace
 {
-    struct hexagonal_number_fn
-    {
-        template <class IntType>
-        constexpr IntType operator()(IntType num) const
-        {
-            return num * (2*num - 1);
-        }
-    };
-
-    inline constexpr auto hexagonal_number = hexagonal_number_fn{};
-
     static_assert(saga::triangular_number(285) == 40755);
-    static_assert(::pentagonal_number(165) == 40755);
-    static_assert(::hexagonal_number_fn{}(143) == 40755);
+    static_assert(saga::pentagonal_number(165) == 40755);
+    static_assert(saga::hexagonal_number(143) == 40755);
+}
+
+TEST_CASE("Hexagonal number")
+{
+    REQUIRE(saga::hexagonal_number(1) == 1);
+    REQUIRE(saga::hexagonal_number(2) == 6);
+    REQUIRE(saga::hexagonal_number(3) == 15);
+    REQUIRE(saga::hexagonal_number(4) == 28);
+    REQUIRE(saga::hexagonal_number(8) == 120);
+    REQUIRE(saga::hexagonal_number(143) == 40755);
 }
 
 TEST_CASE("PE 045")
@@ -2807,7 +2805,7 @@ TEST_CASE("PE 045")
         { return ::is_pentagonal(num) && ::is_triangular_number_fn{}(num); };
 
     auto cur = saga::cursor::iota(std::int64_t(1))
-             | saga::cursor::transform(::hexagonal_number_fn{})
+             | saga::cursor::transform(saga::hexagonal_number_fn{})
              | saga::cursor::filter(pred);
 
     REQUIRE(cur.front() == 1);
@@ -4056,8 +4054,8 @@ TEST_CASE("PE 061")
 {
     auto const nums_3 = ::PE_061_prepare(saga::triangular_number);
     auto const nums_4 = ::PE_061_prepare(saga::square);
-    auto const nums_5 = ::PE_061_prepare(::pentagonal_number);
-    auto const nums_6 = ::PE_061_prepare(::hexagonal_number);
+    auto const nums_5 = ::PE_061_prepare(saga::pentagonal_number);
+    auto const nums_6 = ::PE_061_prepare(saga::hexagonal_number);
     auto const nums_7 = ::PE_061_prepare(::heptagonal_number);
     auto const nums_8 = ::PE_061_prepare(::octagonal_number);
 

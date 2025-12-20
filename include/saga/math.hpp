@@ -1,4 +1,4 @@
-/* (c) 2021-2024 Галушин Павел Викторович, galushin@gmail.com
+/* (c) 2021-2025 Галушин Павел Викторович, galushin@gmail.com
 
 Данный файл -- часть библиотеки SAGA.
 
@@ -80,6 +80,26 @@ namespace saga
         }
     };
 
+    struct pentagonal_number_fn
+    {
+        template <class IntType>
+        constexpr IntType operator()(IntType num) const
+        {
+            assert(num >= 0);
+
+            return 3 * saga::triangular_number_fn{}(num) - 2 * num;
+        }
+    };
+
+    struct hexagonal_number_fn
+    {
+        template <class IntType>
+        constexpr IntType operator()(IntType num) const
+        {
+            return num * (2*num - 1);
+        }
+    };
+
     struct square_pyramidal_number_fn
     {
         template <class IntType>
@@ -140,6 +160,8 @@ namespace saga
     inline constexpr auto abs = saga::absolute_value{};
     inline constexpr auto square = saga::square_fn{};
     inline constexpr auto triangular_number = triangular_number_fn{};
+    inline constexpr auto pentagonal_number = pentagonal_number_fn{};
+    inline constexpr auto hexagonal_number = hexagonal_number_fn{};
     inline constexpr auto square_pyramidal_number = square_pyramidal_number_fn{};
     inline constexpr auto power_natural = saga::power_natural_fn{};
     inline constexpr auto power_semigroup = saga::power_semigroup_fn{};
