@@ -20,10 +20,13 @@ SAGA -- это свободной программное обеспечение:
 #include <catch2/catch_amalgamated.hpp>
 
 // Используемые возможности
+#include "./integer10.hpp"
+
 #include <saga/action/reverse.hpp>
 #include <saga/action/sort.hpp>
 #include <saga/container/make.hpp>
 #include <saga/cursor/by_line.hpp>
+#include <saga/cursor/cached1.hpp>
 #include <saga/cursor/cartesian_product.hpp>
 #include <saga/cursor/enumerate.hpp>
 #include <saga/cursor/indices.hpp>
@@ -911,253 +914,7 @@ namespace
         "53503534226472524250874054075591789781264330331690"};
 }
 
-#include <saga/numeric/digits_of.hpp>
-
-#include <charconv>
-#include <iomanip>
-
-namespace
-{
-    template <class IntType>
-    IntType from_chars_whole(char const * first, char const * last)
-    {
-        assert(first != last);
-
-        auto reader = IntType(0);
-        auto result = std::from_chars(first, last, reader);
-
-        assert(result.ptr == last);
-        assert(result.ec == std::errc{});
-
-        return reader;
-    }
-
-    template <class IntType>
-    IntType from_string_whole(std::string_view str)
-    {
-        return ::from_chars_whole<IntType>(str.data(), str.data() + str.size());
-    }
-
-    class integer10
-    {
-        // Равенство
-        friend bool operator==(integer10 const & lhs, integer10 const & rhs)
-        {
-            return lhs.units_ == rhs.units_;
-        }
-
-        template <class IntType>
-        friend auto operator==(integer10 const & lhs, IntType rhs)
-        -> std::enable_if_t<std::is_integral<IntType>{}, bool>
-        {
-            return saga::equal(saga::cursor::all(lhs.data())
-                              , saga::cursor::digits_of(rhs, lhs.unit_base));
-        }
-
-        // Вывод
-        template <class CharT, class Traits>
-        friend std::basic_ostream<CharT, Traits> &
-        operator<<(std::basic_ostream<CharT, Traits> & out, integer10 const & value)
-        {
-            auto num = value.units_.size();
-
-            if(num == 0)
-            {
-                out << '0';
-                return out;
-            }
-
-            out << value.units_.back();
-            -- num;
-
-            for(; num > 0; -- num)
-            {
-                out << std::setw(value.digits_per_unit)
-                    << std::setfill('0')
-                    << value.units_[num - 1];
-            }
-
-            return out;
-        }
-
-        // Сложение
-        friend integer10 operator+(integer10 lhs, integer10 const & rhs)
-        {
-            lhs += rhs;
-
-            return lhs;
-        }
-
-        // Умножение
-        friend integer10 operator*(integer10 const & lhs, integer10 const & rhs)
-        {
-            if(lhs.units_.empty() || rhs.units_.empty())
-            {
-                return integer10{};
-            }
-
-            auto result = integer10{};
-
-            auto carry = Unit(0);
-
-            auto const lhs_size = lhs.units_.size();
-            auto const rhs_size = rhs.units_.size();
-
-            for(auto pos : saga::cursor::indices(lhs_size + rhs_size))
-            {
-                auto new_unit = carry % unit_base;
-                carry /= unit_base;
-
-                auto const first = rhs_size <= pos ? pos - rhs_size + 1 : 0 * pos;
-                auto const last = std::min(lhs_size, pos + 1);
-
-                for(auto const & index : saga::cursor::indices(first, last))
-                {
-                    auto prod = lhs.units_[index] * rhs.units_[pos - index];
-
-                    assert(prod < std::numeric_limits<Unit>::max() - new_unit);
-
-                    new_unit += prod;
-                }
-
-                result.units_.push_back(new_unit % unit_base);
-                carry += new_unit / unit_base;
-            }
-
-            while(!result.units_.empty() && result.units_.back() == 0)
-            {
-                assert(!result.units_.empty());
-
-                result.units_.pop_back();
-            }
-
-            assert(carry == 0);
-
-            return result;
-        }
-
-        template <class IntType>
-        friend auto operator*(integer10 const & lhs, IntType rhs)
-        -> std::enable_if_t<std::is_integral<IntType>{}, integer10>
-        {
-            return lhs * integer10(std::move(rhs));
-        }
-
-
-    private:
-        using Unit = std::uint64_t;
-
-        static_assert(std::is_unsigned<Unit>{});
-
-    public:
-        // @todo Сделать настраиваемым через шаблонный параметр,
-        // Добавить проверку, что бит достаточно для хранения квадрата
-        static constexpr auto digits_per_unit = 9;
-
-        // Создание, копирование, уничтожение
-        integer10() = default;
-
-        template <class IntType, class = std::enable_if_t<std::is_integral<IntType>{}>>
-        explicit integer10(IntType value)
-        {
-            assert(value >= 0);
-
-            saga::copy(saga::cursor::digits_of(value, unit_base)
-                      , saga::back_inserter(this->units_));
-        }
-
-        explicit integer10(std::string_view str)
-        {
-            auto const tail_size = str.size() % this->digits_per_unit;
-            auto const units_count = str.size() / this->digits_per_unit + (tail_size != 0);
-
-            this->units_.reserve(units_count);
-
-            auto first = str.data();
-            auto last = str.data() + (tail_size == 0 ? digits_per_unit : tail_size);
-            auto const stop = str.data() + str.size();
-
-            for(; first != stop; first = last, last += digits_per_unit)
-            {
-                this->units_.push_back(::from_chars_whole<Unit>(first, last));
-            }
-
-            this->units_ |= saga::action::reverse;
-        }
-
-        // Арифметические операции
-        integer10 & operator+=(integer10 const & rhs)
-        {
-            auto const num = std::max(this->units_.size(), rhs.units_.size());
-
-            this->units_.resize(num, 0);
-
-            auto carry = Unit(0);
-
-            for(auto index : saga::cursor::indices(rhs.units_.size()))
-            {
-                carry += this->units_[index] + rhs.units_[index];
-
-                this->units_[index] = carry % unit_base;
-
-                carry /= unit_base;
-            }
-
-            for(auto index : saga::cursor::indices(rhs.units_.size(), this->units_.size()))
-            {
-                carry += this->units_[index];
-
-                this->units_[index] = carry % unit_base;
-
-                carry /= unit_base;
-            }
-
-            assert(carry < unit_base);
-
-            if(carry > 0)
-            {
-                this->units_.push_back(carry);
-            }
-
-            return *this;
-        }
-
-        integer10 & operator*=(integer10 const & rhs)
-        {
-            *this = *this * rhs;
-
-            return *this;
-        }
-
-        // Остаток
-        void mod10(std::size_t power)
-        {
-            auto const tail_size = power % this->digits_per_unit;
-            auto const units_to_keep = power / this->digits_per_unit + (tail_size != 0);
-
-            if(this->units_.size() >= units_to_keep)
-            {
-                this->units_.resize(units_to_keep);
-
-                if(tail_size > 0)
-                {
-                    this->units_.back() %= saga::power_natural(10, tail_size);
-                }
-            }
-        }
-
-        // Доступ к представлению
-        std::vector<Unit> const & data() const
-        {
-            return this->units_;
-        }
-
-    private:
-        static constexpr auto unit_base = saga::power_natural(Unit(10), digits_per_unit);
-
-        std::vector<Unit> units_;
-    };
-}
+using saga::experimental::integer10;
 
 TEST_CASE("integer10: default ctor")
 {
@@ -1315,18 +1072,6 @@ namespace
         return saga::reduce(saga::cursor::digits_of(saga::power_natural(base, power)));
     }
 
-    long digits_sum(::integer10 const & num)
-    {
-        long digits_sum = 0;
-
-        for(auto const & unit : saga::cursor::all(num.data()))
-        {
-            digits_sum += saga::reduce(saga::cursor::digits_of(unit));
-        }
-
-        return digits_sum;
-    }
-
     int
     projectEuler_016_arbitrary(int base, int power)
     {
@@ -1334,7 +1079,7 @@ namespace
 
         auto num = saga::power_natural(::integer10(base), power);
 
-        return ::digits_sum(num);
+        return saga::experimental::digits_sum(num);
     }
 }
 
@@ -1571,7 +1316,7 @@ namespace
         auto const factorial = saga::accumulate(saga::cursor::indices(1, num)
                                                 , ::integer10(1), std::multiplies<>{});
 
-        return ::digits_sum(factorial);
+        return saga::experimental::digits_sum(factorial);
     }
 }
 
@@ -1784,138 +1529,6 @@ TEST_CASE("PE 025")
 {
     CHECK(projectEuler_025(3) == 12);
     CHECK(projectEuler_025(1000) == 4782);
-}
-
-// PE 026: Циклы в обратных числах
-#include <saga/cursor/cached1.hpp>
-
-namespace
-{
-    class pe_026_cursor
-     : saga::cursor_facade<pe_026_cursor, int const &>
-    {
-    public:
-        // Типы
-        using reference = int const &;
-        using difference_type = std::ptrdiff_t;
-
-        // Конструктор
-        explicit pe_026_cursor(int denom)
-         : denom_(denom)
-        {}
-
-        // Курсор ввода
-        bool operator!() const
-        {
-            return this->state_ == 0;
-        }
-
-        reference front() const
-        {
-            return this->state_;
-        }
-
-        void drop_front()
-        {
-            this->state_ *= 10;
-            this->state_ %= this->denom_;
-        }
-
-    private:
-        int state_ = 1;
-        int denom_ = 1;
-    };
-
-    template <class ForwardCursor>
-    ForwardCursor collision_point(ForwardCursor slow)
-    {
-        if(!slow)
-        {
-            return slow;
-        }
-
-        auto fast = slow;
-        ++ fast;
-
-        for(;;)
-        {
-            if(!fast || *slow == *fast)
-            {
-                return fast;
-            }
-
-            ++ slow;
-            ++ fast;
-
-            if(!fast)
-            {
-                return fast;
-            }
-
-            ++ fast;
-        }
-
-        return fast;
-    }
-
-    template <class ForwardCursor>
-    saga::cursor_difference_t<ForwardCursor>
-    cycle_length(ForwardCursor slow)
-    {
-        slow = ::collision_point(slow);
-
-        if(!slow)
-        {
-            return saga::cursor_difference_t<ForwardCursor>(0);
-        }
-
-        auto fast = slow;
-        ++ fast;
-
-        auto result = saga::cursor_difference_t<ForwardCursor>(1);
-
-        for(; !(*fast == *slow); ++ fast, ++ result)
-        {}
-
-        return result;
-    }
-
-    int PE_026_reciprocal_cycle_length(int num)
-    {
-        assert(num > 0);
-
-        return ::cycle_length(pe_026_cursor(num));
-    }
-
-    int PE_026(int num)
-    {
-        auto cur = saga::cursor::indices(2, num)
-                 | saga::cursor::transform(::PE_026_reciprocal_cycle_length)
-                 | saga::cursor::cached1;
-
-        return saga::max_element(std::move(cur)).base().base().front();
-    }
-}
-
-TEST_CASE("cycle_length of empty")
-{
-    REQUIRE(::cycle_length(saga::cursor::indices(0)) == 0);
-}
-
-TEST_CASE("PE 026")
-{
-    REQUIRE(PE_026_reciprocal_cycle_length(2)  == 0);
-    REQUIRE(PE_026_reciprocal_cycle_length(3)  == 1);
-    REQUIRE(PE_026_reciprocal_cycle_length(4)  == 0);
-    REQUIRE(PE_026_reciprocal_cycle_length(5)  == 0);
-    REQUIRE(PE_026_reciprocal_cycle_length(6)  == 1);
-    REQUIRE(PE_026_reciprocal_cycle_length(7)  == 6);
-    REQUIRE(PE_026_reciprocal_cycle_length(8)  == 0);
-    REQUIRE(PE_026_reciprocal_cycle_length(9)  == 1);
-    REQUIRE(PE_026_reciprocal_cycle_length(10) == 0);
-
-    REQUIRE(PE_026(11) == 7);
-    REQUIRE(PE_026(1000) == 983);
 }
 
 // PE 027: Квадратичные простые числа
@@ -2404,7 +2017,7 @@ namespace
 
         if(saga::is_permutation(saga::cursor::all(str), saga::cursor::all(all_digits)))
         {
-            return ::from_string_whole<IntType>(str);
+            return saga::experimental::from_string_whole<IntType>(str);
         }
         else
         {
@@ -2518,6 +2131,8 @@ TEST_CASE("PE 040")
 
 // PE 041 -  Панцифровое простое число
 // Так как нам нужно самое большое число, то искать начнём с самых больших чисел
+using saga::experimental::from_chars_whole;
+
 namespace
 {
     bool is_pandigital(std::string str)
@@ -2600,6 +2215,8 @@ TEST_CASE("PE 042")
 }
 
 // PE 043 - Делимость под-строк
+using saga::experimental::from_string_whole;
+
 namespace
 {
     template <class IntType>
@@ -3724,7 +3341,8 @@ TEST_CASE("PE 056")
 {
     auto fun = [](auto const & arg)
     {
-        return ::digits_sum(saga::power_natural(::integer10(std::get<0>(arg)), std::get<1>(arg)));
+        return saga::experimental::digits_sum(saga::power_natural(::integer10(std::get<0>(arg))
+                                                                  ,std::get<1>(arg)));
     };
 
     auto cur = saga::cursor::cartesian_product(saga::cursor::indices(1, 100)
@@ -3733,128 +3351,6 @@ TEST_CASE("PE 056")
              | saga::cursor::cached1;
 
     REQUIRE(saga::reduce(std::move(cur), 0L, SAGA_OVERLOAD_SET(std::max)) == 972);
-}
-
-// PE 057 - Подходящие цепные дроби квадратного корня
-namespace
-{
-    template <class IntType>
-    class convergent
-    {
-    public:
-        explicit convergent(IntType num)
-         : p_cur_(std::move(num))
-         , q_cur_(1)
-        {}
-
-        IntType const & numerator() const
-        {
-            return this->p_cur_;
-        }
-
-        IntType const & denominator() const
-        {
-            return this->q_cur_;
-        }
-
-        void add(IntType const & arg)
-        {
-            this->update(this->p_cur_, std::move(this->p_prev_), arg);
-            this->update(this->q_cur_, std::move(this->q_prev_), arg);
-        }
-
-    private:
-        static void update(IntType & cur, IntType && prev, IntType const & arg)
-        {
-            prev = saga::exchange(cur, arg * std::move(cur) + std::move(prev));
-        }
-
-        IntType p_cur_ = IntType(0);
-        IntType q_cur_ = IntType(0);
-
-        IntType p_prev_ = IntType(1);
-        IntType q_prev_ = IntType(0);
-    };
-
-    std::size_t digits_count(::integer10 const & num)
-    {
-        if(num.data().empty())
-        {
-            return 0;
-        }
-
-        return (num.data().size() - 1) * num.digits_per_unit
-                + saga::cursor::size(saga::cursor::digits_of(num.data().back(), 10));
-    }
-}
-
-TEST_CASE("integer10(0) digits_count")
-{
-    REQUIRE(::digits_count(::integer10()) == 0);
-}
-
-TEMPLATE_TEST_CASE("sqrt(2) convergents", "convergent", int, ::integer10)
-{
-    ::convergent<TestType> conv(TestType(1));
-
-    REQUIRE(conv.numerator() == 1);
-    REQUIRE(conv.denominator() == 1);
-
-    conv.add(TestType(2));
-
-    REQUIRE(conv.numerator() == 3);
-    REQUIRE(conv.denominator() == 2);
-
-    conv.add(TestType(2));
-
-    REQUIRE(conv.numerator() == 7);
-    REQUIRE(conv.denominator() == 5);
-
-    conv.add(TestType(2));
-
-    REQUIRE(conv.numerator() == 17);
-    REQUIRE(conv.denominator() == 12);
-
-    conv.add(TestType(2));
-
-    REQUIRE(conv.numerator() == 41);
-    REQUIRE(conv.denominator() == 29);
-
-    conv.add(TestType(2));
-
-    REQUIRE(conv.numerator() == 99);
-    REQUIRE(conv.denominator() == 70);
-
-    conv.add(TestType(2));
-
-    REQUIRE(conv.numerator() == 239);
-    REQUIRE(conv.denominator() == 169);
-
-    conv.add(TestType(2));
-
-    REQUIRE(conv.numerator() == 577);
-    REQUIRE(conv.denominator() == 408);
-
-    conv.add(TestType(2));
-
-    REQUIRE(conv.numerator() == 1393);
-    REQUIRE(conv.denominator() == 985);
-}
-
-TEST_CASE("PE 057")
-{
-    ::convergent<::integer10> conv(::integer10(1));
-
-    std::size_t result = 0;
-
-    for(auto steps = 1000; steps > 0; -- steps)
-    {
-        conv.add(::integer10(2));
-
-        result += (::digits_count(conv.numerator()) > ::digits_count(conv.denominator()));
-    }
-
-    REQUIRE(result == 153);
 }
 
 // PE 058 - Спиральные простые числа
@@ -3934,277 +3430,6 @@ TEST_CASE("PE 063")
     auto const result = saga::transform_reduce(saga::cursor::indices(1, 10), std::size_t(0)
                                                , std::plus<>{}, max_power);
     REQUIRE(result == 49);
-}
-
-// PE 064 - Квадратные корни с нечётным периодом
-namespace
-{
-    template <class IntType>
-    struct PE_64_state
-    {
-        IntType shift = IntType(0);
-        IntType value = IntType(0);
-        IntType denominator = IntType(1);
-
-        friend bool operator==(PE_64_state const & lhs, PE_64_state const & rhs)
-        {
-            return std::tie(lhs.shift, lhs.value, lhs.denominator)
-                   == std::tie(rhs.shift, rhs.value, rhs.denominator);
-        }
-    };
-
-    template <class IntType>
-    class PE_64_cursor
-     : saga::cursor_facade<PE_64_cursor<IntType>, PE_64_state<IntType> const &>
-    {
-    public:
-        // Типы
-        using reference = PE_64_state<IntType> const &;
-        using difference_type = std::ptrdiff_t;
-        using cursor_category = std::input_iterator_tag;
-
-        // Конструктор
-        /**
-        @pre number >= 0
-        */
-        explicit PE_64_cursor(IntType number)
-         : number_(std::move(number))
-         , sqrt_floor_(saga::isqrt(this->number_))
-         , state_{this->sqrt_floor_, this->sqrt_floor_, 1}
-        {}
-
-        // Курсор ввода
-        bool operator!() const
-        {
-            return this->state_.denominator == 0;
-        }
-
-        reference front() const
-        {
-            return this->state_;
-        }
-
-        void drop_front()
-        {
-            auto denom = this->number_ - saga::square(this->state_.shift);
-
-            assert(this->state_.denominator != 0);
-            assert(saga::is_divisible_by(denom, this->state_.denominator));
-
-            this->state_.denominator = std::move(denom) / this->state_.denominator;
-
-            if(this->state_.denominator == 0)
-            {
-                return;
-            }
-
-            this->state_.value = (this->sqrt_floor_ + this->state_.shift)
-                               / this->state_.denominator;
-
-            this->state_.shift = this->state_.value * this->state_.denominator
-                               - std::move(this->state_.shift);
-
-            assert(this->state_.shift > 0);
-        }
-
-    private:
-        IntType number_;
-        IntType sqrt_floor_;
-        PE_64_state<IntType> state_;
-    };
-
-    template <class IntType>
-    std::ptrdiff_t square_root_cycle_length(IntType num)
-    {
-        return ::cycle_length(::PE_64_cursor<IntType>(std::move(num)));
-    }
-
-    template <class IntType>
-    std::size_t PE_064(IntType num)
-    {
-        auto pred = [](auto const & arg) { return saga::is_odd(::square_root_cycle_length(arg)); };
-
-        return saga::count_if(saga::cursor::indices(IntType(2), num + 1), pred);
-    }
-}
-
-TEST_CASE("PE 064")
-{
-    REQUIRE(::square_root_cycle_length(2) == 1);
-    REQUIRE(::square_root_cycle_length(3) == 2);
-    REQUIRE(::square_root_cycle_length(4) == 0);
-    REQUIRE(::square_root_cycle_length(5) == 1);
-    REQUIRE(::square_root_cycle_length(6) == 2);
-    REQUIRE(::square_root_cycle_length(7) == 4);
-    REQUIRE(::square_root_cycle_length(8) == 2);
-    REQUIRE(::square_root_cycle_length(10) == 1);
-    REQUIRE(::square_root_cycle_length(11) == 2);
-    REQUIRE(::square_root_cycle_length(12) == 2);
-    REQUIRE(::square_root_cycle_length(13) == 5);
-
-    REQUIRE(::PE_064(13) == 4);
-    REQUIRE(::PE_064(10'000) == 1322);
-}
-
-// PE 065 - Подходящие цепные дроби числа e
-namespace
-{
-    template <class IntType>
-    class cursor_for_continued_fraction_for_e
-     : saga::cursor_facade<cursor_for_continued_fraction_for_e<IntType>, IntType const &>
-    {
-    public:
-        // Типы
-        using cursor_category = std::input_iterator_tag;
-        using value_type = IntType;
-        using reference = IntType const &;
-
-        // Создание, копирование, уничтожение
-        cursor_for_continued_fraction_for_e() = default;
-
-        // Курсор ввода
-        bool operator!() const
-        {
-            return false;
-        }
-
-        reference front() const
-        {
-            return this->value_;
-        }
-
-        void drop_front()
-        {
-            ++ index;
-
-            this->value_ = (index % 3 == 2) ? IntType(2 * ((index+1) / 3)) : IntType(1);
-        }
-
-    private:
-        IntType value_ = IntType(2);
-        std::size_t index = 0;
-    };
-
-    std::size_t PE_065(std::size_t num)
-    {
-        auto cur = ::cursor_for_continued_fraction_for_e<::integer10>{}
-                 | saga::cursor::take(num);
-
-        ::convergent<::integer10> conv(*cur);
-        ++ cur;
-
-        for(; !!cur; ++ cur)
-        {
-            conv.add(*cur);
-        }
-
-        return ::digits_sum(conv.numerator());
-    }
-}
-
-TEST_CASE("continued fraction of e")
-{
-    using IntType = int;
-
-    std::vector<IntType> const expected{2, 1, 2, 1, 1, 4, 1, 1, 6, 1, 1, 8, 1, 1, 10, 1};
-
-    auto const actual = ::cursor_for_continued_fraction_for_e<IntType>()
-                      | saga::cursor::take(expected.size())
-                      | saga::cursor::to<std::vector>();
-
-    REQUIRE(actual == expected);
-}
-
-TEST_CASE("PE 065")
-{
-    REQUIRE(::PE_065(10) == 17);
-    REQUIRE(::PE_065(100) == 272);
-}
-
-// PE 066 - Диофантово уравнение
-namespace
-{
-    template <class IntType>
-    std::pair<IntType, std::vector<IntType>>
-    sqrt_continued_fraction_period(IntType number)
-    {
-        auto cur = ::PE_64_cursor<IntType>(number)
-                 | saga::cursor::transform(&PE_64_state<IntType>::value);
-
-        assert(!!cur);
-
-        auto const first = *cur;
-        ++ cur;
-
-        auto const pred = [stop = 2 * first](IntType const & arg){ return arg != stop; };
-
-        auto other = cur
-                   | saga::cursor::take_while(pred)
-                   | saga::cursor::to<std::vector>();
-
-        return {first, other};
-    }
-
-    template <class Result, class IntType>
-    Result pells_equation_minimal_solution_x(IntType number)
-    {
-        auto const sqrt_cf = ::sqrt_continued_fraction_period(number);
-
-        ::convergent<Result> conv(sqrt_cf.first);
-
-        for(auto const & each : saga::cursor::all(sqrt_cf.second))
-        {
-            conv.add(each);
-        }
-
-        if(saga::is_even(sqrt_cf.second.size()))
-        {
-            conv.add(2*sqrt_cf.first);
-
-            for(auto const & each : saga::cursor::all(sqrt_cf.second))
-            {
-                conv.add(each);
-            }
-        }
-
-        return conv.numerator();
-    }
-
-    template <class IntType>
-    IntType pells_equation_minimal_solution_x(IntType number)
-    {
-        return pells_equation_minimal_solution_x<IntType, IntType>(number);
-    }
-
-    template <class IntType>
-    IntType PE_066(IntType max_number)
-    {
-        assert(max_number >= 2);
-
-        auto cur = saga::cursor::indices(IntType(2), max_number+1)
-                 | saga::cursor::filter(saga::not_fn(saga::is_square))
-                 | saga::cursor::transform(::pells_equation_minimal_solution_x<double, IntType>)
-                 | saga::cursor::cached1;
-
-        assert(!!cur);
-
-        return *saga::max_element(cur).base().base();
-    }
-}
-
-TEST_CASE("PE 066")
-{
-    CHECK(::pells_equation_minimal_solution_x(2) == 3);
-    CHECK(::pells_equation_minimal_solution_x(3) == 2);
-    CHECK(::pells_equation_minimal_solution_x(5) == 9);
-
-    CHECK(::pells_equation_minimal_solution_x(6) == 5);
-    CHECK(::pells_equation_minimal_solution_x(7) == 8);
-
-    CHECK(::pells_equation_minimal_solution_x(13) == 649);
-
-    CHECK(::PE_066(7) == 5);
-    CHECK(::PE_066(1000) == 661);
 }
 
 // PE 067: Путь наибольшей суммы (часть II)

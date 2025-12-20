@@ -22,6 +22,7 @@ SAGA -- это свободной программное обеспечение:
 @brief Адаптер курсора, кэширующий последнее значение базового курсора
 */
 
+#include <saga/utility/pipeable.hpp>
 #include <saga/cursor/cursor_facade.hpp>
 #include <saga/cursor/cursor_traits.hpp>
 

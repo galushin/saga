@@ -148,6 +148,8 @@
 		<Unit filename="../include/saga/utility/with_old_value.hpp" />
 		<Unit filename="ProjectEuler/PE_061.cpp" />
 		<Unit filename="ProjectEuler/PE_062.cpp" />
+		<Unit filename="ProjectEuler/PE_continued_fractions_and_cycles.cpp" />
+		<Unit filename="ProjectEuler/integer10.hpp" />
 		<Unit filename="ProjectEuler/p081_matrix.txt" />
 		<Unit filename="ProjectEuler/projectEuler.cpp" />
 		<Unit filename="action.cpp" />
