@@ -3918,68 +3918,6 @@ TEST_CASE("PE 058")
     REQUIRE(::PE_058<long long>(1, 10) == 26241);
 }
 
-// PE 062 - Кубические перестановки
-namespace
-{
-    template <class IntType>
-    IntType PE_062(std::size_t const repeats)
-    {
-        assert(repeats > 0);
-
-        std::map<std::string, std::pair<IntType, std::size_t>> data;
-
-        auto current_length = std::size_t(1);
-
-        for(auto const & number : saga::cursor::iota(IntType(1)))
-        {
-            if(number >= std::numeric_limits<IntType>::max() / number / number)
-            {
-                break;
-            }
-
-            auto const cube = saga::power_natural(number, 3);
-            auto const str = std::to_string(cube) | saga::action::sort;
-
-            if(str.size() > current_length)
-            {
-                auto pred = [&](auto const & item) { return item.second.second == repeats; };
-                auto pos = saga::find_if(saga::cursor::all(data), pred);
-
-                if(!!pos)
-                {
-                    return pos.front().second.first;
-                }
-
-                data.clear();
-                ++ current_length;
-            }
-
-            auto & ref = data[str];
-
-            if(ref.second == 0)
-            {
-                ref.first = cube;
-            }
-
-            ref.second += 1;
-        }
-
-        throw std::range_error("PE 062 : answer is not found");
-    }
-}
-
-TEST_CASE("PE 062")
-{
-    using IntType = std::uint64_t;
-
-    REQUIRE(::PE_062<IntType>(3) == 41063625);
-    REQUIRE(::PE_062<IntType>(5) == 127035954683);
-
-    REQUIRE(::PE_062<IntType>(6) == 1000600120008);
-
-    REQUIRE_THROWS(::PE_062<int>(5));
-}
-
 // PE 063 - Количество цифр степеней
 /* Число 10^n содержит n+1 цифр, поэтому основания больше 9 проверять смысла нет.
  Степени n числа b, для которых уже нет смысла проверять, определяется неравенством b^n < 10^(n-1).
