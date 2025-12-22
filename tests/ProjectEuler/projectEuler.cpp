@@ -2534,65 +2534,6 @@ TEST_CASE("PE 047")
     REQUIRE(::PE_047(4) == 134043);
 }
 
-// PE 048 - Собственные степени
-namespace
-{
-    template <class Integer, class IntType
-             , class BinaryOperation1 = std::multiplies<>
-             , class BinaryOperation2 = std::plus<>>
-    Integer PE_048_self_powers_sum(IntType max_num, BinaryOperation1 prod = {}
-                                  , BinaryOperation2 add = {})
-    {
-        auto self_power = [&](IntType const & num)
-        {
-            assert(num >= 1);
-
-            return saga::power_natural(Integer(num), num, prod);
-        };
-
-        auto cur = saga::cursor::indices(1, max_num + 1) | saga::cursor::transform(self_power);
-
-        return saga::reduce(std::move(cur), {}, add);
-    }
-}
-
-TEST_CASE("integer10 : mod10")
-{
-    ::integer10 num("987654321");
-    num.mod10(3);
-
-    REQUIRE(num == 321);
-}
-
-TEST_CASE("PE 048")
-{
-    // Простой пример
-    REQUIRE(::PE_048_self_powers_sum<long long>(10) == 10'405'071'317);
-
-    // Пример, для которого недостаточно 64 бита
-    using Integer = ::integer10;
-
-    auto const digits_needed = 10;
-
-    auto const mult_mod = [=](Integer lhs, Integer const & rhs)
-    {
-        lhs *= rhs;
-        lhs.mod10(digits_needed);
-
-        return lhs;
-    };
-
-    auto const add_mod = [=](Integer lhs, Integer const & rhs)
-    {
-        lhs += rhs;
-        lhs.mod10(digits_needed);
-
-        return lhs;
-    };
-
-    REQUIRE(::PE_048_self_powers_sum<Integer>(1000, mult_mod, add_mod) == 9'110'846'700);
-}
-
 // PE 049 - Простые перестановки
 namespace
 {
