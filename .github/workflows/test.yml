@@ -117,8 +117,15 @@ jobs:
               CXX: "g++-13",
               SANITIZE: none,
               CFLAGS: "-std=gnu++17",
+            }
+          - {
+              name: "Linux GCC 13 C++20",
+              os: ubuntu-latest,
+              CC: "gcc-13", 
+              CXX: "g++-13",
+              SANITIZE: none,
+              CFLAGS: "-std=gnu++20",
             }            
-            # GCC 13 C++20 выдаёт внутреннюю ошибку компилятора            
           - {
               name: "Linux GCC 13 C++23",
               os: ubuntu-latest,
@@ -171,10 +178,10 @@ jobs:
           - {
               name: "Linux Clang ASAN C++17",
               os: ubuntu-latest,
-              # clang 16 и 18 даёт ложноположительное срабатывание в std
-              CC: "clang-15", 
-              CXX: "clang++-15",
-              LLVM: "llvm-15",
+              # clang 15, 16 и 18 даёт ложноположительное срабатывание в std
+              CC: "clang-14", 
+              CXX: "clang++-14",
+              LLVM: "llvm-14",
               SANITIZE: address,
               CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=address",
@@ -183,9 +190,10 @@ jobs:
           - {
               name: "Linux Clang ASAN C++20",
               os: ubuntu-latest,
-              CC: "clang", 
-              CXX: "clang++",
-              LLVM: "llvm",
+              # clang 15, 16 и 18 даёт ложноположительное срабатывание в std
+              CC: "clang-14", 
+              CXX: "clang++-14",
+              LLVM: "llvm-14",
               SANITIZE: address,
               CFLAGS:  "-std=c++20 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=address",
