@@ -19,18 +19,29 @@ jobs:
           - {
               name: "Linux GCC default Ubuntu",
               os: ubuntu-latest,
+              # gcc-13 выдаёт внутреннюю ошибку компилятора на C++20
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: none,
-              CFLAGS: "-std=gnu++20",
+              CFLAGS: "-std=gnu++17",
             }
           - {
-              name: "Linux GCC default ASAN",
+              name: "Linux GCC default ASAN C++17",
               os: ubuntu-latest,
               CC: "gcc", 
               CXX: "g++",
               SANITIZE: address,
-              CFLAGS:  "-std=c++20 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
+              CFLAGS:  "-std=gnu++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
+              LDFLAGS: "-fsanitize=address",
+              ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
+            }
+          - {
+              name: "Linux GCC default ASAN C++20",
+              os: ubuntu-latest,
+              CC: "gcc", 
+              CXX: "g++",
+              SANITIZE: address,
+              CFLAGS:  "-std=gnu++20 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=address",
               ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
             }            
@@ -99,6 +110,54 @@ jobs:
               SANITIZE: none,
               CFLAGS: "-std=gnu++2b",
             }
+          - {
+              name: "Linux GCC 13 C++17",
+              os: ubuntu-latest,
+              CC: "gcc-13", 
+              CXX: "g++-13",
+              SANITIZE: none,
+              CFLAGS: "-std=gnu++17",
+            }
+          - {
+              name: "Linux GCC 13 C++20",
+              os: ubuntu-latest,
+              CC: "gcc-13", 
+              CXX: "g++-13",
+              SANITIZE: none,
+              CFLAGS: "-std=gnu++20",
+            }            
+          - {
+              name: "Linux GCC 13 C++23",
+              os: ubuntu-latest,
+              CC: "gcc-13", 
+              CXX: "g++-13",
+              SANITIZE: none,
+              CFLAGS: "-std=gnu++2b",
+            }
+          - {
+              name: "Linux GCC 14 C++17",
+              os: ubuntu-latest,
+              CC: "gcc-14", 
+              CXX: "g++-14",
+              SANITIZE: none,
+              CFLAGS: "-std=gnu++17",
+            }            
+          - {
+              name: "Linux GCC 14 C++20",
+              os: ubuntu-latest,
+              CC: "gcc-14", 
+              CXX: "g++-14",
+              SANITIZE: none,
+              CFLAGS: "-std=gnu++20",
+            }            
+          - {
+              name: "Linux GCC 14 C++23",
+              os: ubuntu-latest,
+              CC: "gcc-14", 
+              CXX: "g++-14",
+              SANITIZE: none,
+              CFLAGS: "-std=gnu++23",
+            }
           # Clang
           - {
               name: "Linux Clang default",
@@ -117,8 +176,9 @@ jobs:
               CFLAGS: "-std=c++20",
             }
           - {
-              name: "Linux Clang ASAN",
-              os: ubuntu-latest,
+              name: "Linux Clang ASAN C++17",
+              os: ubuntu-22.04,
+              # clang 13-16 и 18 даёт ложноположительное срабатывание в std, а 12 нет на ubuntu-24.04
               CC: "clang-12", 
               CXX: "clang++-12",
               LLVM: "llvm-12",
@@ -126,6 +186,18 @@ jobs:
               CFLAGS:  "-std=c++17 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=address",
               ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
+            }
+            # Clang 12-18 C++20 даёт ложноположительное срабатывание в std с :detect_invalid_pointer_pairs=2
+          - {
+              name: "Linux Clang ASAN C++20",
+              os: ubuntu-latest,
+              CC: "clang", 
+              CXX: "clang++",
+              LLVM: "llvm",
+              SANITIZE: address,
+              CFLAGS:  "-std=c++20 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
+              LDFLAGS: "-fsanitize=address",
+              ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1",
             }
           - {
               name: "Linux Clang default UBSAN",
@@ -147,7 +219,7 @@ jobs:
             }
           - {
               name: "Linux Clang 11",
-              os: ubuntu-latest,
+              os: ubuntu-22.04,
               CC: "clang-11", 
               CXX: "clang++-11",
               LLVM: "llvm-11",
@@ -156,7 +228,7 @@ jobs:
             }
           - {
               name: "Linux Clang 12",
-              os: ubuntu-latest,
+              os: ubuntu-22.04,
               CC: "clang-12", 
               CXX: "clang++-12",
               LLVM: "llvm-12",
@@ -165,7 +237,7 @@ jobs:
             }
           - {
               name: "Linux Clang 13",
-              os: ubuntu-latest,
+              os: ubuntu-22.04,
               CC: "clang-13", 
               CXX: "clang++-13",
               LLVM: "llvm-13",
@@ -218,6 +290,15 @@ jobs:
               CFLAGS: "-std=c++20",
             }
           - {
+              name: "Linux Clang 19 C++17",
+              os: ubuntu-latest,
+              CC: "clang-19", 
+              CXX: "clang++-19",
+              LLVM: "llvm-19",
+              SANITIZE: none,
+              CFLAGS: "-std=c++17",
+            }
+          - {
               name: "Linux Clang 19 C++20",
               os: ubuntu-latest,
               CC: "clang-19", 
@@ -225,6 +306,15 @@ jobs:
               LLVM: "llvm-19",
               SANITIZE: none,
               CFLAGS: "-std=c++20",
+            }
+          - {
+              name: "Linux Clang 19 C++23",
+              os: ubuntu-latest,
+              CC: "clang-19", 
+              CXX: "clang++-19",
+              LLVM: "llvm-19",
+              SANITIZE: none,
+              CFLAGS: "-std=c++23",
             }
 
     steps:
