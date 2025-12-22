@@ -20,7 +20,6 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/numeric/primes_cursor.hpp>
 
 // Инфраструктура тестирования
-#include "../saga_test.hpp"
 #include <catch2/catch_amalgamated.hpp>
 
 // PE 069 - Максимум функции Эйлера

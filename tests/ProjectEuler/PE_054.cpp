@@ -27,7 +27,6 @@ SAGA -- это свободной программное обеспечение:
 #include <fstream>
 
 // Инфраструктура тестирования
-#include "../saga_test.hpp"
 #include <catch2/catch_amalgamated.hpp>
 
 // PE 054 - Покерные комбинации

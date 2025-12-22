@@ -31,7 +31,6 @@ SAGA -- это свободной программное обеспечение:
 #include "./integer10.hpp"
 
 // Инфраструктура тестирования
-#include "../saga_test.hpp"
 #include <catch2/catch_amalgamated.hpp>
 
 // PE 026: Циклы в обратных числах

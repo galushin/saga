@@ -21,9 +21,7 @@ SAGA -- это свободной программное обеспечение:
 #include <saga/cursor/transform.hpp>
 
 // Инфраструктура тестирования
-#include "../saga_test.hpp"
 #include <catch2/catch_amalgamated.hpp>
-
 
 // PE 048 - Собственные степени
 namespace

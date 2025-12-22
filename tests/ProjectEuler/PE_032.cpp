@@ -16,47 +16,47 @@ SAGA -- это свободной программное обеспечение:
 */
 
 // Используемые возможности
+#include <saga/flat_set.hpp>
 #include <saga/numeric.hpp>
 
 // Инфраструктура тестирования
 #include <catch2/catch_amalgamated.hpp>
 
-// PE 070 - Перестановка функции Эйлера
-/* Чтобы n/phi(n) было как можно меньше, phi(p) должно быть как можно больше.
-Чем больше простых множителей, тем меньше phi(p).
-Для p простого phi(p)=p-1 не может быть перестановкой
-Рассмотрим всевозможные пары
-*/
-TEST_CASE("PE 070")
+// PE 032: Панцифирные произведения
+TEST_CASE("PE 032")
 {
-    auto const n_max = 10'000'000;
+    using IntType = long;
+    auto const min_mult = saga::power_natural(IntType(10), 2);
+    auto const max_mult = saga::power_natural(IntType(10), 4);
 
-    auto const primes = saga::primes_below(n_max / 2 + 1);
+    saga::flat_set<IntType> obj;
 
-    auto best_num = 2;
-    auto best_phi = 1;
-
-    for(auto pos1 : saga::cursor::indices_of(primes))
-    for(auto pos2 : saga::cursor::indices(0, pos1))
+    for(auto lhs : saga::cursor::indices(min_mult, max_mult))
     {
-        if(primes[pos2] > n_max / primes[pos1])
+        auto const lhs_str = std::to_string(lhs);
+
+        for(auto rhs : saga::cursor::indices(1, lhs))
         {
-            break;
-        }
+            auto rhs_str = std::to_string(rhs);
 
-        auto const num = primes[pos1] * primes[pos2];
-        auto const phi = (primes[pos1] - 1) * (primes[pos2] - 1);
+            auto prod = lhs * rhs;
 
-        auto const num_s = std::to_string(num);
-        auto const phi_s = std::to_string(phi);
+            auto str = lhs_str + rhs_str + std::to_string(prod);
 
-        if(saga::is_permutation(saga::cursor::all(num_s), saga::cursor::all(phi_s))
-           && (double(num) / phi < double(best_num) / best_phi))
-        {
-            best_num = num;
-            best_phi = phi;
+            if(str.size() > 9)
+            {
+                break;
+            }
+
+            str |= saga::action::sort;
+
+            if(str == "123456789")
+            {
+                // @todo Убрать первый аргумент?
+                obj.insert(obj.end(), std::move(prod));
+            }
         }
     }
 
-    REQUIRE(best_num == 8319823);
+    REQUIRE(saga::reduce(saga::cursor::all(obj)) == 45228);
 }
