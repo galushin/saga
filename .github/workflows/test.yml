@@ -187,17 +187,17 @@ jobs:
               LDFLAGS: "-fsanitize=address",
               ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
             }
+            # Clang 12-18 C++20 даёт ложноположительное срабатывание в std с :detect_invalid_pointer_pairs=2
           - {
               name: "Linux Clang ASAN C++20",
-              # clang 13-16 и 18 даёт ложноположительное срабатывание в std, а 12 нет на ubuntu-24.04
-              os: ubuntu-22.04,
-              CC: "clang-12", 
-              CXX: "clang++-12",
-              LLVM: "llvm-12",
+              os: ubuntu-latest,
+              CC: "clang", 
+              CXX: "clang++",
+              LLVM: "llvm",
               SANITIZE: address,
               CFLAGS:  "-std=c++20 -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fno-sanitize-recover=all",
               LDFLAGS: "-fsanitize=address",
-              ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1:detect_invalid_pointer_pairs=2",
+              ASAN_OPTIONS: "check_initialization_order=1:strict_init_order=1:detect_odr_violation=1",
             }
           - {
               name: "Linux Clang default UBSAN",
