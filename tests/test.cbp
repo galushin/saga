@@ -147,6 +147,7 @@
 		<Unit filename="../include/saga/utility/pipeable.hpp" />
 		<Unit filename="../include/saga/utility/with_old_value.hpp" />
 		<Unit filename="ProjectEuler/PE_048.cpp" />
+		<Unit filename="ProjectEuler/PE_051.cpp" />
 		<Unit filename="ProjectEuler/PE_061.cpp" />
 		<Unit filename="ProjectEuler/PE_062.cpp" />
 		<Unit filename="ProjectEuler/PE_069.cpp" />
@@ -155,6 +156,7 @@
 		<Unit filename="ProjectEuler/integer10.hpp" />
 		<Unit filename="ProjectEuler/p081_matrix.txt" />
 		<Unit filename="ProjectEuler/projectEuler.cpp" />
+		<Unit filename="ProjectEuler/seive.hpp" />
 		<Unit filename="action.cpp" />
 		<Unit filename="algorithm.cpp" />
 		<Unit filename="compare.cpp" />
