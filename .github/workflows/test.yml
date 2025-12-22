@@ -177,8 +177,8 @@ jobs:
             }
           - {
               name: "Linux Clang ASAN C++17",
-              os: ubuntu-latest,
-              # clang 13-16 и 18 даёт ложноположительное срабатывание в std
+              os: ubuntu-22.04,
+              # clang 13-16 и 18 даёт ложноположительное срабатывание в std, а 12 нет на ubuntu-24.04
               CC: "clang-12", 
               CXX: "clang++-12",
               LLVM: "llvm-12",
@@ -189,8 +189,8 @@ jobs:
             }
           - {
               name: "Linux Clang ASAN C++20",
-              os: ubuntu-latest,
-              # clang 13-16 и 18 даёт ложноположительное срабатывание в std
+              # clang 13-16 и 18 даёт ложноположительное срабатывание в std, а 12 нет на ubuntu-24.04
+              os: ubuntu-22.04,
               CC: "clang-12", 
               CXX: "clang++-12",
               LLVM: "llvm-12",
