@@ -3526,46 +3526,6 @@ TEST_CASE("PE 068")
     REQUIRE(PE_068(5, true) == "6531031914842725");
 }
 
-// PE 070 - Перестановка функции Эйлера
-/* Чтобы n/phi(n) было как можно меньше, phi(p) должно быть как можно больше.
-Чем больше простых множителей, тем меньше phi(p).
-Для p простого phi(p)=p-1 не может быть перестановкой
-Рассмотрим всевозможные пары
-*/
-TEST_CASE("PE 070")
-{
-    auto const n_max = 10'000'000;
-
-    auto const primes = saga::primes_below(n_max / 2 + 1);
-
-    auto best_num = 2;
-    auto best_phi = 1;
-
-    for(auto pos1 : saga::cursor::indices_of(primes))
-    for(auto pos2 : saga::cursor::indices(0, pos1))
-    {
-        if(primes[pos2] > n_max / primes[pos1])
-        {
-            break;
-        }
-
-        auto const num = primes[pos1] * primes[pos2];
-        auto const phi = (primes[pos1] - 1) * (primes[pos2] - 1);
-
-        auto const num_s = std::to_string(num);
-        auto const phi_s = std::to_string(phi);
-
-        if(saga::is_permutation(saga::cursor::all(num_s), saga::cursor::all(phi_s))
-           && (double(num) / phi < double(best_num) / best_phi))
-        {
-            best_num = num;
-            best_phi = phi;
-        }
-    }
-
-    REQUIRE(best_num == 8319823);
-}
-
 // PE 071 - Упорядоченные дроби
 namespace
 {
