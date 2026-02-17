@@ -6,8 +6,8 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
-//  Catch v3.9.1
-//  Generated: 2025-08-09 00:29:21.552225
+//  Catch v3.13.0
+//  Generated: 2026-02-15 22:55:00.269529
 //  ----------------------------------------------------------
 //  This file is an amalgamation of multiple different files.
 //  You probably shouldn't edit it directly.
@@ -798,6 +798,10 @@ namespace Catch {
                lhs.customOptions == rhs.customOptions;
     }
 
+    bool operator==( PathFilter const& lhs, PathFilter const& rhs ) {
+        return lhs.type == rhs.type && lhs.filter == rhs.filter;
+    }
+
     Config::Config( ConfigData const& data ):
         m_data( data ) {
         // We need to trim filter specs to avoid trouble with superfluous
@@ -805,9 +809,6 @@ namespace Catch {
         // aligned with whitespace).
 
         for (auto& elem : m_data.testsOrTags) {
-            elem = trim(elem);
-        }
-        for (auto& elem : m_data.sectionsToRun) {
             elem = trim(elem);
         }
 
@@ -825,6 +826,8 @@ namespace Catch {
             m_data.reporterSpecifications.push_back( std::move( *parsed ) );
         }
 
+        // Reading bazel env vars can change some parts of the config data,
+        // so we have to process the bazel env before acting on the config.
         if ( enableBazelEnvSupport() ) {
             readBazelEnvVars();
         }
@@ -873,7 +876,8 @@ namespace Catch {
     bool Config::listListeners() const      { return m_data.listListeners; }
 
     std::vector<std::string> const& Config::getTestsOrTags() const { return m_data.testsOrTags; }
-    std::vector<std::string> const& Config::getSectionsToRun() const { return m_data.sectionsToRun; }
+    std::vector<PathFilter> const& Config::getPathFilters() const { return m_data.pathFilters; }
+    bool Config::useNewFilterBehaviour() const { return m_data.useNewPathFilteringBehaviour; }
 
     std::vector<ReporterSpec> const& Config::getReporterSpecs() const {
         return m_data.reporterSpecifications;
@@ -889,6 +893,8 @@ namespace Catch {
 
     bool Config::showHelp() const { return m_data.showHelp; }
 
+    std::string const& Config::getExitGuardFilePath() const { return m_data.prematureExitGuardFilePath; }
+
     // IConfig interface
     bool Config::allowThrows() const                   { return !m_data.noThrow; }
     StringRef Config::name() const { return m_data.name.empty() ? m_data.processName : m_data.name; }
@@ -898,6 +904,9 @@ namespace Catch {
     }
     bool Config::warnAboutUnmatchedTestSpecs() const {
         return !!( m_data.warnings & WarnAbout::UnmatchedTestSpec );
+    }
+    bool Config::warnAboutInfiniteGenerators() const {
+        return !!( m_data.warnings & WarnAbout::InfiniteGenerator );
     }
     bool Config::zeroTestsCountAsSuccess() const       { return m_data.allowZeroTests; }
     ShowDurations Config::showDurations() const        { return m_data.showDurations; }
@@ -950,6 +959,26 @@ namespace Catch {
                 m_data.shardCount = bazelShardOptions->shardCount;
             }
         }
+
+        const auto bazelExitGuardFile = Detail::getEnv( "TEST_PREMATURE_EXIT_FILE" );
+        if (bazelExitGuardFile) {
+            m_data.prematureExitGuardFilePath = bazelExitGuardFile;
+        }
+
+        const auto bazelRandomSeed = Detail::getEnv( "TEST_RANDOM_SEED" );
+        if ( bazelRandomSeed ) {
+            auto parsedSeed = parseUInt( bazelRandomSeed, 0 );
+            if ( !parsedSeed ) {
+                // Currently we handle issues with parsing other Bazel Env
+                // options by warning and ignoring the issue. So we do the
+                // same for random seed option.
+                Catch::cerr()
+                    << "Warning: could not parse 'TEST_RANDOM_SEED' ('"
+                    << bazelRandomSeed << "') as proper seed.\n";
+            } else {
+                m_data.rngSeed = *parsedSeed;
+            }
+        }
     }
 
 } // end namespace Catch
@@ -975,28 +1004,28 @@ namespace Catch {
 
 
     ScopedMessage::ScopedMessage( MessageBuilder&& builder ):
-        m_info( CATCH_MOVE(builder.m_info) ) {
-        m_info.message = builder.m_stream.str();
-        getResultCapture().pushScopedMessage( m_info );
+        m_messageId( builder.m_info.sequence ) {
+        MessageInfo info( CATCH_MOVE( builder.m_info ) );
+        info.message = builder.m_stream.str();
+        IResultCapture::pushScopedMessage( CATCH_MOVE( info ) );
     }
 
     ScopedMessage::ScopedMessage( ScopedMessage&& old ) noexcept:
-        m_info( CATCH_MOVE( old.m_info ) ) {
+        m_messageId( old.m_messageId ) {
         old.m_moved = true;
     }
 
     ScopedMessage::~ScopedMessage() {
-        if ( !m_moved ){
-            getResultCapture().popScopedMessage(m_info);
-        }
+        if ( !m_moved ) { IResultCapture::popScopedMessage( m_messageId ); }
     }
 
 
     Capturer::Capturer( StringRef macroName,
                         SourceLineInfo const& lineInfo,
                         ResultWas::OfType resultType,
-                        StringRef names ):
-        m_resultCapture( getResultCapture() ) {
+                        StringRef names,
+                        bool isScoped):
+        m_isScoped(isScoped) {
         auto trimmed = [&] (size_t start, size_t end) {
             while (names[start] == ',' || isspace(static_cast<unsigned char>(names[start]))) {
                 ++start;
@@ -1042,8 +1071,8 @@ namespace Catch {
             case ',':
                 if (start != pos && openings.empty()) {
                     m_messages.emplace_back(macroName, lineInfo, resultType);
-                    m_messages.back().message = static_cast<std::string>(trimmed(start, pos));
-                    m_messages.back().message += " := ";
+                    m_messages.back().message += trimmed(start, pos);
+                    m_messages.back().message += " := "_sr;
                     start = pos;
                 }
                 break;
@@ -1052,19 +1081,26 @@ namespace Catch {
         }
         assert(openings.empty() && "Mismatched openings");
         m_messages.emplace_back(macroName, lineInfo, resultType);
-        m_messages.back().message = static_cast<std::string>(trimmed(start, names.size() - 1));
-        m_messages.back().message += " := ";
+        m_messages.back().message += trimmed(start, names.size() - 1);
+        m_messages.back().message += " := "_sr;
     }
     Capturer::~Capturer() {
         assert( m_captured == m_messages.size() );
-        for ( size_t i = 0; i < m_captured; ++i )
-            m_resultCapture.popScopedMessage( m_messages[i] );
+        if ( m_isScoped ) {
+            for ( auto const& message : m_messages ) {
+                IResultCapture::popScopedMessage( message.sequence );
+            }
+        }
     }
 
     void Capturer::captureValue( size_t index, std::string const& value ) {
         assert( index < m_messages.size() );
         m_messages[index].message += value;
-        m_resultCapture.pushScopedMessage( m_messages[index] );
+        if ( m_isScoped ) {
+            IResultCapture::pushScopedMessage( CATCH_MOVE( m_messages[index] ) );
+        } else {
+            IResultCapture::addUnscopedMessage( CATCH_MOVE( m_messages[index] ) );
+        }
         m_captured++;
     }
 
@@ -1148,7 +1184,6 @@ namespace Catch {
     }
     void cleanUp() {
         cleanupSingletons();
-        cleanUpContext();
     }
     std::string translateActiveException() {
         return getRegistryHub().getExceptionTranslatorRegistry().translateActiveException();
@@ -1160,6 +1195,8 @@ namespace Catch {
 
 
 #include <cassert>
+#include <cstdio>
+#include <cstdlib>
 #include <exception>
 #include <iomanip>
 #include <set>
@@ -1271,6 +1308,50 @@ namespace Catch {
         void applyFilenamesAsTags() {
             for (auto const& testInfo : getRegistryHub().getTestCaseRegistry().getAllInfos()) {
                 testInfo->addFilenameTag();
+            }
+        }
+
+        // Creates empty file at path. The path must be writable, we do not
+        // try to create directories in path because that's hard in C++14.
+        void setUpGuardFile( std::string const& guardFilePath ) {
+            if ( !guardFilePath.empty() ) {
+#if defined( _MSC_VER )
+                std::FILE* file = nullptr;
+                if ( fopen_s( &file, guardFilePath.c_str(), "w" ) ) {
+                    char msgBuffer[100];
+                    const auto err = errno;
+                    std::string errMsg;
+                    if ( !strerror_s( msgBuffer, err ) ) {
+                        errMsg = msgBuffer;
+                    } else {
+                        errMsg = "Could not translate errno to a string";
+                    }
+
+#else
+                std::FILE* file = std::fopen( guardFilePath.c_str(), "w" );
+                if ( !file ) {
+                    const auto err = errno;
+                    const char* errMsg = std::strerror( err );
+#endif
+
+                    CATCH_RUNTIME_ERROR( "Could not open the exit guard file '"
+                                         << guardFilePath << "' because '"
+                                         << errMsg << "' (" << err << ')' );
+                }
+                const int ret = std::fclose( file );
+                CATCH_ENFORCE(
+                    ret == 0,
+                    "Error when closing the exit guard file: " << ret );
+            }
+        }
+
+        // Removes file at path. Assuming we created it in setUpGuardFile.
+        void tearDownGuardFile( std::string const& guardFilePath ) {
+            if ( !guardFilePath.empty() ) {
+                const int ret = std::remove( guardFilePath.c_str() );
+                CATCH_ENFORCE(
+                    ret == 0,
+                    "Error when removing the exit guard file: " << ret );
             }
         }
 
@@ -1392,6 +1473,7 @@ namespace Catch {
             static_cast<void>(std::getchar());
         }
         int exitCode = runInternal();
+
         if( ( m_configData.waitForKeypress & WaitForKeypress::BeforeExit ) != 0 ) {
             Catch::cout() << "...waiting for enter/ return before exiting, with code: " << exitCode << '\n' << std::flush;
             static_cast<void>(std::getchar());
@@ -1432,6 +1514,10 @@ namespace Catch {
         CATCH_TRY {
             config(); // Force config to be constructed
 
+            // We need to retrieve potential Bazel config with the full Config
+            // constructor, so we have to create the guard file after it is created.
+            setUpGuardFile( m_config->getExitGuardFilePath() );
+
             seedRng( *m_config );
 
             if (m_configData.filenamesAsTags) {
@@ -1461,9 +1547,12 @@ namespace Catch {
             TestGroup tests { CATCH_MOVE(reporter), m_config.get() };
             auto const totals = tests.execute();
 
+            // If we got here, running the tests finished normally-enough.
+            // They might've failed, but that would've been reported elsewhere.
+            tearDownGuardFile( m_config->getExitGuardFilePath() );
+
             if ( tests.hadUnmatchedTestSpecs()
                 && m_config->warnAboutUnmatchedTestSpecs() ) {
-                // UnmatchedTestSpecExitCode
                 return UnmatchedTestSpecExitCode;
             }
 
@@ -1969,39 +2058,69 @@ namespace Detail {
         }
     } // end unnamed namespace
 
+    std::size_t catch_strnlen( const char* str, std::size_t n ) {
+        auto ret = std::char_traits<char>::find( str, n, '\0' );
+        if ( ret != nullptr ) { return static_cast<std::size_t>( ret - str ); }
+        return n;
+    }
+
+    std::string formatTimeT(std::time_t time) {
+#ifdef _MSC_VER
+        std::tm timeInfo = {};
+        const auto err = gmtime_s( &timeInfo, &time );
+        if ( err ) {
+            return "gmtime from provided timepoint has failed. This "
+                   "happens e.g. with pre-1970 dates using Microsoft libc";
+        }
+#else
+        std::tm* timeInfo = std::gmtime( &time );
+#endif
+
+        auto const timeStampSize = sizeof( "2017-01-16T17:06:45Z" );
+        char timeStamp[timeStampSize];
+        const char* const fmt = "%Y-%m-%dT%H:%M:%SZ";
+
+#ifdef _MSC_VER
+        std::strftime( timeStamp, timeStampSize, fmt, &timeInfo );
+#else
+        std::strftime( timeStamp, timeStampSize, fmt, timeInfo );
+#endif
+        return std::string( timeStamp, timeStampSize - 1 );
+    }
+
     std::string convertIntoString(StringRef string, bool escapeInvisibles) {
         std::string ret;
         // This is enough for the "don't escape invisibles" case, and a good
         // lower bound on the "escape invisibles" case.
-        ret.reserve(string.size() + 2);
+        ret.reserve( string.size() + 2 );
 
-        if (!escapeInvisibles) {
+        if ( !escapeInvisibles ) {
             ret += '"';
             ret += string;
             ret += '"';
             return ret;
         }
 
+        size_t last_start = 0;
+        auto write_to = [&]( size_t idx ) {
+            if ( last_start < idx ) {
+                ret += string.substr( last_start, idx - last_start );
+            }
+            last_start = idx + 1;
+        };
+
         ret += '"';
-        for (char c : string) {
-            switch (c) {
-            case '\r':
-                ret.append("\\r");
-                break;
-            case '\n':
-                ret.append("\\n");
-                break;
-            case '\t':
-                ret.append("\\t");
-                break;
-            case '\f':
-                ret.append("\\f");
-                break;
-            default:
-                ret.push_back(c);
-                break;
+        for ( size_t i = 0; i < string.size(); ++i ) {
+            const char c = string[i];
+            if ( c == '\r' || c == '\n' || c == '\t' || c == '\f' ) {
+                write_to( i );
+                if ( c == '\r' ) { ret.append( "\\r" ); }
+                if ( c == '\n' ) { ret.append( "\\n" ); }
+                if ( c == '\t' ) { ret.append( "\\t" ); }
+                if ( c == '\f' ) { ret.append( "\\f" ); }
             }
         }
+        write_to( string.size() );
         ret += '"';
 
         return ret;
@@ -2278,7 +2397,7 @@ namespace Catch {
     }
 
     Version const& libraryVersion() {
-        static Version version( 3, 9, 1, "", 0 );
+        static Version version( 3, 13, 0, "", 0 );
         return version;
     }
 
@@ -2303,14 +2422,6 @@ namespace Catch {
     IGeneratorTracker::~IGeneratorTracker() = default;
 
 namespace Generators {
-
-namespace Detail {
-
-    [[noreturn]]
-    void throw_generator_exception(char const* msg) {
-        Catch::throw_exception(GeneratorException{ msg });
-    }
-} // end namespace Detail
 
     GeneratorUntypedBase::~GeneratorUntypedBase() = default;
 
@@ -2359,6 +2470,11 @@ namespace Catch {
             m_current_number = m_pimpl->dist( m_pimpl->rng );
             return true;
         }
+
+        bool RandomFloatingGenerator<long double>::isFinite() const {
+            return false;
+        }
+
     } // namespace Generators
 } // namespace Catch
 
@@ -2366,8 +2482,30 @@ namespace Catch {
 
 
 namespace Catch {
+    namespace Generators {
+        namespace Detail {
+
+            [[noreturn]]
+            void throw_generator_exception( char const* msg ) {
+                Catch::throw_exception( GeneratorException{ msg } );
+            }
+
+        } // namespace Detail
+    } // namespace Generators
+} // namespace Catch
+
+
+
+
+namespace Catch {
+    namespace Detail {
+        void missingCaptureInstance() {
+            CATCH_INTERNAL_ERROR( "No result capture instance" );
+        }
+    } // namespace Detail
+
     IResultCapture::~IResultCapture() = default;
-}
+} // namespace Catch
 
 
 
@@ -2386,6 +2524,7 @@ namespace Catch {
 
 
 
+
 #include <string>
 
 namespace Catch {
@@ -2400,12 +2539,39 @@ namespace Catch {
             return ret;
         }
 
+        void GeneratorUntypedBase::skipToNthElementImpl( std::size_t n ) {
+            for ( size_t i = m_currentElementIndex; i < n; ++i ) {
+                bool isValid = next();
+                if ( !isValid ) {
+                    Detail::throw_generator_exception(
+                        "Coud not jump to Nth element: not enough elements" );
+                }
+            }
+        }
+
+        void GeneratorUntypedBase::skipToNthElement( std::size_t n ) {
+            if ( n < m_currentElementIndex ) {
+                Detail::throw_generator_exception(
+                    "Tried to jump generator backwards" );
+            }
+            if ( n == m_currentElementIndex ) { return; }
+
+            skipToNthElementImpl(n);
+            // Fixup tracking after moving the generator forward
+            //  * Ensure that the correct element index is set after skipping
+            //  * Invalidate cache
+            m_currentElementIndex = n;
+            m_stringReprCache.clear();
+        }
+
         StringRef GeneratorUntypedBase::currentElementAsString() const {
             if ( m_stringReprCache.empty() ) {
                 m_stringReprCache = stringifyImpl();
             }
             return m_stringReprCache;
         }
+
+        bool GeneratorUntypedBase::isFinite() const { return true; }
 
     } // namespace Generators
 } // namespace Catch
@@ -3087,6 +3253,9 @@ namespace Catch {
             } else if ( warning == "UnmatchedTestSpec" ) {
                 config.warnings = static_cast<WarnAbout::What>(config.warnings | WarnAbout::UnmatchedTestSpec);
                 return ParserResult::ok( ParseResultType::Matched );
+            } else if ( warning == "InfiniteGenerators" ) {
+                config.warnings = static_cast<WarnAbout::What>(config.warnings | WarnAbout::InfiniteGenerator);
+                return ParserResult::ok( ParseResultType::Matched );
             }
 
             return ParserResult ::runtimeError(
@@ -3244,6 +3413,19 @@ namespace Catch {
             config.shardCount = *parsedCount;
             return ParserResult::ok( ParseResultType::Matched );
         };
+        auto const setBenchmarkSamples = [&]( std::string const& samples ) {
+            auto parsedSamples = parseUInt( samples );
+            if ( !parsedSamples ) {
+                return ParserResult::runtimeError(
+                    "Could not parse '" + samples + "' as benchmark samples" );
+            }
+            if ( *parsedSamples == 0 ) {
+                return ParserResult::runtimeError(
+                    "Benchmark samples must be greater than 0" );
+            }
+            config.benchmarkSamples = *parsedSamples;
+            return ParserResult::ok( ParseResultType::Matched );
+        };
 
         auto const setShardIndex = [&](std::string const& shardIndex) {
             auto parsedIndex = parseUInt( shardIndex );
@@ -3254,6 +3436,43 @@ namespace Catch {
             config.shardIndex = *parsedIndex;
             return ParserResult::ok( ParseResultType::Matched );
         };
+
+        auto const setSectionFilter = [&]( std::string const& sectionFilter ) {
+            config.pathFilters.emplace_back( PathFilter::For::Section, trim(sectionFilter) );
+            return ParserResult::ok( ParseResultType::Matched );
+        };
+        auto const setGeneratorFilter = [&]( std::string const& generatorFilter ) {
+            if (generatorFilter != "*") {
+                // TODO: avoid re-parsing the index?
+                auto parsedIndex = parseUInt( generatorFilter );
+                if ( !parsedIndex ) {
+                    return ParserResult::runtimeError( "Could not parse '" +
+                                                       generatorFilter +
+                                                       "' as generator index" );
+                }
+            }
+            config.useNewPathFilteringBehaviour = true;
+            config.pathFilters.emplace_back( PathFilter::For::Generator, trim(generatorFilter) );
+            return ParserResult::ok( ParseResultType::Matched );
+        };
+        // Copy-capturing other `setFoo` functions enables calling them later,
+        // as the config ref remains valid, but the local lambda vars won't.
+        auto const setPathFilter = [=, &config]( std::string const& pathFilter ) {
+            config.useNewPathFilteringBehaviour = true;
+            if ( pathFilter.size() < 3 ) {
+                return ParserResult::runtimeError(
+                    "Path filter '" + pathFilter + "' is too short" );
+            }
+            if ( startsWith( pathFilter, "g:" ) ) {
+                return setGeneratorFilter( pathFilter.substr( 2 ) );
+            }
+            if ( startsWith( pathFilter, "c:" ) ) {
+                return setSectionFilter( pathFilter.substr( 2 ) );
+            }
+            return ParserResult::runtimeError( "Path filter '" + pathFilter +
+                                               "' has unknown type prefix" );
+        };
+
 
         auto cli
             = ExeName( config.processName )
@@ -3300,9 +3519,15 @@ namespace Catch {
             | Opt( config.filenamesAsTags )
                 ["-#"]["--filenames-as-tags"]
                 ( "adds a tag for the filename" )
-            | Opt( config.sectionsToRun, "section name" )
+            | Opt( accept_many, setSectionFilter, "section name" )
                 ["-c"]["--section"]
                 ( "specify section to run" )
+            | Opt( accept_many, setGeneratorFilter, "index spec" )
+                ["-g"]["--generator-index"]
+                ( "specify generator elements to try" )
+            | Opt( accept_many, setPathFilter, "path filter spec" )
+                ["-p"]["--path-filter"]
+                ( "qualified path filter" )
             | Opt( setVerbosity, "quiet|normal|high" )
                 ["-v"]["--verbosity"]
                 ( "set output verbosity" )
@@ -3320,7 +3545,7 @@ namespace Catch {
                 ( "list all listeners" )
             | Opt( setTestOrder, "decl|lex|rand" )
                 ["--order"]
-                ( "test case order (defaults to decl)" )
+                ( "test case order (defaults to rand)" )
             | Opt( setRngSeed, "'time'|'random-device'|number" )
                 ["--rng-seed"]
                 ( "set a specific seed for random numbers" )
@@ -3336,7 +3561,7 @@ namespace Catch {
             | Opt( config.skipBenchmarks)
                 ["--skip-benchmarks"]
                 ( "disable running benchmarks")
-            | Opt( config.benchmarkSamples, "samples" )
+            | Opt( setBenchmarkSamples, "samples"  )
                 ["--benchmark-samples"]
                 ( "number of samples to collect (default: 100)" )
             | Opt( config.benchmarkResamples, "resamples" )
@@ -3360,6 +3585,9 @@ namespace Catch {
             | Opt( config.allowZeroTests )
                 ["--allow-running-no-tests"]
                 ( "Treat 'No tests run' as a success" )
+            | Opt( config.prematureExitGuardFilePath, "path" )
+                ["--premature-exit-guard-file"]
+                ( "create a file before running tests and delete it during clean exit" )
             | Arg( config.testsOrTags, "test name|pattern|tags" )
                 ( "which test or tests to use" );
 
@@ -3514,7 +3742,13 @@ namespace {
 #endif // Windows/ ANSI/ None
 
 
-#if defined( CATCH_PLATFORM_LINUX ) || defined( CATCH_PLATFORM_MAC ) || defined( __GLIBC__ )
+#if defined( CATCH_PLATFORM_LINUX ) \
+ || defined( CATCH_PLATFORM_MAC ) \
+ || defined( __GLIBC__ ) \
+ || (defined( __FreeBSD__ ) \
+     /* PlayStation platform does not have `isatty()` */ \
+     && !defined(CATCH_PLATFORM_PLAYSTATION)) \
+ || defined( CATCH_PLATFORM_QNX )
 #    define CATCH_INTERNAL_HAS_ISATTY
 #    include <unistd.h>
 #endif
@@ -3638,20 +3872,10 @@ namespace Catch {
 
 namespace Catch {
 
-    Context* Context::currentContext = nullptr;
-
-    void cleanUpContext() {
-        delete Context::currentContext;
-        Context::currentContext = nullptr;
-    }
-    void Context::createContext() {
-        currentContext = new Context();
-    }
+    Context Context::currentContext;
 
     Context& getCurrentMutableContext() {
-        if ( !Context::currentContext ) { Context::createContext(); }
-        // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
-        return *Context::currentContext;
+        return Context::currentContext;
     }
 
     SimplePcg32& sharedRng() {
@@ -3756,7 +3980,7 @@ namespace Catch {
         #endif
     } // namespace Catch
 
-#elif defined(CATCH_PLATFORM_LINUX)
+#elif defined(CATCH_PLATFORM_LINUX) || defined(CATCH_PLATFORM_QNX)
     #include <fstream>
     #include <string>
 
@@ -4090,22 +4314,26 @@ namespace Catch {
         { EXCEPTION_INT_DIVIDE_BY_ZERO, "Divide by zero error" },
     };
 
+    // Since we do not support multiple instantiations, we put these
+    // into global variables and rely on cleaning them up in outlined
+    // constructors/destructors
+    static LPTOP_LEVEL_EXCEPTION_FILTER previousTopLevelExceptionFilter = nullptr;
+
+
     static LONG CALLBACK topLevelExceptionFilter(PEXCEPTION_POINTERS ExceptionInfo) {
         for (auto const& def : signalDefs) {
             if (ExceptionInfo->ExceptionRecord->ExceptionCode == def.id) {
                 reportFatal(def.name);
             }
         }
-        // If its not an exception we care about, pass it along.
+        // If a filter was previously registered, invoke it
+        if (previousTopLevelExceptionFilter) {
+            return previousTopLevelExceptionFilter(ExceptionInfo);
+        }
+        // Otherwise, pass along all exceptions.
         // This stops us from eating debugger breaks etc.
         return EXCEPTION_CONTINUE_SEARCH;
     }
-
-    // Since we do not support multiple instantiations, we put these
-    // into global variables and rely on cleaning them up in outlined
-    // constructors/destructors
-    static LPTOP_LEVEL_EXCEPTION_FILTER previousTopLevelExceptionFilter = nullptr;
-
 
     // For MSVC, we reserve part of the stack memory for handling
     // memory overflow structured exception.
@@ -4458,6 +4686,33 @@ namespace Detail {
 
 
 namespace Catch {
+
+    namespace {
+        static bool needsEscape( char c ) {
+            return c == '"' || c == '\\' || c == '\b' || c == '\f' ||
+                   c == '\n' || c == '\r' || c == '\t';
+        }
+
+        static Catch::StringRef makeEscapeStringRef( char c ) {
+            if ( c == '"' ) {
+                return "\\\""_sr;
+            } else if ( c == '\\' ) {
+                return "\\\\"_sr;
+            } else if ( c == '\b' ) {
+                return "\\b"_sr;
+            } else if ( c == '\f' ) {
+                return "\\f"_sr;
+            } else if ( c == '\n' ) {
+                return "\\n"_sr;
+            } else if ( c == '\r' ) {
+                return "\\r"_sr;
+            } else if ( c == '\t' ) {
+                return "\\t"_sr;
+            }
+            Catch::Detail::Unreachable();
+        }
+    } // namespace
+
     void JsonUtils::indent( std::ostream& os, std::uint64_t level ) {
         for ( std::uint64_t i = 0; i < level; ++i ) {
             os << "  ";
@@ -4567,29 +4822,18 @@ namespace Catch {
 
     void JsonValueWriter::writeImpl( Catch::StringRef value, bool quote ) {
         if ( quote ) { m_os << '"'; }
-        for (char c : value) {
-            // Escape list taken from https://www.json.org/json-en.html,
-            // string definition.
-            // Note that while forward slash _can_ be escaped, it does
-            // not have to be, if JSON is not further embedded somewhere
-            // where forward slash is meaningful.
-            if ( c == '"' ) {
-                m_os << "\\\"";
-            } else if ( c == '\\' ) {
-                m_os << "\\\\";
-            } else if ( c == '\b' ) {
-                m_os << "\\b";
-            } else if ( c == '\f' ) {
-                m_os << "\\f";
-            } else if ( c == '\n' ) {
-                m_os << "\\n";
-            } else if ( c == '\r' ) {
-                m_os << "\\r";
-            } else if ( c == '\t' ) {
-                m_os << "\\t";
-            } else {
-                m_os << c;
+        size_t current_start = 0;
+        for ( size_t i = 0; i < value.size(); ++i ) {
+            if ( needsEscape( value[i] ) ) {
+                if ( current_start < i ) {
+                    m_os << value.substr( current_start, i - current_start );
+                }
+                m_os << makeEscapeStringRef( value[i] );
+                current_start = i + 1;
             }
+        }
+        if ( current_start < value.size() ) {
+            m_os << value.substr( current_start, value.size() - current_start );
         }
         if ( quote ) { m_os << '"'; }
     }
@@ -4787,17 +5031,21 @@ int main (int argc, char * argv[]) {
 
 namespace Catch {
 
-    MessageInfo::MessageInfo(   StringRef _macroName,
-                                SourceLineInfo const& _lineInfo,
-                                ResultWas::OfType _type )
+    namespace {
+        // Messages are owned by their individual threads, so the counter should
+        // be thread-local as well. Alternative consideration: atomic counter,
+        // so threads don't share IDs and things are easier to debug.
+        static CATCH_INTERNAL_THREAD_LOCAL unsigned int messageIDCounter = 0;
+    }
+
+    MessageInfo::MessageInfo( StringRef _macroName,
+                              SourceLineInfo const& _lineInfo,
+                              ResultWas::OfType _type )
     :   macroName( _macroName ),
         lineInfo( _lineInfo ),
         type( _type ),
-        sequence( ++globalCount )
+        sequence( ++messageIDCounter )
     {}
-
-    // This may need protecting if threading support is added
-    unsigned int MessageInfo::globalCount = 0;
 
 } // end namespace Catch
 
@@ -5547,6 +5795,7 @@ ReporterSpec::ReporterSpec(
 
 #include <cstdio>
 #include <sstream>
+#include <tuple>
 #include <vector>
 
 namespace Catch {
@@ -5556,34 +5805,40 @@ namespace Catch {
         std::vector<Detail::unique_ptr<std::ostringstream>> m_streams;
         std::vector<std::size_t> m_unused;
         std::ostringstream m_referenceStream; // Used for copy state/ flags from
+        Detail::Mutex m_mutex;
 
-        auto add() -> std::size_t {
+        auto add() -> std::pair<std::size_t, std::ostringstream*> {
+            Detail::LockGuard _( m_mutex );
             if( m_unused.empty() ) {
                 m_streams.push_back( Detail::make_unique<std::ostringstream>() );
-                return m_streams.size()-1;
+                return { m_streams.size()-1, m_streams.back().get() };
             }
             else {
                 auto index = m_unused.back();
                 m_unused.pop_back();
-                return index;
+                return { index, m_streams[index].get() };
             }
         }
 
-        void release( std::size_t index ) {
-            m_streams[index]->copyfmt( m_referenceStream ); // Restore initial flags and other state
-            m_unused.push_back(index);
+        void release( std::size_t index, std::ostream* originalPtr ) {
+            assert( originalPtr );
+            originalPtr->copyfmt( m_referenceStream );  // Restore initial flags and other state
+
+            Detail::LockGuard _( m_mutex );
+            assert( originalPtr == m_streams[index].get() && "Mismatch between release index and stream ptr" );
+            m_unused.push_back( index );
         }
     };
 
-    ReusableStringStream::ReusableStringStream()
-    :   m_index( Singleton<StringStreams>::getMutable().add() ),
-        m_oss( Singleton<StringStreams>::getMutable().m_streams[m_index].get() )
-    {}
+    ReusableStringStream::ReusableStringStream() {
+        std::tie( m_index, m_oss ) =
+            Singleton<StringStreams>::getMutable().add();
+    }
 
     ReusableStringStream::~ReusableStringStream() {
         static_cast<std::ostringstream*>( m_oss )->str("");
         m_oss->clear();
-        Singleton<StringStreams>::getMutable().release( m_index );
+        Singleton<StringStreams>::getMutable().release( m_index, m_oss );
     }
 
     std::string ReusableStringStream::str() const {
@@ -5610,12 +5865,46 @@ namespace Catch {
             struct GeneratorTracker final : TestCaseTracking::TrackerBase,
                                       IGeneratorTracker {
                 GeneratorBasePtr m_generator;
+                // Filtered generator has moved to specific index due to
+                // a filter, it needs special handling of `countedNext()`
+                bool m_isFiltered = false;
 
                 GeneratorTracker(
                     TestCaseTracking::NameAndLocation&& nameAndLocation,
                     TrackerContext& ctx,
-                    ITracker* parent ):
-                    TrackerBase( CATCH_MOVE( nameAndLocation ), ctx, parent ) {}
+                    ITracker* parent,
+                    GeneratorBasePtr&& generator ):
+                    TrackerBase( CATCH_MOVE( nameAndLocation ), ctx, parent ),
+                    m_generator( CATCH_MOVE( generator ) ) {
+                    assert( m_generator &&
+                            "Cannot create tracker without generator" );
+
+                    // Handle potential filter and move forward here...
+                    // Old style filters do not affect generators at all
+                    if (m_newStyleFilters && m_allTrackerDepth < m_filterRef->size()) {
+                        auto const& filter =
+                            ( *m_filterRef )[m_allTrackerDepth];
+                        // Generator cannot be un-entered the way a section
+                        // can be, so the tracker has to throw for a wrong
+                        // filter to stop the execution flow.
+                        if (filter.type == PathFilter::For::Section) {
+                            // TBD: Explicit SKIP, or new exception that says
+                            //      "don't continue", but doesn't show in totals?
+                            SKIP();
+                        }
+                        // '*' is the wildcard for "all elements in generator"
+                        // used for filtering sections below the generator, but
+                        // not the generator itself.
+                        if ( filter.filter != "*" ) {
+                            m_isFiltered = true;
+                            // TBD: We assume that the filter was validated as
+                            //      number during parsing. We should pass it
+                            //      as number from the CLI parser.
+                            size_t targetIndex = std::stoul( filter.filter );
+                            m_generator->skipToNthElement( targetIndex );
+                        }
+                    }
+                }
 
                 static GeneratorTracker*
                 acquire( TrackerContext& ctx,
@@ -5659,9 +5948,6 @@ namespace Catch {
 
                 // TrackerBase interface
                 bool isGeneratorTracker() const override { return true; }
-                auto hasGenerator() const -> bool override {
-                    return !!m_generator;
-                }
                 void close() override {
                     TrackerBase::close();
                     // If a generator has a child (it is followed by a section)
@@ -5690,29 +5976,24 @@ namespace Catch {
                         // _can_ start, and thus we should wait for them, or
                         // they cannot start (due to filters), and we shouldn't
                         // wait for them
-                        ITracker* parent = m_parent;
-                        // This is safe: there is always at least one section
-                        // tracker in a test case tracking tree
-                        while ( !parent->isSectionTracker() ) {
-                            parent = parent->parent();
+
+                        // No filters left -> no restrictions on running sections
+                        size_t childDepth = 1 + (m_newStyleFilters ? m_allTrackerDepth : m_sectionOnlyDepth);
+                        if ( childDepth >= m_filterRef->size() ) {
+                            return true;
                         }
-                        assert( parent &&
-                                "Missing root (test case) level section" );
 
-                        auto const& parentSection =
-                            static_cast<SectionTracker const&>( *parent );
-                        auto const& filters = parentSection.getFilters();
-                        // No filters -> no restrictions on running sections
-                        if ( filters.empty() ) { return true; }
-
+                        // If we are using the new style filters, we need to check
+                        // whether the successive filter is for section or a generator.
+                        if ( m_newStyleFilters
+                            && (*m_filterRef)[childDepth].type != PathFilter::For::Section ) {
+                            return false;
+                        }
+                        // Look for any child section that could match the remaining filters
                         for ( auto const& child : m_children ) {
                             if ( child->isSectionTracker() &&
-                                 std::find( filters.begin(),
-                                            filters.end(),
-                                            static_cast<SectionTracker const&>(
-                                                *child )
-                                                .trimmedName() ) !=
-                                     filters.end() ) {
+                                 static_cast<SectionTracker const&>( *child )
+                                         .trimmedName() == StringRef((*m_filterRef)[childDepth].filter) ) {
                                 return true;
                             }
                         }
@@ -5724,9 +6005,10 @@ namespace Catch {
                     // value, but we do not want to invoke the side-effect if
                     // this generator is still waiting for any child to start.
                     assert( m_generator && "Tracker without generator" );
-                    if ( should_wait_for_child ||
-                         ( m_runState == CompletedSuccessfully &&
-                           m_generator->countedNext() ) ) {
+                    if ( should_wait_for_child
+                        ||  ( m_runState == CompletedSuccessfully
+                            && !m_isFiltered // filtered generators cannot meaningfully move forward, as they would get past the filter
+                            && m_generator->countedNext() ) ) {
                         m_children.clear();
                         m_runState = Executing;
                     }
@@ -5735,9 +6017,6 @@ namespace Catch {
                 // IGeneratorTracker interface
                 auto getGenerator() const -> GeneratorBasePtr const& override {
                     return m_generator;
-                }
-                void setGenerator( GeneratorBasePtr&& generator ) override {
-                    m_generator = CATCH_MOVE( generator );
                 }
             };
         } // namespace
@@ -5750,26 +6029,109 @@ namespace Catch {
         // This also implies that messages are owned by their respective
         // threads, and should not be shared across different threads.
         //
-        // For simplicity, we disallow messages in multi-threaded contexts,
-        // but in the future we can enable them under this logic.
-        //
         // This implies that various pieces of metadata referring to last
         // assertion result/source location/message handling, etc
         // should also be thread local. For now we just use naked globals
         // below, in the future we will want to allocate piece of memory
         // from heap, to avoid consuming too much thread-local storage.
+        //
+        // Note that we also don't want non-trivial the thread-local variables
+        // below be initialized for every thread, only for those that touch
+        // Catch2. To make this work with both GCC/Clang and MSVC, we have to
+        // make them thread-local magic statics. (Class-level statics have the
+        // desired semantics on GCC, but not on MSVC).
 
         // This is used for the "if" part of CHECKED_IF/CHECKED_ELSE
-        static thread_local bool g_lastAssertionPassed = false;
-        // Should we clear message scopes before sending off the messages to
-        // reporter? Set in `assertionPassedFastPath` to avoid doing the full
-        // clear there for performance reasons.
-        static thread_local bool g_clearMessageScopes = false;
+        static CATCH_INTERNAL_THREAD_LOCAL bool g_lastAssertionPassed = false;
+
         // This is the source location for last encountered macro. It is
         // used to provide the users with more precise location of error
         // when an unexpected exception/fatal error happens.
-        static thread_local SourceLineInfo g_lastKnownLineInfo("DummyLocation", static_cast<size_t>(-1));
-    }
+        static CATCH_INTERNAL_THREAD_LOCAL SourceLineInfo
+            g_lastKnownLineInfo( "DummyLocation", static_cast<size_t>( -1 ) );
+
+        // Should we clear message scopes before sending off the messages to
+        // reporter? Set in `assertionPassedFastPath` to avoid doing the full
+        // clear there for performance reasons.
+        static CATCH_INTERNAL_THREAD_LOCAL bool g_clearMessageScopes = false;
+
+
+        // Holds the data for both scoped and unscoped messages together,
+        // to avoid issues where their lifetimes start in wrong order,
+        // and then are destroyed in wrong order.
+        class MessageHolder {
+            // The actual message vector passed to the reporters
+            std::vector<MessageInfo> messages;
+            // IDs of messages from UNSCOPED_X macros, which we have to
+            // remove manually.
+            std::vector<unsigned int> unscoped_ids;
+
+        public:
+            // We do not need to special-case the unscoped messages when
+            // we only keep around the raw msg ids.
+            ~MessageHolder() = default;
+
+            void addUnscopedMessage( MessageInfo&& info ) {
+                repairUnscopedMessageInvariant();
+                unscoped_ids.push_back( info.sequence );
+                messages.push_back( CATCH_MOVE( info ) );
+            }
+
+            void addUnscopedMessage(MessageBuilder&& builder) {
+                MessageInfo info( CATCH_MOVE( builder.m_info ) );
+                info.message = builder.m_stream.str();
+                addUnscopedMessage( CATCH_MOVE( info ) );
+            }
+
+            void addScopedMessage(MessageInfo&& info) {
+                messages.push_back( CATCH_MOVE( info ) );
+            }
+
+            std::vector<MessageInfo> const& getMessages() const {
+                return messages;
+            }
+
+            void removeMessage( unsigned int messageId ) {
+                // Note: On average, it would probably be better to look for
+                //       the message backwards. However, we do not expect to have
+                //       to  deal with more messages than low single digits, so
+                //       the improvement is tiny, and we would have to hand-write
+                //       the loop to avoid terrible codegen of reverse iterators
+                //       in debug mode.
+                auto iter =
+                    std::find_if( messages.begin(),
+                                  messages.end(),
+                                  [messageId]( MessageInfo const& msg ) {
+                                      return msg.sequence == messageId;
+                                  } );
+                assert( iter != messages.end() &&
+                        "Trying to remove non-existent message." );
+                messages.erase( iter );
+            }
+
+            void removeUnscopedMessages() {
+                for ( const auto messageId : unscoped_ids ) {
+                    removeMessage( messageId );
+                }
+                unscoped_ids.clear();
+                g_clearMessageScopes = false;
+            }
+
+            void repairUnscopedMessageInvariant() {
+                if ( g_clearMessageScopes ) { removeUnscopedMessages(); }
+                g_clearMessageScopes = false;
+            }
+        };
+
+        CATCH_INTERNAL_START_WARNINGS_SUPPRESSION
+        CATCH_INTERNAL_SUPPRESS_GLOBALS_WARNINGS
+        static MessageHolder& g_messageHolder() {
+            static CATCH_INTERNAL_THREAD_LOCAL MessageHolder value;
+            return value;
+        }
+        CATCH_INTERNAL_STOP_WARNINGS_SUPPRESSION
+
+    } // namespace Detail
 
     RunContext::RunContext(IConfig const* _config, IEventListenerPtr&& reporter)
     :   m_runInfo(_config->name()),
@@ -5783,6 +6145,13 @@ namespace Catch {
     {
         getCurrentMutableContext().setResultCapture( this );
         m_reporter->testRunStarting(m_runInfo);
+
+        // TODO: HACK!
+        //       We need to make sure the underlying cache is initialized
+        //       while we are guaranteed to be running in a single thread,
+        //       because the initialization is not thread-safe.
+        ReusableStringStream rss;
+        (void)rss;
     }
 
     RunContext::~RunContext() {
@@ -5802,7 +6171,8 @@ namespace Catch {
 
         ITracker& rootTracker = m_trackerContext.startRun();
         assert(rootTracker.isSectionTracker());
-        static_cast<SectionTracker&>(rootTracker).addInitialFilters(m_config->getSectionsToRun());
+        rootTracker.setFilters( &m_config->getPathFilters(),
+                                m_config->useNewFilterBehaviour() );
 
         // We intentionally only seed the internal RNG once per test case,
         // before it is first invoked. The reason for that is a complex
@@ -5905,20 +6275,19 @@ namespace Catch {
             Detail::g_lastAssertionPassed = true;
         }
 
+        auto& msgHolder = Detail::g_messageHolder();
+        msgHolder.repairUnscopedMessageInvariant();
+
         // From here, we are touching shared state and need mutex.
         Detail::LockGuard lock( m_assertionMutex );
         {
-            if ( Detail::g_clearMessageScopes ) {
-                m_messageScopes.clear();
-                Detail::g_clearMessageScopes = false;
-            }
             auto _ = scopedDeactivate( *m_outputRedirect );
             updateTotalsFromAtomics();
-            m_reporter->assertionEnded( AssertionStats( result, m_messages, m_totals ) );
+            m_reporter->assertionEnded( AssertionStats( result, msgHolder.getMessages(), m_totals ) );
         }
 
         if ( result.getResultType() != ResultWas::Warning ) {
-            m_messageScopes.clear();
+            msgHolder.removeUnscopedMessages();
         }
 
         // Reset working state. assertion info will be reset after
@@ -5975,18 +6344,28 @@ namespace Catch {
         SourceLineInfo lineInfo,
         Generators::GeneratorBasePtr&& generator ) {
 
+        // TBD: Do we want to avoid the warning if the generator is filtered?
+        if ( m_config->warnAboutInfiniteGenerators() &&
+             !generator->isFinite() ) {
+            // TBD: Would it be better to expand this macro inline?
+            FAIL( "GENERATE() would run infinitely" );
+        }
+
         auto nameAndLoc = TestCaseTracking::NameAndLocation( static_cast<std::string>( generatorName ), lineInfo );
         auto& currentTracker = m_trackerContext.currentTracker();
         assert(
             currentTracker.nameAndLocation() != nameAndLoc &&
             "Trying to create tracker for a generator that already has one" );
 
-        auto newTracker = Catch::Detail::make_unique<Generators::GeneratorTracker>(
-            CATCH_MOVE(nameAndLoc), m_trackerContext, &currentTracker );
+        auto newTracker =
+            Catch::Detail::make_unique<Generators::GeneratorTracker>(
+                CATCH_MOVE( nameAndLoc ),
+                m_trackerContext,
+                &currentTracker,
+                CATCH_MOVE( generator ) );
         auto ret = newTracker.get();
         currentTracker.addChild( CATCH_MOVE( newTracker ) );
 
-        ret->setGenerator( CATCH_MOVE( generator ) );
         ret->open();
         return ret;
     }
@@ -6049,28 +6428,6 @@ namespace Catch {
     void RunContext::benchmarkFailed( StringRef error ) {
         auto _ = scopedDeactivate( *m_outputRedirect );
         m_reporter->benchmarkFailed( error );
-    }
-
-    void RunContext::pushScopedMessage(MessageInfo const & message) {
-        m_messages.push_back(message);
-    }
-
-    void RunContext::popScopedMessage( MessageInfo const& message ) {
-        // Note: On average, it would probably be better to look for the message
-        //       backwards. However, we do not expect to have to deal with more
-        //       messages than low single digits, so the optimization is tiny,
-        //       and we would have to hand-write the loop to avoid terrible
-        //       codegen of reverse iterators in debug mode.
-        m_messages.erase(
-            std::find_if( m_messages.begin(),
-                          m_messages.end(),
-                          [id = message.sequence]( MessageInfo const& msg ) {
-                              return msg.sequence == id;
-                          } ) );
-    }
-
-    void RunContext::emplaceUnscopedMessage( MessageBuilder&& builder ) {
-        m_messageScopes.emplace_back( CATCH_MOVE(builder) );
     }
 
     std::string RunContext::getCurrentTestName() const {
@@ -6229,10 +6586,10 @@ namespace Catch {
 
         m_testCaseTracker->close();
         handleUnfinishedSections();
-        m_messageScopes.clear();
-        // TBD: At this point, m_messages should be empty. Do we want to
-        //      assert that this is true, or keep the defensive clear call?
-        m_messages.clear();
+        auto& msgHolder = Detail::g_messageHolder();
+        msgHolder.removeUnscopedMessages();
+        assert( msgHolder.getMessages().empty() &&
+                "There should be no leftover messages after the test ends" );
 
         SectionStats testCaseSectionStats(CATCH_MOVE(testCaseSection), assertions, duration, missingAssertions);
         m_reporter->sectionEnded(testCaseSectionStats);
@@ -6399,11 +6756,20 @@ namespace Catch {
         }
     }
 
-    IResultCapture& getResultCapture() {
-        if (auto* capture = getCurrentContext().getResultCapture())
-            return *capture;
-        else
-            CATCH_INTERNAL_ERROR("No result capture instance");
+    void IResultCapture::pushScopedMessage( MessageInfo&& message ) {
+        Detail::g_messageHolder().addScopedMessage(  CATCH_MOVE( message ) );
+    }
+
+    void IResultCapture::popScopedMessage( unsigned int messageId ) {
+        Detail::g_messageHolder().removeMessage( messageId );
+    }
+
+    void IResultCapture::emplaceUnscopedMessage( MessageBuilder&& builder ) {
+        Detail::g_messageHolder().addUnscopedMessage( CATCH_MOVE( builder ) );
+    }
+
+    void IResultCapture::addUnscopedMessage( MessageInfo&& message ) {
+        Detail::g_messageHolder().addUnscopedMessage( CATCH_MOVE( message ) );
     }
 
     void seedRng(IConfig const& config) {
@@ -6964,6 +7330,17 @@ namespace TestCaseTracking {
         location( _location )
     {}
 
+    ITracker::ITracker( NameAndLocation&& nameAndLoc, ITracker* parent ):
+        m_nameAndLocation( CATCH_MOVE( nameAndLoc ) ), m_parent( parent ) {
+        if ( m_parent ) {
+            m_allTrackerDepth = m_parent->m_allTrackerDepth + 1;
+            // We leave section trackers to bump themselves up, as
+            // we cannot use `isSectionTracker` in constructor
+            m_sectionOnlyDepth = m_parent->m_sectionOnlyDepth;
+            m_filterRef = m_parent->m_filterRef;
+            m_newStyleFilters = m_parent->m_newStyleFilters;
+        }
+    }
 
     ITracker::~ITracker() = default;
 
@@ -7096,25 +7473,32 @@ namespace TestCaseTracking {
     :   TrackerBase( CATCH_MOVE(nameAndLocation), ctx, parent ),
         m_trimmed_name(trim(StringRef(ITracker::nameAndLocation().name)))
     {
-        if( parent ) {
-            while ( !parent->isSectionTracker() ) {
-                parent = parent->parent();
-            }
-
-            SectionTracker& parentSection = static_cast<SectionTracker&>( *parent );
-            addNextFilters( parentSection.m_filters );
+        if( m_parent ) {
+            ++m_sectionOnlyDepth;
         }
     }
 
     bool SectionTracker::isComplete() const {
-        bool complete = true;
-
-        if (m_filters.empty()
-            || m_filters[0].empty()
-            || std::find(m_filters.begin(), m_filters.end(), m_trimmed_name) != m_filters.end()) {
-            complete = TrackerBase::isComplete();
+        // If there are active filters AND we do not pass them,
+        // the section is always "completed"
+        const size_t filterIndex =
+            m_newStyleFilters ? m_allTrackerDepth : m_sectionOnlyDepth;
+        if ( filterIndex < m_filterRef->size() ) {
+            // There is active filter, check it
+            // 1) New style filter must explicitly target section
+            if ( m_newStyleFilters && ( *m_filterRef )[filterIndex].type !=
+                                          PathFilter::For::Section ) {
+                return true;
+            }
+            // 2) Both style filters must match the trimmed name exactly
+            if ( m_trimmed_name !=
+                 StringRef( ( *m_filterRef )[filterIndex].filter ) ) {
+                return true;
+            }
         }
-        return complete;
+
+        // Otherwise we delegate to the generic processing
+        return TrackerBase::isComplete();
     }
 
     bool SectionTracker::isSectionTracker() const { return true; }
@@ -7148,19 +7532,6 @@ namespace TestCaseTracking {
     void SectionTracker::tryOpen() {
         if( !isComplete() )
             open();
-    }
-
-    void SectionTracker::addInitialFilters( std::vector<std::string> const& filters ) {
-        if( !filters.empty() ) {
-            m_filters.reserve( m_filters.size() + filters.size() + 2 );
-            m_filters.emplace_back(StringRef{}); // Root - should never be consulted
-            m_filters.emplace_back(StringRef{}); // Test Case - not a section filter
-            m_filters.insert( m_filters.end(), filters.begin(), filters.end() );
-        }
-    }
-    void SectionTracker::addNextFilters( std::vector<StringRef> const& filters ) {
-        if( filters.size() > 1 )
-            m_filters.insert( m_filters.end(), filters.begin()+1, filters.end() );
     }
 
     StringRef SectionTracker::trimmedName() const {
@@ -7971,7 +8342,7 @@ namespace {
 
     void hexEscapeChar(std::ostream& os, unsigned char c) {
         std::ios_base::fmtflags f(os.flags());
-        os << "\\x"
+        os << "\\x"_sr
             << std::uppercase << std::hex << std::setfill('0') << std::setw(2)
             << static_cast<int>(c);
         os.flags(f);
@@ -7990,95 +8361,111 @@ namespace {
     void XmlEncode::encodeTo( std::ostream& os ) const {
         // Apostrophe escaping not necessary if we always use " to write attributes
         // (see: http://www.w3.org/TR/xml/#syntax)
+        size_t last_start = 0;
+        auto write_to = [&]( size_t idx ) {
+            if ( last_start < idx ) {
+                os << m_str.substr( last_start, idx - last_start );
+            }
+            last_start = idx + 1;
+        };
 
-        for( std::size_t idx = 0; idx < m_str.size(); ++ idx ) {
-            unsigned char c = static_cast<unsigned char>(m_str[idx]);
-            switch (c) {
-            case '<':   os << "&lt;"; break;
-            case '&':   os << "&amp;"; break;
+        for ( std::size_t idx = 0; idx < m_str.size(); ++idx ) {
+            unsigned char c = static_cast<unsigned char>( m_str[idx] );
+            switch ( c ) {
+            case '<':
+                write_to( idx );
+                os << "&lt;"_sr;
+                break;
+            case '&':
+                write_to( idx );
+                os << "&amp;"_sr;
+                break;
 
             case '>':
                 // See: http://www.w3.org/TR/xml/#syntax
-                if (idx > 2 && m_str[idx - 1] == ']' && m_str[idx - 2] == ']')
-                    os << "&gt;";
-                else
-                    os << c;
+                if ( idx > 2 && m_str[idx - 1] == ']' && m_str[idx - 2] == ']' ) {
+                    write_to( idx );
+                    os << "&gt;"_sr;
+                }
                 break;
 
             case '\"':
-                if (m_forWhat == ForAttributes)
-                    os << "&quot;";
-                else
-                    os << c;
+                if ( m_forWhat == ForAttributes ) {
+                    write_to( idx );
+                    os << "&quot;"_sr;
+                }
                 break;
 
             default:
                 // Check for control characters and invalid utf-8
 
                 // Escape control characters in standard ascii
-                // see http://stackoverflow.com/questions/404107/why-are-control-characters-illegal-in-xml-1-0
-                if (c < 0x09 || (c > 0x0D && c < 0x20) || c == 0x7F) {
-                    hexEscapeChar(os, c);
+                // see
+                // http://stackoverflow.com/questions/404107/why-are-control-characters-illegal-in-xml-1-0
+                if ( c < 0x09 || ( c > 0x0D && c < 0x20 ) || c == 0x7F ) {
+                    write_to( idx );
+                    hexEscapeChar( os, c );
                     break;
                 }
 
                 // Plain ASCII: Write it to stream
-                if (c < 0x7F) {
-                    os << c;
+                if ( c < 0x7F ) {
                     break;
                 }
 
                 // UTF-8 territory
-                // Check if the encoding is valid and if it is not, hex escape bytes.
-                // Important: We do not check the exact decoded values for validity, only the encoding format
-                // First check that this bytes is a valid lead byte:
-                // This means that it is not encoded as 1111 1XXX
+                // Check if the encoding is valid and if it is not, hex escape
+                // bytes. Important: We do not check the exact decoded values for
+                // validity, only the encoding format First check that this bytes is
+                // a valid lead byte: This means that it is not encoded as 1111 1XXX
                 // Or as 10XX XXXX
-                if (c <  0xC0 ||
-                    c >= 0xF8) {
-                    hexEscapeChar(os, c);
+                if ( c < 0xC0 || c >= 0xF8 ) {
+                    write_to( idx );
+                    hexEscapeChar( os, c );
                     break;
                 }
 
-                auto encBytes = trailingBytes(c);
-                // Are there enough bytes left to avoid accessing out-of-bounds memory?
-                if (idx + encBytes - 1 >= m_str.size()) {
-                    hexEscapeChar(os, c);
+                auto encBytes = trailingBytes( c );
+                // Are there enough bytes left to avoid accessing out-of-bounds
+                // memory?
+                if ( idx + encBytes - 1 >= m_str.size() ) {
+                    write_to( idx );
+                    hexEscapeChar( os, c );
                     break;
                 }
                 // The header is valid, check data
                 // The next encBytes bytes must together be a valid utf-8
-                // This means: bitpattern 10XX XXXX and the extracted value is sane (ish)
+                // This means: bitpattern 10XX XXXX and the extracted value is sane
+                // (ish)
                 bool valid = true;
-                uint32_t value = headerValue(c);
-                for (std::size_t n = 1; n < encBytes; ++n) {
-                    unsigned char nc = static_cast<unsigned char>(m_str[idx + n]);
-                    valid &= ((nc & 0xC0) == 0x80);
-                    value = (value << 6) | (nc & 0x3F);
+                uint32_t value = headerValue( c );
+                for ( std::size_t n = 1; n < encBytes; ++n ) {
+                    unsigned char nc = static_cast<unsigned char>( m_str[idx + n] );
+                    valid &= ( ( nc & 0xC0 ) == 0x80 );
+                    value = ( value << 6 ) | ( nc & 0x3F );
                 }
 
                 if (
                     // Wrong bit pattern of following bytes
-                    (!valid) ||
+                    ( !valid ) ||
                     // Overlong encodings
-                    (value < 0x80) ||
-                    (0x80 <= value && value < 0x800   && encBytes > 2) ||
-                    (0x800 < value && value < 0x10000 && encBytes > 3) ||
+                    ( value < 0x80 ) ||
+                    ( 0x80 <= value && value < 0x800 && encBytes > 2 ) ||
+                    ( 0x800 < value && value < 0x10000 && encBytes > 3 ) ||
                     // Encoded value out of range
-                    (value >= 0x110000)
-                    ) {
-                    hexEscapeChar(os, c);
+                    ( value >= 0x110000 ) ) {
+                    write_to( idx );
+                    hexEscapeChar( os, c );
                     break;
                 }
 
                 // If we got here, this is in fact a valid(ish) utf-8 sequence
-                for (std::size_t n = 0; n < encBytes; ++n) {
-                    os << m_str[idx + n];
-                }
                 idx += encBytes - 1;
                 break;
             }
         }
+
+        write_to( m_str.size() );
     }
 
     std::ostream& operator << ( std::ostream& os, XmlEncode const& xmlEncode ) {
