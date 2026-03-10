@@ -538,7 +538,7 @@ namespace
         {
             if(saga::is_divisible_by(sum_2, m))
             {
-                auto const sum_m = saga::remove_factor(sum_2, 2).value;
+                auto const sum_m = saga::remove_factor(sum_2 / m, 2).value;
 
                 for(auto k = m + 1 + (m % 2); k < 2*m && k <= sum_m; k += 2)
                 {
