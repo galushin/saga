@@ -253,11 +253,21 @@ namespace saga
 
     struct remove_factor_fn
     {
+        /**
+        @pre factor != 0
+        */
         template <class IntType>
         constexpr
         remove_factor_result<IntType>
         operator()(IntType num, IntType factor) const
         {
+            assert(factor != 0);
+
+            if(num == 0 || factor == 1 || factor == -1)
+            {
+                return {num, 0};
+            }
+
             auto multiplicity = IntType(0);
 
             for(; num % factor == 0;)

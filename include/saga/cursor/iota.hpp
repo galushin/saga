@@ -93,7 +93,7 @@ namespace saga
         using reference = Incrementable const &;
 
         // Создание, копирование, уничтожение
-        constexpr explicit iota_iterator(Incrementable value)
+        constexpr explicit iota_iterator(Incrementable value = {})
          : value_(std::move(value))
         {}
 

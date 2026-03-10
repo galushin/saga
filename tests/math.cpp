@@ -155,3 +155,29 @@ TEST_CASE("isqrt")
     static_assert(saga::isqrt(4503599761588224) == 67108864);
     REQUIRE(saga::isqrt(4503599761588224) == 67108864);
 }
+
+TEST_CASE("remove_factor : corner cases")
+{
+    using IntType = std::int32_t;
+
+    saga_test::property_checker << [](IntType num)
+    {
+        auto const [res_1, mult_1] = saga::remove_factor(num, IntType(1));
+
+        REQUIRE(res_1 == num);
+        REQUIRE(mult_1 == 0);
+
+        auto const [res_minus_1, mult_minus_1] = saga::remove_factor(num, IntType(-1));
+
+        REQUIRE(res_minus_1 == num);
+        REQUIRE(mult_minus_1 == 0);
+
+        if(num != 0)
+        {
+            auto const [res_0, mult_0] = saga::remove_factor(IntType(0), num);
+
+            REQUIRE(res_0 == 0);
+            REQUIRE(mult_0 == 0);
+        }
+    };
+}
