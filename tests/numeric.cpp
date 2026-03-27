@@ -1287,3 +1287,32 @@ TEST_CASE("inverses modulo prime")
         }
     }
 }
+
+TEST_CASE("first_factors_below")
+{
+    auto const num_end = saga_test::random_uniform(2, 1000);
+
+    auto const first_factors = saga::first_factors_below(num_end);
+    auto const primes = saga::primes_below(num_end);
+
+    REQUIRE(first_factors.size() == std::size_t(num_end));
+
+    REQUIRE(first_factors.at(0) == 1);
+    REQUIRE(first_factors.at(1) == 1);
+
+    for(auto num : saga::cursor::indices(2, num_end))
+    {
+        REQUIRE(first_factors[num] <= num);
+        REQUIRE(num % first_factors[num] == 0);
+
+        for(auto probe = 2; probe < first_factors[num]; ++ probe)
+        {
+            REQUIRE(num % probe != 0);
+        }
+
+        if(first_factors[num] == num)
+        {
+            REQUIRE(saga::binary_search(saga::cursor::all(primes), num) == true);
+        }
+    }
+}
