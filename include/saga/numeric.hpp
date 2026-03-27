@@ -533,6 +533,81 @@ namespace saga
         }
     };
 
+    struct first_factors_below_fn
+    {
+        template <class IntType>
+        std::vector<IntType>
+        operator()(IntType n_max) const
+        {
+            assert(n_max > 0);
+
+            std::vector<IntType> answer;
+            answer.reserve(n_max);
+
+            answer.push_back(IntType(1));
+            saga::copy(saga::cursor::indices(IntType(1), n_max), saga::back_inserter(answer));
+
+            auto const primes = saga::primes_below_fn{}(saga::isqrt(n_max) + 1);
+
+            for(auto const & prime : primes)
+            {
+                for(auto num = prime * prime; num < n_max; num += prime)
+                {
+                    answer[num] = std::min(answer[num], prime);
+                }
+            }
+
+            return answer;
+        }
+    };
+
+    struct divisor_sums_below_fn
+    {
+    public:
+        template <class IntType>
+        std::vector<IntType>
+        operator()(IntType n_max) const
+        {
+            assert(n_max > 1);
+
+            auto const first_factors = saga::first_factors_below_fn{}(n_max);
+
+            std::vector<IntType> d_sum(n_max, 1);
+
+            for(auto const & num : saga::cursor::indices(2, n_max))
+            {
+                auto const prime = first_factors[num];
+
+                auto rest = num;
+                for(; rest % prime == 0; rest /= prime)
+                {
+                    d_sum[num] = d_sum[num] * prime + 1;
+                }
+
+                d_sum[num] *= d_sum[rest];
+            }
+
+            return d_sum;
+        }
+    };
+
+    struct aliquot_sums_below_fn
+    {
+        template <class IntType>
+        std::vector<IntType>
+        operator()(IntType n_max) const
+        {
+            auto a_sum = divisor_sums_below_fn{}(n_max);
+
+            for(auto const & num : saga::cursor::indices(n_max))
+            {
+                a_sum[num] -= num;
+            }
+
+            return a_sum;
+        }
+    };
+
     template <class IntType>
     class multiplies_modulo
     {
@@ -750,6 +825,10 @@ namespace saga
     inline constexpr auto const primes_below = primes_below_fn{};
     inline constexpr auto const euler_phi_below = euler_phi_below_fn{};
     inline constexpr auto const inverses_modulo_prime = inverses_modulo_prime_fn{};
+    inline constexpr auto const first_factors_below = first_factors_below_fn{};
+    inline constexpr auto const divisor_sums_below = divisor_sums_below_fn{};
+    inline constexpr auto const aliquot_sums_below = aliquot_sums_below_fn{};
+
     inline constexpr auto const legendre_symbol = legendre_symbol_fn{};
     inline constexpr auto const sqrt_modulo_prime = sqrt_modulo_prime_fn{};
 
