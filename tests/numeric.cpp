@@ -1297,8 +1297,8 @@ TEST_CASE("first_factors_below")
 
     REQUIRE(first_factors.size() == std::size_t(num_end));
 
-    // @todo Проверять значения для 0 и 1
-    // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3133r0.html#contract-for-numbers-less-than-2
+    REQUIRE(first_factors.at(0) == 1);
+    REQUIRE(first_factors.at(1) == 1);
 
     for(auto num : saga::cursor::indices(2, num_end))
     {

@@ -541,8 +541,11 @@ namespace saga
         {
             assert(n_max > 0);
 
-            std::vector<IntType> answer(n_max);
-            saga::iota_fn{}(saga::cursor::all(answer), IntType(0));
+            std::vector<IntType> answer;
+            answer.reserve(n_max);
+
+            answer.push_back(IntType(1));
+            saga::copy(saga::cursor::indices(IntType(1), n_max), saga::back_inserter(answer));
 
             auto const primes = saga::primes_below_fn{}(saga::isqrt(n_max) + 1);
 
