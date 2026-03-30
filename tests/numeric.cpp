@@ -1290,7 +1290,7 @@ TEST_CASE("inverses modulo prime")
 
 TEST_CASE("first_factors_below")
 {
-    auto const num_end = saga_test::random_uniform(2, 1000);
+    auto const num_end = saga_test::random_uniform(2, 10'000);
 
     auto const first_factors = saga::first_factors_below(num_end);
     auto const primes = saga::primes_below(num_end);
@@ -1314,5 +1314,22 @@ TEST_CASE("first_factors_below")
         {
             REQUIRE(saga::binary_search(saga::cursor::all(primes), num) == true);
         }
+    }
+}
+
+TEST_CASE("divisor_sums_below")
+{
+    auto const num_end = saga_test::random_uniform(2u, 10'000u);
+
+    // Протестировано PE 21, PE 23
+    auto const aliquotes    = saga::aliquot_sums_below(num_end);
+
+    auto const divisor_sums = saga::divisor_sums_below(num_end);
+    REQUIRE(divisor_sums.size() == num_end);
+
+    for(auto const & num : saga::cursor::indices(1, num_end))
+    {
+        INFO(num);
+        REQUIRE(divisor_sums[num] == aliquotes[num] + num);
     }
 }

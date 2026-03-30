@@ -1330,26 +1330,9 @@ TEST_CASE("PE 020")
 namespace
 {
     template <class IntType>
-    std::vector<IntType>
-    proper_divisors_sums_below(IntType n_max)
-    {
-        std::vector<IntType> d_sum(n_max, 1);
-
-        for(auto d : saga::cursor::indices(2, n_max))
-        {
-            for(auto num = 2*d; num < n_max; num += d)
-            {
-                d_sum[num] += d;
-            }
-        }
-
-        return d_sum;
-    }
-
-    template <class IntType>
     IntType projectEuler_021(IntType n_max)
     {
-        auto const d_sum = ::proper_divisors_sums_below(n_max);
+        auto const d_sum = saga::aliquot_sums_below(n_max);
 
         auto result = IntType(0);
         for(auto a : saga::cursor::indices(2, n_max))
@@ -1460,7 +1443,7 @@ TEST_CASE("PE 023")
     std::vector<IntType> abundants;
 
     saga::copy_if(saga::cursor::indices(1, n_max), saga::back_inserter(abundants)
-                  , [d_sum = ::proper_divisors_sums_below(n_max)](IntType num)
+                  , [d_sum = saga::aliquot_sums_below(n_max)](IntType num)
                     { return d_sum[num] > num ; });
 
     REQUIRE(abundants.front() == 12);
