@@ -1270,7 +1270,7 @@ TEST_CASE("inverses modulo prime")
 {
     using IntType = long;
 
-    auto const primes = saga::primes_below(IntType(200));
+    auto const primes = saga::primes_below(IntType(500));
 
     for(auto prime : primes)
     {
@@ -1279,6 +1279,30 @@ TEST_CASE("inverses modulo prime")
         REQUIRE(inverses.size() == std::size_t(prime));
 
         for(auto num : saga::cursor::indices(IntType(1), prime))
+        {
+            CAPTURE(num, inverses[num], prime);
+            REQUIRE(inverses[num] > 0);
+            REQUIRE(inverses[num] < prime);
+            REQUIRE((num * inverses[num]) % prime == 1);
+        }
+    }
+}
+
+TEST_CASE("inverses modulo prime : limited")
+{
+    using IntType = long;
+
+    auto const primes = saga::primes_below(IntType(500));
+
+    for(auto prime : primes)
+    {
+        auto const num_end = saga_test::random_uniform(2, prime);
+
+        auto const inverses = saga::inverses_modulo_prime(prime, num_end);
+
+        REQUIRE(inverses.size() == std::size_t(num_end));
+
+        for(auto num : saga::cursor::indices(IntType(1), num_end))
         {
             CAPTURE(num, inverses[num], prime);
             REQUIRE(inverses[num] > 0);
