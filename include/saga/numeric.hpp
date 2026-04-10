@@ -508,9 +508,14 @@ namespace saga
 
     struct inverses_modulo_prime_fn
     {
+        ///@{
         /** @brief Вычисление обратных по простому модулю для всех отстатков по этому модулю
+        @param prime простое число, которое используется в качестве модуля
+        @param num_end верхняя граница индексов, для которых вычисляются обратные элементы.
+        Если значение не задано, то используется значение @c prime
 
         @pre prime -- простое число
+        @pre num_end <= prime
         @return Индексируемый контейнер, элементы которого содержат обратные по простому модулю к
         соответствующему индексу. Значение для нулевого элемента не определено.
         */
@@ -518,9 +523,18 @@ namespace saga
         std::vector<IntType>
         operator()(IntType prime) const
         {
-            assert(prime > 1);
+            return (*this)(prime, prime);
+        }
 
-            std::vector<IntType> result(prime, 0);
+
+        template <class IntType>
+        std::vector<IntType>
+        operator()(IntType prime, IntType num_end) const
+        {
+            assert(prime > 1);
+            assert(num_end <= prime);
+
+            std::vector<IntType> result(num_end, 0);
 
             result[1] = 1;
 
@@ -531,6 +545,7 @@ namespace saga
 
             return result;
         }
+        ///@}
     };
 
     struct first_factors_below_fn
