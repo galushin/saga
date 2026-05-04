@@ -170,7 +170,7 @@ namespace saga
     {
         template <class IntType
                  ,class = std::enable_if_t<std::is_integral<IntType>{} && !std::is_void<IntType>{}>>
-        constexpr IntType operator()(IntType num) const noexcept
+        constexpr IntType operator()(IntType num) const noexcept(std::is_unsigned_v<IntType>)
         {
             assert(num >= 0);
 
@@ -211,7 +211,7 @@ namespace saga
         }
 
         template <class IntType>
-        static constexpr IntType init_guess(IntType num)
+        static constexpr IntType init_guess(IntType num) noexcept
         {
             using UIntType = std::make_unsigned_t<IntType>;
 
