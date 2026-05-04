@@ -135,7 +135,8 @@ TEST_CASE("is_divisible_by")
 
 TEST_CASE("isqrt")
 {
-    static_assert(noexcept(saga::isqrt(0)));
+    static_assert(noexcept(saga::isqrt(0u)), "unsigned must be noexcept");
+    static_assert(!noexcept(saga::isqrt(0)), "signed must not be noexcept");
 
     saga_test::property_checker << [](std::uint16_t const & num_seed)
     {
